@@ -1,8 +1,10 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+import { SignupModule } from './modules/auth/signup/signup.module';
+
 
 @Module({
   imports: [
@@ -19,6 +21,8 @@ import { MongooseModule } from '@nestjs/mongoose';
       }),
     }),
 
+    //Other Modules
+    SignupModule
   ],
   controllers: [AppController],
   providers: [AppService],

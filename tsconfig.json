@@ -17,7 +17,7 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
-    // "moduleResolution": "node",
-    // "esModuleInterop": true
+    "moduleResolution": "node",
+    "esModuleInterop": true
   }
 }
