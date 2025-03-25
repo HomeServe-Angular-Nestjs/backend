@@ -3,7 +3,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { SignupModule } from './modules/auth/signup/signup.module';
+import { AuthModule } from './auth/auth.module';
+import { connection } from 'mongoose';
 
 
 @Module({
@@ -14,15 +15,38 @@ import { SignupModule } from './modules/auth/signup/signup.module';
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        uri: configService.get<string>('MONGO_URI'),
-        retryAttempts: 5,
-        retryDelay: 3000,
-      }),
+      useFactory: async (configService: ConfigService) => {
+        // uri: configService.get<string>('MONGO_URI'),
+        // retryAttempts: 5,
+        // retryDelay: 3000,
+        // connectionFactory: (connection) => {
+        //   connection.on('connected', () =>
+        //     console.log('MongoDB connected successfully'));
+        //   connection.on('error', (error: Error) =>
+        //     console.error('MongoDB connection error: ', error.message));
+        //   return connection;
+        // },
+
+        const uri = configService.get<string>('MONGO_URI');
+        return {
+          uri,
+          retryAttempts: 5,
+          retryDelay: 3000,
+          connectionFactory: (connection) => {
+            if (connection.readyState === 1) {
+              console.log('Successfully connected to MongoDB');
+            } else {
+              connection.on('connected', () => console.log('MongoDB connected!'));
+            }
+            connection.on('disconnected', () => console.log('MongoDB disconnected'));
+            return connection;
+          }
+        };
+      },
     }),
 
     //Other Modules
-    SignupModule
+    AuthModule
   ],
   controllers: [AppController],
   providers: [AppService],
