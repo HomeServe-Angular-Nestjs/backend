@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model, ObjectId } from "mongoose";
+import { Model, ObjectId, Types } from "mongoose";
 import { OTP } from "src/auth/common/entities/otp.entity";
 import { BaseRepository } from "src/auth/common/repositories/implementations/base.repository";
 import { OTP_MODEL_NAME } from "src/auth/constants/model.constant";
@@ -24,10 +24,10 @@ export class OtpRepository extends BaseRepository<OTP, OtpDocument> implements I
 
     protected toEntity(doc: OtpDocument): OTP {
         return new OTP({
-            id: doc._id.toString(),
+            id: (doc._id as Types.ObjectId).toString(),
             email: doc.email,
             code: doc.code,
             expiresAt: doc.expiresAt,
-        })
+        });
     }
 }

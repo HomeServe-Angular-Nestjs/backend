@@ -3,9 +3,6 @@ import { Document, Types } from "mongoose";
 
 @Schema({ timestamps: true })
 export class OtpDocument extends Document {
-    @Prop({ type: Types.ObjectId })
-    declare _id: Types.ObjectId;
-
     @Prop({ required: true, index: true })
     email: string;
 
