@@ -12,6 +12,9 @@ export class BaseUserDocument extends Document {
     @Prop({ required: true })
     username: string;
 
+    @Prop({ required: true })
+    password: string;
+
     @Prop()
     phone: string;
 

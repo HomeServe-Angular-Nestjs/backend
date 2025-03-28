@@ -20,6 +20,10 @@ export class ArgonUtility implements IArgonUtility {
     }
 
     async verify(hash: string, plain: string): Promise<boolean> {
+        if (!hash || typeof hash !== 'string') {
+            throw new Error('Invalid hash provided for verification');
+        }
+        
         return verify(hash, plain);
     }
 

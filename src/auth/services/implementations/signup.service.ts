@@ -1,17 +1,29 @@
 import { ConflictException, Inject, Injectable } from "@nestjs/common";
-import { CompleteSignupDto } from "../../dtos/complete-signup.dto";
+
 import { ISignupService } from "../interfaces/signup-service.interface";
-import { ICustomerRepository } from "src/auth/repositories/interfaces/customer-repo.interface";
 import { IOtpService } from "../interfaces/otp-service.interface";
-import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, } from "src/auth/constants/repository.constant";
-import { Customer } from "src/auth/common/entities/customer.entity";
-import { IArgonUtility } from "src/auth/common/utilities/interface/argon.utility.interface";
+
 import { OTP_SERVICE_INTERFACE_NAME } from "src/auth/constants/service.constant";
-import { ARGON_UTILITY_NAME } from "src/auth/constants/utility.constant";
-import { InitiateSignupDto } from "src/auth/dtos/initiate-signup.dto";
-import { IProviderRepository } from "src/auth/repositories/interfaces/provider-repo.interface";
-import { Provider } from "src/auth/common/entities/provider.entity";
+
 import { IBaseRepository } from "src/auth/common/repositories/interfaces/base-repo.interface";
+import { ICustomerRepository } from "src/auth/repositories/interfaces/customer-repo.interface";
+import { IProviderRepository } from "src/auth/repositories/interfaces/provider-repo.interface";
+
+import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, } from "src/auth/constants/repository.constant";
+
+import { IArgonUtility } from "src/auth/common/utilities/interface/argon.utility.interface";
+
+import { ARGON_UTILITY_NAME } from "src/auth/constants/utility.constant";
+
+import { Customer } from "src/auth/common/entities/customer.entity";
+import { Provider } from "src/auth/common/entities/provider.entity";
+
+import { ICustomer } from "src/auth/common/interfaces/customer.entity.interface";
+import { IProvider } from "src/auth/common/interfaces/provider.entity.interface";
+
+import { CompleteSignupDto } from "../../dtos/signup/complete-signup.dto";
+import { InitiateSignupDto } from "../../dtos/signup/initiate-signup.dto";
+
 
 @Injectable()
 export class SignupService implements ISignupService {
@@ -42,7 +54,7 @@ export class SignupService implements ISignupService {
     async completeSignup(dto: CompleteSignupDto): Promise<void> {
         const hashedPassword = await this.argon.hash(dto.password);
 
-        const repository: IBaseRepository<Customer | Provider> = dto.type === 'customer'
+        const repository: IBaseRepository<ICustomer | IProvider> = dto.type === 'customer'
             ? this.customerRepository
             : this.providerRepository;
 

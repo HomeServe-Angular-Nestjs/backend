@@ -1,10 +1,13 @@
 import { BadRequestException, Body, Controller, HttpCode, Inject, Post } from "@nestjs/common";
-import { InitiateSignupDto } from "../dtos/initiate-signup.dto";
-import { VerifyOtpDto } from "../dtos/verify-otp.dto";
-import { CompleteSignupDto } from "../dtos/complete-signup.dto";
+
 import { ISignupService } from "../services/interfaces/signup-service.interface";
 import { IOtpService } from "../services/interfaces/otp-service.interface";
+
 import { OTP_SERVICE_INTERFACE_NAME, SIGNUP_SERVICE_INTERFACE_NAME } from "../constants/service.constant";
+
+import { InitiateSignupDto } from "../dtos/signup/initiate-signup.dto";
+import { VerifyOtpDto } from "../dtos/signup/verify-otp.dto";
+import { CompleteSignupDto } from "../dtos/signup/complete-signup.dto";
 
 @Controller('signup')
 export class SignUpController {
@@ -37,7 +40,6 @@ export class SignUpController {
     @Post('complete_signup')
     @HttpCode(201)
     async completeSignup(@Body() dto: CompleteSignupDto) {
-        console.log(dto)
         await this.signupService.completeSignup(dto);
         return {success:true, message: 'Customer created successfully' };
     }

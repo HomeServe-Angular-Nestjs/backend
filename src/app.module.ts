@@ -16,17 +16,6 @@ import { connection } from 'mongoose';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => {
-        // uri: configService.get<string>('MONGO_URI'),
-        // retryAttempts: 5,
-        // retryDelay: 3000,
-        // connectionFactory: (connection) => {
-        //   connection.on('connected', () =>
-        //     console.log('MongoDB connected successfully'));
-        //   connection.on('error', (error: Error) =>
-        //     console.error('MongoDB connection error: ', error.message));
-        //   return connection;
-        // },
-
         const uri = configService.get<string>('MONGO_URI');
         return {
           uri,

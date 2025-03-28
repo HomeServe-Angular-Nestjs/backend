@@ -1,14 +1,20 @@
 import { Module } from "@nestjs/common";
 import { MongooseModule } from "@nestjs/mongoose";
-import { CUSTOMER_MODEL_NAME, OTP_MODEL_NAME, PROVIDER_MODEL_NAME } from "./constants/model.constant";
+
 import { CustomerSchema } from "./schema/customer.schema";
 import { OtpSchema } from "./schema/otp.schema";
+import { ProviderSchema } from "./schema/provider.schema";
+
+import { CUSTOMER_MODEL_NAME, OTP_MODEL_NAME, PROVIDER_MODEL_NAME } from "./constants/model.constant";
+
 import { SignUpController } from "./controllers/signup.controller";
+import { LoginController } from "./controllers/login.controller";
+
 import { repositoryProvider } from "./providers/repositories.provider";
-import { CommonModule } from "./common/common.module";
 import { serviceProvider } from "./providers/service.provider";
 import { utilityProvider } from "./providers/utility.provider";
-import { ProviderSchema } from "./schema/provider.schema";
+
+import { CommonModule } from "./common/common.module";
 
 @Module({
     imports: [
@@ -19,7 +25,7 @@ import { ProviderSchema } from "./schema/provider.schema";
         ]),
         CommonModule
     ],
-    controllers: [SignUpController],
+    controllers: [SignUpController, LoginController],
     providers: [
         ...repositoryProvider,
         ...serviceProvider,
