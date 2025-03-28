@@ -24,6 +24,7 @@ export class MailerOtpUtility implements IMailerOtpUtility {
                 rejectUnauthorized: process.env.NODE_ENV === 'production',
                 minVersion: 'TLSv1.2',
             },
+            logger: false
         });
     }
 
@@ -43,6 +44,6 @@ export class MailerOtpUtility implements IMailerOtpUtility {
             `,
         }
 
-        await this.mailTransporter.sendMail(mailOptions);
+        this.mailTransporter.sendMail(mailOptions);
     }
 }

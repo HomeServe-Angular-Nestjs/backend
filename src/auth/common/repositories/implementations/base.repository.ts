@@ -1,14 +1,12 @@
 import { Document, Model } from "mongoose";
-import { IEntity } from "../../interfaces/entity.interface";
+import { IEntity } from "../../interfaces/base/base-entity.entity.interface";
 import { IBaseRepository } from "../interfaces/base-repo.interface";
 
 export abstract class BaseRepository<T extends IEntity, TDocument extends Document> implements IBaseRepository<T> {
     constructor(protected readonly model: Model<TDocument>) { }
 
     async create(entity: Omit<T, 'id'>): Promise<T> {
-        console.log(entity)
         const doc = await this.model.create(entity);
-        console.log(doc)
         return this.toEntity(doc);
     }
 

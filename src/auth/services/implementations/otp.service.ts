@@ -1,4 +1,4 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { BadRequestException, Inject, Injectable } from "@nestjs/common";
 import { IOtpService } from "../interfaces/otp-service.interface";
 import { IOtpRepository } from "src/auth/repositories/interfaces/otp-repo.interface";
 import { IMailerOtpUtility } from "../../common/utilities/interface/mailer.utility.interface";
@@ -34,18 +34,15 @@ export class OtpService implements IOtpService {
 
     async verifyOtp(email: string, code: string): Promise<boolean> {
         const otp = await this.otpRepository.findValidOtp(email, code);
-        console.log(otp);
-
+   
         if (!otp || otp.code !== code || new Date() > otp.expiresAt) {
-            return false
+            throw new BadRequestException('Invalid Otp');
         }
 
         return true;
     }
 
-
-
     private generateOtp(): string {
-        return Math.floor(100000 + Math.random() * 900000).toString();
+        return Math.floor(1000 + Math.random() * 9000).toString();
     }
 }

@@ -10,6 +10,10 @@ export class CompleteSignupDto {
     username: string;
 
     @IsString()
-    @MinLength(6)
+    @MinLength(8)
     password: string;
+
+    @IsNotEmpty()
+    @IsString()
+    type: string;
 }

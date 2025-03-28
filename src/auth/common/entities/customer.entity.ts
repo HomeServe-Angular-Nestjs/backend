@@ -1,20 +1,12 @@
-import { BaseEntity } from "./base.entity";
+import { ICustomer } from "../interfaces/customer.entity.interface";
+import { BaseUserEntity } from "./base/base-user.entity";
 
-export class Customer extends BaseEntity {
-    email: string;
-    password: string;
-    username: string;
-    fullname: string;
-    phone: number;
-    avatar: string;
-    isActive: boolean;
-    isVerified: boolean;
-    isBlocked: boolean;
-    isDeleted: boolean;
-    lastLoginAt: Date;
+export class Customer extends BaseUserEntity implements ICustomer {
+    locations?: { lat: number; lng: number; }[] | null;
+    savedProviders?: string[] | null;
 
     constructor(partial: Partial<Customer>) {
         super(partial);
-        Object.assign(this, partial)
+        Object.assign(this, partial);
     }
 }

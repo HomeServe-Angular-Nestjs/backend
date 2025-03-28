@@ -1,41 +1,23 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { Document } from "mongoose";
+import { BaseUserDocument } from "./base/user-base.schema";
 
 @Schema({
     timestamps: true,
 })
-export class CustomerDocument extends Document {
-    @Prop({ required: true, unique: true })
-    email: string;
+export class CustomerDocument extends BaseUserDocument {
+    @Prop({
+        type: [{ lat: Number, lng: Number }],
+        index: true
+    })
+    locations: {
+        lat: number;
+        lng: number;
+    }[];
 
-    @Prop({ required: true, unique: true })
-    password: string;
-
-    @Prop()
-    username: string;
-
-    @Prop()
-    fullname: string;
-
-    @Prop()
-    phone: number;
-
-    @Prop()
-    avatar: string;
-
-    @Prop()
-    isVerified: string;
-
-    @Prop()
-    isActive: boolean;
-
-    @Prop()
-    isBlocked: boolean;
-
-    @Prop()
-    isDeleted: boolean;
-
-    @Prop()
-    lastLoginAt: Date;
+    @Prop({
+        type: [String],
+        required: true
+    })
+    savedProviders: string[];
 }
 export const CustomerSchema = SchemaFactory.createForClass(CustomerDocument);
