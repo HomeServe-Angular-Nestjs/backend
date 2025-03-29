@@ -5,9 +5,7 @@ import { IOtpService } from "../services/interfaces/otp-service.interface";
 
 import { OTP_SERVICE_INTERFACE_NAME, SIGNUP_SERVICE_INTERFACE_NAME } from "../constants/service.constant";
 
-import { InitiateSignupDto } from "../dtos/signup/initiate-signup.dto";
-import { VerifyOtpDto } from "../dtos/signup/verify-otp.dto";
-import { CompleteSignupDto } from "../dtos/signup/complete-signup.dto";
+import { InitiateSignupDto, VerifyOtpDto, CompleteSignupDto } from "../dtos/signup.dto";
 
 @Controller('signup')
 export class SignUpController {
@@ -41,6 +39,6 @@ export class SignUpController {
     @HttpCode(201)
     async completeSignup(@Body() dto: CompleteSignupDto) {
         await this.signupService.completeSignup(dto);
-        return {success:true, message: 'Customer created successfully' };
+        return { success: true, message: 'Customer created successfully' };
     }
 } 

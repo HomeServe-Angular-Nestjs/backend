@@ -1,9 +1,9 @@
 import { Injectable } from "@nestjs/common";
 import { createTransport, SendMailOptions, Transporter } from 'nodemailer'
-import { IMailerOtpUtility } from "../interface/mailer.utility.interface";
+import { IMailerUtility } from "../interface/mailer.utility.interface";
 
 @Injectable({})
-export class MailerOtpUtility implements IMailerOtpUtility {
+export class MailerUtility implements IMailerUtility {
 
     private mailTransporter: Transporter;
 
@@ -28,17 +28,19 @@ export class MailerOtpUtility implements IMailerOtpUtility {
         });
     }
 
-    async sendOtpEmail(to: string, otp: string): Promise<void> {
+    async sendEmail(to: string, item: string, type: string): Promise<void> {
         const mailOptions: SendMailOptions = {
             from: {
                 name: 'HomeServe',
                 address: process.env.SMTP_FROM as string
             },
             to,
-            subject: 'Registration OTP',
+            subject: type === 'otp' ? 'Registration OTP' : type === 'link' ? "Verification Link" : `${type}`,
             html: `
-            <p>You may verify your account using the otp below: 
-                <span style="font-size:24px; font-weight: 700;">${otp}</span>
+            <p>You may verify your account using the ${type} below: 
+                <span style="${type === 'link' ? 'font-size: 16px; font-weight: 700;' : 'font-size:24px; font-weight: 700;'}">
+                ${type === 'link' ? process.env.VERIFICATION_LINK + '?verification_token=' + item : item}
+                </span>
             </p>  <br>    
             <p>Regards, <br> HomeServe</p>
             `,

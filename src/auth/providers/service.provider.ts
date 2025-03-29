@@ -1,8 +1,10 @@
 import { Provider } from "@nestjs/common";
-import { LOGIN_SERVICE_INTERFACE_NAME, OTP_SERVICE_INTERFACE_NAME, SIGNUP_SERVICE_INTERFACE_NAME } from "../constants/service.constant";
+import { CONFIG_SERVICE_NAME, JWT_SERVICE_NAME, LOGIN_SERVICE_INTERFACE_NAME, OTP_SERVICE_INTERFACE_NAME, SIGNUP_SERVICE_INTERFACE_NAME } from "../constants/service.constant";
 import { OtpService } from "../services/implementations/otp.service";
 import { SignupService } from "../services/implementations/signup.service";
 import { LoginService } from "../services/implementations/login.service";
+import { JwtService } from "@nestjs/jwt";
+import { ConfigService } from "@nestjs/config";
 
 export const serviceProvider: Provider[] = [
     {
@@ -16,5 +18,12 @@ export const serviceProvider: Provider[] = [
     {
         provide: LOGIN_SERVICE_INTERFACE_NAME,
         useClass: LoginService
+    },
+    {
+        provide: JWT_SERVICE_NAME,
+        useClass: JwtService
+    }, {
+        provide: CONFIG_SERVICE_NAME,
+        useClass: ConfigService
     }
 ]

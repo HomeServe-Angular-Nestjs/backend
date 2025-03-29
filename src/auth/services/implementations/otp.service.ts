@@ -1,9 +1,9 @@
 import { BadRequestException, Inject, Injectable } from "@nestjs/common";
 import { IOtpService } from "../interfaces/otp-service.interface";
 import { IOtpRepository } from "src/auth/repositories/interfaces/otp-repo.interface";
-import { IMailerOtpUtility } from "../../common/utilities/interface/mailer.utility.interface";
+import { IMailerUtility } from "../../common/utilities/interface/mailer.utility.interface";
 import { OTP_REPOSITORY_INTERFACE_NAME } from "src/auth/constants/repository.constant";
-import { MAILER_OTP_UTILITY_INTERFACE_NAME } from "src/auth/constants/utility.constant";
+import { MAILER_UTILITY_INTERFACE_NAME } from "src/auth/constants/utility.constant";
 
 @Injectable()
 export class OtpService implements IOtpService {
@@ -12,8 +12,8 @@ export class OtpService implements IOtpService {
         @Inject(OTP_REPOSITORY_INTERFACE_NAME)
         private readonly otpRepository: IOtpRepository,
 
-        @Inject(MAILER_OTP_UTILITY_INTERFACE_NAME)
-        private readonly mailerService: IMailerOtpUtility,
+        @Inject(MAILER_UTILITY_INTERFACE_NAME)
+        private readonly mailerService: IMailerUtility,
     ) { }
 
     async generateAndSendOtp(email: string) {
@@ -29,12 +29,12 @@ export class OtpService implements IOtpService {
             expiresAt
         });
 
-        await this.mailerService.sendOtpEmail(email, code)
+        await this.mailerService.sendEmail(email, code, 'otp')
     }
 
     async verifyOtp(email: string, code: string): Promise<boolean> {
         const otp = await this.otpRepository.findValidOtp(email, code);
-   
+
         if (!otp || otp.code !== code || new Date() > otp.expiresAt) {
             throw new BadRequestException('Invalid Otp');
         }

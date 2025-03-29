@@ -15,6 +15,8 @@ import { serviceProvider } from "./providers/service.provider";
 import { utilityProvider } from "./providers/utility.provider";
 
 import { CommonModule } from "./common/common.module";
+import { JwtModule } from "@nestjs/jwt";
+import { ConfigModule, ConfigService } from "@nestjs/config";
 
 @Module({
     imports: [
@@ -23,6 +25,30 @@ import { CommonModule } from "./common/common.module";
             { name: PROVIDER_MODEL_NAME, schema: ProviderSchema },
             { name: OTP_MODEL_NAME, schema: OtpSchema },
         ]),
+
+        // JWT Module
+        ConfigModule,
+        JwtModule.registerAsync({
+            useFactory: (config: ConfigService) => {
+                const secret = config.get<string>('JWT_ACCESS_SECRET');
+                if (!secret) throw new Error('JWT_SECRET missing in env');
+
+                return {
+                    global: true,
+                    secret: config.get<string>('JWT_ACCESS_SECRET') || (() => {
+                        console.error('MISSING JWT_SECRET IN ENV');
+                        throw new Error('JWT secret missing');
+                    })(),
+                    signOptions: {
+                        expiresIn: config.get<string>('JWT_ACCESS_EXPIRES_IN') || (() => {
+                            console.error('MISSING JWT_SECRET IN ENV');
+                            throw new Error('JWT secret missing');
+                        })(),
+                    }
+                };
+            },
+            inject: [ConfigService],
+        }),
         CommonModule
     ],
     controllers: [SignUpController, LoginController],
@@ -31,5 +57,6 @@ import { CommonModule } from "./common/common.module";
         ...serviceProvider,
         ...utilityProvider
     ],
+    exports: [JwtModule],
 })
 export class AuthModule { }

@@ -1,8 +1,7 @@
-import { Document, Model } from "mongoose";
-import { IEntity } from "../../interfaces/base/base-entity.entity.interface";
+import { Document, FilterQuery, Model, UpdateQuery } from "mongoose";
 import { IBaseRepository } from "../interfaces/base-repo.interface";
-
-export abstract class BaseRepository<T extends IEntity, TDocument extends Document> implements IBaseRepository<T> {
+import { IEntity } from "../../entities/interfaces/base/base-entity.entity.interface";
+export abstract class BaseRepository<T extends IEntity, TDocument extends Document> implements IBaseRepository<T, TDocument> {
     constructor(protected readonly model: Model<TDocument>) { }
 
     async create(entity: Omit<T, 'id'>): Promise<T> {
@@ -12,6 +11,22 @@ export abstract class BaseRepository<T extends IEntity, TDocument extends Docume
 
     async findByEmail(email: string): Promise<T | null> {
         const result = await this.model.findOne({ email }).exec();
+        return result ? this.toEntity(result) : null;
+    }
+
+    async findOneAndUpdate(
+        query: FilterQuery<TDocument>,
+        update: UpdateQuery<TDocument>,
+        options?: {
+            upsert?: boolean; new?: boolean
+        }): Promise<T | null> {
+
+        const result = await this.model.findOneAndUpdate(
+            query,
+            update,
+            { new: true, ...options }
+        );
+
         return result ? this.toEntity(result) : null;
     }
 

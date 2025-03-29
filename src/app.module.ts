@@ -5,6 +5,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { connection } from 'mongoose';
+import { JwtModule } from '@nestjs/jwt';
 
 
 @Module({
@@ -15,8 +16,8 @@ import { connection } from 'mongoose';
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => {
-        const uri = configService.get<string>('MONGO_URI');
+      useFactory: async (config: ConfigService) => {
+        const uri = config.get<string>('MONGO_URI');
         return {
           uri,
           retryAttempts: 5,
@@ -33,6 +34,19 @@ import { connection } from 'mongoose';
         };
       },
     }),
+
+    // // JWT Module
+    // JwtModule.registerAsync({
+    //   imports: [ConfigModule],
+    //   inject: [ConfigService],
+    //   useFactory: async (config: ConfigService) => ({
+    //     secret: config.get<string>('JWT_ACCESS_SECRET'),
+    //     signOptions: {
+    //       expiresIn: config.get('JWT_ACCESS_EXPIRES_IN', '15m'),
+    //       issuer: config.get('JWT_ISSUER', 'HomeServe'),
+    //     },
+    //   })
+    // }),
 
     //Other Modules
     AuthModule
