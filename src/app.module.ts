@@ -4,13 +4,17 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
-import { connection } from 'mongoose';
-import { JwtModule } from '@nestjs/jwt';
+import { CacheModule } from '@nestjs/cache-manager';
+import { redisStore } from 'cache-manager-redis-store';
+import { PassportModule } from '@nestjs/passport';
+import { GoogleStrategy } from './auth/strategies/google.strategy';
 
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+
+    // PassportModule.register({ defaultStrategy: 'google' }),
 
     // Configures the MongoDB
     MongooseModule.forRootAsync({
@@ -35,18 +39,12 @@ import { JwtModule } from '@nestjs/jwt';
       },
     }),
 
-    // // JWT Module
-    // JwtModule.registerAsync({
-    //   imports: [ConfigModule],
-    //   inject: [ConfigService],
-    //   useFactory: async (config: ConfigService) => ({
-    //     secret: config.get<string>('JWT_ACCESS_SECRET'),
-    //     signOptions: {
-    //       expiresIn: config.get('JWT_ACCESS_EXPIRES_IN', '15m'),
-    //       issuer: config.get('JWT_ISSUER', 'HomeServe'),
-    //     },
-    //   })
-    // }),
+    // Cache with Redis
+    CacheModule.register({
+      isGlobal: true,
+      ttl: 60 * 1000,
+      store: redisStore
+    }),
 
     //Other Modules
     AuthModule

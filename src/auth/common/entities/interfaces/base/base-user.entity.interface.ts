@@ -1,3 +1,4 @@
+import { UserType } from "src/auth/dtos/login.dto";
 import { IEntity } from "./base-entity.entity.interface";
 
 export interface IBaseUserEntity extends IEntity {
@@ -10,4 +11,6 @@ export interface IBaseUserEntity extends IEntity {
     avatar: string;
     fullname: string;
     phone: number;
+    googleId?: string;
+    type?: UserType
 }

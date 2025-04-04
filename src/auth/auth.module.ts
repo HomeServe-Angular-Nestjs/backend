@@ -1,4 +1,6 @@
 import { Module } from "@nestjs/common";
+import { ConfigModule, ConfigService } from "@nestjs/config";
+import { JwtModule } from "@nestjs/jwt";
 import { MongooseModule } from "@nestjs/mongoose";
 
 import { CustomerSchema } from "./schema/customer.schema";
@@ -15,11 +17,17 @@ import { serviceProvider } from "./providers/service.provider";
 import { utilityProvider } from "./providers/utility.provider";
 
 import { CommonModule } from "./common/common.module";
-import { JwtModule } from "@nestjs/jwt";
-import { ConfigModule, ConfigService } from "@nestjs/config";
+import { RedisModule } from "src/redis/redis.module";
+
+import { GoogleStrategy } from "./strategies/google.strategy";
+import { PassportModule } from "@nestjs/passport";
+// import { TestController } from "./controllers/test.controller";
+import { AuthController } from "./controllers/auth.controller";
 
 @Module({
     imports: [
+        PassportModule.register({ session: true }),
+
         MongooseModule.forFeature([
             { name: CUSTOMER_MODEL_NAME, schema: CustomerSchema },
             { name: PROVIDER_MODEL_NAME, schema: ProviderSchema },
@@ -49,13 +57,16 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
             },
             inject: [ConfigService],
         }),
-        CommonModule
+
+        CommonModule,
+        RedisModule
     ],
-    controllers: [SignUpController, LoginController],
+    controllers: [SignUpController, LoginController, AuthController],
     providers: [
         ...repositoryProvider,
         ...serviceProvider,
-        ...utilityProvider
+        ...utilityProvider,
+        GoogleStrategy,
     ],
     exports: [JwtModule],
 })

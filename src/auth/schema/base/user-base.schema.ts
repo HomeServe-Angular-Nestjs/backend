@@ -12,7 +12,7 @@ export class BaseUserDocument extends Document {
     @Prop({ required: true })
     username: string;
 
-    @Prop({ required: true })
+    @Prop()
     password: string;
 
     @Prop()
@@ -20,6 +20,9 @@ export class BaseUserDocument extends Document {
 
     @Prop()
     avatar: string;
+
+    @Prop({ default: null })
+    googleId: string;
 
     @Prop()
     isActive: boolean

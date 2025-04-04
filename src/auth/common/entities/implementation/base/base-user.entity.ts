@@ -12,6 +12,7 @@ export abstract class BaseUserEntity extends BaseEntity implements IBaseUserEnti
     isBlocked: boolean;
     isDeleted: boolean;
     lastLoginAt: Date;
+    googleId?:string
 
     constructor(partial: Partial<BaseUserEntity>) {
         super(partial);

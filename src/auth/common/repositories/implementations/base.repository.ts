@@ -1,6 +1,7 @@
 import { Document, FilterQuery, Model, UpdateQuery } from "mongoose";
 import { IBaseRepository } from "../interfaces/base-repo.interface";
 import { IEntity } from "../../entities/interfaces/base/base-entity.entity.interface";
+
 export abstract class BaseRepository<T extends IEntity, TDocument extends Document> implements IBaseRepository<T, TDocument> {
     constructor(protected readonly model: Model<TDocument>) { }
 

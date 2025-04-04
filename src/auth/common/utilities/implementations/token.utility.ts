@@ -1,25 +1,18 @@
-import { Inject, Injectable, UnauthorizedException } from "@nestjs/common";
+import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { JsonWebTokenError, JwtService, TokenExpiredError } from "@nestjs/jwt";
 import { ITokenUtility } from "../interface/token.utility.interface";
 import { IPayload } from "../../entities/interfaces/payload.entity.interface";
-import { CONFIG_SERVICE_NAME, JWT_SERVICE_NAME } from "src/auth/constants/service.constant";
 import { ConfigService } from "@nestjs/config";
 
 @Injectable()
 export class TokenUtility implements ITokenUtility {
     constructor(
         private readonly jwtService: JwtService,
-        @Inject(CONFIG_SERVICE_NAME)
         private configService: ConfigService,
     ) { }
 
     generateAccessToken(payload: IPayload): string {
         return this.jwtService.sign(payload);
-    }
-
-
-    generateRefreshToken(user: IPayload): string {
-        return ''
     }
 
     async verifyToken(token: string): Promise<IPayload> {

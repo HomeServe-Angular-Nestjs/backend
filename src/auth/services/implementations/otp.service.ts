@@ -20,7 +20,7 @@ export class OtpService implements IOtpService {
         await this.otpRepository.removePreviousOtp(email);
 
         const code = this.generateOtp();
-        const expiresAt = new Date(Date.now() + 1 * 60 * 1000);
+        const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
         // saves OTP
         await this.otpRepository.create({

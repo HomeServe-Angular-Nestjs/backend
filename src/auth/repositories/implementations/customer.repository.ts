@@ -21,6 +21,7 @@ export class CustomerRepository extends BaseRepository<Customer, CustomerDocumen
             email: doc.email,
             username: doc.username,
             password: doc.password,
+            googleId: doc.googleId,
             isActive: doc.isActive,
         });
     }

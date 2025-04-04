@@ -5,7 +5,7 @@ import { ProviderDocument } from "src/auth/schema/provider.schema";
 import { IProviderRepository } from "../interfaces/provider-repo.interface";
 import { InjectModel } from "@nestjs/mongoose";
 import { PROVIDER_MODEL_NAME } from "src/auth/constants/model.constant";
-import { Model } from "mongoose";
+import { Model, Types } from "mongoose";
 
 @Injectable()
 export class ProviderRepository extends BaseRepository<Provider, ProviderDocument> implements IProviderRepository {
@@ -16,7 +16,12 @@ export class ProviderRepository extends BaseRepository<Provider, ProviderDocumen
 
     protected toEntity(doc: ProviderDocument): Provider {
         return new Provider({
-
+            id: (doc._id as Types.ObjectId).toString(),
+            email: doc.email,
+            username: doc.username,
+            password: doc.password,
+            googleId: doc.googleId,
+            isActive: doc.isActive,
         });
     }
 }

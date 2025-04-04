@@ -1,6 +1,6 @@
 import { IsEmail, IsNotEmpty, IsString, MinLength, } from "class-validator";
 
-type UserType = 'customer' | 'provider';
+export type UserType = 'customer' | 'provider';
 
 export class AuthLoginDto {
     @IsEmail()
@@ -30,3 +30,11 @@ export class VerifyTokenDto {
 }
 
 export class ChangePasswordDto extends AuthLoginDto { }
+
+export class GoogleLoginDto {
+    googleId: string;
+    email: string;
+    avatar?: string | undefined;
+    name?: string;
+    type: UserType
+}
