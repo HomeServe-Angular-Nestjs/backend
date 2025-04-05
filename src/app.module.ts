@@ -1,44 +1,21 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
+import { CacheModule } from '@nestjs/cache-manager';
+import { redisStore } from 'cache-manager-redis-store';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
-import { CacheModule } from '@nestjs/cache-manager';
-import { redisStore } from 'cache-manager-redis-store';
-import { PassportModule } from '@nestjs/passport';
-import { GoogleStrategy } from './auth/strategies/google.strategy';
+import { SeedsModule } from './seed/seed.module';
+import { DatabaseModule } from './database/database.module';
+
 
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-
-    // PassportModule.register({ defaultStrategy: 'google' }),
-
-    // Configures the MongoDB
-    MongooseModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: async (config: ConfigService) => {
-        const uri = config.get<string>('MONGO_URI');
-        return {
-          uri,
-          retryAttempts: 5,
-          retryDelay: 3000,
-          connectionFactory: (connection) => {
-            if (connection.readyState === 1) {
-              console.log('Successfully connected to MongoDB');
-            } else {
-              connection.on('connected', () => console.log('MongoDB connected!'));
-            }
-            connection.on('disconnected', () => console.log('MongoDB disconnected'));
-            return connection;
-          }
-        };
-      },
-    }),
-
+    DatabaseModule,
+    
     // Cache with Redis
     CacheModule.register({
       isGlobal: true,
@@ -47,7 +24,8 @@ import { GoogleStrategy } from './auth/strategies/google.strategy';
     }),
 
     //Other Modules
-    AuthModule
+    AuthModule,
+    SeedsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

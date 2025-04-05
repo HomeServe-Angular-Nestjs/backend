@@ -1,4 +1,4 @@
-import { IPayload } from "src/auth/dtos/payload.dto"
+import { IPayload } from "../../dtos/payload.dto"
 
 export interface ITokenService {
     generateToken(userId: string, email: string): Promise<string>,

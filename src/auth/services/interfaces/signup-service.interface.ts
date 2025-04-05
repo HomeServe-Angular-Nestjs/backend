@@ -1,4 +1,4 @@
-import { CompleteSignupDto, InitiateSignupDto } from "src/auth/dtos/signup.dto";
+import { CompleteSignupDto, InitiateSignupDto } from "../../dtos/signup.dto";
 
 export interface ISignupService {
     initiateSignup(dto: InitiateSignupDto): Promise<void>;

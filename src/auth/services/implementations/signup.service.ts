@@ -3,21 +3,21 @@ import { ConflictException, Inject, Injectable } from "@nestjs/common";
 import { ISignupService } from "../interfaces/signup-service.interface";
 import { IOtpService } from "../interfaces/otp-service.interface";
 
-import { OTP_SERVICE_INTERFACE_NAME } from "src/auth/constants/service.constant";
+import { OTP_SERVICE_INTERFACE_NAME } from "../../constants/service.constant";
 
-import { ICustomerRepository } from "src/auth/repositories/interfaces/customer-repo.interface";
-import { IProviderRepository } from "src/auth/repositories/interfaces/provider-repo.interface";
+import { ICustomerRepository } from "../../repositories/interfaces/customer-repo.interface";
+import { IProviderRepository } from "../../repositories/interfaces/provider-repo.interface";
 
-import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, } from "src/auth/constants/repository.constant";
+import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, } from "../../constants/repository.constant";
 
-import { IArgonUtility } from "src/auth/common/utilities/interface/argon.utility.interface";
+import { IArgonUtility } from "../../common/utilities/interface/argon.utility.interface";
 
-import { ARGON_UTILITY_NAME } from "src/auth/constants/utility.constant";
+import { ARGON_UTILITY_NAME } from "../../constants/utility.constant";
 
-import { Customer } from "src/auth/common/entities/implementation/customer.entity";
-import { Provider } from "src/auth/common/entities/implementation/provider.entity";
+import { Customer } from "../../common/entities/implementation/customer.entity";
+import { Provider } from "../../common/entities/implementation/provider.entity";
 
-import { CompleteSignupDto, InitiateSignupDto } from "src/auth/dtos/signup.dto";
+import { CompleteSignupDto, InitiateSignupDto } from "../../dtos/signup.dto";
 
 
 @Injectable()

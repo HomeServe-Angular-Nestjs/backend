@@ -1,10 +1,10 @@
 import { Injectable } from "@nestjs/common";
-import { Provider } from "src/auth/common/entities/implementation/provider.entity";
-import { BaseRepository } from "src/auth/common/repositories/implementations/base.repository";
-import { ProviderDocument } from "src/auth/schema/provider.schema";
+import { Provider } from "../../common/entities/implementation/provider.entity";
+import { BaseRepository } from "../../common/repositories/implementations/base.repository";
+import { ProviderDocument } from "../../schema/provider.schema";
 import { IProviderRepository } from "../interfaces/provider-repo.interface";
 import { InjectModel } from "@nestjs/mongoose";
-import { PROVIDER_MODEL_NAME } from "src/auth/constants/model.constant";
+import { PROVIDER_MODEL_NAME } from "../../constants/model.constant";
 import { Model, Types } from "mongoose";
 
 @Injectable()

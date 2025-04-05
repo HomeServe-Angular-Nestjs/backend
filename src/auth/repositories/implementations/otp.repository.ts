@@ -1,10 +1,10 @@
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, ObjectId, Types } from "mongoose";
-import { OTP } from "src/auth/common/entities/implementation/otp.entity";
-import { BaseRepository } from "src/auth/common/repositories/implementations/base.repository";
-import { OTP_MODEL_NAME } from "src/auth/constants/model.constant";
-import { OtpDocument } from "src/auth/schema/otp.schema";
+import { OTP } from "../../common/entities/implementation/otp.entity";
+import { BaseRepository } from "../../common/repositories/implementations/base.repository";
+import { OTP_MODEL_NAME } from "../../constants/model.constant";
+import { OtpDocument } from "../../schema/otp.schema";
 import { IOtpRepository } from "../interfaces/otp-repo.interface";
 
 @Injectable()

@@ -1,9 +1,9 @@
 import { BadRequestException, Inject, Injectable } from "@nestjs/common";
 import { IOtpService } from "../interfaces/otp-service.interface";
-import { IOtpRepository } from "src/auth/repositories/interfaces/otp-repo.interface";
+import { IOtpRepository } from "../../repositories/interfaces/otp-repo.interface";
 import { IMailerUtility } from "../../common/utilities/interface/mailer.utility.interface";
-import { OTP_REPOSITORY_INTERFACE_NAME } from "src/auth/constants/repository.constant";
-import { MAILER_UTILITY_INTERFACE_NAME } from "src/auth/constants/utility.constant";
+import { OTP_REPOSITORY_INTERFACE_NAME } from "../../constants/repository.constant";
+import { MAILER_UTILITY_INTERFACE_NAME } from "../../constants/utility.constant";
 
 @Injectable()
 export class OtpService implements IOtpService {

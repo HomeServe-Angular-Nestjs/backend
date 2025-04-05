@@ -2,29 +2,29 @@ import { BadRequestException, Inject, Injectable, InternalServerErrorException, 
 import { CACHE_MANAGER } from "@nestjs/cache-manager";
 import { Cache } from "cache-manager";
 
-import { ICustomerRepository } from "src/auth/repositories/interfaces/customer-repo.interface";
-import { IProviderRepository } from "src/auth/repositories/interfaces/provider-repo.interface";
+import { ICustomerRepository } from "../../repositories/interfaces/customer-repo.interface";
+import { IProviderRepository } from "../../repositories/interfaces/provider-repo.interface";
 
-import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME } from "src/auth/constants/repository.constant";
+import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME } from "../../constants/repository.constant";
 
 import { ILoginService } from "../interfaces/login-service.interface";
 import { ITokenService } from "../interfaces/token-service.interface";
 
-import { TOKEN_SERVICE_NAME } from "src/auth/constants/service.constant";
+import { TOKEN_SERVICE_NAME } from "../../constants/service.constant";
 
-import { Customer } from "src/auth/common/entities/implementation/customer.entity";
-import { Provider } from "src/auth/common/entities/implementation/provider.entity";
+import { Customer } from "../../common/entities/implementation/customer.entity";
+import { Provider } from "../../common/entities/implementation/provider.entity";
 
-import { IUser } from "src/auth/common/entities/interfaces/user.entity";
-import { IPayload } from "src/auth/dtos/payload.dto";
+import { IUser } from "../../common/entities/interfaces/user.entity";
+import { IPayload } from "../../dtos/payload.dto";
 
-import { IArgonUtility } from "src/auth/common/utilities/interface/argon.utility.interface";
-import { ITokenUtility } from "src/auth/common/utilities/interface/token.utility.interface";
-import { IMailerUtility } from "src/auth/common/utilities/interface/mailer.utility.interface";
+import { IArgonUtility } from "../../common/utilities/interface/argon.utility.interface";
+import { ITokenUtility } from "../../common/utilities/interface/token.utility.interface";
+import { IMailerUtility } from "../../common/utilities/interface/mailer.utility.interface";
 
-import { ARGON_UTILITY_NAME, MAILER_UTILITY_INTERFACE_NAME, TOKEN_UTILITY_NAME } from "src/auth/constants/utility.constant";
+import { ARGON_UTILITY_NAME, MAILER_UTILITY_INTERFACE_NAME, TOKEN_UTILITY_NAME } from "../../constants/utility.constant";
 
-import { AuthLoginDto, ChangePasswordDto, ForgotPasswordDto, GoogleLoginDto, UserType, VerifyTokenDto } from "src/auth/dtos/login.dto";
+import { AuthLoginDto, ChangePasswordDto, ForgotPasswordDto, GoogleLoginDto, UserType, VerifyTokenDto } from "../../dtos/login.dto";
 
 
 @Injectable()

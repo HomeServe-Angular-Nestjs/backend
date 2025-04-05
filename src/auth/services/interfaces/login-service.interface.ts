@@ -1,6 +1,6 @@
-import { IUser } from "src/auth/common/entities/interfaces/user.entity";
-import { AuthLoginDto, ChangePasswordDto, ForgotPasswordDto, GoogleLoginDto, VerifyTokenDto } from "src/auth/dtos/login.dto";
-import { IPayload } from "src/auth/dtos/payload.dto";
+import { IUser } from "../../common/entities/interfaces/user.entity";
+import { AuthLoginDto, ChangePasswordDto, ForgotPasswordDto, GoogleLoginDto, VerifyTokenDto } from "../../dtos/login.dto";
+import { IPayload } from "../../dtos/payload.dto";
 
 export interface ILoginService {
     validateUserCredentials(dto: AuthLoginDto): Promise<IUser>;

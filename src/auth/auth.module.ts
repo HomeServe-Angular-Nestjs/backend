@@ -7,7 +7,7 @@ import { CustomerSchema } from "./schema/customer.schema";
 import { OtpSchema } from "./schema/otp.schema";
 import { ProviderSchema } from "./schema/provider.schema";
 
-import { CUSTOMER_MODEL_NAME, OTP_MODEL_NAME, PROVIDER_MODEL_NAME } from "./constants/model.constant";
+import { ADMIN_MODEL_NAME, CUSTOMER_MODEL_NAME, OTP_MODEL_NAME, PROVIDER_MODEL_NAME } from "./constants/model.constant";
 
 import { SignUpController } from "./controllers/signup.controller";
 import { LoginController } from "./controllers/login.controller";
@@ -17,12 +17,12 @@ import { serviceProvider } from "./providers/service.provider";
 import { utilityProvider } from "./providers/utility.provider";
 
 import { CommonModule } from "./common/common.module";
-import { RedisModule } from "src/redis/redis.module";
+import { RedisModule } from "../redis/redis.module";
 
 import { GoogleStrategy } from "./strategies/google.strategy";
 import { PassportModule } from "@nestjs/passport";
-// import { TestController } from "./controllers/test.controller";
-import { AuthController } from "./controllers/auth.controller";
+import { AdminSchema } from "./schema/admin.schema";
+import { SeedCommand } from "../seed/commands/seed.command";
 
 @Module({
     imports: [
@@ -59,9 +59,9 @@ import { AuthController } from "./controllers/auth.controller";
         }),
 
         CommonModule,
-        RedisModule
+        RedisModule,
     ],
-    controllers: [SignUpController, LoginController, AuthController],
+    controllers: [SignUpController, LoginController],
     providers: [
         ...repositoryProvider,
         ...serviceProvider,

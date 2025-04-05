@@ -1,4 +1,4 @@
-import { UserType } from "src/auth/dtos/login.dto";
+import { UserType } from "../../../../dtos/login.dto";
 import { IEntity } from "./base-entity.entity.interface";
 
 export interface IBaseUserEntity extends IEntity {

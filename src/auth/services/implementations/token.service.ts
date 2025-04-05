@@ -5,7 +5,7 @@ import { JwtService } from "@nestjs/jwt";
 import { Cache } from "cache-manager";
 import { v4 as uuidv4 } from 'uuid';
 import { ITokenService } from "../interfaces/token-service.interface";
-import { IPayload } from "src/auth/dtos/payload.dto";
+import { IPayload } from "../../dtos/payload.dto";
 
 @Injectable()
 export class TokenService implements ITokenService {
