@@ -1,10 +1,10 @@
 import { Inject, Injectable, InternalServerErrorException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { ADMIN_REPOSITORY_INTERFACE_NAME } from "../../auth/constants/repository.constant";
-import { IAdminRepository } from "../../auth/repositories/interfaces/admin-repo.interface";
-import { ARGON_UTILITY_NAME } from "../../auth/constants/utility.constant";
-import { IArgonUtility } from "../../auth/common/utilities/interface/argon.utility.interface";
-import { Admin } from "../../auth/common/entities/implementation/admin.entity";
+import { ADMIN_REPOSITORY_INTERFACE_NAME } from "../../core/constants/repository.constant";
+import { IAdminRepository } from "../../core/repositories/interfaces/admin-repo.interface";
+import { ARGON_UTILITY_NAME } from "../../core/constants/utility.constant";
+import { IArgonUtility } from "../../core/utilities/interface/argon.utility.interface";
+import { Admin } from "../../core/entities/implementation/admin.entity";
 import { ISeedAdminService } from "../interface/seed-service.interface";
 
 

@@ -1,6 +1,6 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { Command, Console } from "nestjs-console";
-import { ADMIN_SEED_SERVICE_NAME } from "../../auth/constants/service.constant";
+import { ADMIN_SEED_SERVICE_NAME } from "../../core/constants/service.constant";
 import { ISeedAdminService } from "../interface/seed-service.interface";
 
 @Console()
