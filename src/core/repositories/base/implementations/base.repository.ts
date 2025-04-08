@@ -10,6 +10,25 @@ export abstract class BaseRepository<T extends IEntity, TDocument extends Docume
         return this.toEntity(doc);
     }
 
+    async find(
+        filter: FilterQuery<TDocument> = {},
+        options?: {
+            limit?: number;
+            skip?: number;
+            sort?: Record<string, 1 | -1>;
+            populate?: string | string[];
+        }): Promise<T[]> {
+        let query = this.model.find(filter).lean();
+
+        if (options?.limit) query = query.limit(options.limit);
+        if (options?.skip) query = query.skip(options.skip);
+        if (options?.sort) query = query.sort(options.sort);
+        if (options?.populate) query = query.populate(options.populate);
+
+        const result = await query.exec();
+        return result ? result.map(doc => this.toEntity(doc)) : [];
+    }
+
     async findByEmail(email: string): Promise<T | null> {
         const result = await this.model.findOne({ email }).exec();
         return result ? this.toEntity(result) : null;
@@ -31,5 +50,5 @@ export abstract class BaseRepository<T extends IEntity, TDocument extends Docume
         return result ? this.toEntity(result) : null;
     }
 
-    protected abstract toEntity(doc: TDocument): T;
+    protected abstract toEntity(doc: TDocument | Record<string, any>): T;
 }

@@ -24,13 +24,13 @@ export class BaseUserDocument extends Document {
     @Prop({ default: null })
     googleId: string;
 
-    @Prop()
+    @Prop({ default: true })
     isActive: boolean
 
-    @Prop()
+    @Prop({ default: false })
     isBlocked: boolean;
 
-    @Prop()
+    @Prop({ default: false })
     isDeleted: boolean;
 
     @Prop()

@@ -1,3 +1,4 @@
+import { UserModule } from './modules/users/user.module';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { CacheModule } from '@nestjs/cache-manager';
@@ -6,15 +7,11 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
 import { SeedsModule } from './seed/seed.module';
-import { DatabaseModule } from './configs/database/database.module';
-
-
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    DatabaseModule,
-    
+
     // Cache with Redis
     CacheModule.register({
       isGlobal: true,
@@ -25,6 +22,7 @@ import { DatabaseModule } from './configs/database/database.module';
     //Other Modules
     AuthModule,
     SeedsModule,
+    UserModule
   ],
   controllers: [AppController],
   providers: [AppService],

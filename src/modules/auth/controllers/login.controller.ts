@@ -5,6 +5,7 @@ import { ILoginService } from "../services/interfaces/login-service.interface";
 import { Request, Response } from "express";
 import { GoogleAuthGuard } from "../guards/google-auth.guard";
 import { IUser } from "../../../core/entities/interfaces/user.entity";
+
 @Controller('login')
 export class LoginController {
     constructor(

@@ -11,6 +11,6 @@ export interface IBaseUserEntity extends IEntity {
     avatar: string;
     fullname: string;
     phone: number;
-    googleId?: string;
+    googleId: string;
     type?: UserType
 }

@@ -18,9 +18,14 @@ export class CustomerRepository extends BaseRepository<Customer, CustomerDocumen
             id: (doc._id as Types.ObjectId).toString(),
             email: doc.email,
             username: doc.username,
-            password: doc.password,
-            googleId: doc.googleId,
+            password: doc?.password,
+            googleId: doc?.googleId,
             isActive: doc.isActive,
+            createdAt: doc.createdAt,
+            updatedAt: doc.updatedAt,
+            fullname: doc?.fullName,
+            isBlocked: doc.isBlocked,
+            isDeleted: doc.isDeleted,
         });
     }
 }

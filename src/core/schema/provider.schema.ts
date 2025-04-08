@@ -1,11 +1,14 @@
 import { Schema, Prop, SchemaFactory } from '@nestjs/mongoose';
 import { BaseUserDocument } from './base/user-base.schema';
 
-@Schema()
+@Schema({ timestamps: true })
 export class ProviderDocument extends BaseUserDocument {
     @Prop()
     bio: string;
 
+    @Prop({ default: false })
+    isVerified: boolean;
+    
     @Prop({
         type: [{
             specialization: { type: String },
@@ -55,7 +58,7 @@ export class ProviderDocument extends BaseUserDocument {
     @Prop({ type: [String] })
     awards: string[];
 
-    @Prop()
+    @Prop({ default: false })
     isCertified: boolean;
 
     @Prop({
@@ -90,7 +93,7 @@ export class ProviderDocument extends BaseUserDocument {
     @Prop({ type: [String] })
     schedules: string[];
 
-    @Prop()
+    @Prop({ default: null })
     subscriptionID: string;
 }
 

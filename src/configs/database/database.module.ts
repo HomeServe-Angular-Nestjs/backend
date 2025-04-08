@@ -1,8 +1,15 @@
-// src/database/database.module.ts
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 
+import { CustomerSchema } from "../../core/schema/customer.schema";
+import { OtpSchema } from "../../core/schema/otp.schema";
+import { ProviderSchema } from "../../core/schema/provider.schema";
+import { AdminSchema } from "../../core/schema/admin.schema";
+
+import { ADMIN_MODEL_NAME, CUSTOMER_MODEL_NAME, OTP_MODEL_NAME, PROVIDER_MODEL_NAME } from "../../core/constants/model.constant";
+
+@Global()
 @Module({
     imports: [
         MongooseModule.forRootAsync({
@@ -26,6 +33,13 @@ import { MongooseModule } from '@nestjs/mongoose';
                 };
             },
         }),
+
+        MongooseModule.forFeature([
+            { name: CUSTOMER_MODEL_NAME, schema: CustomerSchema },
+            { name: PROVIDER_MODEL_NAME, schema: ProviderSchema },
+            { name: OTP_MODEL_NAME, schema: OtpSchema },
+            { name: ADMIN_MODEL_NAME, schema: AdminSchema },
+        ]),
     ],
     exports: [MongooseModule],
 })
