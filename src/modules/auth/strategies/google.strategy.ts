@@ -44,7 +44,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy) {
                 throw new UnauthorizedException('User does not exist.');
             }
 
-            user['type'] = userType;
+            // user['type'] = userType;
 
             return user;
         } catch (err) {

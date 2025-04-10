@@ -98,13 +98,14 @@ export class LoginController {
 
     @Get('google')
     @UseGuards(GoogleAuthGuard)
-    handleGoogleLogin(@Query('type') type: string, @Req() req: Request) { }
+    handleGoogleLogin() { }
 
     @Get('google/redirect')
     @UseGuards(GoogleAuthGuard)
     async handleGoogleRedirect(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
         try {
             const user = req.user as IUser;
+            console.log('auth controller: ', user);
 
             if (!user) {
                 throw new NotFoundException('User is missing in the request')
@@ -127,17 +128,21 @@ export class LoginController {
                     path: '/'
                 });
 
-            const params = new URLSearchParams({
-                email: user.email,
-                type: user.type ? user.type.toString() : '',
-            }).toString();
+            // const params = new URLSearchParams({
+            //     email: user.email,
+            //     type: user.type ? user.type.toString() : '',
+            // }).toString();
 
-            console.log(params)
+            // console.log(params)
 
-            const frontendRedirectUrl = user.type === 'customer'
-                ? `http://localhost:4200/homepage?${params}`
-                : `http://localhost:4200/${user.type}/homepage?${params}`;
-            return res.redirect(frontendRedirectUrl);
+            let frontendUrl = 'http://localhost:4200/homepage';
+
+            if (user.type === 'provider') {
+                frontendUrl = 'http://localhost:4200/provider/homepage';
+            }
+
+            return res.redirect(frontendUrl);
+
         } catch (error) {
             console.error('Google Login Error:', error.message);
 
