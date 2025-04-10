@@ -5,7 +5,7 @@ import { UserType } from '../dtos/login.dto';
 import { ITokenService } from '../services/interfaces/token-service.interface';
 import { TOKEN_SERVICE_NAME } from '../../../core/constants/service.constant';
 
-const getAccessKey = (userType: UserType): string => {
+export const getAccessKey = (userType: UserType): string => {
   let accessKey = '';
   switch (userType) {
     case 'customer':
@@ -32,17 +32,27 @@ export class AuthInterceptor implements NestInterceptor {
   async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<any>> {
     const req: Request = context.switchToHttp().getRequest();
 
-    const userType = req.headers['X-User-Type'] as UserType;
+    const userType = req.headers['x-user-type'] as UserType;
 
-    const accessToken = getAccessKey(userType);
+    const accessKey = getAccessKey(userType);
 
-    if (!accessToken) {
-      throw new UnauthorizedException('Access token is missing');
+    if (!accessKey) {
+      throw new UnauthorizedException('Invalid or missing user type');
     }
 
-    const payload = await this.tokenService.validateAccessToken(accessToken);
-    console.log(payload)
-    req.user = payload;
+    const accessToken = req.cookies?.[accessKey] || req.headers[accessKey.toLowerCase()];
+    console.log(accessToken)
+
+    if (!accessToken || typeof accessToken !== 'string') {
+      throw new UnauthorizedException('Missing access accessToken');
+    }
+
+    try {
+      const payload = await this.tokenService.validateAccessToken(accessToken);
+      req.user = payload;
+    } catch (error) {
+      throw new UnauthorizedException('Invalid or expired access token');
+    }
 
     return next.handle()
   }

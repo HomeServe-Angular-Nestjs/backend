@@ -5,6 +5,7 @@ import { ILoginService } from "../services/interfaces/login-service.interface";
 import { Request, Response } from "express";
 import { GoogleAuthGuard } from "../guards/google-auth.guard";
 import { IUser } from "../../../core/entities/interfaces/user.entity";
+import { getAccessKey } from "../interceptors/auth.interceptor";
 
 @Controller('login')
 export class LoginController {
@@ -22,23 +23,17 @@ export class LoginController {
         try {
             const user = await this.loginService.validateUserCredentials(dto);
             const accessToken = await this.loginService.generateTokens(user);
-            console.log(user)
             console.log(accessToken)
 
-            response.cookie(
-                dto.type === 'customer'
-                    ? 'C_access_token'
-                    : dto.type === 'provider'
-                        ? 'P_access_token'
-                        : 'A_access_token',
-                accessToken,
-                {
-                    httpOnly: true,
-                    secure: false,
-                    sameSite: 'strict',
-                    maxAge: 10 * 60 * 1000,
-                    path: '/'
-                });
+            const accessKey = getAccessKey(dto.type);
+
+            response.cookie(accessKey, accessToken, {
+                httpOnly: true,
+                secure: false,
+                sameSite: 'strict',
+                maxAge: 10 * 60 * 1000,
+                path: '/'
+            });
 
             return { success: true, message: 'Login Successful' };
 

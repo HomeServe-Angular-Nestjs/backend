@@ -1,4 +1,4 @@
-import { Controller, Get, Inject, Res, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Inject, Req, Res, UseInterceptors } from '@nestjs/common';
 import { USER_SERVICE_NAME } from '../../../core/constants/service.constant';
 import { IUserService } from '../services/interfaces/user-service.interface';
 import { Response } from 'express';
@@ -13,16 +13,15 @@ export class UserController {
 
     @UseInterceptors(AuthInterceptor)
     @Get(['admin/customers'])
-    async getCustomer() {
-        const c = await this.userService.getCustomer();
-        console.log(c)
-        return c;
+    async getCustomer(@Req() req: Request) {
+        // if (!req.user) {
+
+        // }
+        return await this.userService.getCustomer();
     }
 
     @Get(['admin/providers'])
     async getProvider() {
-        const p = await this.userService.getProviders();
-        console.log(p)
-        return p;
+        return await this.userService.getProviders();
     }
 }
