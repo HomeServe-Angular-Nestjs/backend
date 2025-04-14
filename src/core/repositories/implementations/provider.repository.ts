@@ -14,6 +14,11 @@ export class ProviderRepository extends BaseRepository<Provider, ProviderDocumen
         super(providerModel)
     }
 
+    async findByGoogleId(id: string): Promise<Provider | null> {
+        const provider = await this.providerModel.findOne({ googleId: id });
+        return provider ? this.toEntity(provider) : null;
+    }
+
     protected toEntity(doc: ProviderDocument): Provider {
         return new Provider({
             id: (doc._id as Types.ObjectId).toString(),

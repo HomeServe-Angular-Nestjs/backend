@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable, UnauthorizedException } from "@nestjs/common";
+import { BadRequestException, Inject, Injectable, InternalServerErrorException, UnauthorizedException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { PassportStrategy } from "@nestjs/passport";
 import { Request } from "express";
@@ -6,6 +6,8 @@ import { Profile, Strategy } from "passport-google-oauth20";
 import { ILoginService } from "../services/interfaces/login-service.interface";
 import { LOGIN_SERVICE_INTERFACE_NAME } from "../../../core/constants/service.constant";
 import { UserType } from "../dtos/login.dto";
+import { getAccessKey } from "../interceptors/auth.interceptor";
+
 
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy) {
@@ -23,10 +25,12 @@ export class GoogleStrategy extends PassportStrategy(Strategy) {
         })
     }
 
-    async validate(req: Request, accessToken: string, refreshToken: string, profile: Profile) {
+    async validate(req: Request, accessToken: string, refreshToken: string, profile: Profile,) {
+
 
         try {
             const userType = req.session['userType'];
+            console.log(userType)
 
             if (!userType) {
                 throw new BadRequestException('User type is missing.');
@@ -34,9 +38,9 @@ export class GoogleStrategy extends PassportStrategy(Strategy) {
 
             const user = await this.loginService.findOrCreateUser({
                 googleId: profile.id,
-                email: profile.emails?.[0].value as string,
-                name: profile.displayName,
-                avatar: profile?.photos?.[0]?.value,
+                email: profile.emails?.[0]?.value ?? '',
+                name: profile.displayName ?? '',
+                avatar: profile.photos?.[0]?.value ?? '',
                 type: userType as UserType
             });
 
@@ -44,11 +48,12 @@ export class GoogleStrategy extends PassportStrategy(Strategy) {
                 throw new UnauthorizedException('User does not exist.');
             }
 
-            // user['type'] = userType;
+            user['type'] = userType || '';
 
             return user;
+
         } catch (err) {
-            console.error("Error in validate:", err.message);
+            console.error('GoogleStrategy validate error:', err);
             throw new UnauthorizedException('Google authentication failed');
         }
     }

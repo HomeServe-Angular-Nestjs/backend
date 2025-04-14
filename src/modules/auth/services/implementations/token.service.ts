@@ -1,86 +1,101 @@
 import { CACHE_MANAGER } from "@nestjs/cache-manager";
-import { Inject, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
+import { Inject, Injectable, InternalServerErrorException, NotFoundException, UnauthorizedException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
-import { Cache } from "cache-manager";
 import { v4 as uuidv4 } from 'uuid';
 import { IPayload } from "../../misc/payload.interface";
 import { ITokenService } from "../interfaces/token-service.interface";
+import Redis from "ioredis";
 
 @Injectable()
 export class TokenService implements ITokenService {
+    private readonly ACCESS_SECRET: string;
+    private readonly REFRESH_SECRET: string;
+    private readonly ACCESS_EXPIRES_IN: string;
+    private readonly REFRESH_EXPIRES_IN: string;
+
     constructor(
-        private jwtService: JwtService,
-        private config: ConfigService,
-        @Inject(CACHE_MANAGER)
-        private cache: Cache
+        private readonly jwtService: JwtService,
+        private readonly configService: ConfigService,
+        @Inject('REDIS_CLIENT') private readonly redis: Redis
     ) {
-        this.testRedisConnection();
+        this.ACCESS_SECRET = this.configService.get<string>('JWT_ACCESS_SECRET') || 'your-access-secret';
+        this.REFRESH_SECRET = this.configService.get<string>('JWT_REFRESH_SECRET') || 'your-refresh-secret';
+        this.ACCESS_EXPIRES_IN = this.configService.get<string>('JWT_ACCESS_EXPIRES_IN') || '10s';
+        this.REFRESH_EXPIRES_IN = this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') || '1h';
     }
 
     async generateToken(userId: string, email: string): Promise<string> {
         const jti = uuidv4();
 
-        const [accessToken, refreshToken] = await Promise.all([
-            this.jwtService.signAsync(
-                { sub: userId, email, jti },
-                {
-                    secret: this.config.get('JWT_ACCESS_SECRET'),
-                    expiresIn: this.config.get('JWT_ACCESS_EXPIRES_IN')
-                }
-            ),
-            this.jwtService.signAsync(
-                { sub: userId, jti },
-                {
-                    secret: this.config.get('JWT_REFRESH_SECRET'),
-                    expiresIn: this.config.get('JWT_REFRESH_EXPIRES_IN')
-                }
-            )
-        ]);
+        const accessPayload = { sub: userId, email, jti };
+        const refreshPayload = { sub: userId, jti };
 
         try {
-            const ttl = parseInt(this.config.get<string>('REDIS_TTL', '3600'), 10) * 1000;
+            const [accessToken, refreshToken] = await Promise.all([
+                this.jwtService.signAsync(accessPayload, {
+                    secret: this.ACCESS_SECRET,
+                    expiresIn: this.ACCESS_EXPIRES_IN
+                }),
+                this.jwtService.signAsync(refreshPayload, {
+                    secret: this.REFRESH_SECRET,
+                    expiresIn: this.REFRESH_EXPIRES_IN
+                })
+            ]);
 
-            await this.cache.set(
-                `user:${userId}:refresh`,
-                refreshToken,
-                ttl
-            );
+            const redisKey = this.getRefreshTokenKey(userId);
+            const ttl = this.configService.get<string>('REDIS_TTL') || 60 * 60; // 1 hour
 
-            // Verify storage
-            const storedToken = await this.cache.get(`user:${userId}:refresh`);
-            if (!storedToken) {
-                throw new Error('Failed to store refresh token in redis')
+            await this.redis.set(redisKey, refreshToken, 'EX', ttl);
+
+            const verifyStorage = await this.redis.get(redisKey);
+            if (!verifyStorage) {
+                throw new Error('Failed to store refresh token in Redis');
             }
 
-        } catch (error) {
-            console.error('Redis storage error:', error);
-            throw new InternalServerErrorException(error || 'Error while saving refresh token');
+            return accessToken;
+
+        } catch (err) {
+            console.error('Token generation error:', err);
+            throw new InternalServerErrorException('Failed to generate tokens');
         }
-        
-        return accessToken;
     }
 
     async validateAccessToken(token: string): Promise<IPayload> {
-        return await this.jwtService.verify(token);
+        return await this.jwtService.verifyAsync<IPayload>(token, {
+            secret: this.ACCESS_SECRET
+        });
     }
 
-    async validateRefreshToken(userId: string, token: string) {
-        const storedToken = await this.cache.get(`user:${userId}:refresh`);
-        return storedToken === token;
-    }
-
-    async invalidateTokens(userId: string) {
-        await this.cache.del(`user:${userId}:refresh`);
-    }
-
-    private async testRedisConnection() {
+    async validateRefreshToken(userId: string): Promise<IPayload | null> {
         try {
-            await this.cache.set('connection_test', 'success', 10);
-            const value = await this.cache.get('connection_test');
-            console.log('Redis connection test:', value === 'success' ? '✅ Success' : '❌ Failed');
-        } catch (error) {
-            console.error('Redis connection error:', error);
+            const redisKey = this.getRefreshTokenKey(userId);
+            const storedToken = await this.redis.get(redisKey);
+
+            if (!storedToken) {
+                throw new UnauthorizedException('No refresh token found in Redis');
+            }
+
+            const payload = await this.jwtService.verifyAsync<IPayload>(storedToken, {
+                secret: this.REFRESH_SECRET,
+            });
+
+            return payload;
+        } catch (err) {
+            throw new UnauthorizedException('Invalid or expired refresh token');
         }
+    }
+
+    async invalidateTokens(userId: string): Promise<void> {
+        const redisKey = this.getRefreshTokenKey(userId);
+        await this.redis.del(redisKey);
+    }
+
+    decode(token: string): null | { [key: string]: any } {
+        return this.jwtService.decode(token);
+    }
+
+    private getRefreshTokenKey(userId: string): string {
+        return `user:${userId}:refresh`;
     }
 }

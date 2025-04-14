@@ -1,5 +1,5 @@
-import { Body, Controller, Get, HttpCode, Inject, InternalServerErrorException, NotFoundException, Post, Put, Query, Req, Res, UnauthorizedException, UseGuards } from "@nestjs/common";
-import { AuthLoginDto, ChangePasswordDto, ForgotPasswordDto, VerifyTokenDto } from "../dtos/login.dto";
+import { BadRequestException, Body, Controller, Get, HttpCode, Inject, InternalServerErrorException, NotFoundException, Post, Put, Query, Req, Res, UnauthorizedException, UseGuards } from "@nestjs/common";
+import { AuthLoginDto, ChangePasswordDto, ForgotPasswordDto, LogoutDto, VerifyTokenDto } from "../dtos/login.dto";
 import { LOGIN_SERVICE_INTERFACE_NAME } from "../../../core/constants/service.constant";
 import { ILoginService } from "../services/interfaces/login-service.interface";
 import { Request, Response } from "express";
@@ -23,7 +23,6 @@ export class LoginController {
         try {
             const user = await this.loginService.validateUserCredentials(dto);
             const accessToken = await this.loginService.generateTokens(user);
-            console.log(accessToken)
 
             const accessKey = getAccessKey(dto.type);
 
@@ -100,9 +99,8 @@ export class LoginController {
     async handleGoogleRedirect(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
         try {
             const user = req.user as IUser;
-            console.log('auth controller: ', user);
 
-            if (!user) {
+            if (!user || !user.type) {
                 throw new NotFoundException('User is missing in the request')
             }
 
@@ -112,8 +110,9 @@ export class LoginController {
                 throw new NotFoundException('Missing Access Token');
             }
 
+            const accessKey = getAccessKey(user.type);
             res.cookie(
-                user.type === 'customer' ? 'C_access_token' : 'P_access_token',
+                accessKey,
                 accessToken,
                 {
                     httpOnly: true,
@@ -123,18 +122,10 @@ export class LoginController {
                     path: '/'
                 });
 
-            // const params = new URLSearchParams({
-            //     email: user.email,
-            //     type: user.type ? user.type.toString() : '',
-            // }).toString();
 
-            // console.log(params)
-
-            let frontendUrl = 'http://localhost:4200/homepage';
-
-            if (user.type === 'provider') {
-                frontendUrl = 'http://localhost:4200/provider/homepage';
-            }
+            const frontendUrl = user.type === 'provider'
+                ? `http://localhost:4200/provider/homepage?loggedIn=true&email=${user.email}`
+                : `http://localhost:4200/homepage?loggedIn=true&email=${user.email}`;
 
             return res.redirect(frontendUrl);
 
@@ -146,6 +137,30 @@ export class LoginController {
             }
 
             throw new InternalServerErrorException('An unexpected error occurred. Please try again.');
+        }
+    }
+
+    @Post('logout')
+    logout(@Body() dto: LogoutDto, @Res() res: Response) {
+        try {
+            if (!dto.userType) {
+                throw new BadRequestException('User type is not found');
+            }
+
+            const accessKey = getAccessKey(dto.userType);
+            console.log(accessKey)
+            res.clearCookie(accessKey, {
+                httpOnly: true,
+                secure: false,
+                sameSite: 'strict',
+                path: '/'
+            });
+
+            return res.status(200).json({ message: 'Logout successful' });
+
+        } catch (err) {
+            console.log('[ERROR] Logout: ', err);
+            throw new InternalServerErrorException('Something went wrong.')
         }
     }
 }

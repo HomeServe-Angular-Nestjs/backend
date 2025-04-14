@@ -3,5 +3,6 @@ import { IBaseRepository } from "../base/interfaces/base-repo.interface";
 import { ProviderDocument } from "../../schema/provider.schema";
 
 export interface IProviderRepository extends IBaseRepository<Provider, ProviderDocument> {
+    findByGoogleId(id: string): Promise<Provider | null>;
 
 }

@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model, Types } from "mongoose";
+import { FilterQuery, Model, Types } from "mongoose";
 import { CustomerDocument } from "../../schema/customer.schema";
 import { Customer } from "../../entities/implementation/customer.entity";
 import { BaseRepository } from "../base/implementations/base.repository";
@@ -11,6 +11,11 @@ export class CustomerRepository extends BaseRepository<Customer, CustomerDocumen
 
     constructor(@InjectModel(CUSTOMER_MODEL_NAME) private customerModel: Model<CustomerDocument>) {
         super(customerModel);
+    }
+
+    async findByGoogleId(id: string): Promise<Customer | null> {
+        const customer = await this.customerModel.findOne({ googleId: id });
+        return customer ? this.toEntity(customer) : null;
     }
 
     protected toEntity(doc: CustomerDocument): Customer {

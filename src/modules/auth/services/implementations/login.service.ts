@@ -76,11 +76,30 @@ export class LoginService implements ILoginService {
 
     async findOrCreateUser(user: GoogleLoginDto): Promise<IUser> {
         try {
-            const repository = this.findRepo(user.type);
+            if (user.type === 'admin') {
+                throw new BadRequestException('Google login is not supported for admin users');
+            }
+
+            const repository = user.type === 'customer' ? this.customerRepository : this.providerRepository;
+
             const existingUser = await repository.findByEmail(user.email);
 
             if (existingUser) {
-                return existingUser;
+                if (existingUser.googleId) {
+                    return existingUser;
+                }
+
+                const updatedUser = await repository.findOneAndUpdate(
+                    { email: existingUser.email },
+                    { $set: { googleId: user.googleId } },
+                    { new: true }
+                );
+
+                if (!updatedUser) {
+                    throw new InternalServerErrorException('Failed to update user with Google ID');
+                }
+
+                return updatedUser;
             }
 
             let newUser: IUser;
@@ -120,7 +139,7 @@ export class LoginService implements ILoginService {
 
         const token = this.token.generateAccessToken({ ...dto, id: user.id });
 
-        this.mailerService.sendEmail(dto.email, token, 'link');
+        await this.mailerService.sendEmail(dto.email, token, 'link');
     }
 
     async verifyToken(dto: VerifyTokenDto): Promise<IPayload> {

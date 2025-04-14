@@ -29,6 +29,11 @@ export class VerifyTokenDto {
     token: string;
 }
 
+export class LogoutDto {
+    @IsNotEmpty()
+    userType: UserType;
+}
+
 export class ChangePasswordDto extends AuthLoginDto { }
 
 export class GoogleLoginDto {
