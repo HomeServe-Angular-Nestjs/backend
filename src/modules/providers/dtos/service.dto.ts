@@ -26,5 +26,5 @@ export class CreateServiceDto {
     @IsArray()
     @ValidateNested({ each: true })
     @Type(() => CreateSubServiceDto)
-    subServices: CreateSubServiceDto[];
+    subServices?: CreateSubServiceDto[];
 }

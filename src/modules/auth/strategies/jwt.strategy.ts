@@ -33,6 +33,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
             throw new Error('Token revoked');
         }
 
+        console.log("Payload: ", payload)
+
         return {
             userId: payload.sub,
             email: payload.email,

@@ -1,4 +1,4 @@
-import { IProvider } from "../interfaces/user.entity";
+import { IProvider } from "../interfaces/user.entity.interface";
 import { BaseUserEntity } from "../base/implementation/base-user.entity";
 
 export class Provider extends BaseUserEntity implements IProvider {

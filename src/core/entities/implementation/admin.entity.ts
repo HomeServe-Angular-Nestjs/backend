@@ -1,4 +1,4 @@
-import { IAdmin } from "../interfaces/admin.interface";
+import { IAdmin } from "../interfaces/admin.entity.interface";
 import { BaseEntity } from "../base/implementation/base.entity";
 
 export class Admin extends BaseEntity implements IAdmin {

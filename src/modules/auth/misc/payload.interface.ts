@@ -1,8 +1,7 @@
 import { UserType } from "../dtos/login.dto";
+import { JwtPayload } from 'jsonwebtoken';
 
-export interface IPayload {
-    id?: string;
+export interface IPayload extends JwtPayload {
     email: string;
-    username?: string;
-    type: UserType;
+    type?: UserType;
 }

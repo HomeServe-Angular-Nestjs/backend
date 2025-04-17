@@ -1,4 +1,4 @@
-import { IUser } from "../../../../core/entities/interfaces/user.entity";
+import { IUser } from "../../../../core/entities/interfaces/user.entity.interface";
 import { AuthLoginDto, ChangePasswordDto, ForgotPasswordDto, GoogleLoginDto, VerifyTokenDto } from "../../dtos/login.dto";
 import { IPayload } from "../../misc/payload.interface";
 

@@ -1,11 +1,12 @@
-import { CACHE_MANAGER } from "@nestjs/cache-manager";
 import { Inject, Injectable, InternalServerErrorException, NotFoundException, UnauthorizedException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 import { v4 as uuidv4 } from 'uuid';
-import { IPayload } from "../../misc/payload.interface";
 import { ITokenService } from "../interfaces/token-service.interface";
 import Redis from "ioredis";
+import { UserType } from "../../dtos/login.dto";
+import { IPayload } from "../../misc/payload.interface";
+
 
 @Injectable()
 export class TokenService implements ITokenService {

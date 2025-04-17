@@ -4,7 +4,9 @@ import { CloudinaryService } from "../../../configs/cloudinary/cloudinary.servic
 import { Request, Response } from "express";
 import { IServiceFeatureService } from "../services/interfaces/service-service.interface";
 import { SERVICE_SERVICE_NAME } from "../../../core/constants/service.constant";
-import { CreateServiceDto } from "../dtos/service.dto";
+import { CreateServiceDto, CreateSubServiceDto } from "../dtos/service.dto";
+import { AuthInterceptor } from "../../auth/interceptors/auth.interceptor";
+import { IPayload } from "../../auth/misc/payload.interface";
 
 @Controller()
 export class ServiceController {
@@ -24,37 +26,42 @@ export class ServiceController {
     */
 
     @Post('provider/create_service')
-    @UseInterceptors(AnyFilesInterceptor())
+    @UseInterceptors(AuthInterceptor, AnyFilesInterceptor())
     async createNewService(
         @Req() req: Request,
         @Res() res: Response,
         @Body() body: any,
         @UploadedFiles() files: Express.Multer.File[]
     ): Promise<void> {
+        const user = req.user as IPayload;
 
         // Extract the main service image from the uploaded files
         const serviceImageFile = files.find(f => f.fieldname === 'serviceImageFile');
 
-        // Extract and map sub-service images using regex to find their corresponding index
-        const subServicesImage = files
-            .filter(f => f.fieldname.startsWith('subServices['))
-            .map(f => {
-                const match = f.fieldname.match(/^subServices\[(\d+)]\[imageFile]$/);
-                return match ? { index: +match[1], file: f } : null;
-            })
-            .filter(Boolean) as { index: number, file: Express.Multer.File }[];
+        let subServices: CreateSubServiceDto[] = [];
 
-        // Parse the subServices from string if not already an array
-        const subServices = Array.isArray(body.subServices)
-            ? body.subServices
-            : JSON.parse(body.subServices);
+        if (body.subServices) {
+            // Extract and map sub-service images using regex to find their corresponding index
+            const subServicesImage = files
+                .filter(f => f.fieldname.startsWith('subServices['))
+                .map(f => {
+                    const match = f.fieldname.match(/^subServices\[(\d+)]\[imageFile]$/);
+                    return match ? { index: +match[1], file: f } : null;
+                })
+                .filter(Boolean) as { index: number, file: Express.Multer.File }[];
 
-        // Append image files to their respective sub-service entries by index
-        subServicesImage.forEach(({ index, file }) => {
-            if (subServices[index]) {
-                subServices[index].imageFile = file;
-            }
-        });
+            // Parse the subServices from string if not already an array
+            subServices = Array.isArray(body?.subServices)
+                ? body?.subServices ?? []
+                : JSON.parse(body?.subServices ?? []);
+
+            // Append image files to their respective sub-service entries by index
+            subServicesImage.forEach(({ index, file }) => {
+                if (subServices && subServices[index]) {
+                    subServices[index].imageFile = file;
+                }
+            });
+        }
 
         // Final composed service data object
         const serviceData: CreateServiceDto = {
@@ -64,6 +71,6 @@ export class ServiceController {
             subServices
         };
 
-        await this.serviceFeature.createService(serviceData)
+        // await this.serviceFeature.createService(serviceData)
     }
 }

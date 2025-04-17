@@ -1,4 +1,4 @@
-import { ICustomer } from "../interfaces/user.entity";
+import { ICustomer } from "../interfaces/user.entity.interface";
 import { BaseUserEntity } from "../base/implementation/base-user.entity";
 
 export class Customer extends BaseUserEntity implements ICustomer {

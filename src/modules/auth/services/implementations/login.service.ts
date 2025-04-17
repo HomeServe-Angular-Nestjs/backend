@@ -13,7 +13,7 @@ import { TOKEN_SERVICE_NAME } from "../../../../core/constants/service.constant"
 import { Customer } from "../../../../core/entities/implementation/customer.entity";
 import { Provider } from "../../../../core/entities/implementation/provider.entity";
 
-import { IUser } from "../../../../core/entities/interfaces/user.entity";
+import { IUser } from "../../../../core/entities/interfaces/user.entity.interface";
 import { IPayload } from "../../misc/payload.interface";
 
 import { IArgonUtility } from "../../../../core/utilities/interface/argon.utility.interface";
@@ -137,7 +137,9 @@ export class LoginService implements ILoginService {
         const user = await repository.findByEmail(dto.email);
         if (!user) throw new NotFoundException('User not found');
 
-        const token = this.token.generateAccessToken({ ...dto, id: user.id });
+        const token = this.token.generateAccessToken({
+            ...dto, sub: user.id,
+        });
 
         await this.mailerService.sendEmail(dto.email, token, 'link');
     }
