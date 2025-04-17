@@ -5,7 +5,8 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Cache } from "cache-manager";
 import { Request } from "express";
 import { ExtractJwt, Strategy } from "passport-jwt";
-
+import { getAccessKey } from "../interceptors/auth.interceptor";
+import { UserType } from "../dtos/login.dto";
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -15,7 +16,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     ) {
         super({
             jwtFromRequest: ExtractJwt.fromExtractors([
-                (req: Request) => req.cookies?.access_token
+                (req: Request) => {
+                    const userType = req.headers['x-user-type'] as UserType;
+                    const accessKey = getAccessKey(userType);
+                    return req.cookies?.[accessKey];
+                }
             ]),
             ignoreExpiration: false,
             secretOrKey: config.getOrThrow<string>('JWT_ACCESS_SECRET'),
