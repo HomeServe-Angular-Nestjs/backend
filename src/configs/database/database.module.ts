@@ -7,7 +7,8 @@ import { OtpSchema } from "../../core/schema/otp.schema";
 import { ProviderSchema } from "../../core/schema/provider.schema";
 import { AdminSchema } from "../../core/schema/admin.schema";
 
-import { ADMIN_MODEL_NAME, CUSTOMER_MODEL_NAME, OTP_MODEL_NAME, PROVIDER_MODEL_NAME } from "../../core/constants/model.constant";
+import { ADMIN_MODEL_NAME, CUSTOMER_MODEL_NAME, OTP_MODEL_NAME, PROVIDER_MODEL_NAME, SERVICE_MODEL_NAME } from "../../core/constants/model.constant";
+import { ServiceSchema } from '../../core/schema/service.schema';
 
 @Global()
 @Module({
@@ -39,6 +40,7 @@ import { ADMIN_MODEL_NAME, CUSTOMER_MODEL_NAME, OTP_MODEL_NAME, PROVIDER_MODEL_N
             { name: PROVIDER_MODEL_NAME, schema: ProviderSchema },
             { name: OTP_MODEL_NAME, schema: OtpSchema },
             { name: ADMIN_MODEL_NAME, schema: AdminSchema },
+            { name: SERVICE_MODEL_NAME, schema: ServiceSchema },
         ]),
     ],
     exports: [MongooseModule],
