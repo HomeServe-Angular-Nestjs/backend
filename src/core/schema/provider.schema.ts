@@ -1,5 +1,8 @@
 import { Schema, Prop, SchemaFactory } from '@nestjs/mongoose';
 import { BaseUserDocument } from './base/user-base.schema';
+import { Types } from 'mongoose';
+import { SERVICE_MODEL_NAME } from '../constants/model.constant';
+import { ServiceDocument } from './service.schema';
 
 @Schema({ timestamps: true })
 export class ProviderDocument extends BaseUserDocument {
@@ -8,7 +11,7 @@ export class ProviderDocument extends BaseUserDocument {
 
     @Prop({ default: false })
     isVerified: boolean;
-    
+
     @Prop({
         type: [{
             specialization: { type: String },
@@ -89,6 +92,9 @@ export class ProviderDocument extends BaseUserDocument {
         verificationStatus: string;
         verifiedAt: Date;
     };
+
+    @Prop({ type: Types.ObjectId, ref: SERVICE_MODEL_NAME })
+    servicesOffered: Types.ObjectId | ServiceDocument;
 
     @Prop({ type: [String] })
     schedules: string[];
