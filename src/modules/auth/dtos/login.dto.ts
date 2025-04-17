@@ -1,45 +1,45 @@
-import { IsEmail, IsNotEmpty, IsString, MinLength, } from "class-validator";
+import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
 
 export type UserType = 'customer' | 'provider' | 'admin';
 
 export class AuthLoginDto {
-    @IsEmail()
-    @IsNotEmpty()
-    email: string;
+  @IsEmail()
+  @IsNotEmpty()
+  email: string;
 
-    @MinLength(8)
-    @IsString()
-    password: string
+  @MinLength(8)
+  @IsString()
+  password: string;
 
-    @IsNotEmpty()
-    type: UserType;
+  @IsNotEmpty()
+  type: UserType;
 }
 
 export class ForgotPasswordDto {
-    @IsEmail()
-    email: string;
+  @IsEmail()
+  email: string;
 
-    @IsNotEmpty()
-    type: UserType;
+  @IsNotEmpty()
+  type: UserType;
 }
 
 export class VerifyTokenDto {
-    @IsNotEmpty()
-    @IsString()
-    token: string;
+  @IsNotEmpty()
+  @IsString()
+  token: string;
 }
 
 export class LogoutDto {
-    @IsNotEmpty()
-    userType: UserType;
+  @IsNotEmpty()
+  userType: UserType;
 }
 
-export class ChangePasswordDto extends AuthLoginDto { }
+export class ChangePasswordDto extends AuthLoginDto {}
 
 export class GoogleLoginDto {
-    googleId: string;
-    email: string;
-    avatar?: string | undefined;
-    name?: string;
-    type: UserType
+  googleId: string;
+  email: string;
+  avatar?: string | undefined;
+  name?: string;
+  type: UserType;
 }

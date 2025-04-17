@@ -17,16 +17,16 @@ import { ProviderModule } from './modules/providers/provider.module';
     CacheModule.register({
       isGlobal: true,
       ttl: 60 * 1000,
-      store: redisStore
+      store: redisStore,
     }),
 
     //Other Modules
     AuthModule,
     SeedsModule,
     UserModule,
-    ProviderModule
+    ProviderModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule { } 
+export class AppModule {}

@@ -14,30 +14,32 @@ import { AdminRepository } from '../core/repositories/implementations/admin.repo
 import { DatabaseModule } from '../configs/database/database.module';
 
 @Module({
-    imports: [
-        ConfigModule,
-        DatabaseModule,
-        ConsoleModule,
-        MongooseModule.forFeature([{ name: ADMIN_MODEL_NAME, schema: AdminSchema }]),
-    ],
-    providers: [
-        SeedAdminService,
-        {
-            provide: ADMIN_SEED_SERVICE_NAME,
-            useClass: SeedAdminService
-        },
-        ArgonUtility,
-        {
-            provide: ARGON_UTILITY_NAME,
-            useClass: ArgonUtility
-        },
-        AdminRepository,
-        {
-            provide: ADMIN_REPOSITORY_INTERFACE_NAME,
-            useFactory: (adminModel) => new AdminRepository(adminModel),
-            inject: [getModelToken(ADMIN_MODEL_NAME)],
-        },
-        SeedCommand,
-    ],
+  imports: [
+    ConfigModule,
+    DatabaseModule,
+    ConsoleModule,
+    MongooseModule.forFeature([
+      { name: ADMIN_MODEL_NAME, schema: AdminSchema },
+    ]),
+  ],
+  providers: [
+    SeedAdminService,
+    {
+      provide: ADMIN_SEED_SERVICE_NAME,
+      useClass: SeedAdminService,
+    },
+    ArgonUtility,
+    {
+      provide: ARGON_UTILITY_NAME,
+      useClass: ArgonUtility,
+    },
+    AdminRepository,
+    {
+      provide: ADMIN_REPOSITORY_INTERFACE_NAME,
+      useFactory: (adminModel) => new AdminRepository(adminModel),
+      inject: [getModelToken(ADMIN_MODEL_NAME)],
+    },
+    SeedCommand,
+  ],
 })
-export class SeedsModule { }
+export class SeedsModule {}

@@ -1,4 +1,12 @@
-import { Injectable, NestInterceptor, ExecutionContext, CallHandler, UnauthorizedException, Inject, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NestInterceptor,
+  ExecutionContext,
+  CallHandler,
+  UnauthorizedException,
+  Inject,
+  BadRequestException,
+} from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { Request, Response } from 'express';
 import { UserType } from '../dtos/login.dto';
@@ -16,16 +24,19 @@ export const getAccessKey = (userType: UserType): string => {
     default:
       return '';
   }
-}
+};
 
 @Injectable()
 export class AuthInterceptor implements NestInterceptor {
   constructor(
     @Inject(TOKEN_SERVICE_NAME)
-    private readonly tokenService: ITokenService
-  ) { }
+    private readonly tokenService: ITokenService,
+  ) {}
 
-  async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<any>> {
+  async intercept(
+    context: ExecutionContext,
+    next: CallHandler,
+  ): Promise<Observable<any>> {
     const req: Request = context.switchToHttp().getRequest();
     const res: Response = context.switchToHttp().getResponse();
 
@@ -37,7 +48,9 @@ export class AuthInterceptor implements NestInterceptor {
       throw new UnauthorizedException('Missing x-user-type header');
     }
 
-    const accessToken = req.cookies?.[accessKey] || req.headers[accessKey.toLowerCase()] as string;
+    const accessToken =
+      (req.cookies?.[accessKey] as string) ||
+      (req.headers[accessKey.toLowerCase()] as string);
 
     if (!accessToken) {
       throw new UnauthorizedException('Access token not found in request');
@@ -55,14 +68,17 @@ export class AuthInterceptor implements NestInterceptor {
           throw new BadRequestException('Malformed access token');
         }
 
-        const userId = decodedAccessPayload.sub;
-        const refreshPayload = await this.tokenService.validateRefreshToken(userId);
+        const sub = decodedAccessPayload.sub;
+        await this.tokenService.validateRefreshToken(sub);
 
         // console.log('[ACCESS]', decodedAccessPayload);
         // console.log('[REFRESH]', refreshPayload);
 
         const email = decodedAccessPayload.email;
-        const newAccessToken = await this.tokenService.generateToken(userId, email);
+        const newAccessToken = await this.tokenService.generateToken(
+          sub,
+          email,
+        );
 
         const tokenKey = getAccessKey(userType);
         res.cookie(tokenKey, newAccessToken, {
@@ -70,10 +86,11 @@ export class AuthInterceptor implements NestInterceptor {
           secure: false,
           sameSite: 'strict',
           maxAge: 10 * 60 * 1000,
-          path: '/'
+          path: '/',
         });
 
-        const payload = await this.tokenService.validateAccessToken(newAccessToken);
+        const payload =
+          await this.tokenService.validateAccessToken(newAccessToken);
         req.user = payload;
         return next.handle();
       } catch (refreshError) {

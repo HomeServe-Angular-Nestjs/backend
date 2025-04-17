@@ -6,7 +6,6 @@ import session from 'express-session';
 import { SeedsModule } from './seed/seed.module';
 import { SeedCommand } from './seed/commands/seed.command';
 
-
 async function bootstrap() {
   if (process.argv.includes('seed:admin')) {
     const app = await NestFactory.createApplicationContext(SeedsModule, {
@@ -38,11 +37,13 @@ async function bootstrap() {
   });
 
   // Configure the session.
-  app.use(session({
-    secret: process.env.SESSION_SECRET || 'your-secret-key',
-    resave: false,
-    saveUninitialized: false,
-  }));
+  app.use(
+    session({
+      secret: process.env.SESSION_SECRET || 'your-secret-key',
+      resave: false,
+      saveUninitialized: false,
+    }),
+  );
 
   await app.listen(process.env.PORT ?? 3000);
 

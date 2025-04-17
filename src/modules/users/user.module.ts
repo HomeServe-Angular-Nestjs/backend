@@ -5,11 +5,8 @@ import { repositoryProvider } from '../auth/providers/repositories.provider';
 import { JwtConfigModule } from '../../configs/jwt/jwt.module';
 
 @Module({
-    imports: [JwtConfigModule],
-    controllers: [UserController],
-    providers: [
-        ...userServiceProvider,
-        ...repositoryProvider,
-    ],
+  imports: [JwtConfigModule],
+  controllers: [UserController],
+  providers: [...userServiceProvider, ...repositoryProvider],
 })
-export class UserModule { }
+export class UserModule {}

@@ -1,23 +1,22 @@
-import { IEntity } from "../base/interfaces/base-entity.entity.interface";
+import { IEntity } from '../base/interfaces/base-entity.entity.interface';
 
 export interface ISubService {
-    title: string;
-    desc: string;
-    price: number;
-    estimatedTime: string;
-    image: string;
-    tag: string;
-    isACtive: boolean;
-    isDeleted: boolean;
+  title: string;
+  desc: string;
+  price: string;
+  estimatedTime: string;
+  image: string;
+  tag: string;
+  isACtive?: boolean;
+  isDeleted?: boolean;
 }
 
 export interface IService extends IEntity {
-    title: string;
-    desc: string;
-    image: string;
-    subservice: ISubService[] | [];
-    isActive: boolean;
-    isVerified: boolean;
-    isDeleted: boolean;
-    provider: string;
+  title: string;
+  desc: string;
+  image: string;
+  subService: Partial<ISubService>[];
+  isActive?: boolean;
+  isVerified?: boolean;
+  isDeleted?: boolean;
 }
