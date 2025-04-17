@@ -93,8 +93,8 @@ export class ProviderDocument extends BaseUserDocument {
         verifiedAt: Date;
     };
 
-    @Prop({ type: Types.ObjectId, ref: SERVICE_MODEL_NAME })
-    servicesOffered: Types.ObjectId | ServiceDocument;
+    @Prop({ type: [{ type: Types.ObjectId, ref: SERVICE_MODEL_NAME }] })
+    servicesOffered: (Types.ObjectId | ServiceDocument)[];
 
     @Prop({ type: [String] })
     schedules: string[];
