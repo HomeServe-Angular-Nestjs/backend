@@ -28,12 +28,9 @@ export class ServiceFeatureService implements IServiceFeatureService {
     private serviceOfferedRepository: IServiceOfferedRepository,
     @Inject(UPLOAD_UTILITY_NAME)
     private uploadsUtility: IUploadsUtility,
-  ) {}
+  ) { }
 
-  async createService(
-    dto: CreateServiceDto,
-    user: IPayload,
-  ): Promise<ServiceOffered> {
+  async createService(dto: CreateServiceDto, user: IPayload,): Promise<ServiceOffered> {
     try {
       const provider = await this.providerRepository.findByEmail(user.email);
 

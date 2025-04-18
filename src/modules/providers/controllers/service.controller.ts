@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Get,
   Inject,
   InternalServerErrorException,
   Post,
@@ -11,7 +12,6 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { AnyFilesInterceptor } from '@nestjs/platform-express';
-import { CloudinaryService } from '../../../configs/cloudinary/cloudinary.service';
 import { Request, Response } from 'express';
 import { IServiceFeatureService } from '../services/interfaces/service-service.interface';
 import { SERVICE_OFFERED_SERVICE_NAME } from '../../../core/constants/service.constant';
@@ -22,10 +22,9 @@ import { IPayload } from '../../auth/misc/payload.interface';
 @Controller()
 export class ServiceController {
   constructor(
-    private readonly cloudinaryService: CloudinaryService,
     @Inject(SERVICE_OFFERED_SERVICE_NAME)
     private serviceFeature: IServiceFeatureService,
-  ) {}
+  ) { }
 
   /**
    * Handles the creation of a new service along with its associated sub - services and image uploads.    *
@@ -96,5 +95,10 @@ export class ServiceController {
         'Something happened while creating new service',
       );
     }
+  }
+
+  @Get(['provider/offered_service'])
+  async getOfferedServices() {
+    console.log('U got in!')
   }
 }

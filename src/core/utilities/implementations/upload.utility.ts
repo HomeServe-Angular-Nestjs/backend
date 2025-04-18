@@ -4,7 +4,9 @@ import { IUploadsUtility } from '../interface/upload.utility.interface';
 
 @Injectable()
 export class UploadsUtility implements IUploadsUtility {
-  constructor(private readonly cloudinaryService: CloudinaryService) {}
+  constructor(
+    private readonly cloudinaryService: CloudinaryService
+  ) {}
 
   async uploadImage(file: Express.Multer.File): Promise<string> {
     try {
