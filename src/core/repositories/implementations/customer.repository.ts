@@ -5,11 +5,11 @@ import { Customer } from '../../entities/implementation/customer.entity';
 import { BaseRepository } from '../base/implementations/base.repository';
 import { CUSTOMER_MODEL_NAME } from '../../constants/model.constant';
 import { ICustomerRepository } from '../interfaces/customer-repo.interface';
+import { Model, Types } from 'mongoose';
 @Injectable()
 export class CustomerRepository
   extends BaseRepository<Customer, CustomerDocument>
-  implements ICustomerRepository
-{
+  implements ICustomerRepository {
   constructor(
     @InjectModel(CUSTOMER_MODEL_NAME)
     private customerModel: Model<CustomerDocument>,
