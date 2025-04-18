@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsArray, IsOptional, IsString, ValidateNested } from 'class-validator';
+import { IsArray, IsBoolean, IsDateString, IsOptional, IsString, ValidateNested } from 'class-validator';
 
 export class CreateSubServiceDto {
   @IsString()
@@ -29,7 +29,6 @@ export class CreateServiceDto {
   @IsString()
   serviceDesc: string;
 
-  // This will be attached manually in the controller like sub-service images
   @IsOptional()
   imageFile: Express.Multer.File;
 
@@ -39,3 +38,86 @@ export class CreateServiceDto {
   subServices?: CreateSubServiceDto[];
 }
 
+
+export class UpdateSubServiceDto {
+  @IsOptional()
+  @IsString()
+  id?: string;
+
+  @IsOptional()
+  @IsString()
+  title?: string;
+
+  @IsOptional()
+  @IsString()
+  desc?: string;
+
+  @IsOptional()
+  @IsString()
+  price?: string;
+
+  @IsOptional()
+  @IsString()
+  estimatedTime?: string;
+
+  @IsOptional()
+  @IsString()
+  tag?: string;
+
+  @IsOptional()
+  @IsString()
+  image?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  isDeleted?: boolean;
+}
+
+
+export class UpdateServiceDto {
+  @IsOptional()
+  @IsString()
+  id?: string;
+
+  @IsOptional()
+  @IsString()
+  title?: string;
+
+  @IsOptional()
+  @IsString()
+  desc?: string;
+
+  @IsOptional()
+  @IsString()
+  image?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  isDeleted?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  isVerified?: boolean;
+
+  @IsOptional()
+  @IsDateString()
+  createdAt?: Date;
+
+  @IsOptional()
+  @IsDateString()
+  updatedAt?: Date;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => UpdateSubServiceDto)
+  subService?: UpdateSubServiceDto[];
+}

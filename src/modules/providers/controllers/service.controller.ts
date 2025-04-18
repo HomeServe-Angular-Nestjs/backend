@@ -5,6 +5,8 @@ import {
   Get,
   Inject,
   InternalServerErrorException,
+  NotFoundException,
+  Patch,
   Post,
   Req,
   Res,
@@ -15,7 +17,7 @@ import { AnyFilesInterceptor } from '@nestjs/platform-express';
 import { Request, Response } from 'express';
 import { IServiceFeatureService } from '../services/interfaces/service-service.interface';
 import { SERVICE_OFFERED_SERVICE_NAME } from '../../../core/constants/service.constant';
-import { CreateServiceDto, CreateSubServiceDto } from '../dtos/service.dto';
+import { CreateServiceDto, CreateSubServiceDto, UpdateServiceDto } from '../dtos/service.dto';
 import { AuthInterceptor } from '../../auth/interceptors/auth.interceptor';
 import { IPayload } from '../../auth/misc/payload.interface';
 
@@ -106,6 +108,24 @@ export class ServiceController {
     } catch (err) {
       console.log(err)
       throw new InternalServerErrorException('Something happened while fetching offered services');
+    }
+  }
+
+  @Patch(['provider/offered_services'])
+  @UseInterceptors(AuthInterceptor)
+  async updateService(@Body() dto: UpdateServiceDto) {
+    try {
+      return await this.serviceFeature.updateService(dto);
+    } catch (err) {
+      if (err instanceof NotFoundException) {
+        throw new NotFoundException(err.message);
+      }
+
+      if (err instanceof BadRequestException) {
+        throw new BadRequestException(err.message);
+      }
+
+      throw new InternalServerErrorException('An error occurred while updating the service');
     }
   }
 }

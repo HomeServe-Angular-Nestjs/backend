@@ -1,7 +1,7 @@
-import { Inject, Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { IServiceFeatureService } from '../interfaces/service-service.interface';
-import { CreateServiceDto, CreateSubServiceDto } from '../../dtos/service.dto';
+import { CreateServiceDto, CreateSubServiceDto, UpdateServiceDto } from '../../dtos/service.dto';
 import { IProviderRepository } from '../../../../core/repositories/interfaces/provider-repo.interface';
 import { PROVIDER_REPOSITORY_INTERFACE_NAME, SERVICE_OFFERED_REPOSITORY_NAME } from '../../../../core/constants/repository.constant';
 import { IPayload } from '../../../auth/misc/payload.interface';
@@ -9,7 +9,7 @@ import { ServiceOffered } from '../../../../core/entities/implementation/service
 import { UPLOAD_UTILITY_NAME } from '../../../../core/constants/utility.constant';
 import { IUploadsUtility } from '../../../../core/utilities/interface/upload.utility.interface';
 import { IServiceOfferedRepository } from '../../../../core/repositories/interfaces/serviceOffered-repo.interface';
-import { ISubService } from '../../../../core/entities/interfaces/service.entity.interface';
+import { IService, ISubService } from '../../../../core/entities/interfaces/service.entity.interface';
 import { Provider } from '../../../../core/entities/implementation/provider.entity';
 
 @Injectable()
@@ -71,13 +71,13 @@ export class ServiceFeatureService implements IServiceFeatureService {
     }
   }
 
-  async fetchServices(user: IPayload) {
+  async fetchServices(user: IPayload): Promise<IService[]> {
     try {
       const services = await this.providerRepository.fetchOfferedServices(user.sub);
       if (!services) {
         throw new Error('Could find the provider');
       }
-      
+
       return services ? services : [];
     } catch (err) {
       console.error(err);
@@ -85,7 +85,27 @@ export class ServiceFeatureService implements IServiceFeatureService {
     }
   }
 
-  private async handleSubServices(subServices: CreateSubServiceDto[],): Promise<ISubService[]> {
+  async updateService(updateData: UpdateServiceDto): Promise<IService> {
+    if (updateData.id) {
+      const { id, ...updateFields } = updateData;
+
+      const updatedService = await this.serviceOfferedRepository.findOneAndUpdate(
+        { _id: id },
+        { $set: updateFields },
+        { new: true }
+      );
+
+      if (!updatedService) {
+        throw new NotFoundException('Service not found or could not be updated');
+      }
+
+      return updatedService;
+    }
+
+    throw new BadRequestException('Service id is missing');
+  }
+
+  private async handleSubServices(subServices: CreateSubServiceDto[]): Promise<ISubService[]> {
     return Promise.all(
       subServices.map(async (sub) => ({
         title: sub.title,
