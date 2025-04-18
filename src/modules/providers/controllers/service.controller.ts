@@ -87,8 +87,8 @@ export class ServiceController {
         subServices,
       };
 
-      const result = await this.serviceFeature.createService(serviceData, user);
-      // console.log(result);
+      await this.serviceFeature.createService(serviceData, user);
+
     } catch (err) {
       console.error(err);
       throw new InternalServerErrorException(
@@ -97,8 +97,15 @@ export class ServiceController {
     }
   }
 
-  @Get(['provider/offered_service'])
-  async getOfferedServices() {
-    console.log('U got in!')
+  @Get(['provider/offered_services'])
+  @UseInterceptors(AuthInterceptor)
+  async getOfferedServices(@Req() req: Request) {
+    try {
+      const user = req.user as IPayload;
+      return await this.serviceFeature.fetchServices(user);
+    } catch (err) {
+      console.log(err)
+      throw new InternalServerErrorException('Something happened while fetching offered services');
+    }
   }
 }

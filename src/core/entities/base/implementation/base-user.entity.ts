@@ -14,7 +14,7 @@ export abstract class BaseUserEntity
   isActive: boolean;
   isBlocked: boolean;
   isDeleted: boolean;
-  lastLoginAt: Date;
+  lastLoginAt?: Date;
   googleId: string;
 
   constructor(partial: Partial<BaseUserEntity>) {

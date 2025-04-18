@@ -1,18 +1,17 @@
 import { IProvider } from '../interfaces/user.entity.interface';
 import { BaseUserEntity } from '../base/implementation/base-user.entity';
+import { ISubService } from '../interfaces/service.entity.interface';
 
 export class Provider extends BaseUserEntity implements IProvider {
   bio: string;
   isVerified: boolean;
-  expertise:
-    | {
-        specialization: string;
-        label: string;
-        tag: string;
-      }[]
-    | null;
-  additionalSkills: string[] | null;
-  languages: string[] | null;
+  expertise: {
+    specialization: string;
+    label: string;
+    tag: string;
+  }[];
+  additionalSkills: string[];
+  languages: string[];
   location: {
     street: string;
     city: string;
@@ -23,27 +22,25 @@ export class Provider extends BaseUserEntity implements IProvider {
       lng: number;
     };
   };
-  workImages: string[] | null;
-  awards: string[] | null;
+  workImages: string[];
+  awards: string[];
   isCertified: boolean;
   verification: {
     pcc: {
       fileUrl: string;
       uploadedAt: Date;
     };
-    additionalDocs:
-      | {
-          type: string;
-          fileUrl: string;
-          uploadedAt: Date;
-        }[]
-      | null;
+    additionalDocs: {
+      type: string;
+      fileUrl: string;
+      uploadedAt: Date;
+    }[];
     verificationStatus: boolean;
     verifiedAt: Date;
   };
-  servicesOffered: string[] = [];
-  schedules: string[] | null;
-  subscriptionID: string | null;
+  servicesOffered: (string[] | ISubService[]) = [];
+  schedules: string[];
+  subscriptionID: string;
 
   constructor(partial: Partial<Provider>) {
     super(partial);

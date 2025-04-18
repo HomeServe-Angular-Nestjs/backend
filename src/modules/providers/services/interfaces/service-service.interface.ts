@@ -4,4 +4,5 @@ import { CreateServiceDto } from '../../dtos/service.dto';
 
 export interface IServiceFeatureService {
   createService(dto: CreateServiceDto, user: IPayload): Promise<ServiceOffered>;
+  fetchServices(user: IPayload)
 }

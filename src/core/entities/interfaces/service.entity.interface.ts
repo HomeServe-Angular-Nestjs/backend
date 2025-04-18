@@ -1,14 +1,18 @@
 import { IEntity } from '../base/interfaces/base-entity.entity.interface';
 
 export interface ISubService {
+  id?: string;
   title: string;
   desc: string;
   price: string;
   estimatedTime: string;
   image: string;
   tag: string;
-  isACtive?: boolean;
+  isActive?: boolean;
+  isVerified?: boolean;
   isDeleted?: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface IService extends IEntity {
@@ -19,4 +23,5 @@ export interface IService extends IEntity {
   isActive?: boolean;
   isVerified?: boolean;
   isDeleted?: boolean;
+
 }

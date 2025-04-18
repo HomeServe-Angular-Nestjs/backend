@@ -5,4 +5,5 @@ import { ProviderDocument } from '../../schema/provider.schema';
 export interface IProviderRepository
   extends IBaseRepository<Provider, ProviderDocument> {
   findByGoogleId(id: string): Promise<Provider | null>;
+  fetchOfferedServices(id: string): Promise<Provider | null>;
 }

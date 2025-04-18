@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
-import { SubService, SubServiceSchema } from './subservice.schema';
+import { SubServiceDocument, SubServiceSchema } from './subservice.schema';
 
 @Schema({ timestamps: true })
 export class ServiceDocument extends Document {
@@ -14,7 +14,7 @@ export class ServiceDocument extends Document {
   image: string;
 
   @Prop({ type: [SubServiceSchema], default: [] })
-  subService: SubService[];
+  subService: SubServiceDocument[];
 
   @Prop({ default: true })
   isActive: boolean;

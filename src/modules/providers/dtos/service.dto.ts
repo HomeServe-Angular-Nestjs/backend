@@ -1,3 +1,4 @@
+import { Type } from 'class-transformer';
 import { IsArray, IsOptional, IsString, ValidateNested } from 'class-validator';
 
 export class CreateSubServiceDto {
@@ -29,10 +30,12 @@ export class CreateServiceDto {
   serviceDesc: string;
 
   // This will be attached manually in the controller like sub-service images
+  @IsOptional()
   imageFile: Express.Multer.File;
 
   @IsArray()
   @ValidateNested({ each: true })
-  // @Type(() => CreateSubServiceDto)
+  @Type(() => CreateSubServiceDto)
   subServices?: CreateSubServiceDto[];
 }
+
