@@ -1,9 +1,7 @@
-import { DynamicModule, Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { v2 as Cloudinary } from 'cloudinary';
+import { Module, DynamicModule } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { CloudinaryService } from './cloudinary.service';
-
-export const CLOUDINARY = 'CLOUDINARY';
+import { CloudinaryProvider } from './cloudinary.provider';
 
 @Module({})
 export class CloudinaryModule {
@@ -11,32 +9,8 @@ export class CloudinaryModule {
     return {
       module: CloudinaryModule,
       imports: [ConfigModule],
-      providers: [
-        {
-          provide: CLOUDINARY,
-          useFactory: (config: ConfigService) => {
-            const cloud_name = config.get<string>('CLOUDINARY_NAME');
-            const api_key = config.get<string>('CLOUDINARY_KEY');
-            const api_secret = config.get<string>('CLOUDINARY_SECRET');
-
-            if (!cloud_name || !api_key || !api_secret) {
-              throw new Error('Missing Cloudinary config in .env');
-            }
-
-            Cloudinary.config({
-              cloud_name,
-              api_key,
-              api_secret,
-            });
-
-            return Cloudinary;
-          },
-          inject: [ConfigService],
-        },
-
-        CloudinaryService,
-      ],
-      exports: [CLOUDINARY, CloudinaryService],
+      providers: [CloudinaryProvider, CloudinaryService],
+      exports: [CloudinaryProvider, CloudinaryService],
     };
   }
 }
