@@ -6,8 +6,9 @@ import { IProviderRepository } from '../interfaces/provider-repo.interface';
 import { InjectModel } from '@nestjs/mongoose';
 import { PROVIDER_MODEL_NAME, SERVICE_OFFERED_MODEL_NAME } from '../../constants/model.constant';
 import { Model, Types } from 'mongoose';
-import { ISubService } from '../../entities/interfaces/service.entity.interface';
+import { IService, ISubService } from '../../entities/interfaces/service.entity.interface';
 import { SubServiceDocument } from '../../schema/subservice.schema';
+import { ServiceDocument } from '../../schema/service.schema';
 
 @Injectable()
 export class ProviderRepository
@@ -25,32 +26,21 @@ export class ProviderRepository
     return provider ? this.toEntity(provider) : null;
   }
 
-  async fetchOfferedServices(id: string): Promise<Provider | null> {
+  async fetchOfferedServices(id: string): Promise<IService[] | null> {
     const provider = await this.providerModel
-      .findOne({ _id: id })
+      .findOne({ _id: id }, { servicesOffered: 1 })
       .populate({
         path: 'servicesOffered',
         model: SERVICE_OFFERED_MODEL_NAME
       })
       .exec();
 
-    return provider ? this.toEntity(provider) : null;
+    return provider && provider.servicesOffered
+      ? this.toServiceEntity(provider.servicesOffered as ServiceDocument[])
+      : null;
   }
 
   protected toEntity(doc: ProviderDocument): Provider {
-    let servicesOffered: string[] | ISubService[] = [];
-
-    // Checking if the servicesOffered field is populated
-    if (Array.isArray(doc.servicesOffered) && doc.servicesOffered.length) {
-      if (doc.servicesOffered[0] instanceof Types.ObjectId) {
-        servicesOffered = doc.servicesOffered.map((id: Types.ObjectId) => id.toString());
-      } else {
-        servicesOffered = (doc.servicesOffered as SubServiceDocument[]).map(subServiceDoc =>
-          this.toServiceEntity(subServiceDoc)
-        );
-      }
-    }
-
     return new Provider({
       id: (doc._id as Types.ObjectId).toString(),
       email: doc.email,
@@ -71,23 +61,33 @@ export class ProviderRepository
       isDeleted: doc.isDeleted,
       isVerified: doc.isVerified,
       isCertified: doc.isCertified,
-      servicesOffered
+      servicesOffered: doc.servicesOffered.map((id: Types.ObjectId) => id.toString())
     });
   }
 
-  private toServiceEntity(doc: SubServiceDocument): ISubService {
-    return {
+  private toServiceEntity(docs: ServiceDocument[]): IService[] {
+    return docs.map(doc => ({
       id: (doc._id as Types.ObjectId).toString(),
       title: doc.title,
       desc: doc.desc,
       image: doc.image,
-      price: doc.price,
-      estimatedTime: doc.estimatedTime,
+      subService: doc.subService.map(sub => ({
+        id: (sub._id as Types.ObjectId).toString(),
+        title: sub.title,
+        desc: sub.desc,
+        image: sub.image,
+        price: sub.price,
+        estimatedTime: sub.estimatedTime,
+        tag: sub.tag || '',
+        isActive: sub.isActive,
+        isDeleted: sub.isDeleted,
+        createdAt: sub.createdAt,
+        updatedAt: sub.updatedAt
+      })),
       isActive: doc.isActive,
-      tag: doc.tag || '',
       isDeleted: doc.isDeleted,
       createdAt: doc.createdAt,
       updatedAt: doc.updatedAt
-    };
+    }));
   }
 }

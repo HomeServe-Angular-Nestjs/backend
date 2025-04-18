@@ -73,12 +73,12 @@ export class ServiceFeatureService implements IServiceFeatureService {
 
   async fetchServices(user: IPayload) {
     try {
-      const provider = await this.providerRepository.fetchOfferedServices(user.sub);
-      if (!provider) {
+      const services = await this.providerRepository.fetchOfferedServices(user.sub);
+      if (!services) {
         throw new Error('Could find the provider');
       }
-
-      return provider.servicesOffered ? provider.servicesOffered : [];
+      
+      return services ? services : [];
     } catch (err) {
       console.error(err);
       throw new InternalServerErrorException('Something happened while fetching the offered service');

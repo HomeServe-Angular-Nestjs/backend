@@ -2,7 +2,7 @@ import { Schema, Prop, SchemaFactory } from '@nestjs/mongoose';
 import { BaseUserDocument } from './base/user-base.schema';
 import { Types } from 'mongoose';
 import { SERVICE_OFFERED_MODEL_NAME } from '../constants/model.constant';
-import { SubServiceDocument } from './subservice.schema';
+import { ServiceDocument } from './service.schema';
 
 @Schema({ timestamps: true })
 export class ProviderDocument extends BaseUserDocument {
@@ -101,7 +101,7 @@ export class ProviderDocument extends BaseUserDocument {
     type: [{ type: Types.ObjectId, ref: SERVICE_OFFERED_MODEL_NAME }],
     default: []
   })
-  servicesOffered: (Types.ObjectId | SubServiceDocument)[];
+  servicesOffered: (Types.ObjectId | ServiceDocument)[];
 
   @Prop({ type: [String] })
   schedules: string[];
