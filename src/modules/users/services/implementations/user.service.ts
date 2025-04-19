@@ -23,6 +23,8 @@ export class UserService implements IUserService {
   }
 
   async getProviders(): Promise<Provider[]> {
-    return await this.providerRepository.find();
+    const result = await this.providerRepository.find();
+    console.log(result);
+    return result;
   }
 }
