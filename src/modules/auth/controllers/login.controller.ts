@@ -34,7 +34,7 @@ export class LoginController {
   constructor(
     @Inject(LOGIN_SERVICE_INTERFACE_NAME)
     private loginService: ILoginService,
-  ) {}
+  ) { }
 
   @Post('auth')
   @HttpCode(200)
@@ -52,7 +52,6 @@ export class LoginController {
         httpOnly: true,
         secure: false,
         sameSite: 'strict',
-        maxAge: 10 * 60 * 1000,
         path: '/',
       });
 
@@ -129,7 +128,7 @@ export class LoginController {
 
   @Get('google')
   @UseGuards(GoogleAuthGuard)
-  handleGoogleLogin() {}
+  handleGoogleLogin() { }
 
   @Get('google/redirect')
   @UseGuards(GoogleAuthGuard)
@@ -155,7 +154,6 @@ export class LoginController {
         httpOnly: true,
         secure: false,
         sameSite: 'strict',
-        maxAge: 10 * 60 * 1000,
         path: '/',
       });
 
