@@ -159,7 +159,7 @@ export class LoginController {
 
       const frontendUrl =
         user.type === 'provider'
-          ? `http://localhost:4200/provider/homepage?loggedIn=true&email=${user.email}`
+          ? `http://localhost:4200/provider/dashboard?loggedIn=true&email=${user.email}`
           : `http://localhost:4200/homepage?loggedIn=true&email=${user.email}`;
 
       return res.redirect(frontendUrl);

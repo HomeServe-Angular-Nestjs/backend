@@ -19,6 +19,8 @@ export interface IBaseRepository<
 
   findByEmail(email: string): Promise<T | null>;
 
+  findOne(filter: FilterQuery<TDocument>): Promise<T | null>;
+
   findOneAndUpdate(
     query: FilterQuery<TDocument>,
     update: UpdateQuery<TDocument>,

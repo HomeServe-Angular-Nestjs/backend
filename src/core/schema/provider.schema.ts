@@ -35,25 +35,32 @@ export class ProviderDocument extends BaseUserDocument {
 
   @Prop({
     type: {
-      street: String,
-      city: String,
-      state: String,
-      zipcode: String,
-      coordinates: {
-        lat: Number,
-        lng: Number,
+      street: { type: String },
+      city: { type: String },
+      state: { type: String },
+      zipcode: { type: String },
+      geo: {
+        type: {
+          type: String,
+          enum: ['Point'],
+          default: 'Point',
+        },
+        coordinates: {
+          type: [Number],
+          index: '2dsphere',
+          required: true,
+        },
       },
     },
-    index: true,
   })
   location: {
     street: string;
     city: string;
     state: string;
     zipcode: string;
-    coordinates: {
-      lat: number;
-      lng: number;
+    geo: {
+      type: 'Point';
+      coordinates: [number, number]; // [lng, lat]
     };
   };
 
@@ -69,18 +76,18 @@ export class ProviderDocument extends BaseUserDocument {
   @Prop({
     type: {
       pcc: {
-        fileUrl: String,
-        uploadedAt: Date,
+        fileUrl: { type: String },
+        uploadedAt: { type: Date },
       },
       additionalDocs: [
         {
-          type: { type: String },
-          fileUrl: String,
-          uploadedAt: Date,
+          docType: { type: String },
+          fileUrl: { type: String },
+          uploadedAt: { type: Date },
         },
       ],
-      verificationStatus: String,
-      verifiedAt: Date,
+      verificationStatus: { type: Boolean, default: false },
+      verifiedAt: { type: Date, default: null },
     },
   })
   verification: {
@@ -89,12 +96,12 @@ export class ProviderDocument extends BaseUserDocument {
       uploadedAt: Date;
     };
     additionalDocs: {
-      type: string;
+      docType: string;
       fileUrl: string;
       uploadedAt: Date;
     }[];
-    verificationStatus: string;
-    verifiedAt: Date;
+    verificationStatus: boolean;
+    verifiedAt: Date | null;
   };
 
   @Prop({
@@ -108,6 +115,32 @@ export class ProviderDocument extends BaseUserDocument {
 
   @Prop({ default: null })
   subscriptionID: string;
+
+  @Prop()
+  profession: string;
+
+  @Prop()
+  experience: number;
+
+  @Prop()
+  serviceRadius: number;
+
+  @Prop({
+    type: {
+      day: {
+        from: { type: String },
+        to: { type: String }
+      },
+      time: {
+        from: { type: String },
+        to: { type: String }
+      }
+    }
+  })
+  availability: {
+    day: { from: string, to: string },
+    time: { from: string, to: string }
+  }
 }
 
 export const ProviderSchema = SchemaFactory.createForClass(ProviderDocument);

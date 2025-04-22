@@ -1,4 +1,4 @@
-import { IProvider } from '../interfaces/user.entity.interface';
+import { Availability, IProvider } from '../interfaces/user.entity.interface';
 import { BaseUserEntity } from '../base/implementation/base-user.entity';
 import { ISubService } from '../interfaces/service.entity.interface';
 
@@ -40,7 +40,11 @@ export class Provider extends BaseUserEntity implements IProvider {
   };
   servicesOffered: (string[] | ISubService[]) = [];
   schedules: string[];
-  subscriptionID: string;
+  subscriptionID: string | null;
+  profession: string;
+  experience: number;
+  availability: Availability;
+  serviceRadius: number;
 
   constructor(partial: Partial<Provider>) {
     super(partial);

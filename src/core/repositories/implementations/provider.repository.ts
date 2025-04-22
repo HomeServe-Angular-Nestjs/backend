@@ -6,8 +6,7 @@ import { IProviderRepository } from '../interfaces/provider-repo.interface';
 import { InjectModel } from '@nestjs/mongoose';
 import { PROVIDER_MODEL_NAME, SERVICE_OFFERED_MODEL_NAME } from '../../constants/model.constant';
 import { Model, Types } from 'mongoose';
-import { IService, ISubService } from '../../entities/interfaces/service.entity.interface';
-import { SubServiceDocument } from '../../schema/subservice.schema';
+import { IService } from '../../entities/interfaces/service.entity.interface';
 import { ServiceDocument } from '../../schema/service.schema';
 
 @Injectable()
@@ -20,6 +19,7 @@ export class ProviderRepository
   ) {
     super(providerModel);
   }
+
 
   async findByGoogleId(id: string): Promise<Provider | null> {
     const provider = await this.providerModel.findOne({ googleId: id });
@@ -40,6 +40,7 @@ export class ProviderRepository
       : null;
   }
 
+
   protected toEntity(doc: ProviderDocument): Provider {
     return new Provider({
       id: (doc._id as Types.ObjectId).toString(),
@@ -52,7 +53,7 @@ export class ProviderRepository
       awards: doc.awards ?? [],
       bio: doc.bio || '',
       expertise: doc.expertise ?? [],
-      fullname: doc.fullName || '',
+      fullname: doc.fullname || '',
       languages: doc.languages ?? [],
       isActive: doc.isActive,
       createdAt: doc.createdAt,
@@ -61,7 +62,11 @@ export class ProviderRepository
       isDeleted: doc.isDeleted,
       isVerified: doc.isVerified,
       isCertified: doc.isCertified,
-      servicesOffered: doc.servicesOffered.map((id: Types.ObjectId) => id.toString())
+      servicesOffered: doc.servicesOffered.map((id: Types.ObjectId) => id.toString()),
+      availability: doc.availability,
+      experience: doc.experience,
+      serviceRadius: doc.serviceRadius,
+      profession: doc.profession
     });
   }
 

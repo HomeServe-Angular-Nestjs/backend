@@ -32,7 +32,7 @@ export class CustomerRepository
       isActive: doc.isActive,
       createdAt: doc.createdAt,
       updatedAt: doc.updatedAt,
-      fullname: doc?.fullName,
+      fullname: doc?.fullname,
       isBlocked: doc.isBlocked,
       isDeleted: doc.isDeleted,
     });

@@ -4,7 +4,7 @@ import { Document } from 'mongoose';
 @Schema({ discriminatorKey: 'kind', timestamps: true })
 export class BaseUserDocument extends Document {
   @Prop()
-  fullName: string;
+  fullname: string;
 
   @Prop({ required: true, unique: true, index: true })
   email: string;
