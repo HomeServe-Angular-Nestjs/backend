@@ -5,8 +5,9 @@ import { IEntity } from '../../../entities/base/interfaces/base-entity.entity.in
 export abstract class BaseRepository<
   T extends IEntity,
   TDocument extends Document,
-> implements IBaseRepository<T, TDocument> {
-  constructor(protected readonly model: Model<TDocument>) { }
+> implements IBaseRepository<T, TDocument>
+{
+  constructor(protected readonly model: Model<TDocument>) {}
 
   async create(entity: Omit<T, 'id'>): Promise<T> {
     const doc = await this.model.create(entity);
@@ -40,7 +41,7 @@ export abstract class BaseRepository<
 
   async findOne(filter: FilterQuery<TDocument>): Promise<T | null> {
     const result = await this.model.findOne(filter);
-    return result ? this.toEntity(result) : null
+    return result ? this.toEntity(result) : null;
   }
 
   async findOneAndUpdate(

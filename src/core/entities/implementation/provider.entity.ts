@@ -38,7 +38,7 @@ export class Provider extends BaseUserEntity implements IProvider {
     verificationStatus: boolean;
     verifiedAt: Date;
   };
-  servicesOffered: (string[] | ISubService[]) = [];
+  servicesOffered: string[] | ISubService[] = [];
   schedules: string[];
   subscriptionID: string | null;
   profession: string;

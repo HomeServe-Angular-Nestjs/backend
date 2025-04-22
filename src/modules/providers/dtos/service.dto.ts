@@ -1,5 +1,12 @@
 import { Type } from 'class-transformer';
-import { IsArray, IsBoolean, IsDateString, IsOptional, IsString, ValidateNested } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsDateString,
+  IsOptional,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
 
 export class CreateSubServiceDto {
   @IsString()
@@ -38,7 +45,6 @@ export class CreateServiceDto {
   subServices?: CreateSubServiceDto[];
 }
 
-
 export class UpdateSubServiceDto {
   @IsOptional()
   @IsString()
@@ -76,7 +82,6 @@ export class UpdateSubServiceDto {
   @IsBoolean()
   isDeleted?: boolean;
 }
-
 
 export class UpdateServiceDto {
   @IsOptional()

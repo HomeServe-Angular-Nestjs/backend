@@ -106,7 +106,7 @@ export class ProviderDocument extends BaseUserDocument {
 
   @Prop({
     type: [{ type: Types.ObjectId, ref: SERVICE_OFFERED_MODEL_NAME }],
-    default: []
+    default: [],
   })
   servicesOffered: (Types.ObjectId | ServiceDocument)[];
 
@@ -129,18 +129,18 @@ export class ProviderDocument extends BaseUserDocument {
     type: {
       day: {
         from: { type: String },
-        to: { type: String }
+        to: { type: String },
       },
       time: {
         from: { type: String },
-        to: { type: String }
-      }
-    }
+        to: { type: String },
+      },
+    },
   })
   availability: {
-    day: { from: string, to: string },
-    time: { from: string, to: string }
-  }
+    day: { from: string; to: string };
+    time: { from: string; to: string };
+  };
 }
 
 export const ProviderSchema = SchemaFactory.createForClass(ProviderDocument);

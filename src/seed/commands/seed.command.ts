@@ -33,7 +33,7 @@ export class SeedCommand {
       await this.seedService.seedAdmin();
       console.log('Admin seeded successfully');
     } catch (error) {
-      console.error('Error seeding admin:', error.message);
+      console.error('Error seeding admin:', error);
       process.exit(1);
     }
   }

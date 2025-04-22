@@ -19,6 +19,6 @@ export const serviceProviders: Provider[] = [
   },
   {
     provide: PROVIDER_SERVICES_NAME,
-    useClass: ProviderServices
-  }
+    useClass: ProviderServices,
+  },
 ];

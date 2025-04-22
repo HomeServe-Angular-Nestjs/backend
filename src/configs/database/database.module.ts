@@ -1,7 +1,7 @@
 import { Global, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
-import { Connection } from 'mongoose';
+import { Connection, ConnectionStates } from 'mongoose';
 
 import { CustomerSchema } from '../../core/schema/customer.schema';
 import { OtpSchema } from '../../core/schema/otp.schema';
@@ -30,7 +30,7 @@ import { ServiceSchema } from '../../core/schema/service.schema';
           retryAttempts: 5,
           retryDelay: 3000,
           connectionFactory: (connection: Connection): Connection => {
-            if (connection.readyState === 1) {
+            if (connection.readyState === ConnectionStates.connected) {
               console.log('Successfully connected to MongoDB');
             } else {
               connection.on('connected', () =>

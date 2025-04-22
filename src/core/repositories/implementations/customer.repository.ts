@@ -9,7 +9,8 @@ import { Model, Types } from 'mongoose';
 @Injectable()
 export class CustomerRepository
   extends BaseRepository<Customer, CustomerDocument>
-  implements ICustomerRepository {
+  implements ICustomerRepository
+{
   constructor(
     @InjectModel(CUSTOMER_MODEL_NAME)
     private customerModel: Model<CustomerDocument>,

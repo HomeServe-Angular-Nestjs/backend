@@ -85,7 +85,7 @@ export class LoginService implements ILoginService {
 
       return user;
     } catch (error) {
-      console.error('Credential Validation Error:', error.message);
+      console.error('Credential Validation Error:', error);
       if (error instanceof UnauthorizedException) {
         throw error;
       }
@@ -161,7 +161,7 @@ export class LoginService implements ILoginService {
 
       return newUser;
     } catch (err) {
-      console.error('Error in findOrCreateUser:', err.message);
+      console.error('Error in findOrCreateUser:', err);
       throw new BadRequestException('Failed to create or find user');
     }
   }

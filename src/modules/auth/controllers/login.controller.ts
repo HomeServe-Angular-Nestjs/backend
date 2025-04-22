@@ -34,7 +34,7 @@ export class LoginController {
   constructor(
     @Inject(LOGIN_SERVICE_INTERFACE_NAME)
     private loginService: ILoginService,
-  ) { }
+  ) {}
 
   @Post('auth')
   @HttpCode(200)
@@ -88,6 +88,7 @@ export class LoginController {
     try {
       return await this.loginService.verifyToken(dto);
     } catch (err) {
+      console.error('Google Login Error:', err);
       throw new UnauthorizedException('Token Verification Failed');
     }
   }
@@ -118,8 +119,8 @@ export class LoginController {
         message: 'Google Authentication Initialized',
         data: googleAuthUrl,
       });
-    } catch (error) {
-      console.error('Google Login Error:', error.message);
+    } catch (err) {
+      console.error('Google Login Error:', err);
       throw new InternalServerErrorException(
         'An unexpected error occurred. Please try again.',
       );
@@ -128,7 +129,7 @@ export class LoginController {
 
   @Get('google')
   @UseGuards(GoogleAuthGuard)
-  handleGoogleLogin() { }
+  handleGoogleLogin() {}
 
   @Get('google/redirect')
   @UseGuards(GoogleAuthGuard)

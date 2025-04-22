@@ -34,4 +34,5 @@ export class SubServiceDocument extends Document {
   updatedAt: Date;
 }
 
-export const SubServiceSchema = SchemaFactory.createForClass(SubServiceDocument);
+export const SubServiceSchema =
+  SchemaFactory.createForClass(SubServiceDocument);

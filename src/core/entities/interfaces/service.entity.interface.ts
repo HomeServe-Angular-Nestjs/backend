@@ -23,5 +23,4 @@ export interface IService extends IEntity {
   isActive?: boolean;
   isVerified?: boolean;
   isDeleted?: boolean;
-
 }

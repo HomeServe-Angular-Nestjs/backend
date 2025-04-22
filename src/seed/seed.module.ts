@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { getModelToken, MongooseModule } from '@nestjs/mongoose';
 import { ConsoleModule } from 'nestjs-console';
-import { AdminSchema } from '../core/schema/admin.schema';
+import { AdminDocument, AdminSchema } from '../core/schema/admin.schema';
 import { SeedAdminService } from './services/admin-seed.service';
 import { ADMIN_MODEL_NAME } from '../core/constants/model.constant';
 import { SeedCommand } from './commands/seed.command';
@@ -12,6 +12,7 @@ import { ArgonUtility } from '../core/utilities/implementations/argon.utility';
 import { ADMIN_REPOSITORY_INTERFACE_NAME } from '../core/constants/repository.constant';
 import { AdminRepository } from '../core/repositories/implementations/admin.repository';
 import { DatabaseModule } from '../configs/database/database.module';
+import { Model } from 'mongoose';
 
 @Module({
   imports: [
@@ -36,7 +37,8 @@ import { DatabaseModule } from '../configs/database/database.module';
     AdminRepository,
     {
       provide: ADMIN_REPOSITORY_INTERFACE_NAME,
-      useFactory: (adminModel) => new AdminRepository(adminModel),
+      useFactory: (adminModel: Model<AdminDocument>) =>
+        new AdminRepository(adminModel),
       inject: [getModelToken(ADMIN_MODEL_NAME)],
     },
     SeedCommand,
