@@ -5,6 +5,7 @@ import {
   InternalServerErrorException,
   NotFoundException,
   UnauthorizedException,
+  Logger,
 } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { IServiceFeatureService } from '../interfaces/service-service.interface';
@@ -12,6 +13,7 @@ import {
   CreateServiceDto,
   CreateSubServiceDto,
   UpdateServiceDto,
+  UpdateSubServiceWrapperDto,
 } from '../../dtos/service.dto';
 import { IProviderRepository } from '../../../../core/repositories/interfaces/provider-repo.interface';
 import {
@@ -37,7 +39,9 @@ export class ServiceFeatureService implements IServiceFeatureService {
     private serviceOfferedRepository: IServiceOfferedRepository,
     @Inject(UPLOAD_UTILITY_NAME)
     private uploadsUtility: IUploadsUtility,
-  ) {}
+  ) { }
+
+  private readonly logger = new Logger(ServiceFeatureService.name);
 
   async createService(
     dto: CreateServiceDto,
@@ -50,9 +54,7 @@ export class ServiceFeatureService implements IServiceFeatureService {
         throw new UnauthorizedException('The user is not found');
       }
 
-      const serviceImageUrl = await this.uploadsUtility.uploadImage(
-        dto.imageFile,
-      );
+      const serviceImageUrl = await this.uploadsUtility.uploadImage(dto.imageFile);
 
       const subServicesWithImages = dto.subServices
         ? await this.handleSubServices(dto.subServices)
@@ -93,14 +95,19 @@ export class ServiceFeatureService implements IServiceFeatureService {
 
   async fetchServices(user: IPayload): Promise<IService[]> {
     try {
-      const services = await this.providerRepository.fetchOfferedServices(
-        user.sub,
-      );
-      if (!services) {
+      const provider = await this.providerRepository.findOne({ _id: new Types.ObjectId(user.sub) });
+      if (!provider) {
         throw new Error('Could find the provider');
       }
 
-      return services ? services : [];
+      const offeredServices = await Promise.all(
+        provider.servicesOffered.map(async (id: string): Promise<IService | undefined> => {
+          const service = await this.serviceOfferedRepository.findOne({ _id: new Types.ObjectId(id) });
+          return service ? service : undefined
+        })
+      );
+
+      return offeredServices.filter(service => service !== undefined);
     } catch (err) {
       console.error(err);
       throw new InternalServerErrorException(
@@ -130,6 +137,49 @@ export class ServiceFeatureService implements IServiceFeatureService {
     }
 
     throw new BadRequestException('Service id is missing');
+  }
+
+  async updateSubservice(updateData: UpdateSubServiceWrapperDto) {
+    try {
+
+      console.log(updateData)
+      const { id: serviceId, subService } = updateData;
+      const { id: subServiceId, ...subServiceFields } = subService;
+
+      if (!serviceId || !subService?.id) {
+        throw new BadRequestException('Both service ID and subService ID are required.');
+      }
+
+      const setObject: Record<string, any> = {};
+      for (const [key, value] of Object.entries(subServiceFields)) {
+        if (value !== undefined) {
+          setObject[`subService.$.${key}`] = value;
+        }
+      }
+
+      const updatedService =
+        await this.serviceOfferedRepository.findOneAndUpdate(
+          {
+            _id: serviceId,
+            "subService._id": subServiceId
+          },
+          { $set: setObject },
+          { new: true },
+        );
+
+      if (!updatedService) {
+        throw new NotFoundException('No matching sub-service found to update.');
+      }
+
+      const updated = updatedService?.subService.find(
+        s => s.id === subServiceId
+      );
+
+      return { id: serviceId, subService: updated };
+    } catch (err) {
+      this.logger.error('Failed to update subService', err.stack);
+      throw new InternalServerErrorException('Failed to update subService');
+    }
   }
 
   private async handleSubServices(

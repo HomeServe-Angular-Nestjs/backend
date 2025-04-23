@@ -14,11 +14,11 @@ export type Availability = {
 
 export interface ICustomer extends IBaseUserEntity {
   locations?:
-    | {
-        lat: number;
-        lng: number;
-      }[]
-    | null;
+  | {
+    lat: number;
+    lng: number;
+  }[]
+  | null;
   savedProviders?: string[] | null;
 }
 
@@ -26,12 +26,12 @@ export interface IProvider extends IBaseUserEntity {
   isVerified: boolean;
   bio: string;
   expertise:
-    | {
-        specialization: string;
-        label: string;
-        tag: string;
-      }[]
-    | null;
+  | {
+    specialization: string;
+    label: string;
+    tag: string;
+  }[]
+  | null;
   additionalSkills: string[] | null;
   languages: string[] | null;
   location: {
@@ -53,15 +53,16 @@ export interface IProvider extends IBaseUserEntity {
       uploadedAt: Date;
     };
     additionalDocs:
-      | {
-          type: string;
-          fileUrl: string;
-          uploadedAt: Date;
-        }[]
-      | null;
+    | {
+      type: string;
+      fileUrl: string;
+      uploadedAt: Date;
+    }[]
+    | null;
     verificationStatus: boolean;
     verifiedAt: Date;
   };
+  servicesOffered: string[];
   schedules: string[] | null;
   subscriptionID: string | null;
   profession: string;

@@ -21,6 +21,8 @@ import {
   CreateServiceDto,
   CreateSubServiceDto,
   UpdateServiceDto,
+  UpdateSubServiceDto,
+  UpdateSubServiceWrapperDto,
 } from '../dtos/service.dto';
 import { AuthInterceptor } from '../../auth/interceptors/auth.interceptor';
 import { IPayload } from '../../auth/misc/payload.interface';
@@ -30,7 +32,7 @@ export class ServiceController {
   constructor(
     @Inject(SERVICE_OFFERED_SERVICE_NAME)
     private serviceFeature: IServiceFeatureService,
-  ) {}
+  ) { }
 
   /**
    * Handles the creation of a new service along with its associated sub - services and image uploads.    *
@@ -134,5 +136,10 @@ export class ServiceController {
         'An error occurred while updating the service',
       );
     }
+  }
+
+  @Patch(['provider/subservice'])
+  async updateSubservice(@Body() dto: UpdateSubServiceWrapperDto) {
+    return await this.serviceFeature.updateSubservice(dto);
   }
 }

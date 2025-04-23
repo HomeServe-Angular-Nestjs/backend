@@ -1,10 +1,11 @@
 import { ServiceOffered } from '../../../../core/entities/implementation/service.entity';
-import { IService } from '../../../../core/entities/interfaces/service.entity.interface';
+import { IService, ISubService } from '../../../../core/entities/interfaces/service.entity.interface';
 import { IPayload } from '../../../auth/misc/payload.interface';
-import { CreateServiceDto, UpdateServiceDto } from '../../dtos/service.dto';
+import { CreateServiceDto, UpdateServiceDto, UpdateSubServiceDto, UpdateSubServiceWrapperDto } from '../../dtos/service.dto';
 
 export interface IServiceFeatureService {
   createService(dto: CreateServiceDto, user: IPayload): Promise<ServiceOffered>;
   fetchServices(user: IPayload): Promise<IService[]>;
-  updateService(updateData: UpdateServiceDto);
+  updateService(updateData: UpdateServiceDto): Promise<IService>;
+  updateSubservice(updateData: UpdateSubServiceWrapperDto)
 }

@@ -2,12 +2,9 @@ import { Document, FilterQuery, Model, UpdateQuery } from 'mongoose';
 import { IBaseRepository } from '../interfaces/base-repo.interface';
 import { IEntity } from '../../../entities/base/interfaces/base-entity.entity.interface';
 
-export abstract class BaseRepository<
-  T extends IEntity,
-  TDocument extends Document,
-> implements IBaseRepository<T, TDocument>
-{
-  constructor(protected readonly model: Model<TDocument>) {}
+export abstract class BaseRepository<T extends IEntity, TDocument extends Document> implements IBaseRepository<T, TDocument> {
+
+  constructor(protected readonly model: Model<TDocument>) { }
 
   async create(entity: Omit<T, 'id'>): Promise<T> {
     const doc = await this.model.create(entity);
@@ -20,7 +17,6 @@ export abstract class BaseRepository<
       limit?: number;
       skip?: number;
       sort?: Record<string, 1 | -1>;
-      populate?: string | string[];
     },
   ): Promise<T[]> {
     let query = this.model.find(filter).lean();
@@ -28,7 +24,6 @@ export abstract class BaseRepository<
     if (options?.limit) query = query.limit(options.limit);
     if (options?.skip) query = query.skip(options.skip);
     if (options?.sort) query = query.sort(options.sort);
-    if (options?.populate) query = query.populate(options.populate);
 
     const result = await query.exec();
     return result ? result.map((doc) => this.toEntity(doc)) : [];

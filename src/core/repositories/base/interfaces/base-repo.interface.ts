@@ -1,5 +1,7 @@
 import { Document, FilterQuery, UpdateQuery } from 'mongoose';
 import { IEntity } from '../../../entities/base/interfaces/base-entity.entity.interface';
+import mongoose from 'mongoose';
+import { UpdateResult } from 'mongoose';
 
 export interface IBaseRepository<
   T extends IEntity,
@@ -13,7 +15,6 @@ export interface IBaseRepository<
       limit?: number;
       skip?: number;
       sort?: Record<string, 1 | -1>;
-      populate?: string | string[];
     },
   ): Promise<T[]>;
 
@@ -30,4 +31,5 @@ export interface IBaseRepository<
       populate?: string | string[];
     },
   ): Promise<T | null>;
+
 }

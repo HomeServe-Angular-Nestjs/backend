@@ -21,6 +21,7 @@ export class ProviderServices implements IProviderServices {
 
   async fetchOneProvider(user: IPayload): Promise<IProvider> {
     const result = await this.providerRepository.findOne({ _id: user.sub });
+    
     if (!result) {
       throw new NotFoundException(`No provider found for user ID: ${user.sub}`);
     }

@@ -3,6 +3,7 @@ import {
   IsArray,
   IsBoolean,
   IsDateString,
+  IsNotEmpty,
   IsOptional,
   IsString,
   ValidateNested,
@@ -125,4 +126,13 @@ export class UpdateServiceDto {
   @ValidateNested({ each: true })
   @Type(() => UpdateSubServiceDto)
   subService?: UpdateSubServiceDto[];
+}
+
+export class UpdateSubServiceWrapperDto {
+  @IsString()
+  id: string; // parent service ID
+
+  @ValidateNested()
+  @Type(() => UpdateSubServiceDto)
+  subService: UpdateSubServiceDto;
 }
