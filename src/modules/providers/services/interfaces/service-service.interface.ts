@@ -6,6 +6,7 @@ import { CreateServiceDto, UpdateServiceDto, UpdateSubServiceDto, UpdateSubServi
 export interface IServiceFeatureService {
   createService(dto: CreateServiceDto, user: IPayload): Promise<ServiceOffered>;
   fetchServices(user: IPayload): Promise<IService[]>;
+  fetchService(id: string): Promise<IService>;
   updateService(updateData: UpdateServiceDto): Promise<IService>;
   updateSubservice(updateData: UpdateSubServiceWrapperDto)
 }

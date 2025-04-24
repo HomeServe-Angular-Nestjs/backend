@@ -116,6 +116,20 @@ export class ServiceFeatureService implements IServiceFeatureService {
     }
   }
 
+  async fetchService(id: string): Promise<IService> {
+    if (!id) {
+      throw new BadRequestException('Id is required');
+    }
+
+    const service = await this.serviceOfferedRepository.findOne({ _id: id });
+
+    if (!service) {
+      throw new NotFoundException('Service is not found');
+    }
+
+    return service;
+  }
+
   async updateService(updateData: UpdateServiceDto): Promise<IService> {
     if (updateData.id) {
       const { id, ...updateFields } = updateData;

@@ -13,17 +13,17 @@ export class ProviderServices implements IProviderServices {
     @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
     private providerRepository: IProviderRepository,
     private cloudinaryService: CloudinaryService,
-  ) {}
+  ) { }
 
   async getProviders(): Promise<Provider[]> {
     return await this.providerRepository.find();
   }
 
-  async fetchOneProvider(user: IPayload): Promise<IProvider> {
-    const result = await this.providerRepository.findOne({ _id: user.sub });
-    
+  async fetchOneProvider(id: string): Promise<IProvider> {
+    const result = await this.providerRepository.findOne({ _id: id });
+
     if (!result) {
-      throw new NotFoundException(`No provider found for user ID: ${user.sub}`);
+      throw new NotFoundException(`No provider found for user ID: ${id}`);
     }
     return result;
   }

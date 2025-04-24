@@ -9,5 +9,5 @@ export interface IProviderServices {
     updateData: Partial<IProvider>,
     file: Express.Multer.File,
   ): Promise<Provider>;
-  fetchOneProvider(user: IPayload): Promise<IProvider>;
+  fetchOneProvider(id: string): Promise<IProvider>;
 }

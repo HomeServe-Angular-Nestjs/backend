@@ -8,6 +8,7 @@ import {
   NotFoundException,
   Patch,
   Post,
+  Query,
   Req,
   Res,
   UploadedFiles,
@@ -105,13 +106,23 @@ export class ServiceController {
   }
 
   @Get(['provider/offered_services'])
-  @UseInterceptors(AuthInterceptor)
   async getOfferedServices(@Req() req: Request) {
     try {
       const user = req.user as IPayload;
       return await this.serviceFeature.fetchServices(user);
     } catch (err) {
       console.log(err);
+      throw new InternalServerErrorException(
+        'Something happened while fetching offered services',
+      );
+    }
+  }
+
+  @Get(['provider/offered_service'])
+  async getOfferedService(@Query() query: { id: string }) {
+    try {
+      return this.serviceFeature.fetchService(query.id);
+    } catch (err) {
       throw new InternalServerErrorException(
         'Something happened while fetching offered services',
       );

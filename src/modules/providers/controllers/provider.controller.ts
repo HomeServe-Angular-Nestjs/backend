@@ -7,6 +7,7 @@ import {
     UseInterceptors,
     Req,
     UploadedFile,
+    Query,
 } from '@nestjs/common';
 import { AuthInterceptor } from '../../auth/interceptors/auth.interceptor';
 import { PROVIDER_SERVICES_NAME } from '../../../core/constants/service.constant';
@@ -37,10 +38,14 @@ export class ProviderController {
     }
 
     @Get('fetch_one_provider')
-    async fetchOneProvider(@Req() req: Request) {
+    async fetchOneProvider(@Req() req: Request, @Query() query: { id: string | null }) {
         try {
             const user = req.user as IPayload;
-            return await this.providerServices.fetchOneProvider(user);
+            let arg = user.sub;
+            if (query && query.id) {
+                arg = query.id;
+            }
+            return await this.providerServices.fetchOneProvider(arg);
         } catch (err) {
             console.error(`Error fetching provider: ${err}`);
             throw new InternalServerErrorException(
