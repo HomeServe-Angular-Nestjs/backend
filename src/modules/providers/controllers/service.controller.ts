@@ -106,6 +106,7 @@ export class ServiceController {
   }
 
   @Get(['provider/offered_services'])
+  @UseInterceptors(AuthInterceptor) //! Don't touch it 'cause it is working
   async getOfferedServices(@Req() req: Request) {
     try {
       const user = req.user as IPayload;
@@ -128,6 +129,17 @@ export class ServiceController {
       );
     }
   }
+
+  // @Get(['provider/fetch_subservice'])
+  // async fetchSubservice(@Query() query: { id: string }) {
+  //   try {
+  //     return this.serviceFeature.fetchSubService(query.id);
+  //   } catch (err) {
+  //     throw new InternalServerErrorException(
+  //       'Something happened while fetching offered services',
+  //     );
+  //   }
+  // }
 
   @Patch(['provider/offered_services'])
   @UseInterceptors(AuthInterceptor)

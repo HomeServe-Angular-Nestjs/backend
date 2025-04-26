@@ -42,7 +42,7 @@ export class ProviderController {
         try {
             const user = req.user as IPayload;
             let arg = user.sub;
-            if (query && query.id) {
+            if (query && query.id !== null && query.id !== 'null') {
                 arg = query.id;
             }
             return await this.providerServices.fetchOneProvider(arg);
