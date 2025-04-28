@@ -1,5 +1,6 @@
 import { IAdmin } from './admin.entity.interface';
 import { IBaseUserEntity } from '../base/interfaces/base-user.entity.interface';
+import { SlotType } from './schedule.entity.interface';
 
 export type Availability = {
   day: {
@@ -69,6 +70,7 @@ export interface IProvider extends IBaseUserEntity {
   experience: number;
   serviceRadius: number;
   availability: Availability;
+  defaultSlots: SlotType[]
 }
 
 export type IUser = ICustomer | IProvider | IAdmin;

@@ -1,6 +1,7 @@
 import { Availability, IProvider } from '../interfaces/user.entity.interface';
 import { BaseUserEntity } from '../base/implementation/base-user.entity';
 import { ISubService } from '../interfaces/service.entity.interface';
+import { SlotType } from '../interfaces/schedule.entity.interface';
 
 export class Provider extends BaseUserEntity implements IProvider {
   bio: string;
@@ -45,6 +46,7 @@ export class Provider extends BaseUserEntity implements IProvider {
   experience: number;
   availability: Availability;
   serviceRadius: number;
+  defaultSlots: SlotType[];
 
   constructor(partial: Partial<Provider>) {
     super(partial);

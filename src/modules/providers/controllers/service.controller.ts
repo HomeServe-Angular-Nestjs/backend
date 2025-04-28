@@ -36,12 +36,12 @@ export class ServiceController {
   ) { }
 
   /**
-   * Handles the creation of a new service along with its associated sub - services and image uploads.    *
+   * Handles the creation of a new service along with its associated sub - services and image uploads.
    * @param req - The HTTP request object provided by Express.
    * @param res - The HTTP response object provided by Express.
    * @param body - The parsed body of the request, expected to include service details and sub - services.
    * @param files - An array of uploaded files(service image + sub - service images).
-   * @returns
+   * @returns - void
    */
 
   @Post('provider/create_service')
@@ -163,6 +163,11 @@ export class ServiceController {
 
   @Patch(['provider/subservice'])
   async updateSubservice(@Body() dto: UpdateSubServiceWrapperDto) {
-    return await this.serviceFeature.updateSubservice(dto);
+    try {
+      return await this.serviceFeature.updateSubservice(dto);
+    } catch (err) {
+      console.error(`Error updating service: ${err.message}`, err.stack);
+      throw new InternalServerErrorException('Failed to update subservice');
+    }
   }
 }

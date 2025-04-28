@@ -53,6 +53,8 @@ export class ProviderRepository
       experience: doc.experience,
       serviceRadius: doc.serviceRadius,
       profession: doc.profession,
+      defaultSlots: doc.defaultSlots,
+      schedules: doc.schedules.map(id => id.toString()),
     });
   }
 }

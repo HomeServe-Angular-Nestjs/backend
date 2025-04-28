@@ -141,6 +141,12 @@ export class ProviderDocument extends BaseUserDocument {
     day: { from: string; to: string };
     time: { from: string; to: string };
   };
+
+  @Prop({ type: [{ from: String, to: String, }], default: [] })
+  defaultSlots: {
+    from: string;
+    to: string;
+  }[];
 }
 
 export const ProviderSchema = SchemaFactory.createForClass(ProviderDocument);

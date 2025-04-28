@@ -1,6 +1,7 @@
 import { Provider } from '../../../../core/entities/implementation/provider.entity';
 import { IProvider } from '../../../../core/entities/interfaces/user.entity.interface';
 import { IPayload } from '../../../auth/misc/payload.interface';
+import { UpdateDefaultSlotsDto } from '../../dtos/provider.dto';
 
 export interface IProviderServices {
   getProviders(): Promise<Provider[]>;
@@ -10,4 +11,6 @@ export interface IProviderServices {
     file: Express.Multer.File,
   ): Promise<Provider>;
   fetchOneProvider(id: string): Promise<IProvider>;
+  updateDefaultSlot(slot: UpdateDefaultSlotsDto, id: string): Promise<IProvider>;
+  deleteDefaultSlot(id: string): void;
 }

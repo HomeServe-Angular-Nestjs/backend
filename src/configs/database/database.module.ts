@@ -3,19 +3,23 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Connection, ConnectionStates } from 'mongoose';
 
-import { CustomerSchema } from '../../core/schema/customer.schema';
-import { OtpSchema } from '../../core/schema/otp.schema';
-import { ProviderSchema } from '../../core/schema/provider.schema';
-import { AdminSchema } from '../../core/schema/admin.schema';
-
 import {
   ADMIN_MODEL_NAME,
   CUSTOMER_MODEL_NAME,
   OTP_MODEL_NAME,
   PROVIDER_MODEL_NAME,
+  SCHEDULE_MODEL_NAME,
   SERVICE_OFFERED_MODEL_NAME,
 } from '../../core/constants/model.constant';
+
+
+import { CustomerSchema } from '../../core/schema/customer.schema';
+import { OtpSchema } from '../../core/schema/otp.schema';
+import { ProviderSchema } from '../../core/schema/provider.schema';
+import { AdminSchema } from '../../core/schema/admin.schema';
 import { ServiceSchema } from '../../core/schema/service.schema';
+import { ScheduleSchema } from '../../core/schema/schedule.schema';
+
 
 @Global()
 @Module({
@@ -52,8 +56,9 @@ import { ServiceSchema } from '../../core/schema/service.schema';
       { name: OTP_MODEL_NAME, schema: OtpSchema },
       { name: ADMIN_MODEL_NAME, schema: AdminSchema },
       { name: SERVICE_OFFERED_MODEL_NAME, schema: ServiceSchema },
+      { name: SCHEDULE_MODEL_NAME, schema: ScheduleSchema }
     ]),
   ],
   exports: [MongooseModule],
 })
-export class DatabaseModule {}
+export class DatabaseModule { }
