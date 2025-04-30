@@ -80,7 +80,7 @@ export class TokenService implements ITokenService {
 
   }
 
-  async generateToken(userId: string, email: string): Promise<string> {
+  async generateToken(userId: string, email: string): Promise<string> { //! Need to remove this!!!
     const jti = uuidv4();
 
     const accessPayload = { sub: userId, email, jti };

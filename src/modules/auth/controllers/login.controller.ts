@@ -23,13 +23,14 @@ import {
   LogoutDto,
   VerifyTokenDto,
 } from '../dtos/login.dto';
-import { LOGIN_SERVICE_INTERFACE_NAME } from '../../../core/constants/service.constant';
+import { LOGIN_SERVICE_INTERFACE_NAME, TOKEN_SERVICE_NAME } from '../../../core/constants/service.constant';
 import { ILoginService } from '../services/interfaces/login-service.interface';
 import { Request, Response } from 'express';
 import { GoogleAuthGuard } from '../guards/google-auth.guard';
 import { IUser } from '../../../core/entities/interfaces/user.entity.interface';
 import { getAccessKey } from '../interceptors/auth.interceptor';
 import { IResponse, prepareResponse } from '../../../core/misc/response.util';
+import { ITokenService } from '../services/interfaces/token-service.interface';
 
 @Controller('api/login')
 export class LoginController {
@@ -38,6 +39,8 @@ export class LoginController {
   constructor(
     @Inject(LOGIN_SERVICE_INTERFACE_NAME)
     private _loginService: ILoginService,
+    @Inject(TOKEN_SERVICE_NAME)
+    private _tokenService: ITokenService,
   ) { }
 
   @Post('auth')
@@ -52,8 +55,6 @@ export class LoginController {
       if (!accessToken) {
         throw new NotFoundException('Access token is missing');
       }
-
-      console.log(accessToken)
 
       const refreshToken = await this._loginService.generateRefreshToken(user);
       if (!refreshToken) {
@@ -191,22 +192,24 @@ export class LoginController {
   }
 
   @Post('logout')
-  logout(@Body() dto: LogoutDto, @Res() res: Response) {
+  async logout(@Req() req: Request, @Res() res: Response) {
     try {
-      if (!dto.userType) {
-        throw new BadRequestException('User type is not found');
+      const token = req.cookies['access_token'];
+      if (token) {
+        const decoded = this._tokenService.decode(token);
+        if (decoded && typeof decoded === 'object' && decoded.sub) {
+          await this._loginService.invalidateRefreshToken(decoded.sub);
+        }
       }
 
-      const accessKey = getAccessKey(dto.userType);
-      this.logger.log(accessKey);
-      res.clearCookie(accessKey, {
+      res.clearCookie('access_token', {
         httpOnly: true,
         secure: false,
         sameSite: 'strict',
         path: '/',
       });
 
-      return res.status(200).json({ message: 'Logout successful' });
+      return res.status(200).json(prepareResponse(true, 'Successful logout'));
     } catch (err) {
       this.logger.log('[ERROR] Logout: ', err);
       throw new InternalServerErrorException('Something went wrong.');

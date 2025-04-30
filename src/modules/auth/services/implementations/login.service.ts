@@ -221,6 +221,10 @@ export class LoginService implements ILoginService {
     }
   }
 
+  async invalidateRefreshToken(id: string): Promise<void> {
+    await this._tokenService.invalidateTokens(id);
+  }
+
   private findRepo(type: UserType): UserReposType {
     if (type === 'customer') {
       return this._customerRepository;

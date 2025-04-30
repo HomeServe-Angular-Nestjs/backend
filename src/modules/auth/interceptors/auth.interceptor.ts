@@ -6,6 +6,8 @@ import {
   UnauthorizedException,
   Inject,
   BadRequestException,
+  NotFoundException,
+  Logger,
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { Request, Response } from 'express';
@@ -28,10 +30,12 @@ export const getAccessKey = (userType: UserType): string => {
 
 @Injectable()
 export class AuthInterceptor implements NestInterceptor {
+  private readonly logger = new Logger(AuthInterceptor.name);
+
   constructor(
     @Inject(TOKEN_SERVICE_NAME)
     private readonly tokenService: ITokenService,
-  ) {}
+  ) { }
 
   async intercept(
     context: ExecutionContext,
@@ -42,46 +46,45 @@ export class AuthInterceptor implements NestInterceptor {
 
     const userType = req.headers['x-user-type'] as UserType;
 
-    const accessKey = getAccessKey(userType);
-
     if (!userType) {
       throw new UnauthorizedException('Missing x-user-type header');
     }
 
-    const accessToken =
-      (req.cookies?.[accessKey] as string) ||
-      (req.headers[accessKey.toLowerCase()] as string);
+    const accessToken = (req.cookies?.['access_token']) || (req.headers['access_token']);
 
     if (!accessToken) {
       throw new UnauthorizedException('Access token not found in request');
     }
 
-    try {
-      const payload = await this.tokenService.validateAccessToken(accessToken);
+    const attachUserFromToken = async (token: string) => {
+      const payload = await this.tokenService.validateAccessToken(token);
       req.user = payload;
+    };
+
+    try {
+      await attachUserFromToken(accessToken);
       return next.handle();
     } catch (accessError) {
       try {
-        const decodedAccessPayload = this.tokenService.decode(accessToken);
+        const decoded = this.tokenService.decode(accessToken);
 
-        if (!decodedAccessPayload || typeof decodedAccessPayload !== 'object') {
+        if (!decoded || typeof decoded !== 'object') {
           throw new BadRequestException('Malformed access token');
         }
 
-        const sub = decodedAccessPayload.sub;
-        await this.tokenService.validateRefreshToken(sub);
+        const { sub, email } = decoded;
+        const isValidRefreshToken = await this.tokenService.validateRefreshToken(sub);
 
-        // console.log('[ACCESS]', decodedAccessPayload);
-        // console.log('[REFRESH]', refreshPayload);
+        if (!isValidRefreshToken) {
+          throw new UnauthorizedException('Invalid refresh token');
+        }
 
-        const email = decodedAccessPayload.email;
-        const newAccessToken = await this.tokenService.generateToken(
-          sub,
-          email,
-        );
+        const newToken = this.tokenService.generateAccessToken(sub, email);
+        if (!newToken) {
+          throw new NotFoundException('Failed to generate new access token');
+        }
 
-        const tokenKey = getAccessKey(userType);
-        res.cookie(tokenKey, newAccessToken, {
+        res.cookie('access_token', newToken, {
           httpOnly: true,
           secure: false,
           sameSite: 'strict',
@@ -89,12 +92,10 @@ export class AuthInterceptor implements NestInterceptor {
           path: '/',
         });
 
-        const payload =
-          await this.tokenService.validateAccessToken(newAccessToken);
-        req.user = payload;
+        await attachUserFromToken(newToken);
         return next.handle();
       } catch (refreshError) {
-        console.error('[TOKEN ERROR] Refresh token flow failed:', refreshError);
+        this.logger.error('Refresh token flow failed:', refreshError);
         throw new UnauthorizedException('Invalid or expired token');
       }
     }
