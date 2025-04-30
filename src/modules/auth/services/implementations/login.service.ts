@@ -105,10 +105,6 @@ export class LoginService implements ILoginService {
     }
   }
 
-  async generateTokens(user: IUser): Promise<string> {
-    return this._tokenService.generateAccessToken(user.id, user.email);
-  }
-
   generateAccessToken(user: IUser): string {
     return this._tokenService.generateAccessToken(user.id, user.email);
   }

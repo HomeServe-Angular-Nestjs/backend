@@ -80,41 +80,6 @@ export class TokenService implements ITokenService {
 
   }
 
-  async generateToken(userId: string, email: string): Promise<string> { //! Need to remove this!!!
-    const jti = uuidv4();
-
-    const accessPayload = { sub: userId, email, jti };
-    const refreshPayload = { sub: userId, jti };
-
-    try {
-      const [accessToken, refreshToken] = await Promise.all([
-        this._jwtService.signAsync(accessPayload, {
-          secret: this.ACCESS_SECRET,
-          expiresIn: this.ACCESS_EXPIRES_IN,
-        }),
-        this._jwtService.signAsync(refreshPayload, {
-          secret: this.REFRESH_SECRET,
-          expiresIn: this.REFRESH_EXPIRES_IN,
-        }),
-      ]);
-
-      const redisKey = this.getRefreshTokenKey(userId);
-      const ttl = this._configService.get<string>('REDIS_TTL') || 60 * 60; // 1 hour
-
-      await this._redis.set(redisKey, refreshToken, 'EX', ttl);
-
-      const verifyStorage = await this._redis.get(redisKey);
-      if (!verifyStorage) {
-        throw new Error('Failed to store refresh token in Redis');
-      }
-
-      return accessToken;
-    } catch (err) {
-      this.logger.error('Token generation error:', err);
-      throw new InternalServerErrorException('Failed to generate tokens');
-    }
-  }
-
   async validateAccessToken(token: string): Promise<IPayload> {
     return await this._jwtService.verifyAsync<IPayload>(token, {
       secret: this.ACCESS_SECRET,
