@@ -10,8 +10,7 @@ import { Admin } from '../../entities/implementation/admin.entity';
 @Injectable()
 export class AdminRepository
   extends BaseRepository<Admin, AdminDocument>
-  implements IAdminRepository
-{
+  implements IAdminRepository {
   constructor(
     @InjectModel(ADMIN_MODEL_NAME) private adminModel: Model<AdminDocument>,
   ) {
@@ -23,6 +22,7 @@ export class AdminRepository
       id: (doc._id as Types.ObjectId).toString(),
       email: doc.email,
       password: doc.password,
+      isDeleted: doc.isDeleted,
     });
   }
 }

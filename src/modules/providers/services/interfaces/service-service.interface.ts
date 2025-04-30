@@ -1,6 +1,6 @@
 import { ServiceOffered } from '../../../../core/entities/implementation/service.entity';
 import { IService, ISubService } from '../../../../core/entities/interfaces/service.entity.interface';
-import { IPayload } from '../../../auth/misc/payload.interface';
+import { IPayload } from '../../../../core/misc/payload.interface';
 import { CreateServiceDto, UpdateServiceDto, UpdateSubServiceDto, UpdateSubServiceWrapperDto } from '../../dtos/service.dto';
 
 export interface IServiceFeatureService {

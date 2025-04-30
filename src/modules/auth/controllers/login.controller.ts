@@ -6,6 +6,7 @@ import {
   HttpCode,
   Inject,
   InternalServerErrorException,
+  Logger,
   NotFoundException,
   Post,
   Put,
@@ -28,13 +29,16 @@ import { Request, Response } from 'express';
 import { GoogleAuthGuard } from '../guards/google-auth.guard';
 import { IUser } from '../../../core/entities/interfaces/user.entity.interface';
 import { getAccessKey } from '../interceptors/auth.interceptor';
+import { IResponse, prepareResponse } from '../../../core/misc/response.util';
 
-@Controller('login')
+@Controller('api/login')
 export class LoginController {
+  private readonly logger = new Logger(LoginController.name);
+
   constructor(
     @Inject(LOGIN_SERVICE_INTERFACE_NAME)
     private _loginService: ILoginService,
-  ) {}
+  ) { }
 
   @Post('auth')
   @HttpCode(200)
@@ -44,23 +48,32 @@ export class LoginController {
   ) {
     try {
       const user = await this._loginService.validateUserCredentials(dto);
-      const accessToken = await this._loginService.generateTokens(user);
+      const accessToken = this._loginService.generateAccessToken(user);
+      if (!accessToken) {
+        throw new NotFoundException('Access token is missing');
+      }
 
-      const accessKey = getAccessKey(dto.type);
+      console.log(accessToken)
 
-      response.cookie(accessKey, accessToken, {
+      const refreshToken = await this._loginService.generateRefreshToken(user);
+      if (!refreshToken) {
+        throw new NotFoundException('Refresh token is missing');
+      }
+
+      response.cookie('access_token', accessToken, {
         httpOnly: true,
         secure: false,
         sameSite: 'strict',
         path: '/',
       });
 
-      return { success: true, message: 'Login Successful' };
+      return prepareResponse(true, 'Login Successful');
     } catch (error: unknown) {
       if (error instanceof Error) {
-        console.error('Login Error:', error.message);
+        this.logger.error('Login Error:', error.message);
+
       } else {
-        console.error('Unknown login error:', error);
+        this.logger.error('Unknown login error:', error);
       }
 
       if (
@@ -88,7 +101,7 @@ export class LoginController {
     try {
       return await this._loginService.verifyToken(dto);
     } catch (err) {
-      console.error('Google Login Error:', err);
+      this.logger.error('Google Login Error:', err);
       throw new UnauthorizedException('Token Verification Failed');
     }
   }
@@ -120,7 +133,7 @@ export class LoginController {
         data: googleAuthUrl,
       });
     } catch (err) {
-      console.error('Google Login Error:', err);
+      this.logger.error('Google Login Error:', err);
       throw new InternalServerErrorException(
         'An unexpected error occurred. Please try again.',
       );
@@ -129,7 +142,7 @@ export class LoginController {
 
   @Get('google')
   @UseGuards(GoogleAuthGuard)
-  handleGoogleLogin() {}
+  handleGoogleLogin() { }
 
   @Get('google/redirect')
   @UseGuards(GoogleAuthGuard)
@@ -165,7 +178,7 @@ export class LoginController {
 
       return res.redirect(frontendUrl);
     } catch (error) {
-      console.error('Google Login Error:', error.message);
+      this.logger.error('Google Login Error:', error.message);
 
       if (error instanceof NotFoundException) {
         throw error;
@@ -185,7 +198,7 @@ export class LoginController {
       }
 
       const accessKey = getAccessKey(dto.userType);
-      console.log(accessKey);
+      this.logger.log(accessKey);
       res.clearCookie(accessKey, {
         httpOnly: true,
         secure: false,
@@ -195,7 +208,7 @@ export class LoginController {
 
       return res.status(200).json({ message: 'Logout successful' });
     } catch (err) {
-      console.log('[ERROR] Logout: ', err);
+      this.logger.log('[ERROR] Logout: ', err);
       throw new InternalServerErrorException('Something went wrong.');
     }
   }

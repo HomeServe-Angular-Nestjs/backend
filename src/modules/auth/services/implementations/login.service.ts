@@ -3,6 +3,7 @@ import {
   Inject,
   Injectable,
   InternalServerErrorException,
+  Logger,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -25,7 +26,7 @@ import { Customer } from '../../../../core/entities/implementation/customer.enti
 import { Provider } from '../../../../core/entities/implementation/provider.entity';
 
 import { IUser } from '../../../../core/entities/interfaces/user.entity.interface';
-import { IPayload } from '../../misc/payload.interface';
+import { IPayload } from '../../../../core/misc/payload.interface';
 
 import { IArgonUtility } from '../../../../core/utilities/interface/argon.utility.interface';
 import { ITokenUtility } from '../../../../core/utilities/interface/token.utility.interface';
@@ -45,27 +46,29 @@ import {
   UserType,
   VerifyTokenDto,
 } from '../../dtos/login.dto';
-import { UserReposType } from '../../misc/repo.type';
+import { UserReposType } from '../../../../core/misc/repo.type';
 import { IAdminRepository } from '../../../../core/repositories/interfaces/admin-repo.interface';
 
 @Injectable()
 export class LoginService implements ILoginService {
+  private readonly logger = new Logger(LoginService.name);
+
   constructor(
     @Inject(CUSTOMER_REPOSITORY_INTERFACE_NAME)
-    private customerRepository: ICustomerRepository,
+    private _customerRepository: ICustomerRepository,
     @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
-    private providerRepository: IProviderRepository,
+    private _providerRepository: IProviderRepository,
     @Inject(ADMIN_REPOSITORY_INTERFACE_NAME)
-    private adminRepository: IAdminRepository,
+    private _adminRepository: IAdminRepository,
     @Inject(ARGON_UTILITY_NAME)
-    private argon: IArgonUtility,
+    private _argon: IArgonUtility,
     @Inject(TOKEN_UTILITY_NAME)
-    private token: ITokenUtility,
+    private _token: ITokenUtility,
     @Inject(MAILER_UTILITY_INTERFACE_NAME)
-    private mailerService: IMailerUtility,
+    private _mailerService: IMailerUtility,
     @Inject(TOKEN_SERVICE_NAME)
-    private tokenService: ITokenService,
-  ) {}
+    private _tokenService: ITokenService,
+  ) { }
 
   async validateUserCredentials(dto: AuthLoginDto): Promise<IUser> {
     try {
@@ -76,16 +79,22 @@ export class LoginService implements ILoginService {
         throw new UnauthorizedException('Invalid email or password');
       }
 
-      const isValidPassword = await this.argon.verify(
+      const isValidPassword = await this._argon.verify(
         user.password,
         dto.password,
       );
-      if (!isValidPassword)
+
+      if (!isValidPassword) {
         throw new UnauthorizedException('Invalid email or password.');
+      }
+
+      if (user.isDeleted) {
+        throw new UnauthorizedException('You are blocked by the admin.');
+      }
 
       return user;
     } catch (error) {
-      console.error('Credential Validation Error:', error);
+      this.logger.error('Credential Validation Error:', error);
       if (error instanceof UnauthorizedException) {
         throw error;
       }
@@ -97,7 +106,15 @@ export class LoginService implements ILoginService {
   }
 
   async generateTokens(user: IUser): Promise<string> {
-    return this.tokenService.generateToken(user.id, user.email);
+    return this._tokenService.generateAccessToken(user.id, user.email);
+  }
+
+  generateAccessToken(user: IUser): string {
+    return this._tokenService.generateAccessToken(user.id, user.email);
+  }
+
+  async generateRefreshToken(user: IUser): Promise<string> {
+    return this._tokenService.generateRefreshToken(user.id, user.email);
   }
 
   async findOrCreateUser(user: GoogleLoginDto): Promise<IUser> {
@@ -110,8 +127,8 @@ export class LoginService implements ILoginService {
 
       const repository =
         user.type === 'customer'
-          ? this.customerRepository
-          : this.providerRepository;
+          ? this._customerRepository
+          : this._providerRepository;
 
       const existingUser = await repository.findByEmail(user.email);
 
@@ -138,7 +155,7 @@ export class LoginService implements ILoginService {
       let newUser: IUser;
 
       if (user.type === 'customer') {
-        newUser = await this.customerRepository.create(
+        newUser = await this._customerRepository.create(
           new Customer({
             email: user.email,
             username: user.name,
@@ -147,7 +164,7 @@ export class LoginService implements ILoginService {
           }),
         );
       } else if (user.type === 'provider') {
-        newUser = await this.providerRepository.create(
+        newUser = await this._providerRepository.create(
           new Provider({
             email: user.email,
             username: user.name,
@@ -169,28 +186,28 @@ export class LoginService implements ILoginService {
   async forgotPassword(dto: ForgotPasswordDto): Promise<void> {
     const repository =
       dto.type === 'customer'
-        ? this.customerRepository
-        : this.providerRepository;
+        ? this._customerRepository
+        : this._providerRepository;
 
     const user = await repository.findByEmail(dto.email);
     if (!user) throw new NotFoundException('User not found');
 
-    const token = this.token.generateAccessToken({
+    const token = this._token.generateAccessToken({
       ...dto,
       sub: user.id,
     });
 
-    await this.mailerService.sendEmail(dto.email, token, 'link');
+    await this._mailerService.sendEmail(dto.email, token, 'link');
   }
 
   async verifyToken(dto: VerifyTokenDto): Promise<IPayload> {
-    return await this.token.verifyToken(dto.token);
+    return await this._token.verifyToken(dto.token);
   }
 
   async changePassword(dto: ChangePasswordDto): Promise<void> {
     try {
       const repository = this.findRepo(dto.type);
-      const hashedPassword = await this.argon.hash(dto.password);
+      const hashedPassword = await this._argon.hash(dto.password);
 
       const updatedUser = await repository.findOneAndUpdate(
         { email: dto.email },
@@ -206,11 +223,11 @@ export class LoginService implements ILoginService {
 
   private findRepo(type: UserType): UserReposType {
     if (type === 'customer') {
-      return this.customerRepository;
+      return this._customerRepository;
     } else if (type === 'provider') {
-      return this.providerRepository;
+      return this._providerRepository;
     } else if (type === 'admin') {
-      return this.adminRepository;
+      return this._adminRepository;
     } else {
       throw new BadRequestException('Invalid type Error.');
     }

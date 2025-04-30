@@ -26,7 +26,7 @@ import {
   UpdateSubServiceWrapperDto,
 } from '../dtos/service.dto';
 import { AuthInterceptor } from '../../auth/interceptors/auth.interceptor';
-import { IPayload } from '../../auth/misc/payload.interface';
+import { IPayload } from '../../../core/misc/payload.interface';
 
 @Controller()
 export class ServiceController {

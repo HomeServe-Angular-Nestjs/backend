@@ -4,4 +4,5 @@ export interface IAdmin extends IEntity {
   email: string;
   password: string;
   type: 'admin';
+  isDeleted: boolean,
 }

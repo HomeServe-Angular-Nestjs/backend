@@ -1,4 +1,4 @@
-import { IPayload } from '../../../modules/auth/misc/payload.interface';
+import { IPayload } from '../../misc/payload.interface';
 
 export interface ITokenUtility {
   generateAccessToken(payload: IPayload): string;

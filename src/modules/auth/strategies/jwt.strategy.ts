@@ -7,7 +7,7 @@ import { Request } from 'express';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { getAccessKey } from '../interceptors/auth.interceptor';
 import { UserType } from '../dtos/login.dto';
-import { IPayload } from '../misc/payload.interface';
+import { IPayload } from '../../../core/misc/payload.interface';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
