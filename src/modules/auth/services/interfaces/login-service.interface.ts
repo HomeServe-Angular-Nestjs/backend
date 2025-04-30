@@ -17,4 +17,5 @@ export interface ILoginService {
   generateAccessToken(user: IUser): string;
   generateRefreshToken(user: IUser): Promise<string>;
   findOrCreateUser(user: GoogleLoginDto): Promise<IUser>;
+  invalidateRefreshToken(id: string): Promise<void>;
 }
