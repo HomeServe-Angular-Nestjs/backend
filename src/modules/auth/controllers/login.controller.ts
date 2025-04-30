@@ -158,15 +158,18 @@ export class LoginController {
       if (!user || !user.type) {
         throw new NotFoundException('User is missing in the request');
       }
-
-      const accessToken = await this._loginService.generateTokens(user);
-
+      
+      const accessToken = this._loginService.generateAccessToken(user);
       if (!accessToken) {
-        throw new NotFoundException('Missing Access Token');
+        throw new NotFoundException('Access token is missing');
       }
 
-      const accessKey = getAccessKey(user.type);
-      res.cookie(accessKey, accessToken, {
+      const refreshToken = await this._loginService.generateRefreshToken(user);
+      if (!refreshToken) {
+        throw new NotFoundException('Refresh token is missing');
+      }
+
+      res.cookie('access_token', accessToken, {
         httpOnly: true,
         secure: false,
         sameSite: 'strict',
