@@ -1,6 +1,6 @@
 import { Provider } from '../../../../core/entities/implementation/provider.entity';
 import { IProvider } from '../../../../core/entities/interfaces/user.entity.interface';
-import { IPayload } from '../../../auth/misc/payload.interface';
+import { IPayload } from '../../../../core/misc/payload.interface';
 import { UpdateDefaultSlotsDto } from '../../dtos/provider.dto';
 
 export interface IProviderServices {

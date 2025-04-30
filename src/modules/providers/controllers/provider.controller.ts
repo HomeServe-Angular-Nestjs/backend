@@ -17,7 +17,7 @@ import { IProviderServices } from '../services/interfaces/provider-service.inter
 import { Provider } from '../../../core/entities/implementation/provider.entity';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Request } from 'express';
-import { IPayload } from '../../auth/misc/payload.interface';
+import { IPayload } from '../../../core/misc/payload.interface';
 import { UpdateDefaultSlotsDto } from '../dtos/provider.dto';
 import { UserType } from '../../auth/dtos/login.dto';
 

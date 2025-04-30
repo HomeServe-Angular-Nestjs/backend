@@ -20,7 +20,7 @@ import {
   PROVIDER_REPOSITORY_INTERFACE_NAME,
   SERVICE_OFFERED_REPOSITORY_NAME,
 } from '../../../../core/constants/repository.constant';
-import { IPayload } from '../../../auth/misc/payload.interface';
+import { IPayload } from '../../../../core/misc/payload.interface';
 import { ServiceOffered } from '../../../../core/entities/implementation/service.entity';
 import { UPLOAD_UTILITY_NAME } from '../../../../core/constants/utility.constant';
 import { IUploadsUtility } from '../../../../core/utilities/interface/upload.utility.interface';

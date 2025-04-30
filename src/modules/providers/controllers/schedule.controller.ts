@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Inject, InternalServerErrorException, Put, Query, Req, UseInterceptors } from "@nestjs/common";
 import { AuthInterceptor } from "../../auth/interceptors/auth.interceptor";
 import { Request } from "express";
-import { IPayload } from "../../auth/misc/payload.interface";
+import { IPayload } from "../../../core/misc/payload.interface";
 import { SCHEDULE_SERVICE_NAME } from "../../../core/constants/service.constant";
 import { IScheduleService } from "../services/interfaces/schedule-service.interface";
 import { CreateScheduleDto } from "../dtos/schedule.dto";
