@@ -29,12 +29,9 @@ import { Request, Response } from 'express';
 import { GoogleAuthGuard } from '../guards/google-auth.guard';
 import { IUser } from '../../../core/entities/interfaces/user.entity.interface';
 import { getAccessKey } from '../interceptors/auth.interceptor';
-import { IResponse, prepareResponse } from '../../../core/misc/response.util';
+import { prepareResponse } from '../../../core/misc/response.util';
 import { ITokenService } from '../services/interfaces/token-service.interface';
-<<<<<<< HEAD
-=======
 import { BACKEND_URL, FRONTEND_URL } from '../../../core/environments/environments';
->>>>>>> auth
 
 @Controller('login')
 export class LoginController {
