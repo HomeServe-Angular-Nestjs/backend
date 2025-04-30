@@ -33,7 +33,7 @@ import { getAccessKey } from '../interceptors/auth.interceptor';
 export class LoginController {
   constructor(
     @Inject(LOGIN_SERVICE_INTERFACE_NAME)
-    private loginService: ILoginService,
+    private _loginService: ILoginService,
   ) {}
 
   @Post('auth')
@@ -43,8 +43,8 @@ export class LoginController {
     @Res({ passthrough: true }) response: Response,
   ) {
     try {
-      const user = await this.loginService.validateUserCredentials(dto);
-      const accessToken = await this.loginService.generateTokens(user);
+      const user = await this._loginService.validateUserCredentials(dto);
+      const accessToken = await this._loginService.generateTokens(user);
 
       const accessKey = getAccessKey(dto.type);
 
@@ -79,14 +79,14 @@ export class LoginController {
   @Post('forgot_password')
   @HttpCode(200)
   async forgotPassword(@Body() dto: ForgotPasswordDto) {
-    await this.loginService.forgotPassword(dto);
+    await this._loginService.forgotPassword(dto);
   }
 
   @Post('verify_token')
   @HttpCode(200)
   async verifyToken(@Body() dto: VerifyTokenDto) {
     try {
-      return await this.loginService.verifyToken(dto);
+      return await this._loginService.verifyToken(dto);
     } catch (err) {
       console.error('Google Login Error:', err);
       throw new UnauthorizedException('Token Verification Failed');
@@ -95,7 +95,7 @@ export class LoginController {
 
   @Put('change_password')
   async changePassword(@Body() dto: ChangePasswordDto) {
-    await this.loginService.changePassword(dto);
+    await this._loginService.changePassword(dto);
   }
 
   @Get('google/init')
@@ -144,7 +144,7 @@ export class LoginController {
         throw new NotFoundException('User is missing in the request');
       }
 
-      const accessToken = await this.loginService.generateTokens(user);
+      const accessToken = await this._loginService.generateTokens(user);
 
       if (!accessToken) {
         throw new NotFoundException('Missing Access Token');

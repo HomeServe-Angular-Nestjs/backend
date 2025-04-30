@@ -67,6 +67,6 @@ export class ScheduleService implements IScheduleService {
             throw new Error(`Failed to update the provider with new schedule`);
         }
 
-        return updatedProvider;
+        return { updateSchedule, updatedProvider };
     }
 }

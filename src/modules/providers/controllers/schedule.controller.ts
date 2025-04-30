@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Inject, InternalServerErrorException, Put, Req, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Get, Inject, InternalServerErrorException, Put, Query, Req, UseInterceptors } from "@nestjs/common";
 import { AuthInterceptor } from "../../auth/interceptors/auth.interceptor";
 import { Request } from "express";
 import { IPayload } from "../../auth/misc/payload.interface";
@@ -16,10 +16,14 @@ export class ScheduleController {
     ) { }
 
     @Get(['provider/schedules'])
-    async fetchSchedules(@Req() req: Request) {
+    async fetchSchedules(@Req() req: Request, @Query() query: { id: string }) {
         try {
             const user = req.user as IPayload;
-            return await this.scheduleService.fetchSchedules(user.sub);
+            let id = user.sub;
+            if (query && query.id) {
+                id = query.id;
+            }
+            return await this.scheduleService.fetchSchedules(id);
         } catch (err) {
             console.error(`Error fetching schedules: ${err.message}`, err.stack);
             throw new InternalServerErrorException('Failed to fetch schedules');

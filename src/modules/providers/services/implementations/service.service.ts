@@ -156,8 +156,6 @@ export class ServiceFeatureService implements IServiceFeatureService {
 
   async updateSubservice(updateData: UpdateSubServiceWrapperDto) {
     try {
-
-      console.log(updateData)
       const { id: serviceId, subService } = updateData;
       const { id: subServiceId, ...subServiceFields } = subService;
 

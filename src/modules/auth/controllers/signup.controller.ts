@@ -25,16 +25,16 @@ import {
 export class SignUpController {
   constructor(
     @Inject(SIGNUP_SERVICE_INTERFACE_NAME)
-    private readonly signupService: ISignupService,
+    private readonly _signupService: ISignupService,
     @Inject(OTP_SERVICE_INTERFACE_NAME)
-    private readonly otpService: IOtpService,
-  ) {}
+    private readonly _otpService: IOtpService,
+  ) { }
 
   // STEP: 1
   @Post('initiate_signup')
   @HttpCode(200)
   async initiateSignup(@Body() dto: InitiateSignupDto) {
-    await this.signupService.initiateSignup(dto);
+    await this._signupService.initiateSignup(dto);
     return { success: true, message: 'OTP send to email.' };
   }
 
@@ -42,7 +42,7 @@ export class SignUpController {
   @Post('verify_otp')
   @HttpCode(200)
   async verifyOtp(@Body() dto: VerifyOtpDto) {
-    const isValid = await this.otpService.verifyOtp(dto.email, dto.code);
+    const isValid = await this._otpService.verifyOtp(dto.email, dto.code);
     if (!isValid) throw new BadRequestException('Invalid Otp');
     return { success: true, message: 'OTP verified successfully' };
   }
@@ -51,7 +51,7 @@ export class SignUpController {
   @Post('complete_signup')
   @HttpCode(201)
   async completeSignup(@Body() dto: CompleteSignupDto) {
-    await this.signupService.completeSignup(dto);
+    await this._signupService.completeSignup(dto);
     return { success: true, message: 'Customer created successfully' };
   }
 }
