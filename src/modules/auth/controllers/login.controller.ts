@@ -31,8 +31,12 @@ import { IUser } from '../../../core/entities/interfaces/user.entity.interface';
 import { getAccessKey } from '../interceptors/auth.interceptor';
 import { IResponse, prepareResponse } from '../../../core/misc/response.util';
 import { ITokenService } from '../services/interfaces/token-service.interface';
+<<<<<<< HEAD
+=======
+import { BACKEND_URL, FRONTEND_URL } from '../../../core/environments/environments';
+>>>>>>> auth
 
-@Controller('api/login')
+@Controller('login')
 export class LoginController {
   private readonly logger = new Logger(LoginController.name);
 
@@ -127,7 +131,7 @@ export class LoginController {
 
       req.session['userType'] = type;
 
-      const googleAuthUrl = 'http://localhost:5000/login/google';
+      const googleAuthUrl = `${BACKEND_URL}/api/login/google`;
       return res.status(200).json({
         success: true,
         message: 'Google Authentication Initialized',
@@ -174,8 +178,8 @@ export class LoginController {
 
       const frontendUrl =
         user.type === 'provider'
-          ? `http://localhost:4200/provider/dashboard?loggedIn=true&email=${user.email}`
-          : `http://localhost:4200/homepage?loggedIn=true&email=${user.email}`;
+          ? `${FRONTEND_URL}/provider/dashboard?loggedIn=true&email=${user.email}`
+          : `${FRONTEND_URL}/homepage?loggedIn=true&email=${user.email}`;
 
       return res.redirect(frontendUrl);
     } catch (error) {

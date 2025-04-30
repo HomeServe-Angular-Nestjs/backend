@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Inject,
   Injectable,
+  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -14,26 +15,23 @@ import { UserType } from '../dtos/login.dto';
 
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy) {
+  private readonly logger = new Logger(GoogleStrategy.name);
+
   constructor(
-    private config: ConfigService,
+    private _config: ConfigService,
     @Inject(LOGIN_SERVICE_INTERFACE_NAME)
-    private loginService: ILoginService,
+    private _loginService: ILoginService,
   ) {
     super({
-      clientID: config.get('GOOGLE_CLIENT_ID') as string,
-      clientSecret: config.get('GOOGLE_CLIENT_SECRET') as string,
-      callbackURL: config.get('GOOGLE_CALLBACK_URL'),
+      clientID: _config.get('GOOGLE_CLIENT_ID') as string,
+      clientSecret: _config.get('GOOGLE_CLIENT_SECRET') as string,
+      callbackURL: _config.get('GOOGLE_CALLBACK_URL'),
       scope: ['profile', 'email'],
       passReqToCallback: true,
     });
   }
 
-  async validate(
-    req: Request,
-    accessToken: string,
-    refreshToken: string,
-    profile: Profile,
-  ) {
+  async validate(req: Request, accessToken: string, refreshToken: string, profile: Profile,) {
     try {
       const userType = req.session['userType'] as UserType;
 
@@ -41,7 +39,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy) {
         throw new BadRequestException('User type is missing.');
       }
 
-      const user = await this.loginService.findOrCreateUser({
+      const user = await this._loginService.findOrCreateUser({
         googleId: profile.id,
         email: profile.emails?.[0]?.value ?? '',
         name: profile.displayName ?? '',
@@ -57,7 +55,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy) {
 
       return user;
     } catch (err) {
-      console.error('GoogleStrategy validate error:', err);
+      this.logger.error('GoogleStrategy validate error:', err);
       throw new UnauthorizedException('Google authentication failed');
     }
   }
