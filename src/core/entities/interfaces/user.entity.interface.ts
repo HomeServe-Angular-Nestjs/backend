@@ -13,6 +13,12 @@ export type Availability = {
   };
 };
 
+export type Address = {
+  type: 'Point',
+  address: string,
+  coordinates: [number, number];
+}
+
 export interface ICustomer extends IBaseUserEntity {
   locations?:
   | {
@@ -35,16 +41,7 @@ export interface IProvider extends IBaseUserEntity {
   | null;
   additionalSkills: string[] | null;
   languages: string[] | null;
-  location: {
-    street: string;
-    city: string;
-    state: string;
-    zipcode: string;
-    coordinates: {
-      lat: number;
-      lng: number;
-    };
-  };
+  location: Address;
   workImages: string[] | null;
   awards: string[] | null;
   isCertified: boolean;

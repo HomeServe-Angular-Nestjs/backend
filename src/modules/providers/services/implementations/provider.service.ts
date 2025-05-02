@@ -30,17 +30,17 @@ export class ProviderServices implements IProviderServices {
     return result;
   }
 
-  async updateProvider(
-    user: IPayload,
-    updateData: Partial<IProvider>,
-    file: Express.Multer.File,
-  ): Promise<Provider> {
-    const avatarUrl = await this.cloudinaryService.uploadImage(file);
+  async updateProvider(id: string, updateData: Partial<IProvider>, file?: Express.Multer.File,): Promise<Provider> {
 
-    if (!avatarUrl) {
-      throw new NotFoundException(
-        'Avatar not updated to cloudinary successfully',
-      );
+    if (file) {
+      const response = await this.cloudinaryService.uploadImage(file);
+
+      if (!response) {
+        throw new NotFoundException(
+          'Avatar not updated to cloudinary successfully',
+        );
+      }
+      updateData.avatar = response.url;
     }
 
     const sanitizedUpdate = Object.fromEntries(
@@ -50,18 +50,15 @@ export class ProviderServices implements IProviderServices {
     );
 
     const updatedProvider = await this.providerRepository.findOneAndUpdate(
-      { _id: user.sub },
+      { _id: new Types.ObjectId(id) },
       {
-        $set: {
-          ...sanitizedUpdate,
-          avatar: avatarUrl?.url || '',
-        },
+        $set: sanitizedUpdate,
       },
       { new: true },
     );
 
     if (!updatedProvider) {
-      throw new NotFoundException(`Provider with ID ${user.sub} not found`);
+      throw new NotFoundException(`Provider with ID ${id} not found`);
     }
 
     return updatedProvider;

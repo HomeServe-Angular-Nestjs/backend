@@ -1,4 +1,4 @@
-import { Availability, IProvider } from '../interfaces/user.entity.interface';
+import { Address, Availability, IProvider } from '../interfaces/user.entity.interface';
 import { BaseUserEntity } from '../base/implementation/base-user.entity';
 import { ISubService } from '../interfaces/service.entity.interface';
 import { SlotType } from '../interfaces/schedule.entity.interface';
@@ -13,16 +13,7 @@ export class Provider extends BaseUserEntity implements IProvider {
   }[];
   additionalSkills: string[];
   languages: string[];
-  location: {
-    street: string;
-    city: string;
-    state: string;
-    zipcode: string;
-    coordinates: {
-      lat: number;
-      lng: number;
-    };
-  };
+  location: Address;
   workImages: string[];
   awards: string[];
   isCertified: boolean;

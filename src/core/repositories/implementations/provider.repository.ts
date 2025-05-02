@@ -55,6 +55,7 @@ export class ProviderRepository
       profession: doc.profession,
       defaultSlots: doc.defaultSlots,
       schedules: doc.schedules.map(id => id.toString()),
+      location: doc.location,
     });
   }
 }

@@ -19,7 +19,6 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { Request } from 'express';
 import { IPayload } from '../../../core/misc/payload.interface';
 import { UpdateDefaultSlotsDto } from '../dtos/provider.dto';
-import { UserType } from '../../auth/dtos/login.dto';
 
 @Controller('provider')
 @UseInterceptors(AuthInterceptor)
@@ -58,17 +57,18 @@ export class ProviderController {
         }
     }
 
-    @Patch('update_providers')
+    @Patch('update_provider')
     @UseInterceptors(FileInterceptor('providerAvatar'))
     async updateProvider(
         @Req() req: Request,
+        @Body('providerData') dto: string,
         @UploadedFile() file: Express.Multer.File,
     ) {
         try {
             const user = req.user as IPayload;
-            const updateData = JSON.parse(req.body.providerData);
+            const updateData = JSON.parse(dto);
 
-            return await this.providerServices.updateProvider(user, updateData, file);
+            return await this.providerServices.updateProvider(user.sub, updateData, file);
         } catch (err) {
             console.error(`Error updating provider: ${err.message}`, err.stack);
             throw new InternalServerErrorException('Failed to update provider');

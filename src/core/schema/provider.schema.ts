@@ -35,33 +35,24 @@ export class ProviderDocument extends BaseUserDocument {
 
   @Prop({
     type: {
-      street: { type: String },
-      city: { type: String },
-      state: { type: String },
-      zipcode: { type: String },
-      geo: {
-        type: {
-          type: String,
-          enum: ['Point'],
-          default: 'Point',
-        },
-        coordinates: {
-          type: [Number],
-          index: '2dsphere',
-          required: true,
-        },
-      },
+      type: String,
+      enum: ['Point'],
+      default: 'Point',
+    },
+    coordinates: {
+      type: [Number],
+      required: true,
+      index: '2dsphere',
+    },
+    address: {
+      type: String,
+      required: true,
     },
   })
   location: {
-    street: string;
-    city: string;
-    state: string;
-    zipcode: string;
-    geo: {
-      type: 'Point';
-      coordinates: [number, number]; // [lng, lat]
-    };
+    type: 'Point';
+    coordinates: [number, number];
+    address: string;
   };
 
   @Prop({ type: [String] })
