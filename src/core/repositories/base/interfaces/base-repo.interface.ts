@@ -32,4 +32,5 @@ export interface IBaseRepository<
     },
   ): Promise<T | null>;
 
+  deleteOne(query: FilterQuery<TDocument>): Promise<{ deletedCount?: number }>;
 }

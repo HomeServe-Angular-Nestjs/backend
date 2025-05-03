@@ -43,10 +43,7 @@ export class ServiceFeatureService implements IServiceFeatureService {
 
   private readonly logger = new Logger(ServiceFeatureService.name);
 
-  async createService(
-    dto: CreateServiceDto,
-    user: IPayload,
-  ): Promise<ServiceOffered> {
+  async createService(dto: CreateServiceDto, user: IPayload,): Promise<ServiceOffered> {
     try {
       const provider = await this.providerRepository.findByEmail(user.email);
 
@@ -100,14 +97,21 @@ export class ServiceFeatureService implements IServiceFeatureService {
         throw new Error('Could find the provider');
       }
 
-      const offeredServices = await Promise.all(
+      const offeredServices: (IService | undefined)[] = await Promise.all(
         provider.servicesOffered.map(async (id: string): Promise<IService | undefined> => {
           const service = await this.serviceOfferedRepository.findOne({ _id: new Types.ObjectId(id) });
-          return service ? service : undefined
+          return service || undefined;
         })
       );
 
-      return offeredServices.filter(service => service !== undefined);
+      let result: IService[] = offeredServices.filter(service => service !== undefined);
+
+      result = result.map(service => {
+        service.subService = service.subService.filter(sub => !sub.isDeleted);
+        return service;
+      });
+
+      return result;
     } catch (err) {
       console.error(err);
       throw new InternalServerErrorException(
@@ -132,29 +136,45 @@ export class ServiceFeatureService implements IServiceFeatureService {
 
 
   async updateService(updateData: UpdateServiceDto): Promise<IService> {
-    if (updateData.id) {
-      const { id, ...updateFields } = updateData;
-
-      const updatedService =
-        await this.serviceOfferedRepository.findOneAndUpdate(
-          { _id: id },
-          { $set: updateFields },
-          { new: true },
-        );
-
-      if (!updatedService) {
-        throw new NotFoundException(
-          'Service not found or could not be updated',
-        );
-      }
-
-      return updatedService;
+    if (!updateData.id) {
+      throw new BadRequestException('Service id is missing');
     }
 
-    throw new BadRequestException('Service id is missing');
+    const { id, ...updateFields } = updateData;
+
+    if (updateFields.image && typeof updateFields.image !== 'string') {
+      const uploadedImageUrl = await this.uploadsUtility.uploadImage(updateFields.image);
+      updateFields.image = uploadedImageUrl;
+    }
+
+    const subServices = Array.isArray(updateFields.subServices) ? updateFields.subServices : [];
+
+    for (let i = 0; i < subServices.length; i++) {
+      const sub = subServices[i];
+
+      if (sub.image && typeof sub.image !== 'string') {
+        const subImageUrl = await this.uploadsUtility.uploadImage(sub.image);
+        sub.image = subImageUrl;
+      }
+    }
+
+    updateFields.subServices = subServices;
+
+    const updatedService = await this.serviceOfferedRepository.findOneAndUpdate(
+      { _id: id },
+      { $set: updateFields },
+      { new: true }
+    );
+
+    if (!updatedService) {
+      throw new NotFoundException('No matching service found to update.')
+    }
+
+    return updatedService;
   }
 
-  async updateSubservice(updateData: UpdateSubServiceWrapperDto) {
+
+  async updateSubservice(updateData: UpdateSubServiceWrapperDto): Promise<{ id: string, subService: ISubService }> {
     try {
       const { id: serviceId, subService } = updateData;
       const { id: subServiceId, ...subServiceFields } = subService;
@@ -170,15 +190,14 @@ export class ServiceFeatureService implements IServiceFeatureService {
         }
       }
 
-      const updatedService =
-        await this.serviceOfferedRepository.findOneAndUpdate(
-          {
-            _id: serviceId,
-            "subService._id": subServiceId
-          },
-          { $set: setObject },
-          { new: true },
-        );
+      const updatedService = await this.serviceOfferedRepository.findOneAndUpdate(
+        {
+          _id: serviceId,
+          "subService._id": subServiceId
+        },
+        { $set: setObject },
+        { new: true },
+      );
 
       if (!updatedService) {
         throw new NotFoundException('No matching sub-service found to update.');
@@ -188,7 +207,7 @@ export class ServiceFeatureService implements IServiceFeatureService {
         s => s.id === subServiceId
       );
 
-      return { id: serviceId, subService: updated };
+      return { id: serviceId, subService: updated as ISubService };
     } catch (err) {
       this.logger.error('Failed to update subService', err.stack);
       throw new InternalServerErrorException('Failed to update subService');

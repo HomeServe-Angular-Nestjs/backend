@@ -72,8 +72,7 @@ export class UpdateSubServiceDto {
   tag?: string;
 
   @IsOptional()
-  @IsString()
-  image?: string;
+  image?: any;
 
   @IsOptional()
   @IsBoolean()
@@ -98,8 +97,7 @@ export class UpdateServiceDto {
   desc?: string;
 
   @IsOptional()
-  @IsString()
-  image?: string;
+  image?: any;
 
   @IsOptional()
   @IsBoolean()
@@ -114,18 +112,10 @@ export class UpdateServiceDto {
   isVerified?: boolean;
 
   @IsOptional()
-  @IsDateString()
-  createdAt?: Date;
-
-  @IsOptional()
-  @IsDateString()
-  updatedAt?: Date;
-
-  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => UpdateSubServiceDto)
-  subService?: UpdateSubServiceDto[];
+  subServices?: UpdateSubServiceDto[];
 }
 
 export class UpdateSubServiceWrapperDto {
@@ -135,4 +125,14 @@ export class UpdateSubServiceWrapperDto {
   @ValidateNested()
   @Type(() => UpdateSubServiceDto)
   subService: UpdateSubServiceDto;
+}
+
+export class DeleteSubServiceDto {
+  @IsString()
+  @IsNotEmpty()
+  serviceId: string;
+
+  @IsString()
+  @IsNotEmpty()
+  subId: string
 }

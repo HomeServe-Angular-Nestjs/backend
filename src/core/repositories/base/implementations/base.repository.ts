@@ -55,5 +55,10 @@ export abstract class BaseRepository<T extends IEntity, TDocument extends Docume
     return result ? this.toEntity(result) : null;
   }
 
+  async deleteOne(query: FilterQuery<TDocument>): Promise<{ deletedCount?: number; }> {
+    const result = await this.model.deleteOne(query).exec();
+    return { deletedCount: result.deletedCount };
+  }
+
   protected abstract toEntity(doc: TDocument | Record<string, any>): T;
 }

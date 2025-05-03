@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Inject,
   InternalServerErrorException,
@@ -21,12 +22,15 @@ import { SERVICE_OFFERED_SERVICE_NAME } from '../../../core/constants/service.co
 import {
   CreateServiceDto,
   CreateSubServiceDto,
+  DeleteSubServiceDto,
   UpdateServiceDto,
   UpdateSubServiceDto,
   UpdateSubServiceWrapperDto,
 } from '../dtos/service.dto';
 import { AuthInterceptor } from '../../auth/interceptors/auth.interceptor';
 import { IPayload } from '../../../core/misc/payload.interface';
+import { IService } from '../../../core/entities/interfaces/service.entity.interface';
+import { AnyCatcher } from 'rxjs/internal/AnyCatcher';
 
 @Controller()
 export class ServiceController {
@@ -120,6 +124,7 @@ export class ServiceController {
   }
 
   @Get(['provider/offered_service'])
+  @UseInterceptors(AuthInterceptor)
   async getOfferedService(@Query() query: { id: string }) {
     try {
       return this.serviceFeature.fetchService(query.id);
@@ -130,22 +135,13 @@ export class ServiceController {
     }
   }
 
-  // @Get(['provider/fetch_subservice'])
-  // async fetchSubservice(@Query() query: { id: string }) {
-  //   try {
-  //     return this.serviceFeature.fetchSubService(query.id);
-  //   } catch (err) {
-  //     throw new InternalServerErrorException(
-  //       'Something happened while fetching offered services',
-  //     );
-  //   }
-  // }
-
-  @Patch(['provider/offered_services'])
-  @UseInterceptors(AuthInterceptor)
-  async updateService(@Body() dto: UpdateServiceDto) {
+  @Patch(['provider/offered_service'])
+  @UseInterceptors(AuthInterceptor, AnyFilesInterceptor())
+  async updateService(@Body() dto: UpdateServiceDto, @UploadedFiles() files: Express.Multer.File[]) {
     try {
-      return await this.serviceFeature.updateService(dto);
+      const prepareDto = this._attachFilesToServiceData(dto, files);
+
+      return await this.serviceFeature.updateService(prepareDto);
     } catch (err) {
       if (err instanceof NotFoundException) {
         throw new NotFoundException(err.message);
@@ -162,6 +158,7 @@ export class ServiceController {
   }
 
   @Patch(['provider/subservice'])
+  @UseInterceptors(AuthInterceptor)
   async updateSubservice(@Body() dto: UpdateSubServiceWrapperDto) {
     try {
       return await this.serviceFeature.updateSubservice(dto);
@@ -169,5 +166,33 @@ export class ServiceController {
       console.error(`Error updating service: ${err.message}`, err.stack);
       throw new InternalServerErrorException('Failed to update subservice');
     }
+  }
+
+  private _attachFilesToServiceData(dto: UpdateServiceDto, files: Express.Multer.File[]) {
+    const result = { ...dto };
+
+    // Attach main service image
+    const image = files.find(file => file.fieldname === 'serviceImageFile');
+    if (image) {
+      result.image = image;
+    } else if (dto.image) {
+      result.image = dto.image;
+    }
+
+    result.subServices = (dto.subServices || []).map((sub: any, index: number) => {
+      const subResult: any = { ...sub };
+
+      const image = files.find(file => file.fieldname === `subServices[${index}][imageFile]`);
+
+      if (image) {
+        subResult.image = image;
+      } else if (sub.image) {
+        subResult.image = sub.image
+      }
+
+      return subResult;
+    });
+
+    return result;
   }
 }
