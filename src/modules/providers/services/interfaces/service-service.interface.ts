@@ -7,7 +7,7 @@ export interface IServiceFeatureService {
   createService(dto: CreateServiceDto, user: IPayload): Promise<ServiceOffered>;
   fetchServices(user: IPayload): Promise<IService[]>;
   fetchService(id: string): Promise<IService>;
-  updateService(updateData: UpdateServiceDto): Promise<IService>;
+  updateService(updateData: UpdateServiceDto,): Promise<IService>;
   updateSubservice(updateData: UpdateSubServiceWrapperDto): Promise<{ id: string, subService: ISubService }>;
 
 }

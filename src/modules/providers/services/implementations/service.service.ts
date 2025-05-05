@@ -32,39 +32,40 @@ import {
 
 @Injectable()
 export class ServiceFeatureService implements IServiceFeatureService {
+  private readonly logger = new Logger(ServiceFeatureService.name);
+
   constructor(
     @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
-    private providerRepository: IProviderRepository,
+    private _providerRepository: IProviderRepository,
     @Inject(SERVICE_OFFERED_REPOSITORY_NAME)
-    private serviceOfferedRepository: IServiceOfferedRepository,
+    private _serviceOfferedRepository: IServiceOfferedRepository,
     @Inject(UPLOAD_UTILITY_NAME)
-    private uploadsUtility: IUploadsUtility,
+    private _uploadsUtility: IUploadsUtility,
   ) { }
 
-  private readonly logger = new Logger(ServiceFeatureService.name);
 
   async createService(dto: CreateServiceDto, user: IPayload,): Promise<ServiceOffered> {
     try {
-      const provider = await this.providerRepository.findByEmail(user.email);
+      const provider = await this._providerRepository.findByEmail(user.email);
 
       if (!provider) {
         throw new UnauthorizedException('The user is not found');
       }
 
-      const serviceImageUrl = await this.uploadsUtility.uploadImage(dto.imageFile);
+      const serviceImageUrl = await this._uploadsUtility.uploadImage(dto.imageFile);
 
       const subServicesWithImages = dto.subServices
         ? await this.handleSubServices(dto.subServices)
         : [];
 
-      const newOfferedService = await this.serviceOfferedRepository.create({
+      const newOfferedService = await this._serviceOfferedRepository.create({
         title: dto.serviceTitle,
         desc: dto.serviceDesc,
         image: serviceImageUrl,
         subService: subServicesWithImages,
       });
 
-      const updatedProvider = await this.providerRepository.findOneAndUpdate(
+      const updatedProvider = await this._providerRepository.findOneAndUpdate(
         { _id: provider.id },
         {
           $push: { servicesOffered: new Types.ObjectId(newOfferedService.id) },
@@ -80,8 +81,6 @@ export class ServiceFeatureService implements IServiceFeatureService {
 
       return newOfferedService;
     } catch (err) {
-      console.error(err);
-
       if (err instanceof UnauthorizedException) {
         throw err;
       }
@@ -92,14 +91,14 @@ export class ServiceFeatureService implements IServiceFeatureService {
 
   async fetchServices(user: IPayload): Promise<IService[]> {
     try {
-      const provider = await this.providerRepository.findOne({ _id: new Types.ObjectId(user.sub) });
+      const provider = await this._providerRepository.findOne({ _id: new Types.ObjectId(user.sub) });
       if (!provider) {
         throw new Error('Could find the provider');
       }
 
       const offeredServices: (IService | undefined)[] = await Promise.all(
         provider.servicesOffered.map(async (id: string): Promise<IService | undefined> => {
-          const service = await this.serviceOfferedRepository.findOne({ _id: new Types.ObjectId(id) });
+          const service = await this._serviceOfferedRepository.findOne({ _id: new Types.ObjectId(id) });
           return service || undefined;
         })
       );
@@ -113,7 +112,6 @@ export class ServiceFeatureService implements IServiceFeatureService {
 
       return result;
     } catch (err) {
-      console.error(err);
       throw new InternalServerErrorException(
         'Something happened while fetching the offered service',
       );
@@ -125,7 +123,7 @@ export class ServiceFeatureService implements IServiceFeatureService {
       throw new BadRequestException('Id is required');
     }
 
-    const service = await this.serviceOfferedRepository.findOne({ _id: id });
+    const service = await this._serviceOfferedRepository.findOne({ _id: id });
 
     if (!service) {
       throw new NotFoundException('Service is not found');
@@ -143,7 +141,7 @@ export class ServiceFeatureService implements IServiceFeatureService {
     const { id, ...updateFields } = updateData;
 
     if (updateFields.image && typeof updateFields.image !== 'string') {
-      const uploadedImageUrl = await this.uploadsUtility.uploadImage(updateFields.image);
+      const uploadedImageUrl = await this._uploadsUtility.uploadImage(updateFields.image);
       updateFields.image = uploadedImageUrl;
     }
 
@@ -153,16 +151,16 @@ export class ServiceFeatureService implements IServiceFeatureService {
       const sub = subServices[i];
 
       if (sub.image && typeof sub.image !== 'string') {
-        const subImageUrl = await this.uploadsUtility.uploadImage(sub.image);
+        const subImageUrl = await this._uploadsUtility.uploadImage(sub.image);
         sub.image = subImageUrl;
       }
     }
 
     updateFields.subServices = subServices;
 
-    const updatedService = await this.serviceOfferedRepository.findOneAndUpdate(
+    const updatedService = await this._serviceOfferedRepository.findOneAndUpdate(
       { _id: id },
-      { $set: updateFields },
+      { $set: { ...updateFields, subService: updateFields.subServices } },
       { new: true }
     );
 
@@ -190,7 +188,7 @@ export class ServiceFeatureService implements IServiceFeatureService {
         }
       }
 
-      const updatedService = await this.serviceOfferedRepository.findOneAndUpdate(
+      const updatedService = await this._serviceOfferedRepository.findOneAndUpdate(
         {
           _id: serviceId,
           "subService._id": subServiceId
@@ -223,7 +221,7 @@ export class ServiceFeatureService implements IServiceFeatureService {
         desc: sub.desc,
         estimatedTime: sub.estimatedTime,
         image: sub.imageFile
-          ? await this.uploadsUtility.uploadImage(sub.imageFile)
+          ? await this._uploadsUtility.uploadImage(sub.imageFile)
           : '',
         price: sub.price,
         tag: sub.tag,

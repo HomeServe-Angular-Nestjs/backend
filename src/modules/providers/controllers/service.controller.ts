@@ -2,10 +2,10 @@ import {
   BadRequestException,
   Body,
   Controller,
-  Delete,
   Get,
   Inject,
   InternalServerErrorException,
+  Logger,
   NotFoundException,
   Patch,
   Post,
@@ -22,18 +22,16 @@ import { SERVICE_OFFERED_SERVICE_NAME } from '../../../core/constants/service.co
 import {
   CreateServiceDto,
   CreateSubServiceDto,
-  DeleteSubServiceDto,
   UpdateServiceDto,
-  UpdateSubServiceDto,
   UpdateSubServiceWrapperDto,
 } from '../dtos/service.dto';
 import { AuthInterceptor } from '../../auth/interceptors/auth.interceptor';
 import { IPayload } from '../../../core/misc/payload.interface';
-import { IService } from '../../../core/entities/interfaces/service.entity.interface';
-import { AnyCatcher } from 'rxjs/internal/AnyCatcher';
 
 @Controller()
 export class ServiceController {
+  private readonly logger = new Logger(ServiceController.name);
+
   constructor(
     @Inject(SERVICE_OFFERED_SERVICE_NAME)
     private serviceFeature: IServiceFeatureService,
@@ -102,7 +100,7 @@ export class ServiceController {
 
       await this.serviceFeature.createService(serviceData, user);
     } catch (err) {
-      console.error(err);
+      this.logger.error(`Error creating service: ${err.message}`, err.stack);
       throw new InternalServerErrorException(
         'Something happened while creating new service',
       );
@@ -140,7 +138,6 @@ export class ServiceController {
   async updateService(@Body() dto: UpdateServiceDto, @UploadedFiles() files: Express.Multer.File[]) {
     try {
       const prepareDto = this._attachFilesToServiceData(dto, files);
-
       return await this.serviceFeature.updateService(prepareDto);
     } catch (err) {
       if (err instanceof NotFoundException) {
