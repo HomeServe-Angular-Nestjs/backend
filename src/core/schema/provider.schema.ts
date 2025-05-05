@@ -133,7 +133,7 @@ export class ProviderDocument extends BaseUserDocument {
     time: { from: string; to: string };
   };
 
-  @Prop({ type: [{ from: String, to: String, }], default: [] })
+  @Prop({ type: [{ from: String, to: String, _id: false }], default: [] })
   defaultSlots: {
     from: string;
     to: string;

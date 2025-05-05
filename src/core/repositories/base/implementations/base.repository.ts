@@ -1,4 +1,4 @@
-import { Document, FilterQuery, Model, UpdateQuery } from 'mongoose';
+import { ClientSession, Document, FilterQuery, Model, QueryOptions, UpdateQuery } from 'mongoose';
 import { IBaseRepository } from '../interfaces/base-repo.interface';
 import { IEntity } from '../../../entities/base/interfaces/base-entity.entity.interface';
 
@@ -34,18 +34,18 @@ export abstract class BaseRepository<T extends IEntity, TDocument extends Docume
     return result ? this.toEntity(result) : null;
   }
 
-  async findOne(filter: FilterQuery<TDocument>): Promise<T | null> {
-    const result = await this.model.findOne(filter);
+  async findOne(filter: FilterQuery<TDocument>, session?: ClientSession): Promise<T | null> {
+    let query = this.model.findOne(filter);
+    if(session) query = query.session(session);
+
+    const result = await query.exec();
     return result ? this.toEntity(result) : null;
   }
 
   async findOneAndUpdate(
     query: FilterQuery<TDocument>,
     update: UpdateQuery<TDocument>,
-    options?: {
-      upsert?: boolean;
-      new?: boolean;
-    },
+    options?: QueryOptions & {session?: ClientSession},
   ): Promise<T | null> {
     const result = await this.model.findOneAndUpdate(query, update, {
       new: true,

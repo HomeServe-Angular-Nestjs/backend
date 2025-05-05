@@ -8,9 +8,7 @@ import { Model, Types } from 'mongoose';
 import { IServiceOfferedRepository } from '../interfaces/serviceOffered-repo.interface';
 
 @Injectable()
-export class ServiceOfferedRepository
-  extends BaseRepository<ServiceOffered, ServiceDocument>
-  implements IServiceOfferedRepository {
+export class ServiceOfferedRepository extends BaseRepository<ServiceOffered, ServiceDocument> implements IServiceOfferedRepository {
   constructor(
     @InjectModel(SERVICE_OFFERED_MODEL_NAME)
     private serviceModel: Model<ServiceDocument>,

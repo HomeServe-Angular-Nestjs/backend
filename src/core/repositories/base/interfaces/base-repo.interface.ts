@@ -1,7 +1,6 @@
-import { Document, FilterQuery, UpdateQuery } from 'mongoose';
+import { ClientSession, Document, FilterQuery, QueryOptions, UpdateQuery } from 'mongoose';
 import { IEntity } from '../../../entities/base/interfaces/base-entity.entity.interface';
-import mongoose from 'mongoose';
-import { UpdateResult } from 'mongoose';
+
 
 export interface IBaseRepository<
   T extends IEntity,
@@ -20,16 +19,13 @@ export interface IBaseRepository<
 
   findByEmail(email: string): Promise<T | null>;
 
-  findOne(filter: FilterQuery<TDocument>): Promise<T | null>;
+  findOne(filter: FilterQuery<TDocument>, session?: ClientSession): Promise<T | null>;
 
   findOneAndUpdate(
     query: FilterQuery<TDocument>,
     update: UpdateQuery<TDocument>,
-    options?: {
-      upsert?: boolean;
-      new?: boolean;
-      populate?: string | string[];
-    },
+    options?: QueryOptions & { session?: ClientSession },
+
   ): Promise<T | null>;
 
   deleteOne(query: FilterQuery<TDocument>): Promise<{ deletedCount?: number }>;
