@@ -10,6 +10,7 @@ import {
     Query,
     Body,
     Delete,
+    Logger,
 } from '@nestjs/common';
 import { AuthInterceptor } from '../../auth/interceptors/auth.interceptor';
 import { PROVIDER_SERVICE_NAME } from '../../../core/constants/service.constant';
@@ -23,6 +24,8 @@ import { UpdateDefaultSlotsDto } from '../dtos/provider.dto';
 @Controller('provider')
 @UseInterceptors(AuthInterceptor)
 export class ProviderController {
+    private readonly logger = new Logger(ProviderController.name);
+
     constructor(
         @Inject(PROVIDER_SERVICE_NAME)
         private providerServices: IProviderServices,
@@ -33,7 +36,7 @@ export class ProviderController {
         try {
             return await this.providerServices.getProviders();
         } catch (err) {
-            console.error(`Error fetching provider: ${err}`);
+            this.logger.error(`Error fetching provider: ${err}`);
             throw new InternalServerErrorException(
                 'Something happened while fetching providers',
             );
@@ -50,7 +53,7 @@ export class ProviderController {
             }
             return await this.providerServices.fetchOneProvider(arg);
         } catch (err) {
-            console.error(`Error fetching provider: ${err}`);
+            this.logger.error(`Error fetching provider: ${err}`);
             throw new InternalServerErrorException(
                 'Something happened while fetching providers',
             );
@@ -67,10 +70,9 @@ export class ProviderController {
         try {
             const user = req.user as IPayload;
             const updateData = JSON.parse(dto);
-
             return await this.providerServices.updateProvider(user.sub, updateData, file);
         } catch (err) {
-            console.error(`Error updating provider: ${err.message}`, err.stack);
+            this.logger.error(`Error updating provider: ${err.message}`, err.stack);
             throw new InternalServerErrorException('Failed to update provider');
         }
     }
@@ -81,7 +83,7 @@ export class ProviderController {
             const user = req.user as IPayload;
             return await this.providerServices.updateDefaultSlot(dto, user.sub)
         } catch (err) {
-            console.error(`Error updating provider: ${err.message}`, err.stack);
+            this.logger.error(`Error updating provider: ${err.message}`, err.stack);
             throw new InternalServerErrorException('Failed to update provider');
         }
     }
@@ -92,7 +94,7 @@ export class ProviderController {
             const user = req.user as IPayload;
             this.providerServices.deleteDefaultSlot(user.sub);
         } catch (err) {
-            console.error(`Error updating provider: ${err.message}`, err.stack);
+            this.logger.error(`Error updating provider: ${err.message}`, err.stack);
             throw new InternalServerErrorException('Failed to update provider');
         }
     }

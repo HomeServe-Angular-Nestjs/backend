@@ -41,12 +41,10 @@ export class ProviderDocument extends BaseUserDocument {
     },
     coordinates: {
       type: [Number],
-      required: true,
       index: '2dsphere',
     },
     address: {
       type: String,
-      required: true,
     },
   })
   location: {
@@ -138,6 +136,16 @@ export class ProviderDocument extends BaseUserDocument {
     from: string;
     to: string;
   }[];
+
+  @Prop({ default: null })
+  bookingLimit: number;
+
+  @Prop({ default: null })
+  bufferTime: number;
+
+  @Prop({ default: false })
+  enableSR: boolean
+
 }
 
 export const ProviderSchema = SchemaFactory.createForClass(ProviderDocument);

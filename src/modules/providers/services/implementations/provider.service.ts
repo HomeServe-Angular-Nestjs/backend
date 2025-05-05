@@ -1,9 +1,8 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { IProviderServices } from '../interfaces/provider-service.interface';
 import { PROVIDER_REPOSITORY_INTERFACE_NAME } from '../../../../core/constants/repository.constant';
 import { IProviderRepository } from '../../../../core/repositories/interfaces/provider-repo.interface';
 import { Provider } from '../../../../core/entities/implementation/provider.entity';
-import { IPayload } from '../../../../core/misc/payload.interface';
 import { IProvider } from '../../../../core/entities/interfaces/user.entity.interface';
 import { CloudinaryService } from '../../../../configs/cloudinary/cloudinary.service';
 import { UpdateDefaultSlotsDto } from '../../dtos/provider.dto';
@@ -11,6 +10,8 @@ import { Types } from 'mongoose';
 
 @Injectable()
 export class ProviderServices implements IProviderServices {
+  private readonly logger = new Logger(ProviderServices.name);
+
   constructor(
     @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
     private providerRepository: IProviderRepository,
@@ -31,7 +32,6 @@ export class ProviderServices implements IProviderServices {
   }
 
   async updateProvider(id: string, updateData: Partial<IProvider>, file?: Express.Multer.File,): Promise<Provider> {
-
     if (file) {
       const response = await this.cloudinaryService.uploadImage(file);
 

@@ -1,6 +1,5 @@
 import { Address, Availability, IProvider } from '../interfaces/user.entity.interface';
 import { BaseUserEntity } from '../base/implementation/base-user.entity';
-import { ISubService } from '../interfaces/service.entity.interface';
 import { SlotType } from '../interfaces/schedule.entity.interface';
 
 export class Provider extends BaseUserEntity implements IProvider {
@@ -13,7 +12,7 @@ export class Provider extends BaseUserEntity implements IProvider {
   }[];
   additionalSkills: string[];
   languages: string[];
-  location: Address;
+  location?: Address;
   workImages: string[];
   awards: string[];
   isCertified: boolean;
@@ -38,6 +37,9 @@ export class Provider extends BaseUserEntity implements IProvider {
   availability: Availability;
   serviceRadius: number;
   defaultSlots: SlotType[];
+  bookingLimit: number | null;
+  bufferTime: number | null;
+  enableSR: boolean;
 
   constructor(partial: Partial<Provider>) {
     super(partial);

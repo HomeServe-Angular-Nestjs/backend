@@ -41,7 +41,7 @@ export interface IProvider extends IBaseUserEntity {
   | null;
   additionalSkills: string[] | null;
   languages: string[] | null;
-  location: Address;
+  location?: Address;
   workImages: string[] | null;
   awards: string[] | null;
   isCertified: boolean;
@@ -62,12 +62,15 @@ export interface IProvider extends IBaseUserEntity {
   };
   servicesOffered: string[];
   schedules: string[] | null;
+  defaultSlots: SlotType[];
   subscriptionID: string | null;
+  availability: Availability;
   profession: string;
   experience: number;
   serviceRadius: number;
-  availability: Availability;
-  defaultSlots: SlotType[]
+  bookingLimit: number | null;
+  bufferTime: number | null;
+  enableSR: boolean;
 }
 
 export type IUser = ICustomer | IProvider | IAdmin;

@@ -56,6 +56,9 @@ export class ProviderRepository
       defaultSlots: doc.defaultSlots,
       schedules: doc.schedules.map(id => id.toString()),
       location: doc.location,
+      bookingLimit: doc.bookingLimit,
+      bufferTime: doc.bufferTime,
+      enableSR: doc.enableSR
     });
   }
 }
