@@ -1,3 +1,4 @@
+import { BookingService } from './modules/bookings/services/implementations/booking.service';
 import { UserModule } from './modules/users/user.module';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
@@ -8,6 +9,7 @@ import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
 import { SeedsModule } from './seed/seed.module';
 import { ProviderModule } from './modules/providers/provider.module';
+import { BookingsModule } from './modules/bookings/bookings.module';
 
 @Module({
   imports: [
@@ -25,8 +27,9 @@ import { ProviderModule } from './modules/providers/provider.module';
     SeedsModule,
     UserModule,
     ProviderModule,
+    BookingsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }
