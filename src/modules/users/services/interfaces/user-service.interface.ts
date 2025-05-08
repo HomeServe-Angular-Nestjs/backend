@@ -2,6 +2,6 @@ import { Provider } from '../../../../core/entities/implementation/provider.enti
 import { Customer } from '../../../../core/entities/implementation/customer.entity';
 
 export interface IUserService {
-  getCustomer(): Promise<Customer[]>;
+  getCustomers(): Promise<Customer[]>;
   getProviders(): Promise<Provider[]>;
 }

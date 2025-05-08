@@ -8,6 +8,7 @@ export interface IBaseUserEntity extends IEntity {
   isBlocked: boolean;
   lastLoginAt?: Date;
   isDeleted: boolean;
+  isActive: boolean;
   avatar: string;
   fullname: string;
   phone: number;

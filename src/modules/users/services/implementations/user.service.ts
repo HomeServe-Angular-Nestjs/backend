@@ -16,15 +16,13 @@ export class UserService implements IUserService {
     private customerRepository: ICustomerRepository,
     @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
     private providerRepository: IProviderRepository,
-  ) {}
+  ) { }
 
-  async getCustomer(): Promise<Customer[]> {
-    return await this.customerRepository.find();
+  async getCustomers(): Promise<Customer[]> {
+    return await this.customerRepository.find({ isDeleted: false });
   }
 
   async getProviders(): Promise<Provider[]> {
-    const result = await this.providerRepository.find();
-    console.log(result);
-    return result;
+    return await this.providerRepository.find({ isDeleted: false });
   }
 }

@@ -16,15 +16,12 @@ export class UserController {
   constructor(
     @Inject(USER_SERVICE_NAME)
     private readonly userService: IUserService,
-  ) {}
+  ) { }
 
   @UseInterceptors(AuthInterceptor)
   @Get(['admin/customers'])
   async getCustomer(@Req() req: Request) {
-    // if (!req.user) {
-
-    // }
-    return await this.userService.getCustomer();
+    return await this.userService.getCustomers();
   }
 
   @Get(['admin/providers'])

@@ -10,6 +10,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { SeedsModule } from './seed/seed.module';
 import { ProviderModule } from './modules/providers/provider.module';
 import { BookingsModule } from './modules/bookings/bookings.module';
+import { CustomerModule } from './modules/customer/customer.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { BookingsModule } from './modules/bookings/bookings.module';
     UserModule,
     ProviderModule,
     BookingsModule,
+    CustomerModule
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -9,3 +9,4 @@ export const SERVICE_OFFERED_SERVICE_NAME = 'IServiceService';
 export const PROVIDER_SERVICE_NAME = 'IProviderServices';
 export const SCHEDULE_SERVICE_NAME = 'IScheduleService';
 export const BOOKING_SERVICE_NAME = 'IBookingService';
+export const CUSTOMER_SERVICE_NAME = 'ICustomerService';

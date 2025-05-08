@@ -5,8 +5,9 @@ import { UpdateDefaultSlotsDto } from '../../dtos/provider.dto';
 
 export interface IProviderServices {
   getProviders(): Promise<Provider[]>;
-  updateProvider(id: string, updateData: Partial<IProvider>, file?: Express.Multer.File,): Promise<Provider>;
+  bulkUpdateProvider(id: string, updateData: Partial<IProvider>, file?: Express.Multer.File,): Promise<Provider>;
+  partialUpdate(id: string, updateData: Partial<IProvider>): Promise<IProvider>;
   fetchOneProvider(id: string): Promise<IProvider>;
   updateDefaultSlot(slot: UpdateDefaultSlotsDto, id: string): Promise<IProvider>;
-  deleteDefaultSlot(id: string): void;
+  deleteDefaultSlot(id: string): Promise<void>;
 }

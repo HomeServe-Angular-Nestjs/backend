@@ -14,16 +14,28 @@ export class ProviderServices implements IProviderServices {
 
   constructor(
     @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
-    private providerRepository: IProviderRepository,
-    private cloudinaryService: CloudinaryService,
+    private _providerRepository: IProviderRepository,
+    private _cloudinaryService: CloudinaryService,
   ) { }
 
+  /**
+   * Retrieves all providers from the database.
+   *
+   * @returns {Promise<Provider[]>} List of all provider documents.
+   */
   async getProviders(): Promise<Provider[]> {
-    return await this.providerRepository.find();
+    return await this._providerRepository.find();
   }
 
+  /**
+   * Fetches a single provider by ID.
+   *
+   * @param {string} id - The unique identifier of the provider.
+   * @returns {Promise<IProvider>} The provider document if found.
+   * @throws {NotFoundException} If the provider is not found.
+   */
   async fetchOneProvider(id: string): Promise<IProvider> {
-    const result = await this.providerRepository.findOne({ _id: id });
+    const result = await this._providerRepository.findOne({ _id: id });
 
     if (!result) {
       throw new NotFoundException(`No provider found for user ID: ${id}`);
@@ -31,9 +43,18 @@ export class ProviderServices implements IProviderServices {
     return result;
   }
 
-  async updateProvider(id: string, updateData: Partial<IProvider>, file?: Express.Multer.File,): Promise<Provider> {
+  /**
+   * Performs a full update on the provider's data including avatar upload if a file is provided.
+   *
+   * @param {string} id - The unique identifier of the provider.
+   * @param {Partial<IProvider>} updateData - The data to update the provider with.
+   * @param {Express.Multer.File} [file] - Optional avatar image file.
+   * @returns {Promise<Provider>} The updated provider document.
+   * @throws {NotFoundException} If the provider or avatar upload fails.
+   */
+  async bulkUpdateProvider(id: string, updateData: Partial<IProvider>, file?: Express.Multer.File,): Promise<Provider> {
     if (file) {
-      const response = await this.cloudinaryService.uploadImage(file);
+      const response = await this._cloudinaryService.uploadImage(file);
 
       if (!response) {
         throw new NotFoundException(
@@ -49,7 +70,7 @@ export class ProviderServices implements IProviderServices {
       ),
     );
 
-    const updatedProvider = await this.providerRepository.findOneAndUpdate(
+    const updatedProvider = await this._providerRepository.findOneAndUpdate(
       { _id: new Types.ObjectId(id) },
       {
         $set: sanitizedUpdate,
@@ -64,12 +85,41 @@ export class ProviderServices implements IProviderServices {
     return updatedProvider;
   }
 
+  /**
+   * Partially updates provider information.
+   *
+   * @param {string} id - The provider's unique ID.
+   * @param {Partial<IProvider>} updateData - The fields to update.
+   * @returns {Promise<IProvider>} The updated provider document.
+   * @throws {NotFoundException} If the provider is not found.
+   */
+  async partialUpdate(id: string, updateData: Partial<IProvider>): Promise<IProvider> {
+    const updatedProvider = await this._providerRepository.findOneAndUpdate(
+      { _id: id },
+      { $set: updateData }
+    );
+
+    if (!updatedProvider) {
+      throw new NotFoundException(`Provider with id ${id} not found`);
+    }
+
+    return updatedProvider;
+  }
+
+  /**
+   * Appends a default slot to the provider's schedule.
+   *
+   * @param {UpdateDefaultSlotsDto} slot - The slot data to be added.
+   * @param {string} id - The provider's unique ID.
+   * @returns {Promise<IProvider>} The updated provider document.
+   * @throws {BadRequestException | NotFoundException} If update fails.
+   */
   async updateDefaultSlot(slot: UpdateDefaultSlotsDto, id: string): Promise<IProvider> {
     if (!id) {
       throw new BadRequestException(`Provider with ID ${id} not found`);
     }
 
-    const updatedProvider = await this.providerRepository.findOneAndUpdate(
+    const updatedProvider = await this._providerRepository.findOneAndUpdate(
       { _id: new Types.ObjectId(id) },
       { $push: { defaultSlots: slot } },
       { new: true }
@@ -82,12 +132,19 @@ export class ProviderServices implements IProviderServices {
     return updatedProvider;
   }
 
-  async deleteDefaultSlot(id: string) {
+  /**
+  * Deletes all default slots associated with a provider.
+  *
+  * @param {string} id - The provider's unique ID.
+  * @returns {Promise<void>} Resolves if deletion is successful.
+  * @throws {NotFoundException | Error} If provider is not found or update fails.
+  */
+  async deleteDefaultSlot(id: string): Promise<void> {
     if (!id) {
       throw new NotFoundException(`Provider with ID ${id} not found`);
     }
 
-    const hasDeleted = await this.providerRepository.findOneAndUpdate(
+    const hasDeleted = await this._providerRepository.findOneAndUpdate(
       { _id: new Types.ObjectId(id) },
       {
         $set: { defaultSlots: [] }
