@@ -22,6 +22,7 @@ import { Request } from 'express';
 import { IPayload } from '../../../core/misc/payload.interface';
 import { UpdateDefaultSlotsDto } from '../dtos/provider.dto';
 import { IProvider } from '../../../core/entities/interfaces/user.entity.interface';
+import { FilterDto } from '../../customer/dtos/customer.dto';
 
 @Controller('provider')
 @UseInterceptors(AuthInterceptor)
@@ -40,9 +41,9 @@ export class ProviderController {
      * @throws {InternalServerErrorException} If any error occurs while fetching.
      */
     @Get('fetch_providers')
-    async fetchProviders(): Promise<Provider[]> {
+    async fetchProviders(@Query() filter: FilterDto): Promise<Provider[]> {
         try {
-            return await this.providerServices.getProviders();
+            return await this.providerServices.getProviders(filter);
         } catch (err) {
             this.logger.error(`Error fetching provider: ${err}`);
             throw new InternalServerErrorException(

@@ -1,10 +1,7 @@
 import { IBaseUserEntity } from '../interfaces/base-user.entity.interface';
 import { BaseEntity } from './base.entity';
 
-export abstract class BaseUserEntity
-  extends BaseEntity
-  implements IBaseUserEntity
-{
+export abstract class BaseUserEntity extends BaseEntity implements IBaseUserEntity {
   email: string;
   password: string;
   username: string;

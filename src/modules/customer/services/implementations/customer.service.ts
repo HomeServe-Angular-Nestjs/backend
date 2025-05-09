@@ -3,6 +3,7 @@ import { CUSTOMER_REPOSITORY_INTERFACE_NAME } from "../../../../core/constants/r
 import { ICustomerRepository } from "../../../../core/repositories/interfaces/customer-repo.interface";
 import { ICustomerService } from "../interfaces/customer-service.interface";
 import { ICustomer } from "../../../../core/entities/interfaces/user.entity.interface";
+import { FilterDto } from "../../dtos/customer.dto";
 
 @Injectable()
 export class CustomerService implements ICustomerService {
@@ -10,6 +11,17 @@ export class CustomerService implements ICustomerService {
         @Inject(CUSTOMER_REPOSITORY_INTERFACE_NAME)
         private readonly _customerRepository: ICustomerRepository
     ) { }
+
+
+    async getCustomers(filter: FilterDto): Promise<ICustomer[]> {
+        const query: { [key: string]: any | string } = { isDeleted: false };
+
+        if (filter.search) {
+            query.email = new RegExp(filter.search, 'i')
+        }
+
+        return await this._customerRepository.find(query);
+    }
 
     /**
    * Partially updates customer information.

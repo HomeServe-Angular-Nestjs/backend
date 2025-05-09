@@ -7,6 +7,7 @@ import { IProvider } from '../../../../core/entities/interfaces/user.entity.inte
 import { CloudinaryService } from '../../../../configs/cloudinary/cloudinary.service';
 import { UpdateDefaultSlotsDto } from '../../dtos/provider.dto';
 import { Types } from 'mongoose';
+import { FilterDto } from '../../../customer/dtos/customer.dto';
 
 @Injectable()
 export class ProviderServices implements IProviderServices {
@@ -23,8 +24,12 @@ export class ProviderServices implements IProviderServices {
    *
    * @returns {Promise<Provider[]>} List of all provider documents.
    */
-  async getProviders(): Promise<Provider[]> {
-    return await this._providerRepository.find();
+  async getProviders(filter?: FilterDto): Promise<Provider[]> {
+    const query: { [key: string]: any } = { isDeleted: false };
+    if (filter?.search) {
+      query.email = new RegExp(filter.search, 'i');
+    }
+    return await this._providerRepository.find(query);
   }
 
   /**
