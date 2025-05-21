@@ -22,13 +22,21 @@ export class ProviderServices implements IProviderServices {
   /**
    * Retrieves all providers from the database.
    *
-   * @returns {Promise<Provider[]>} List of all provider documents.
+   * @returns {Promise<IProvider[]>} List of all provider documents.
    */
-  async getProviders(filter?: FilterDto): Promise<Provider[]> {
+  async getProviders(filter?: FilterDto): Promise<IProvider[]> {
     const query: { [key: string]: any } = { isDeleted: false };
+
     if (filter?.search) {
       query.email = new RegExp(filter.search, 'i');
     }
+
+    if (filter?.status && filter.status !== 'all') {
+      query.isActive = filter.status;
+    }
+
+    this.logger.debug(filter)
+
     return await this._providerRepository.find(query);
   }
 
@@ -57,7 +65,7 @@ export class ProviderServices implements IProviderServices {
    * @returns {Promise<Provider>} The updated provider document.
    * @throws {NotFoundException} If the provider or avatar upload fails.
    */
-  async bulkUpdateProvider(id: string, updateData: Partial<IProvider>, file?: Express.Multer.File,): Promise<Provider> {
+  async bulkUpdateProvider(id: string, updateData: Partial<IProvider>, file?: Express.Multer.File,): Promise<IProvider> {
     if (file) {
       const response = await this._cloudinaryService.uploadImage(file);
 

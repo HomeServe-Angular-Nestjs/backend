@@ -25,7 +25,6 @@ import { IProvider } from '../../../core/entities/interfaces/user.entity.interfa
 import { FilterDto } from '../../customer/dtos/customer.dto';
 
 @Controller('provider')
-@UseInterceptors(AuthInterceptor)
 export class ProviderController {
     private readonly logger = new Logger(ProviderController.name);
 
@@ -41,6 +40,7 @@ export class ProviderController {
      * @throws {InternalServerErrorException} If any error occurs while fetching.
      */
     @Get('fetch_providers')
+    @UseInterceptors(AuthInterceptor)
     async fetchProviders(@Query() filter: FilterDto): Promise<Provider[]> {
         try {
             return await this.providerServices.getProviders(filter);
@@ -61,6 +61,7 @@ export class ProviderController {
      * @throws {InternalServerErrorException} If any error occurs while fetching.
      */
     @Get('fetch_one_provider')
+    @UseInterceptors(AuthInterceptor)
     async fetchOneProvider(@Req() req: Request, @Query() query: { id: string | null }): Promise<IProvider> {
         try {
             const user = req.user as IPayload;
@@ -113,6 +114,7 @@ export class ProviderController {
      * @throws {InternalServerErrorException} If the update operation fails.
      */
     @Patch('partial_update')
+    @UseInterceptors(AuthInterceptor)
     async partialUpdate(@Body() dto: Partial<IProvider>): Promise<IProvider> {
         try {
             const { id, ...updateData } = dto;
@@ -138,6 +140,7 @@ export class ProviderController {
      * @throws {InternalServerErrorException} If update fails.
      */
     @Patch('default_slots')
+    @UseInterceptors(AuthInterceptor)
     async updateDefaultSlot(@Req() req: Request, @Body() dto: UpdateDefaultSlotsDto): Promise<IProvider> {
         try {
             const user = req.user as IPayload;
@@ -156,6 +159,7 @@ export class ProviderController {
     * @throws {InternalServerErrorException} If deletion fails.
     */
     @Delete('default_slots')
+    @UseInterceptors(AuthInterceptor)
     async deleteDefaultSlot(@Req() req: Request): Promise<void> {
         try {
             const user = req.user as IPayload;

@@ -3,29 +3,30 @@ import {
   Get,
   Inject,
   Req,
-  Res,
   UseInterceptors,
 } from '@nestjs/common';
-import { USER_SERVICE_NAME } from '../../../core/constants/service.constant';
-import { IUserService } from '../services/interfaces/user-service.interface';
-import { Response } from 'express';
+import { CUSTOMER_SERVICE_NAME, PROVIDER_SERVICE_NAME } from '../../../core/constants/service.constant';
 import { AuthInterceptor } from '../../auth/interceptors/auth.interceptor';
+import { ICustomerService } from '../../customer/services/interfaces/customer-service.interface';
+import { IProviderServices } from '../../providers/services/interfaces/provider-service.interface';
 
 @Controller()
-export class UserController {
+@UseInterceptors(AuthInterceptor)
+export class AdminController {
   constructor(
-    @Inject(USER_SERVICE_NAME)
-    private readonly userService: IUserService,
+    @Inject(CUSTOMER_SERVICE_NAME)
+    private readonly customerService: ICustomerService,
+    @Inject(PROVIDER_SERVICE_NAME)
+    private readonly providerService: IProviderServices
   ) { }
 
-  @UseInterceptors(AuthInterceptor)
   @Get(['admin/customers'])
-  async getCustomer(@Req() req: Request) {
-    return await this.userService.getCustomers();
+  async getCustomer() {
+    return await this.customerService.getCustomers();
   }
 
   @Get(['admin/providers'])
   async getProvider() {
-    return await this.userService.getProviders();
+    return await this.providerService.getProviders();
   }
 }

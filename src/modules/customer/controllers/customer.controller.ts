@@ -6,7 +6,6 @@ import { ICustomer } from "../../../core/entities/interfaces/user.entity.interfa
 import { FilterDto } from "../dtos/customer.dto";
 
 @Controller('')
-@UseInterceptors(AuthInterceptor)
 export class CustomerController {
     private readonly logger = new Logger(CustomerController.name);
 
@@ -16,6 +15,7 @@ export class CustomerController {
     ) { }
 
     @Get('customers')
+    @UseInterceptors(AuthInterceptor)
     async getCustomers(@Query() filter: FilterDto) {
         try {
             return await this._customerService.getCustomers(filter);
@@ -26,6 +26,7 @@ export class CustomerController {
     }
 
     @Patch('partial_update')
+    @UseInterceptors(AuthInterceptor)
     async partialUpdate(@Body() dto: Partial<ICustomer>): Promise<ICustomer> {
         try {
             const { id, ...updateData } = dto;

@@ -1,5 +1,4 @@
-import { BookingService } from './modules/bookings/services/implementations/booking.service';
-import { UserModule } from './modules/users/user.module';
+import { AdminModule } from './modules/users/admin.module';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { CacheModule } from '@nestjs/cache-manager';
@@ -26,7 +25,7 @@ import { CustomerModule } from './modules/customer/customer.module';
     //Other Modules
     AuthModule,
     SeedsModule,
-    UserModule,
+    AdminModule,
     ProviderModule,
     BookingsModule,
     CustomerModule

@@ -37,13 +37,12 @@ export interface IProvider extends IBaseUserEntity {
     specialization: string;
     label: string;
     tag: string;
-  }[]
-  | null;
-  additionalSkills: string[] | null;
-  languages: string[] | null;
+  }[];
+  additionalSkills: string[];
+  languages: string[];
   location?: Address;
-  workImages: string[] | null;
-  awards: string[] | null;
+  workImages: string[];
+  awards: string[];
   isCertified: boolean;
   verification: {
     pcc: {
@@ -55,13 +54,12 @@ export interface IProvider extends IBaseUserEntity {
       type: string;
       fileUrl: string;
       uploadedAt: Date;
-    }[]
-    | null;
+    }[];
     verificationStatus: boolean;
     verifiedAt: Date;
   };
   servicesOffered: string[];
-  schedules: string[] | null;
+  schedules: string[];
   defaultSlots: SlotType[];
   subscriptionID: string | null;
   availability: Availability;
