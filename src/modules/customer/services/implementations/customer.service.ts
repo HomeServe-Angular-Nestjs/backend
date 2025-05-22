@@ -33,6 +33,10 @@ export class CustomerService implements ICustomerService {
         return await this._customerRepository.find(query);
     }
 
+    async fetchOneCustomer(id: string): Promise<ICustomer | null> {
+        return await this._customerRepository.findOne({ _id: id });
+    }
+
     /**
    * Partially updates customer information.
    *

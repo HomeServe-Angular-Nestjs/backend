@@ -158,7 +158,7 @@ export class LoginController {
       if (!user || !user.type) {
         throw new NotFoundException('User is missing in the request');
       }
-      
+
       const accessToken = this._loginService.generateAccessToken(user);
       if (!accessToken) {
         throw new NotFoundException('Access token is missing');

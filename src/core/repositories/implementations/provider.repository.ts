@@ -10,9 +10,7 @@ import {
 import { Model, Types } from 'mongoose';
 
 @Injectable()
-export class ProviderRepository
-  extends BaseRepository<Provider, ProviderDocument>
-  implements IProviderRepository {
+export class ProviderRepository extends BaseRepository<Provider, ProviderDocument> implements IProviderRepository {
   constructor(
     @InjectModel(PROVIDER_MODEL_NAME)
     private providerModel: Model<ProviderDocument>,
