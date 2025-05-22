@@ -13,10 +13,10 @@ import {
   OTP_MODEL_NAME,
   PROVIDER_MODEL_NAME,
 } from '../../../core/constants/model.constant';
+import { Model } from 'mongoose';
 import { OtpRepository } from '../../../core/repositories/implementations/otp.repository';
 import { ProviderRepository } from '../../../core/repositories/implementations/provider.repository';
 import { AdminRepository } from '../../../core/repositories/implementations/admin.repository';
-import { Model } from 'mongoose';
 import { OtpDocument } from '../../../core/schema/otp.schema';
 import { ProviderDocument } from '../../../core/schema/provider.schema';
 import { AdminDocument } from '../../../core/schema/admin.schema';

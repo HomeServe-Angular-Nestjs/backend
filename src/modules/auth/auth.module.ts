@@ -7,7 +7,7 @@ import { repositoryProvider } from './providers/repositories.provider';
 import { serviceProvider } from './providers/service.provider';
 import { utilityProvider } from './providers/utility.provider';
 
-import { RedisModule } from '../../redis/redis.module';
+import { RedisModule } from '../../configs/redis/redis.module';
 
 import { GoogleStrategy } from './strategies/google.strategy';
 import { PassportModule } from '@nestjs/passport';
