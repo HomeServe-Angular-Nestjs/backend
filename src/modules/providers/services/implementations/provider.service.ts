@@ -25,7 +25,7 @@ export class ProviderServices implements IProviderServices {
    * @returns {Promise<IProvider[]>} List of all provider documents.
    */
   async getProviders(filter?: FilterDto): Promise<IProvider[]> {
-    const query: { [key: string]: any } = { isDeleted: false };
+    const query: { [key: string]: any } = { isDeleted: false, isCertified: true };
 
     if (filter?.search) {
       query.email = new RegExp(filter.search, 'i');
@@ -35,6 +35,9 @@ export class ProviderServices implements IProviderServices {
       query.isActive = filter.status;
     }
 
+    if (filter?.isCertified) {
+      query.isCertified = filter.isCertified
+    }
     this.logger.debug(filter)
 
     return await this._providerRepository.find(query);

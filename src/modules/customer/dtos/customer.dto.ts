@@ -10,4 +10,8 @@ export class FilterDto {
     @IsOptional()
     @IsBoolean()
     status: FilterStatusType;
+
+    @IsOptional()
+    @IsBoolean()
+    isCertified: boolean;
 }
