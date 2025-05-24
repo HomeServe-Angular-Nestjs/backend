@@ -5,4 +5,6 @@ import { CustomerDocument } from '../../schema/customer.schema';
 export interface ICustomerRepository
   extends IBaseRepository<Customer, CustomerDocument> {
   findByGoogleId(id: string): Promise<Customer | null>;
+  findByEmail(email: string): Promise<Customer | null>;
+
 }

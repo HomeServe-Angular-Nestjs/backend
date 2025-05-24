@@ -3,7 +3,7 @@ import { CUSTOMER_REPOSITORY_INTERFACE_NAME } from "../../../../core/constants/r
 import { ICustomerRepository } from "../../../../core/repositories/interfaces/customer-repo.interface";
 import { ICustomerService } from "../interfaces/customer-service.interface";
 import { ICustomer } from "../../../../core/entities/interfaces/user.entity.interface";
-import { FilterDto } from "../../dtos/customer.dto";
+import { FilterDto, UpdateSavedProvidersDto } from "../../dtos/customer.dto";
 
 @Injectable()
 export class CustomerService implements ICustomerService {
@@ -49,10 +49,34 @@ export class CustomerService implements ICustomerService {
         const updatedCustomer = await this._customerRepository.findOneAndUpdate(
             { _id: id },
             { $set: data },
+            { new: true }
         );
 
         if (!updatedCustomer) {
             throw new NotFoundException(`Customer with Id ${id} is not found`)
+        }
+
+        return updatedCustomer;
+    }
+
+    async updateSavedProviders(id: string, dto: UpdateSavedProvidersDto): Promise<ICustomer> {
+        const customers = await this._customerRepository.findById(id);
+        const alreadySaved = customers?.savedProviders?.includes(dto.providerId);
+
+        const query = alreadySaved
+            ? { $pull: { savedProviders: dto.providerId } }
+            : { $addToSet: { savedProviders: dto.providerId } };
+
+        const updatedCustomer = await this._customerRepository.findOneAndUpdate(
+            { _id: id },
+            query,
+            { new: true }
+        );
+
+        this.logger.debug(updatedCustomer);
+
+        if (!updatedCustomer) {
+            throw new NotFoundException(`Customer with ID ${id} not found`);
         }
 
         return updatedCustomer;

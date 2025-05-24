@@ -1,11 +1,9 @@
-import { ClientSession, Document, FilterQuery, QueryOptions, UpdateQuery } from 'mongoose';
+import { ClientSession, Document, FilterQuery, QueryOptions, Types, UpdateQuery } from 'mongoose';
 import { IEntity } from '../../../entities/base/interfaces/base-entity.entity.interface';
 
 
-export interface IBaseRepository<
-  T extends IEntity,
-  TDocument extends Document,
-> {
+export interface IBaseRepository<T extends IEntity, TDocument extends Document,> {
+
   create(entity: Omit<T, 'id'>): Promise<T>;
 
   find(
@@ -17,7 +15,7 @@ export interface IBaseRepository<
     },
   ): Promise<T[]>;
 
-  findByEmail(email: string): Promise<T | null>;
+  findById(id: string | Types.ObjectId): Promise<T | null>;
 
   findOne(filter: FilterQuery<TDocument>, session?: ClientSession): Promise<T | null>;
 

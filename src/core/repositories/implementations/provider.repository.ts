@@ -8,6 +8,7 @@ import {
   PROVIDER_MODEL_NAME,
 } from '../../constants/model.constant';
 import { Model, Types } from 'mongoose';
+import { IProvider } from '../../entities/interfaces/user.entity.interface';
 
 @Injectable()
 export class ProviderRepository extends BaseRepository<Provider, ProviderDocument> implements IProviderRepository {
@@ -21,6 +22,11 @@ export class ProviderRepository extends BaseRepository<Provider, ProviderDocumen
   async findByGoogleId(id: string): Promise<Provider | null> {
     const provider = await this.providerModel.findOne({ googleId: id });
     return provider ? this.toEntity(provider) : null;
+  }
+
+  async findByEmail(email: string): Promise<IProvider | null> {
+    const result = await this.providerModel.findOne({ email }).exec();
+    return result ? this.toEntity(result) : null;
   }
 
   protected toEntity(doc: ProviderDocument): Provider {

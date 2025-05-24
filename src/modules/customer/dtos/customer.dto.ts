@@ -1,4 +1,4 @@
-import { IsBoolean, IsOptional, IsString } from "class-validator";
+import { IsBoolean, IsNotEmpty, IsOptional, IsString } from "class-validator";
 
 export type FilterStatusType = true | false | 'all';
 
@@ -14,4 +14,10 @@ export class FilterDto {
     @IsOptional()
     @IsBoolean()
     isCertified: boolean;
+}
+
+export class UpdateSavedProvidersDto {
+    @IsNotEmpty()
+    @IsString()
+    providerId: string;
 }

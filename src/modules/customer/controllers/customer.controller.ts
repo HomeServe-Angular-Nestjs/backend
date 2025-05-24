@@ -3,7 +3,7 @@ import { AuthInterceptor } from "../../auth/interceptors/auth.interceptor";
 import { CUSTOMER_SERVICE_NAME } from "../../../core/constants/service.constant";
 import { ICustomerService } from "../services/interfaces/customer-service.interface";
 import { ICustomer } from "../../../core/entities/interfaces/user.entity.interface";
-import { FilterDto } from "../dtos/customer.dto";
+import { FilterDto, UpdateSavedProvidersDto } from "../dtos/customer.dto";
 import { IPayload } from "../../../core/misc/payload.interface";
 import { Request } from "express";
 
@@ -45,16 +45,33 @@ export class CustomerController {
 
     @Patch('partial_update')
     @UseInterceptors(AuthInterceptor)
-    async partialUpdate(@Body() dto: Partial<ICustomer>): Promise<ICustomer> {
+    async partialUpdate(@Req() req: Request, @Body() dto: Partial<ICustomer>): Promise<ICustomer> {
         try {
-            const { id, ...updateData } = dto;
-            if (!id) {
-                throw new BadRequestException('customer7Id is not found in the request');
+            const user = req.user as IPayload;
+            if (!user.sub) {
+                throw new BadRequestException('customerId is not found in the request');
             }
-            return this._customerService.partialUpdate(id, updateData);
+
+            return this._customerService.partialUpdate(user.sub, dto);
         } catch (err) {
             this.logger.error(`Error updating customer: ${err.message}`, err.stack);
             throw new InternalServerErrorException('Failed to partially update the customer');
+        }
+    }
+
+    @Patch('saved_providers')
+    @UseInterceptors(AuthInterceptor)
+    async updateSavedProviders(@Req() req: Request, @Body() dto: UpdateSavedProvidersDto): Promise<ICustomer> {
+        try {
+            const user = req.user as IPayload;
+            if (!user.sub) {
+                throw new BadRequestException('customerId is not found in the request');
+            }
+
+            return this._customerService.updateSavedProviders(user.sub, dto);
+        } catch (err) {
+            this.logger.error(`Error updating customer saved providers: ${err.message}`, err.stack);
+            throw new InternalServerErrorException('Failed to update the customer saved providers');
         }
     }
 }

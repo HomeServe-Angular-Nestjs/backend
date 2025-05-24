@@ -38,7 +38,6 @@ export class ProviderServices implements IProviderServices {
     if (filter?.isCertified) {
       query.isCertified = filter.isCertified
     }
-    this.logger.debug(filter)
 
     return await this._providerRepository.find(query);
   }

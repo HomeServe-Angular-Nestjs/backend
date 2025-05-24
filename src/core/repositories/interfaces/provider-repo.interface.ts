@@ -6,4 +6,6 @@ import { IService } from '../../entities/interfaces/service.entity.interface';
 export interface IProviderRepository
   extends IBaseRepository<Provider, ProviderDocument> {
   findByGoogleId(id: string): Promise<Provider | null>;
+  findByEmail(email: string): Promise<Provider | null>;
+
 }

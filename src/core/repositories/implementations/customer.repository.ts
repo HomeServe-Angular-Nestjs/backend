@@ -20,6 +20,11 @@ export class CustomerRepository extends BaseRepository<Customer, CustomerDocumen
     return customer ? this.toEntity(customer) : null;
   }
 
+  async findByEmail(email: string): Promise<Customer | null> {
+    const result = await this.customerModel.findOne({ email }).exec();
+    return result ? this.toEntity(result) : null;
+  }
+
   protected toEntity(doc: CustomerDocument): Customer {
     return new Customer({
       id: (doc._id as Types.ObjectId).toString(),
@@ -33,6 +38,7 @@ export class CustomerRepository extends BaseRepository<Customer, CustomerDocumen
       fullname: doc?.fullname,
       isBlocked: doc.isBlocked,
       isDeleted: doc.isDeleted,
+      savedProviders: doc.savedProviders
     });
   }
 }

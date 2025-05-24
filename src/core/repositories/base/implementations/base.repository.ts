@@ -1,4 +1,4 @@
-import { ClientSession, Document, FilterQuery, Model, QueryOptions, UpdateQuery } from 'mongoose';
+import { ClientSession, Document, FilterQuery, Model, QueryOptions, Types, UpdateQuery } from 'mongoose';
 import { IBaseRepository } from '../interfaces/base-repo.interface';
 import { IEntity } from '../../../entities/base/interfaces/base-entity.entity.interface';
 
@@ -29,23 +29,28 @@ export abstract class BaseRepository<T extends IEntity, TDocument extends Docume
     return result ? result.map((doc) => this.toEntity(doc)) : [];
   }
 
-  async findByEmail(email: string): Promise<T | null> {
-    const result = await this.model.findOne({ email }).exec();
-    return result ? this.toEntity(result) : null;
-  }
+  // async findByEmail(email: string): Promise<T | null> {
+  //   const result = await this.model.findOne({ email }).exec();
+  //   return result ? this.toEntity(result) : null;
+  // }
 
   async findOne(filter: FilterQuery<TDocument>, session?: ClientSession): Promise<T | null> {
     let query = this.model.findOne(filter);
-    if(session) query = query.session(session);
+    if (session) query = query.session(session);
 
     const result = await query.exec();
+    return result ? this.toEntity(result) : null;
+  }
+
+  async findById(id: string | Types.ObjectId): Promise<T | null> {
+    let result = await this.model.findById(id).exec();
     return result ? this.toEntity(result) : null;
   }
 
   async findOneAndUpdate(
     query: FilterQuery<TDocument>,
     update: UpdateQuery<TDocument>,
-    options?: QueryOptions & {session?: ClientSession},
+    options?: QueryOptions & { session?: ClientSession },
   ): Promise<T | null> {
     const result = await this.model.findOneAndUpdate(query, update, {
       new: true,

@@ -8,13 +8,17 @@ import { BaseRepository } from '../base/implementations/base.repository';
 import { Admin } from '../../entities/implementation/admin.entity';
 
 @Injectable()
-export class AdminRepository
-  extends BaseRepository<Admin, AdminDocument>
-  implements IAdminRepository {
+export class AdminRepository extends BaseRepository<Admin, AdminDocument> implements IAdminRepository {
   constructor(
-    @InjectModel(ADMIN_MODEL_NAME) private adminModel: Model<AdminDocument>,
+    @InjectModel(ADMIN_MODEL_NAME)
+    private adminModel: Model<AdminDocument>,
   ) {
     super(adminModel);
+  }
+
+  async findByEmail(email: string): Promise<Admin | null> {
+    const result = await this.adminModel.findOne({ email }).exec();
+    return result ? this.toEntity(result) : null;
   }
 
   protected toEntity(doc: AdminDocument): Admin {

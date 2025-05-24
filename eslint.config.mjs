@@ -31,7 +31,6 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'warn',         // Warn about 'any' usage
       '@typescript-eslint/no-floating-promises': 'warn',   // Enforce promise handling
       '@typescript-eslint/no-unsafe-argument': 'error',     // Enforce type-safe arguments
-
     },
   },
 );
