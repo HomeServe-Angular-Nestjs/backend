@@ -12,11 +12,13 @@ import { IServiceFeatureService } from '../interfaces/service-service.interface'
 import {
   CreateServiceDto,
   CreateSubServiceDto,
+  FilterServiceDto,
   UpdateServiceDto,
   UpdateSubServiceWrapperDto,
 } from '../../dtos/service.dto';
 import { IProviderRepository } from '../../../../core/repositories/interfaces/provider-repo.interface';
 import {
+  CUSTOMER_REPOSITORY_INTERFACE_NAME,
   PROVIDER_REPOSITORY_INTERFACE_NAME,
   SERVICE_OFFERED_REPOSITORY_NAME,
 } from '../../../../core/constants/repository.constant';
@@ -29,6 +31,7 @@ import {
   IService,
   ISubService,
 } from '../../../../core/entities/interfaces/service.entity.interface';
+import { ICustomerRepository } from '../../../../core/repositories/interfaces/customer-repo.interface';
 
 @Injectable()
 export class ServiceFeatureService implements IServiceFeatureService {
@@ -210,6 +213,114 @@ export class ServiceFeatureService implements IServiceFeatureService {
       this.logger.error('Failed to update subService', err.stack);
       throw new InternalServerErrorException('Failed to update subService');
     }
+  }
+
+  async fetchFilteredServices(id: string, filter: FilterServiceDto): Promise<IService[]> {
+    const provider = await this._providerRepository.findById(id);
+    if (!provider) {
+      throw new NotFoundException('Provider with ID ${id} not found');
+    }
+
+    const services = (await Promise.all(
+      provider.servicesOffered.map((serviceId: string) =>
+        serviceId ? this._serviceOfferedRepository.findById(serviceId) : Promise.resolve(null)
+      )
+    )).filter(service => service !== null);
+
+    let filteredServices = services;
+
+    // Search in title or description
+    if (filter.search) {
+      const searchLower = filter.search.toLowerCase();
+      filteredServices = filteredServices.filter(service =>
+        service.title.toLowerCase().includes(searchLower) ||
+        service.desc?.toLowerCase().includes(searchLower)
+      )
+    }
+
+    // Filter by category
+    if (filter.category) {
+      filteredServices = filteredServices.filter(service =>
+        service.title === filter.category
+      )
+    }
+
+    // Price filter
+    if (filter.priceRange) {
+      const { min, max } = filter.priceRange;
+
+      filteredServices = filteredServices.filter(service =>
+        service.subService.some(sub => {
+          if (sub?.price == null) return false;
+
+          const price = typeof sub.price === 'string' ? parseFloat(sub.price) : sub.price;
+          if (isNaN(price)) return false;
+
+          return (
+            (min === undefined || price >= min) &&
+            (max === undefined || price <= max)
+          );
+        })
+      );
+    }
+
+    // Duration filter 
+    if (filter.duration) {
+      const { minHours, maxHours } = filter.duration;
+
+      filteredServices = filteredServices.filter(service =>
+        service.subService.some(sub => {
+          if (sub?.estimatedTime == null) return false;
+
+          const duration = typeof sub.estimatedTime === 'string'
+            ? parseFloat(sub.estimatedTime)
+            : sub.estimatedTime;
+
+          if (isNaN(duration)) return false;
+
+          return (
+            (minHours == null || duration >= minHours) &&
+            (maxHours == null || duration <= maxHours)
+          );
+        })
+      );
+    }
+
+    // Sort by min subService price or duration
+    if (filter.sort) {
+      const getMinSubField = (service: IService, field: 'price' | 'duration') =>
+        Math.min(...service.subService.map(sub => sub[field]));
+
+      switch (filter.sort) {
+        case 'price-asc':
+          filteredServices = filteredServices.sort((a, b) =>
+            getMinSubField(a, 'price') - getMinSubField(b, 'price')
+          );
+          break;
+        case 'price-desc':
+          filteredServices = filteredServices.sort((a, b) =>
+            getMinSubField(b, 'price') - getMinSubField(a, 'price')
+          );
+          break;
+        case 'duration-asc':
+          filteredServices = filteredServices.sort((a, b) =>
+            getMinSubField(a, 'duration') - getMinSubField(b, 'duration')
+          );
+          break;
+        case 'duration-desc':
+          filteredServices = filteredServices.sort((a, b) =>
+            getMinSubField(b, 'duration') - getMinSubField(a, 'duration')
+          );
+          break;
+        case 'popular':
+          // Add your own popularity logic if applicable
+          break;
+      }
+    }
+
+
+    return filteredServices;
+
   }
 
   private async handleSubServices(

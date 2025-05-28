@@ -2,7 +2,6 @@ import { BadRequestException, Inject, Injectable, Logger, NotFoundException } fr
 import { IProviderServices } from '../interfaces/provider-service.interface';
 import { PROVIDER_REPOSITORY_INTERFACE_NAME } from '../../../../core/constants/repository.constant';
 import { IProviderRepository } from '../../../../core/repositories/interfaces/provider-repo.interface';
-import { Provider } from '../../../../core/entities/implementation/provider.entity';
 import { IProvider } from '../../../../core/entities/interfaces/user.entity.interface';
 import { CloudinaryService } from '../../../../configs/cloudinary/cloudinary.service';
 import { UpdateDefaultSlotsDto } from '../../dtos/provider.dto';

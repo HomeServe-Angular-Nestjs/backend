@@ -12,6 +12,7 @@ import {
   Query,
   Req,
   Res,
+  UnauthorizedException,
   UploadedFiles,
   UseInterceptors,
 } from '@nestjs/common';
@@ -22,11 +23,13 @@ import { SERVICE_OFFERED_SERVICE_NAME } from '../../../core/constants/service.co
 import {
   CreateServiceDto,
   CreateSubServiceDto,
+  FilterServiceDto,
   UpdateServiceDto,
   UpdateSubServiceWrapperDto,
 } from '../dtos/service.dto';
 import { AuthInterceptor } from '../../auth/interceptors/auth.interceptor';
 import { IPayload } from '../../../core/misc/payload.interface';
+import { IService } from '../../../core/entities/interfaces/service.entity.interface';
 
 @Controller()
 export class ServiceController {
@@ -34,7 +37,7 @@ export class ServiceController {
 
   constructor(
     @Inject(SERVICE_OFFERED_SERVICE_NAME)
-    private serviceFeature: IServiceFeatureService,
+    private readonly _serviceFeature: IServiceFeatureService,
   ) { }
 
   /**
@@ -50,7 +53,6 @@ export class ServiceController {
   @UseInterceptors(AuthInterceptor, AnyFilesInterceptor())
   async createNewService(
     @Req() req: Request,
-    @Res() res: Response,
     @Body() body: CreateServiceDto,
     @UploadedFiles() files: Express.Multer.File[],
   ): Promise<void> {
@@ -98,7 +100,7 @@ export class ServiceController {
         subServices,
       };
 
-      await this.serviceFeature.createService(serviceData, user);
+      await this._serviceFeature.createService(serviceData, user);
     } catch (err) {
       this.logger.error(`Error creating service: ${err.message}`, err.stack);
       throw new InternalServerErrorException(
@@ -112,7 +114,7 @@ export class ServiceController {
   async getOfferedServices(@Req() req: Request) {
     try {
       const user = req.user as IPayload;
-      return await this.serviceFeature.fetchServices(user);
+      return await this._serviceFeature.fetchServices(user);
     } catch (err) {
       console.error(err);
       throw new InternalServerErrorException(
@@ -125,7 +127,7 @@ export class ServiceController {
   @UseInterceptors(AuthInterceptor)
   async getOfferedService(@Query() query: { id: string }) {
     try {
-      return this.serviceFeature.fetchService(query.id);
+      return this._serviceFeature.fetchService(query.id);
     } catch (err) {
       throw new InternalServerErrorException(
         'Something happened while fetching offered services',
@@ -138,7 +140,7 @@ export class ServiceController {
   async updateService(@Body() dto: UpdateServiceDto, @UploadedFiles() files: Express.Multer.File[]) {
     try {
       const prepareDto = this._attachFilesToServiceData(dto, files);
-      return await this.serviceFeature.updateService(prepareDto);
+      return await this._serviceFeature.updateService(prepareDto);
     } catch (err) {
       if (err instanceof NotFoundException) {
         throw new NotFoundException(err.message);
@@ -158,10 +160,26 @@ export class ServiceController {
   @UseInterceptors(AuthInterceptor)
   async updateSubservice(@Body() dto: UpdateSubServiceWrapperDto) {
     try {
-      return await this.serviceFeature.updateSubservice(dto);
+      return await this._serviceFeature.updateSubservice(dto);
     } catch (err) {
-      console.error(`Error updating service: ${err.message}`, err.stack);
+      this.logger.error(`Error updating service: ${err.message}`, err.stack);
       throw new InternalServerErrorException('Failed to update subservice');
+    }
+  }
+
+  @Get('provider/filter_service')
+  @UseInterceptors(AuthInterceptor)
+  async fetchFilteredServices(@Query() dto: FilterServiceDto): Promise<IService[]> {
+    try {
+      const { id } = dto;
+      if (!id) {
+        throw new NotFoundException(`Provider with ID ${id} not found`);
+      }
+
+      return await this._serviceFeature.fetchFilteredServices(id, dto);
+    } catch (err) {
+      this.logger.error(`Error fetching filtered service: ${err.message}`, err.stack);
+      throw new InternalServerErrorException('Failed to fetch filtered service');
     }
   }
 

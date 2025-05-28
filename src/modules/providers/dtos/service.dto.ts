@@ -3,9 +3,12 @@ import {
   IsArray,
   IsBoolean,
   IsDateString,
+  IsIn,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
   IsString,
+  Min,
   ValidateNested,
 } from 'class-validator';
 
@@ -135,4 +138,56 @@ export class DeleteSubServiceDto {
   @IsString()
   @IsNotEmpty()
   subId: string
+}
+
+export class IPriceRangeDto {
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  min?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  max?: number;
+}
+
+export class IServiceDurationRangeDto {
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  minHours?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  maxHours?: number;
+}
+
+export class FilterServiceDto {
+  @IsString()
+  @IsNotEmpty()
+  id:string;
+
+  @IsOptional()
+  @IsString()
+  search?: string;
+
+  @IsOptional()
+  @IsIn(['price-asc', 'price-desc', 'duration-asc', 'duration-desc', 'popular'])
+  sort?: 'price-asc' | 'price-desc' | 'duration-asc' | 'duration-desc' | 'popular';
+
+  @IsOptional()
+  @IsString()
+  category?: string;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => IPriceRangeDto)
+  priceRange?: IPriceRangeDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => IServiceDurationRangeDto)
+  duration?: IServiceDurationRangeDto;
 }
