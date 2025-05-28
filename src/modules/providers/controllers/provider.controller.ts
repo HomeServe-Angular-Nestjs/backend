@@ -20,9 +20,8 @@ import { Provider } from '../../../core/entities/implementation/provider.entity'
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Request } from 'express';
 import { IPayload } from '../../../core/misc/payload.interface';
-import { UpdateDefaultSlotsDto } from '../dtos/provider.dto';
+import { FilterDto, UpdateDefaultSlotsDto } from '../dtos/provider.dto';
 import { IProvider } from '../../../core/entities/interfaces/user.entity.interface';
-import { FilterDto } from '../../customer/dtos/customer.dto';
 
 @Controller('provider')
 export class ProviderController {
@@ -121,8 +120,6 @@ export class ProviderController {
             if (!id) {
                 throw new BadRequestException('Id is is not found in the request');
             }
-
-            console.log(updateData, id);
 
             return this.providerServices.partialUpdate(id, updateData);
         } catch (err) {

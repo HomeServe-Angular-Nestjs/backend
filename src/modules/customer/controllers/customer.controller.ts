@@ -45,14 +45,14 @@ export class CustomerController {
 
     @Patch('partial_update')
     @UseInterceptors(AuthInterceptor)
-    async partialUpdate(@Req() req: Request, @Body() dto: Partial<ICustomer>): Promise<ICustomer> {
+    async partialUpdate(@Body() dto: Partial<ICustomer>): Promise<ICustomer> {
         try {
-            const user = req.user as IPayload;
-            if (!user.sub) {
-                throw new BadRequestException('customerId is not found in the request');
+            const { id, ...updateData } = dto;
+            if (!id) {
+                throw new BadRequestException('Id is is not found in the request');
             }
 
-            return this._customerService.partialUpdate(user.sub, dto);
+            return this._customerService.partialUpdate(id, updateData);
         } catch (err) {
             this.logger.error(`Error updating customer: ${err.message}`, err.stack);
             throw new InternalServerErrorException('Failed to partially update the customer');

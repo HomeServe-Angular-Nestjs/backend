@@ -24,7 +24,7 @@ export class ProviderServices implements IProviderServices {
    * @returns {Promise<IProvider[]>} List of all provider documents.
    */
   async getProviders(filter?: FilterDto): Promise<IProvider[]> {
-    const query: { [key: string]: any } = { isDeleted: false, isCertified: true };
+    const query: { [key: string]: any } = { isDeleted: false };
 
     if (filter?.search) {
       query.email = new RegExp(filter.search, 'i');
@@ -110,7 +110,8 @@ export class ProviderServices implements IProviderServices {
   async partialUpdate(id: string, updateData: Partial<IProvider>): Promise<IProvider> {
     const updatedProvider = await this._providerRepository.findOneAndUpdate(
       { _id: id },
-      { $set: updateData }
+      { $set: updateData },
+      { new: true }
     );
 
     if (!updatedProvider) {

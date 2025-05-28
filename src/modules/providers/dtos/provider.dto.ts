@@ -1,5 +1,8 @@
 import { Type } from "class-transformer";
-import { IsNotEmpty, IsString, ValidateNested } from "class-validator";
+import { IsBoolean, IsNotEmpty, IsOptional, IsString, ValidateNested } from "class-validator";
+
+
+export type FilterStatusType = true | false | 'all';
 
 class SlotDto {
     @IsNotEmpty()
@@ -16,4 +19,18 @@ export class UpdateDefaultSlotsDto {
     @ValidateNested()
     @Type(() => SlotDto)
     slot: SlotDto;
+}
+
+export class FilterDto {
+    @IsOptional()
+    @IsString()
+    search: string;
+
+    @IsOptional()
+    @IsBoolean()
+    status: FilterStatusType;
+
+    @IsOptional()
+    @IsBoolean()
+    isCertified: boolean;
 }
