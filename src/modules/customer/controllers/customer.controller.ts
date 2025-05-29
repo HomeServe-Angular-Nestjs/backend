@@ -1,4 +1,4 @@
-import { BadRequestException, Query, Body, Controller, Get, Inject, InternalServerErrorException, Logger, Patch, UseInterceptors, Req, UnauthorizedException } from "@nestjs/common";
+import { BadRequestException, Query, Body, Controller, Get, Inject, InternalServerErrorException, Logger, Patch, UseInterceptors, Req, UnauthorizedException, Post } from "@nestjs/common";
 import { AuthInterceptor } from "../../auth/interceptors/auth.interceptor";
 import { CUSTOMER_SERVICE_NAME } from "../../../core/constants/service.constant";
 import { ICustomerService } from "../services/interfaces/customer-service.interface";
@@ -6,6 +6,7 @@ import { ICustomer } from "../../../core/entities/interfaces/user.entity.interfa
 import { FilterDto, UpdateSavedProvidersDto } from "../dtos/customer.dto";
 import { IPayload } from "../../../core/misc/payload.interface";
 import { Request } from "express";
+import { dot } from "node:test/reporters";
 
 @Controller('')
 export class CustomerController {
@@ -73,5 +74,17 @@ export class CustomerController {
             this.logger.error(`Error updating customer saved providers: ${err.message}`, err.stack);
             throw new InternalServerErrorException('Failed to update the customer saved providers');
         }
+    }
+
+    @Post('send_otp_sms')
+    @UseInterceptors(AuthInterceptor)
+    async sendOtp(@Req() req: Request, @Body() dto: { phone: string }) {
+        const user = req.user as IPayload;
+        if (!user.sub) {
+            throw new UnauthorizedException('User not found');
+        }
+
+        this.logger.debug(dto);
+        this._customerService.sendOtp(Number(dto.phone))
     }
 }

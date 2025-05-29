@@ -4,6 +4,8 @@ import { ICustomerRepository } from "../../../../core/repositories/interfaces/cu
 import { ICustomerService } from "../interfaces/customer-service.interface";
 import { ICustomer } from "../../../../core/entities/interfaces/user.entity.interface";
 import { FilterDto, UpdateSavedProvidersDto } from "../../dtos/customer.dto";
+import { FAST2SMS_UTILITY_NAME } from "../../../../core/constants/utility.constant";
+import { IFast2SmsService } from "../../../../core/utilities/interface/fast2sms.interface";
 
 @Injectable()
 export class CustomerService implements ICustomerService {
@@ -11,7 +13,9 @@ export class CustomerService implements ICustomerService {
 
     constructor(
         @Inject(CUSTOMER_REPOSITORY_INTERFACE_NAME)
-        private readonly _customerRepository: ICustomerRepository
+        private readonly _customerRepository: ICustomerRepository,
+        @Inject(FAST2SMS_UTILITY_NAME)
+        private readonly _fast2SmsService: IFast2SmsService
     ) { }
 
     /**
@@ -80,6 +84,10 @@ export class CustomerService implements ICustomerService {
         }
 
         return updatedCustomer;
+    }
+
+    async sendOtp(phone: number): Promise<any> {
+        this._fast2SmsService.sendOtp(phone)
     }
 
 }

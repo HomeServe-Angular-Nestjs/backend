@@ -7,7 +7,6 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { v4 as uuidv4 } from 'uuid';
 import { ITokenService } from '../interfaces/token-service.interface';
 import Redis from 'ioredis';
 import { IPayload } from '../../../../core/misc/payload.interface';
