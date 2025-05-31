@@ -6,7 +6,7 @@ export abstract class BaseUserEntity extends BaseEntity implements IBaseUserEnti
   password: string;
   username: string;
   fullname: string;
-  phone: number;
+  phone: string;
   avatar: string;
   isActive: boolean;
   isBlocked: boolean;

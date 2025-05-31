@@ -9,7 +9,11 @@ import { HttpModule } from "@nestjs/axios";
 @Module({
     imports: [JwtConfigModule, HttpModule],
     controllers: [CustomerController],
-    providers: [...customerRepositoryProviders, ...customerServiceProviders, ...customerUtilityProviders],
+    providers: [
+        ...customerRepositoryProviders,
+        ...customerServiceProviders,
+        ...customerUtilityProviders
+    ],
     exports: [...customerUtilityProviders]
 })
 export class CustomerModule {

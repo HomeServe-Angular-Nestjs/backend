@@ -8,16 +8,22 @@ export class ScheduleDocument extends Document {
 
     @Prop({
         type: [{
-            from: String,
-            to: String,
-            takenBy: String
+            from: { type: String },
+            to: { type: String },
+            takenBy: { type: String, default: null }
         }]
     })
     slots: {
         from: string;
         to: string
-        takenBy: string
+        takenBy: string | null
     }[];
+
+    @Prop({ type: Date })
+    createdAt: Date;
+
+    @Prop({ type: Date })
+    updatedAt: Date;
 }
 
 export const ScheduleSchema = SchemaFactory.createForClass(ScheduleDocument);

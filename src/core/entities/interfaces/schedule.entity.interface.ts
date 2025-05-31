@@ -6,13 +6,14 @@ export type SlotType = {
     to: string;
 };
 
-export interface ISlot extends IEntity {
+export interface ISlot {
+    id: string;
     from: string;
     to: string;
-    takenBy?: string;
+    takenBy: string | null;
 }
 
 export interface ISchedule extends IEntity {
-    scheduleDate: Date,
+    scheduleDate: string,
     slots: ISlot[];
 }

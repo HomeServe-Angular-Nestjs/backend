@@ -11,7 +11,7 @@ export interface IBaseUserEntity extends IEntity {
   isActive: boolean;
   avatar: string;
   fullname: string;
-  phone: number;
+  phone: string;
   googleId: string;
   type?: UserType;
 }

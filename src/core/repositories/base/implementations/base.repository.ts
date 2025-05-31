@@ -29,11 +29,6 @@ export abstract class BaseRepository<T extends IEntity, TDocument extends Docume
     return result ? result.map((doc) => this.toEntity(doc)) : [];
   }
 
-  // async findByEmail(email: string): Promise<T | null> {
-  //   const result = await this.model.findOne({ email }).exec();
-  //   return result ? this.toEntity(result) : null;
-  // }
-
   async findOne(filter: FilterQuery<TDocument>, session?: ClientSession): Promise<T | null> {
     let query = this.model.findOne(filter);
     if (session) query = query.session(session);

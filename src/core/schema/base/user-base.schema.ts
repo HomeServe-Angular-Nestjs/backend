@@ -3,40 +3,40 @@ import { Document } from 'mongoose';
 
 @Schema({ discriminatorKey: 'kind', timestamps: true })
 export class BaseUserDocument extends Document {
-  @Prop()
+  @Prop({ type: String })
   fullname: string;
 
-  @Prop({ required: true, unique: true, index: true })
+  @Prop({ type: String, required: true, unique: true, index: true })
   email: string;
 
-  @Prop({ required: true })
+  @Prop({ type: String, required: true })
   username: string;
 
-  @Prop()
+  @Prop({ type: String })
   password: string;
 
-  @Prop()
+  @Prop({ type: String })
   phone: string;
 
-  @Prop()
+  @Prop({ type: String })
   avatar: string;
 
-  @Prop({ default: null })
+  @Prop({ type: String, default: null })
   googleId: string;
 
-  @Prop({ default: true })
+  @Prop({ type: Boolean, default: true })
   isActive: boolean;
 
-  @Prop({ default: false })
+  @Prop({ type: Boolean, default: false })
   isBlocked: boolean;
 
-  @Prop({ default: false })
+  @Prop({ type: Boolean, default: false })
   isDeleted: boolean;
 
-  @Prop()
+  @Prop({ type: Date })
   createdAt?: Date;
 
-  @Prop()
+  @Prop({ type: Date })
   updatedAt?: Date;
 }
 

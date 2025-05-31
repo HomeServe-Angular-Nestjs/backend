@@ -5,6 +5,7 @@ import { Connection, ConnectionStates } from 'mongoose';
 
 import {
   ADMIN_MODEL_NAME,
+  BOOKINGS_MODEL_NAME,
   CUSTOMER_MODEL_NAME,
   OTP_MODEL_NAME,
   PROVIDER_MODEL_NAME,
@@ -19,6 +20,7 @@ import { ProviderSchema } from '../../core/schema/provider.schema';
 import { AdminSchema } from '../../core/schema/admin.schema';
 import { ServiceSchema } from '../../core/schema/service.schema';
 import { ScheduleSchema } from '../../core/schema/schedule.schema';
+import { BookingDocument, BookingSchema } from '../../core/schema/bookings.schema';
 
 
 @Global()
@@ -56,7 +58,8 @@ import { ScheduleSchema } from '../../core/schema/schedule.schema';
       { name: OTP_MODEL_NAME, schema: OtpSchema },
       { name: ADMIN_MODEL_NAME, schema: AdminSchema },
       { name: SERVICE_OFFERED_MODEL_NAME, schema: ServiceSchema },
-      { name: SCHEDULE_MODEL_NAME, schema: ScheduleSchema }
+      { name: SCHEDULE_MODEL_NAME, schema: ScheduleSchema },
+      { name: BOOKINGS_MODEL_NAME, schema: BookingSchema }
     ]),
   ],
   exports: [MongooseModule],
