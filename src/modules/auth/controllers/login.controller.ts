@@ -215,8 +215,8 @@ export class LoginController {
 
       return res.status(200).json(prepareResponse(true, 'Successful logout'));
     } catch (err) {
-      this.logger.log('[ERROR] Logout: ', err);
-      throw new InternalServerErrorException('Something went wrong.');
+      this.logger.error('[ERROR] Logout: ', err);
+      throw new InternalServerErrorException('Something went wrong while logging out.');
     }
   }
 }

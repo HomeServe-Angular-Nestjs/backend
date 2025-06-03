@@ -52,10 +52,7 @@ export class BookingService implements IBookingService {
      *
      * */
     async preparePriceBreakup(dto: SelectedServiceDto[]): Promise<IPriceBreakupDto> {
-        if (!dto || dto.length === 0) {
-            throw new Error('No services selected for price calculation.');
-        }
-
+        this.logger.debug(dto);
         // Fetch all selected services from the repository
         let services = await Promise.all(
             dto.map(item => this._serviceOfferedRepository.findOne({ _id: item.serviceId }))
@@ -149,7 +146,7 @@ export class BookingService implements IBookingService {
             }
         } catch (err) {
             this.logger.error('Failed to update slot in schedule', err);
-            throw new InternalServerErrorException('Failed to update slot');
+            throw new InternalServerErrorException(err.message);
         }
 
         const expectedArrivalTime = this._combineDateAndTime(schedule.scheduleDate, updatedSlot.from);
@@ -187,7 +184,7 @@ export class BookingService implements IBookingService {
 
     // !Todo - Filter.
     async fetchBookings(id: string): Promise<IBookingResponse[]> {
-        const bookings = await this._bookingRepository.find({ customerId: id });
+        const bookings = await this._bookingRepository.find({ customerId: id }, { sort: { createdAt: -1 } });
 
         // If no bookings exist, validate the customer exists
         if (!bookings.length) {

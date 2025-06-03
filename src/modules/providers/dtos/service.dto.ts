@@ -1,8 +1,7 @@
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
-  IsDateString,
   IsIn,
   IsNotEmpty,
   IsNumber,
@@ -78,10 +77,12 @@ export class UpdateSubServiceDto {
   image?: any;
 
   @IsOptional()
+  @Transform(({ value }) => value === 'true')
   @IsBoolean()
   isActive?: boolean;
 
   @IsOptional()
+  @Transform(({ value }) => value === 'true')
   @IsBoolean()
   isDeleted?: boolean;
 }
@@ -103,14 +104,17 @@ export class UpdateServiceDto {
   image?: any;
 
   @IsOptional()
+  @Transform(({ value }) => value === 'true')
   @IsBoolean()
   isActive?: boolean;
 
   @IsOptional()
+  @Transform(({ value }) => value === 'true')
   @IsBoolean()
   isDeleted?: boolean;
 
   @IsOptional()
+  @Transform(({ value }) => value === 'true')
   @IsBoolean()
   isVerified?: boolean;
 
@@ -167,7 +171,7 @@ export class IServiceDurationRangeDto {
 export class FilterServiceDto {
   @IsString()
   @IsNotEmpty()
-  id:string;
+  id: string;
 
   @IsOptional()
   @IsString()

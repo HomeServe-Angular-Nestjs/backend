@@ -137,11 +137,23 @@ export class ServiceController {
 
   @Patch(['provider/offered_service'])
   @UseInterceptors(AuthInterceptor, AnyFilesInterceptor())
-  async updateService(@Body() dto: UpdateServiceDto, @UploadedFiles() files: Express.Multer.File[]) {
+  async updateService(@Req() req: Request, @Body() dto: UpdateServiceDto, @UploadedFiles() files: Express.Multer.File[]) {
     try {
-      const prepareDto = this._attachFilesToServiceData(dto, files);
-      return await this._serviceFeature.updateService(prepareDto);
+      const user = req.user as IPayload;
+      if (!user.sub) {
+        throw new UnauthorizedException(`Provider found`);
+      }
+
+      let prepareDto: UpdateServiceDto = dto;
+      if (files) {
+        prepareDto = this._attachFilesToServiceData(dto, files);
+      }
+
+      const res = await this._serviceFeature.updateService(prepareDto);
+      this.logger.debug(res);
+      return res;
     } catch (err) {
+      this.logger.error(err);
       if (err instanceof NotFoundException) {
         throw new NotFoundException(err.message);
       }

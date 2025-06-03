@@ -127,7 +127,6 @@ export class ScheduleService implements IScheduleService {
             throw new BadRequestException('Date is not found or Invalid schedule ID');
         }
 
-        console.log(dto)
 
         const result = await this._scheduleRepository.deleteOne(
             {

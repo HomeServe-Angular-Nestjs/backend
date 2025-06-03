@@ -70,7 +70,6 @@ export class ScheduleController {
                 throw new BadRequestException('Invalid parameters received');
             }
 
-            console.log(dto)
             return await this._scheduleService.removeSchedule(user.sub, dto);
         } catch (err) {
             this.logger.error(`Error removing schedule: ${err.message}`, err.stack);

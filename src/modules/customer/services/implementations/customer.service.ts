@@ -77,7 +77,6 @@ export class CustomerService implements ICustomerService {
             { new: true }
         );
 
-        this.logger.debug(updatedCustomer);
 
         if (!updatedCustomer) {
             throw new NotFoundException(`Customer with ID ${id} not found`);

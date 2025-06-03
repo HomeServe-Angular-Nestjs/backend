@@ -156,6 +156,7 @@ export class LoginService implements ILoginService {
             email: user.email,
             username: user.name,
             googleId: user.googleId,
+            avatar: user.avatar,
             isActive: true,
           }),
         );
@@ -165,6 +166,7 @@ export class LoginService implements ILoginService {
             email: user.email,
             username: user.name,
             googleId: user.googleId,
+            avatar: user.avatar,
             isActive: true,
           }),
         );

@@ -58,7 +58,7 @@ export class ServiceFeatureService implements IServiceFeatureService {
       const serviceImageUrl = await this._uploadsUtility.uploadImage(dto.imageFile);
 
       const subServicesWithImages = dto.subServices
-        ? await this.handleSubServices(dto.subServices)
+        ? await this._handleSubServices(dto.subServices)
         : [];
 
       const newOfferedService = await this._serviceOfferedRepository.create({
@@ -137,38 +137,35 @@ export class ServiceFeatureService implements IServiceFeatureService {
 
 
   async updateService(updateData: UpdateServiceDto): Promise<IService> {
-    if (!updateData.id) {
-      throw new BadRequestException('Service id is missing');
+    if (!updateData?.id) {
+      throw new BadRequestException('Service ID is missing.');
     }
 
     const { id, ...updateFields } = updateData;
 
-    if (updateFields.image && typeof updateFields.image !== 'string') {
-      const uploadedImageUrl = await this._uploadsUtility.uploadImage(updateFields.image);
-      updateFields.image = uploadedImageUrl;
+    // Handle main service image upload
+    if (updateFields.image) {
+      updateFields.image = await this._processImage(updateFields.image);
     }
 
-    const subServices = Array.isArray(updateFields.subServices) ? updateFields.subServices : [];
-
-    for (let i = 0; i < subServices.length; i++) {
-      const sub = subServices[i];
-
-      if (sub.image && typeof sub.image !== 'string') {
-        const subImageUrl = await this._uploadsUtility.uploadImage(sub.image);
-        sub.image = subImageUrl;
-      }
+    if (Array.isArray(updateFields.subServices) && updateFields.subServices.length > 0) {
+      updateFields.subServices = await Promise.all(
+        updateFields.subServices.map(async (sub) => {
+          const updatedSub = { ...sub };
+          updatedSub.image = await this._processImage(sub.image);
+          return updatedSub;
+        })
+      );
     }
-
-    updateFields.subServices = subServices;
 
     const updatedService = await this._serviceOfferedRepository.findOneAndUpdate(
       { _id: id },
-      { $set: { ...updateFields, subService: updateFields.subServices } },
+      { $set: updateFields },
       { new: true }
     );
 
     if (!updatedService) {
-      throw new NotFoundException('No matching service found to update.')
+      throw new NotFoundException('No matching service found to update.');
     }
 
     return updatedService;
@@ -323,9 +320,7 @@ export class ServiceFeatureService implements IServiceFeatureService {
 
   }
 
-  private async handleSubServices(
-    subServices: CreateSubServiceDto[],
-  ): Promise<ISubService[]> {
+  private async _handleSubServices(subServices: CreateSubServiceDto[]): Promise<ISubService[]> {
     return Promise.all(
       subServices.map(async (sub) => ({
         title: sub.title,
@@ -338,5 +333,17 @@ export class ServiceFeatureService implements IServiceFeatureService {
         tag: sub.tag,
       })),
     );
+  }
+
+  private async _processImage(image: string | Express.Multer.File): Promise<string | undefined> {
+    if (!image) return undefined;
+    if (typeof image === 'string') return image;
+
+    try {
+      return await this._uploadsUtility.uploadImage(image);
+    } catch (error) {
+      this.logger.error('Image upload failed:', error);
+      throw new InternalServerErrorException('Failed to upload image.');
+    }
   }
 }

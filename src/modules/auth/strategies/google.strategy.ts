@@ -46,7 +46,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy) {
         avatar: profile.photos?.[0]?.value ?? '',
         type: userType,
       });
-
+      console.log(user)
       if (!user) {
         throw new UnauthorizedException('User does not exist.');
       }

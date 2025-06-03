@@ -3,7 +3,7 @@ import { BookingDto, SelectedServiceDto } from '../dtos/booking.dto';
 import { AuthInterceptor } from '../../auth/interceptors/auth.interceptor';
 import { Request } from 'express';
 import { IPayload } from '../../../core/misc/payload.interface';
-import { BOOKING_SERVICE_NAME } from '../../../core/constants/service.constant';
+import { CUSTOMER_SERVICE_NAME } from '../../../core/constants/service.constant';
 import { IBookingService } from '../services/interfaces/booking-service.interface';
 import { IBooking, IBookingResponse } from '../../../core/entities/interfaces/booking.entity.interface';
 
@@ -13,13 +13,17 @@ export class BookingsController {
     private readonly logger = new Logger(BookingsController.name);
 
     constructor(
-        @Inject(BOOKING_SERVICE_NAME)
-        private readonly _bookingService: IBookingService
+        @Inject(CUSTOMER_SERVICE_NAME)
+        private readonly _bookingService: IBookingService,
     ) { }
 
     @Post('price_breakup')
-    async preparePriceBreakup(@Body() dto: SelectedServiceDto[]) {
+    async calcPriceBreakup(@Body() dto: SelectedServiceDto[]) {
         try {
+            if (!dto || dto.length === 0) {
+                throw new Error('No services selected for price calculation.');
+            }
+
             return await this._bookingService.preparePriceBreakup(dto);
         } catch (err) {
             this.logger.error(`Error fetching provider: ${err}`);

@@ -3,10 +3,11 @@ import { BookingsController } from './controllers/bookings.controller';
 import { repositoryProviders } from './providers/repository.provider';
 import { serviceProviders } from './providers/service.provider';
 import { JwtConfigModule } from '../../configs/jwt/jwt.module';
+import { ProviderBookingsController } from './controllers/provider-bookings.controller';
 
 @Module({
     imports: [JwtConfigModule],
-    controllers: [BookingsController],
+    controllers: [BookingsController, ProviderBookingsController],
     providers: [
         ...repositoryProviders,
         ...serviceProviders

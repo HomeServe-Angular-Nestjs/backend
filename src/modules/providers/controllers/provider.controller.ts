@@ -12,6 +12,7 @@ import {
     Delete,
     Logger,
     BadRequestException,
+    UnauthorizedException,
 } from '@nestjs/common';
 import { AuthInterceptor } from '../../auth/interceptors/auth.interceptor';
 import { PROVIDER_SERVICE_NAME } from '../../../core/constants/service.constant';
@@ -87,7 +88,7 @@ export class ProviderController {
      * @throws {InternalServerErrorException} If update fails.
      */
     @Patch('update_provider')
-    @UseInterceptors(FileInterceptor('providerAvatar'))
+    @UseInterceptors(AuthInterceptor, FileInterceptor('providerAvatar'))
     async bulkUpdateProvider(
         @Req() req: Request,
         @Body('providerData') dto: string,
@@ -95,6 +96,9 @@ export class ProviderController {
     ): Promise<IProvider> {
         try {
             const user = req.user as IPayload;
+            if (!user.sub) {
+                throw new UnauthorizedException(`Provider found`);
+            }
             const updateData = JSON.parse(dto);
 
             return await this.providerServices.bulkUpdateProvider(user.sub, updateData, file);
@@ -160,6 +164,9 @@ export class ProviderController {
     async deleteDefaultSlot(@Req() req: Request): Promise<void> {
         try {
             const user = req.user as IPayload;
+            if (!user.sub) {
+                throw new UnauthorizedException(`Provider found`);
+            }
             this.providerServices.deleteDefaultSlot(user.sub);
         } catch (err) {
             this.logger.error(`Error updating provider: ${err.message}`, err.stack);

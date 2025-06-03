@@ -30,6 +30,7 @@ export class CustomerRepository extends BaseRepository<Customer, CustomerDocumen
       id: (doc._id as Types.ObjectId).toString(),
       email: doc.email,
       username: doc.username,
+      avatar: doc.avatar,
       password: doc?.password,
       googleId: doc?.googleId,
       isActive: doc.isActive,

@@ -20,6 +20,27 @@ export interface IBookingResponse {
     createdAt: Date;
 }
 
+export interface IProviderBookingLists {
+    services: {
+        id: string;
+        title: string;
+        image: string;
+    }[];
+    customer: {
+        id: string;
+        name: string;
+        avatar: string;
+        email: string;
+    },
+    bookingId: string;
+    expectedArrivalTime: Date;
+    totalAmount: number;
+    createdAt: Date;
+    paymentStatus: PaymentStatus;
+    bookingStatus: BookingStatus;
+    totalBookings: number;
+}
+
 export interface IBooking extends IEntity {
     customerId: string;
     providerId: string;

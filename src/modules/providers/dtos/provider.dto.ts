@@ -1,5 +1,5 @@
-import { Type } from "class-transformer";
-import { IsBoolean, IsNotEmpty, IsOptional, IsString, ValidateNested } from "class-validator";
+import { Transform, Type } from "class-transformer";
+import { IsBoolean, IsIn, IsNotEmpty, IsOptional, IsString, ValidateNested } from "class-validator";
 
 
 export type FilterStatusType = true | false | 'all';
@@ -27,10 +27,17 @@ export class FilterDto {
     search: string;
 
     @IsOptional()
-    @IsBoolean()
+    @Transform(({ value }) => {
+        if (value === 'true') return true;
+        if (value === 'false') return false;
+        if (value === 'all') return 'all';
+        return value;
+    })
+    @IsIn([true, false, 'all'])
     status: FilterStatusType;
 
     @IsOptional()
+    @Transform(({ value }) => value === 'true')
     @IsBoolean()
     isCertified: boolean;
 }
