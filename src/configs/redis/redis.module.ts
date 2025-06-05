@@ -14,7 +14,7 @@ import Redis from 'ioredis';
           host: configService.get<string>('REDIS_HOST'),
           port: configService.get<number>('REDIS_PORT'),
           password: configService.get<string>('REDIS_PASSWORD'),
-          tls: configService.get<boolean>('REDIS_TLS') ? {} : undefined,
+          tls: configService.get<string>('REDIS_TLS') === 'true' ? {} : undefined,
         });
 
         // Optional: Log or test connection
@@ -27,4 +27,4 @@ import Redis from 'ioredis';
   ],
   exports: ['REDIS_CLIENT'],
 })
-export class RedisModule {}
+export class RedisModule { }

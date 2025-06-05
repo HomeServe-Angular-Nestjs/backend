@@ -76,7 +76,6 @@ export class TokenService implements ITokenService {
       this.logger.error('Token generation error:', err);
       throw new InternalServerErrorException('Failed to generate refresh token');
     }
-
   }
 
   async validateAccessToken(token: string): Promise<IPayload> {

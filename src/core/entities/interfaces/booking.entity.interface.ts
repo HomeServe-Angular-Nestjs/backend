@@ -38,7 +38,17 @@ export interface IProviderBookingLists {
     createdAt: Date;
     paymentStatus: PaymentStatus;
     bookingStatus: BookingStatus;
-    totalBookings: number;
+}
+
+export interface IPagination {
+    page: number;
+    limit: number;
+    total: number;
+}
+
+export interface IResponseProviderBookingLists {
+    bookingData: IProviderBookingLists[],
+    paginationData: IPagination;
 }
 
 export interface IBooking extends IEntity {

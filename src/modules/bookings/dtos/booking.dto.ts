@@ -1,5 +1,5 @@
-import { Type } from "class-transformer";
-import { ArrayMaxSize, ArrayMinSize, ArrayNotEmpty, Equals, IsArray, IsBoolean, IsDate, IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from "class-validator";
+import { Transform, Type } from "class-transformer";
+import { ArrayMaxSize, ArrayMinSize, ArrayNotEmpty, IsArray, IsNotEmpty, IsNumber, IsOptional, IsString, Min, ValidateNested } from "class-validator";
 
 export class SlotType {
     @IsString()
@@ -97,6 +97,29 @@ export class BookingDto {
     serviceIds: SelectedServiceType[]
 }
 
-export class BookingListDto {
 
+export class BookingPaginationFilterDto {
+    @IsOptional()
+    @Transform(({ value }) => Number(value) || 1)
+    @IsNumber()
+    @Min(1)
+    page: number;
+
+    @IsOptional()
+    @IsString()
+    search: string;
+
+    @IsOptional()
+    @IsString()
+    date: string;
+
+    @IsOptional()
+    @IsString()
+    sort: string;
+
+    @IsOptional()
+    @IsString()
+    status: string;
 }
+
+export type FilterFileds = Omit<BookingPaginationFilterDto, 'page'>;

@@ -1,10 +1,12 @@
-import { BadRequestException, Body, Controller, Get, Inject, InternalServerErrorException, Logger, Post, Req, UnauthorizedException, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Inject, Logger, Query, Req, UnauthorizedException, UseInterceptors } from '@nestjs/common';
 import { PROVIDER_BOOKING_SERVICE_NAME } from '../../../core/constants/service.constant';
 import { AuthInterceptor } from '../../auth/interceptors/auth.interceptor';
 import { IPayload } from '../../../core/misc/payload.interface';
 import { Request } from 'express';
 import { IProviderBookingService } from '../services/interfaces/provider-booking-service.interface';
-import { IProviderBookingLists } from '../../../core/entities/interfaces/booking.entity.interface';
+import { IResponseProviderBookingLists } from '../../../core/entities/interfaces/booking.entity.interface';
+import { BookingPaginationFilterDto } from '../dtos/booking.dto';
+import { filter } from 'rxjs';
 
 
 @Controller('provider')
@@ -18,12 +20,14 @@ export class ProviderBookingsController {
     ) { }
 
     @Get('bookings')
-    async fetchBookings(@Req() req: Request): Promise<IProviderBookingLists[]> {
+    async fetchBookings(@Req() req: Request, @Query() paginationDto: BookingPaginationFilterDto): Promise<IResponseProviderBookingLists> {
         const user = req.user as IPayload;
         if (!user.sub) {
             throw new UnauthorizedException('User not found');
         }
 
-        return this._providerBookingService.fetchBookingsList();
+        const { page, ...filters } = paginationDto;
+
+        return this._providerBookingService.fetchBookingsList(page, filters);
     }
 }

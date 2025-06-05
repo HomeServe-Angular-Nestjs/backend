@@ -1,9 +1,9 @@
 export enum BookingStatus {
-    PENDING = 'pending',
-    CONFIRMED = 'confirmed',
-    IN_PROGRESS = 'in_progress',
-    COMPLETED = 'completed',
-    CANCELLED = 'cancelled',
+    PENDING = 'pending', // inital/default stage
+    CONFIRMED = 'confirmed', // after in_progress stage
+    IN_PROGRESS = 'in_progress', // after pending stage
+    COMPLETED = 'completed', // completion stage
+    CANCELLED = 'cancelled', // cancellation stage
 }
 
 export enum PaymentStatus {

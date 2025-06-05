@@ -16,6 +16,14 @@ export class BookingRepository extends BaseRepository<Booking, BookingDocument> 
         super(_bookingModel);
     }
 
+    async count(): Promise<number> {
+        return await this._bookingModel.countDocuments();
+    }
+
+    async aggregate(pipeline: any[]): Promise<any[]> {
+        return await this._bookingModel.aggregate(pipeline).exec();
+    }
+
 
     protected toEntity(doc: BookingDocument | Record<string, any>): IBooking {
         return new Booking({

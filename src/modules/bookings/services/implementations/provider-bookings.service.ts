@@ -1,4 +1,4 @@
-import { Inject, Injectable, InternalServerErrorException, Logger } from "@nestjs/common";
+import { Inject, Injectable, InternalServerErrorException, Logger, Search } from "@nestjs/common";
 import { IProviderBookingService } from "../interfaces/provider-booking-service.interface";
 import { BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SCHEDULE_REPOSITORY_NAME, SERVICE_OFFERED_REPOSITORY_NAME } from "../../../../core/constants/repository.constant";
 import { IBookingRepository } from "../../../../core/repositories/interfaces/bookings-repo.interface";
@@ -6,7 +6,8 @@ import { IServiceOfferedRepository } from "../../../../core/repositories/interfa
 import { IProviderRepository } from "../../../../core/repositories/interfaces/provider-repo.interface";
 import { ICustomerRepository } from "../../../../core/repositories/interfaces/customer-repo.interface";
 import { IScheduleRepository } from "../../../../core/repositories/interfaces/schedule-repo.interface";
-import { IProviderBookingLists } from "../../../../core/entities/interfaces/booking.entity.interface";
+import { IProviderBookingLists, IResponseProviderBookingLists } from "../../../../core/entities/interfaces/booking.entity.interface";
+import { FilterFileds } from "../../dtos/booking.dto";
 
 @Injectable()
 export class ProviderBookingService implements IProviderBookingService {
@@ -25,52 +26,70 @@ export class ProviderBookingService implements IProviderBookingService {
         private readonly _providerRepository: IProviderRepository
     ) { }
 
-    async fetchBookingsList(): Promise<IProviderBookingLists[]> {
-        const bookings = await this._bookingRepository.find();
-        if (!bookings) {
-            throw new InternalServerErrorException('Error while fetching bookings');
+
+    async fetchBookingsList(page: number = 1, filters: FilterFileds): Promise<IResponseProviderBookingLists> {
+        const limit = 5;
+        const skip = (page - 1) * limit;
+
+        const rawBookings = await this._bookingRepository.find({});
+        if (!rawBookings.length) {
+            return {
+                bookingData: [],
+                paginationData: { total: 0, page, limit }
+            };
         }
 
-        const bookingResponse: IProviderBookingLists[] = await Promise.all(bookings.map(async (booking) => {
-            const customer = await this._customerRepository.findById(booking.customerId);
-            if (!customer) {
-                throw new InternalServerErrorException(`customer with ID ${booking.customerId} not found.`);
-            }
+        const enrichBookings = await Promise.all(
+            rawBookings.map(async (booking) => {
+                const customer = await this._customerRepository.findById(booking.customerId);
+                if (!customer) throw new InternalServerErrorException(`Customer not found: ${booking.customerId}`);
 
-            const services = await Promise.all(
-                booking.services.map(async (serviceItem) => {
-                    const serviceData = await this._serviceOfferedRepository.findById(serviceItem.serviceId);
-                    if (!serviceData) {
-                        throw new InternalServerErrorException(`Service with ID ${serviceItem.serviceId} not found.`);
-                    }
+                const services = await Promise.all(
+                    booking.services.map(async (s) => {
+                        const service = await this._serviceOfferedRepository.findById(s.serviceId);
+                        if (!service) throw new InternalServerErrorException(`Service not found: ${s.serviceId}`);
+                        return { id: service.id, title: service.title, image: service.image };
+                    })
+                );
 
-                    return {
-                        id: serviceData.id,
-                        title: serviceData.title,
-                        image: serviceData.image
-                    }
-                })
-            );
+                return {
+                    services,
+                    customer: {
+                        id: customer.id,
+                        name: customer.fullname || customer.username,
+                        email: customer.email,
+                        avatar: customer.avatar
+                    },
+                    bookingId: booking.id,
+                    expectedArrivalTime: booking.expectedArrivalTime,
+                    totalAmount: booking.totalAmount,
+                    createdAt: booking.createdAt as Date,
+                    paymentStatus: booking.paymentStatus,
+                    bookingStatus: booking.bookingStatus,
+                };
+            })
+        );
 
-            return {
-                services,
-                customer: {
-                    id: customer.id,
-                    name: customer.fullname || customer.username,
-                    avatar: customer.avatar,
-                    email: customer.email
-                },
-                bookingId: booking.id,
-                expectedArrivalTime: booking.expectedArrivalTime,
-                totalAmount: booking.totalAmount,
-                createdAt: booking.createdAt as Date,
-                paymentStatus: booking.paymentStatus,
-                bookingStatus: booking.bookingStatus,
-                totalBookings: bookings.length
-            }
+        let filteredBookings = enrichBookings;
 
-        }));
+        if (filters.search) {
+            const search = filters.search.trim().toLowerCase();
+            filteredBookings = enrichBookings.filter((booking) => {
+                return (
+                    booking.bookingId.toLowerCase().includes(search) ||
+                    booking.customer.name.toLowerCase().includes(search) ||
+                    booking.customer.email.toLowerCase().includes(search) ||
+                    booking.services.some((s) => s.title.toLowerCase().includes(search))
+                );
+            });
+        }
 
-        return bookingResponse;
+        const total = filteredBookings.length;
+        const paginated = filteredBookings.slice(skip, skip + limit);
+
+        return {
+            bookingData: paginated,
+            paginationData: { page, limit, total }
+        }
     }
 }
