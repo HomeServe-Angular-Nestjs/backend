@@ -20,6 +20,17 @@ export interface IBookingResponse {
     createdAt: Date;
 }
 
+export interface IPagination {
+    total: number;
+    page: number;
+    limit: number
+}
+
+export interface IBookingWithPagination {
+    bookingData: IBookingResponse[];
+    paginationData: IPagination;
+}
+
 export interface IProviderBookingLists {
     services: {
         id: string;

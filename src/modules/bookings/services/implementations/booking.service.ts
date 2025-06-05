@@ -6,7 +6,7 @@ import { SelectedServiceDto, IPriceBreakupDto, BookingDto, SelectedServiceType }
 import { IBookingRepository } from '../../../../core/repositories/interfaces/bookings-repo.interface';
 import { BookingStatus, PaymentStatus } from '../../../../core/enum/bookings.enum';
 import { IScheduleRepository } from '../../../../core/repositories/interfaces/schedule-repo.interface';
-import { IBooking, IBookingResponse } from '../../../../core/entities/interfaces/booking.entity.interface';
+import { IBooking, IBookingResponse, IBookingWithPagination } from '../../../../core/entities/interfaces/booking.entity.interface';
 import { ICustomerRepository } from '../../../../core/repositories/interfaces/customer-repo.interface';
 import { ISlot } from '../../../../core/entities/interfaces/schedule.entity.interface';
 import { IProviderRepository } from '../../../../core/repositories/interfaces/provider-repo.interface';
@@ -183,59 +183,152 @@ export class BookingService implements IBookingService {
     }
 
     // !Todo - Filter.
-    async fetchBookings(id: string): Promise<IBookingResponse[]> {
-        const bookings = await this._bookingRepository.find({ customerId: id }, { sort: { createdAt: -1 } });
+    // async fetchBookings(id: string, page: number = 1): Promise<IBookingWithPagination> {
+    //     const limit = 4;
+    //     const skip = (page - 1) * limit;
 
-        // If no bookings exist, validate the customer exists
-        if (!bookings.length) {
+    //     const allBookings = await this._bookingRepository.find({ customerId: id }, { sort: { createdAt: -1 } });
+    //     const total = allBookings.length;
+
+    //     if (!rawBookings) {
+    //         return {
+    //             bookingData: [],
+    //             paginationData: { total: 0, page, limit }
+    //         };
+    //     }
+
+    //     // If no bookings exist, validate the customer exists
+    //     if (!rawBookings.length) {
+    //         const customer = await this._customerRepository.findById(id);
+    //         if (!customer) {
+    //             throw new InternalServerErrorException(`Customer with ID ${id} not found.`);
+    //         }
+    //         return {
+    //             bookingData: [],
+    //             paginationData: { total: 0, page, limit }
+    //         };
+    //     }
+
+    //     // Process all bookings with resolved services and provider info
+    //     const responseData: IBookingResponse[] = await Promise.all(rawBookings.map(async (booking) => {
+    //         const provider = await this._providerRepository.findById(booking.providerId);
+    //         if (!provider) {
+    //             throw new InternalServerErrorException(`Provider with ID ${booking.providerId} not found.`);
+    //         }
+
+    //         const services = await Promise.all(
+    //             booking.services.map(async (serviceItem) => {
+    //                 const serviceData = await this._serviceOfferedRepository.findById(serviceItem.serviceId);
+    //                 if (!serviceData) {
+    //                     throw new InternalServerErrorException(`Service with ID ${serviceItem.serviceId} not found.`);
+    //                 }
+
+    //                 return {
+    //                     id: serviceData.id,
+    //                     name: serviceData.title
+    //                 }
+    //             })
+    //         );
+
+    //         return {
+    //             bookingId: booking.id,
+    //             provider: {
+    //                 id: provider.id,
+    //                 name: provider.fullname || provider.username,
+    //                 email: provider.email,
+    //                 phone: provider.phone
+    //             },
+    //             services,
+    //             expectedArrivalTime: booking.expectedArrivalTime,
+    //             bookingStatus: booking.bookingStatus,
+    //             paymentStatus: booking.paymentStatus,
+    //             totalAmount: booking.totalAmount,
+    //             createdAt: booking.createdAt as Date,
+    //         };
+
+    //     }));
+
+    //     return responseData;
+    // }
+
+    async fetchBookings(id: string, page: number = 1): Promise<IBookingWithPagination> {
+        const limit = 4;
+        const skip = (page - 1) * limit;
+
+        // Get total count first for pagination metadata
+        const total = await this._bookingRepository.count({ customerId: id });
+
+        if (!total) {
             const customer = await this._customerRepository.findById(id);
             if (!customer) {
                 throw new InternalServerErrorException(`Customer with ID ${id} not found.`);
             }
-            return [];
-        }
-
-        // Process all bookings with resolved services and provider info
-        const responseData: IBookingResponse[] = await Promise.all(bookings.map(async (booking) => {
-            const provider = await this._providerRepository.findById(booking.providerId);
-            if (!provider) {
-                throw new InternalServerErrorException(`Provider with ID ${booking.providerId} not found.`);
-            }
-
-            const services = await Promise.all(
-                booking.services.map(async (serviceItem) => {
-                    const serviceData = await this._serviceOfferedRepository.findById(serviceItem.serviceId);
-                    if (!serviceData) {
-                        throw new InternalServerErrorException(`Service with ID ${serviceItem.serviceId} not found.`);
-                    }
-
-                    return {
-                        id: serviceData.id,
-                        name: serviceData.title
-                    }
-                })
-            );
 
             return {
-                bookingId: booking.id,
-                provider: {
-                    id: provider.id,
-                    name: provider.fullname || provider.username,
-                    email: provider.email,
-                    phone: provider.phone
-                },
-                services,
-                expectedArrivalTime: booking.expectedArrivalTime,
-                bookingStatus: booking.bookingStatus,
-                paymentStatus: booking.paymentStatus,
-                totalAmount: booking.totalAmount,
-                createdAt: booking.createdAt as Date,
-            };
+                bookingData: [],
+                paginationData: { total: 0, page, limit }
+            }
+        }
 
-        }));
+        // Get only the bookings for the requested page
+        const paginatedBookings = await this._bookingRepository.find(
+            { customerId: id },
+            {
+                sort: { createdAt: -1 },
+                skip,
+                limit,
+            });
 
-        return responseData;
+        // Map and enrich booking data
+        const bookingData: IBookingResponse[] = await Promise.all(
+            paginatedBookings.map(async (booking) => {
+                const provider = await this._providerRepository.findById(booking.providerId);
+                if (!provider) {
+                    throw new InternalServerErrorException(`Provider with ID ${booking.providerId} not found.`);
+                }
+
+                const services = await Promise.all(
+                    booking.services.map(async (s) => {
+                        const service = await this._serviceOfferedRepository.findById(s.serviceId);
+                        if (!service) {
+                            throw new InternalServerErrorException(`Service with ID ${s.serviceId} not found.`);
+                        }
+
+                        return {
+                            id: service.id,
+                            name: service.title
+                        };
+                    })
+                );
+                return {
+                    bookingId: booking.id,
+                    provider: {
+                        id: provider.id,
+                        name: provider.fullname || provider.username,
+                        email: provider.email,
+                        phone: provider.phone,
+                    },
+                    services,
+                    expectedArrivalTime: booking.expectedArrivalTime,
+                    bookingStatus: booking.bookingStatus,
+                    paymentStatus: booking.paymentStatus,
+                    totalAmount: booking.totalAmount,
+                    createdAt: booking.createdAt as Date,
+                };
+            })
+        );
+
+        // Return structured paginated response
+        return {
+            bookingData,
+            paginationData: {
+                total,
+                page,
+                limit
+            }
+        };
     }
+
 
     private _combineDateAndTime(dateStr: string, timeStr: string): Date {
         const fullDateTimeStr = `${dateStr} ${timeStr}`;

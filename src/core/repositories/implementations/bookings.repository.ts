@@ -4,7 +4,7 @@ import { IBooking } from "../../entities/interfaces/booking.entity.interface";
 import { BookingDocument } from "../../schema/bookings.schema";
 import { InjectModel } from "@nestjs/mongoose";
 import { BOOKINGS_MODEL_NAME } from "../../constants/model.constant";
-import { Model, Types } from "mongoose";
+import { FilterQuery, Model, Types } from "mongoose";
 import { Booking } from "../../entities/implementation/bookings.entity";
 
 @Injectable()
@@ -16,8 +16,8 @@ export class BookingRepository extends BaseRepository<Booking, BookingDocument> 
         super(_bookingModel);
     }
 
-    async count(): Promise<number> {
-        return await this._bookingModel.countDocuments();
+    async count(filter?: FilterQuery<BookingDocument>): Promise<number> {
+        return await this._bookingModel.countDocuments(filter);
     }
 
     async aggregate(pipeline: any[]): Promise<any[]> {
