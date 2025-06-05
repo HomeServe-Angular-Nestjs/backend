@@ -4,7 +4,7 @@ import { IServiceOfferedRepository } from '../../../../core/repositories/interfa
 import { IBookingService } from '../interfaces/booking-service.interface';
 import { SelectedServiceDto, IPriceBreakupDto, BookingDto, SelectedServiceType } from '../../dtos/booking.dto';
 import { IBookingRepository } from '../../../../core/repositories/interfaces/bookings-repo.interface';
-import { BookingStatus, PaymentStatus } from '../../../../core/enum/schema.enum';
+import { BookingStatus, PaymentStatus } from '../../../../core/enum/bookings.enum';
 import { IScheduleRepository } from '../../../../core/repositories/interfaces/schedule-repo.interface';
 import { IBooking, IBookingResponse } from '../../../../core/entities/interfaces/booking.entity.interface';
 import { ICustomerRepository } from '../../../../core/repositories/interfaces/customer-repo.interface';

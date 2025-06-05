@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
-import { BookingStatus, PaymentStatus } from '../enum/schema.enum';
+import { BookingStatus, PaymentStatus } from '../enum/bookings.enum';
 
 @Schema({ timestamps: true })
 export class BookingDocument extends Document {

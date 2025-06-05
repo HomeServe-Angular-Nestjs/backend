@@ -1,5 +1,6 @@
 import { Transform, Type } from "class-transformer";
-import { ArrayMaxSize, ArrayMinSize, ArrayNotEmpty, IsArray, IsNotEmpty, IsNumber, IsOptional, IsString, Min, ValidateNested } from "class-validator";
+import { ArrayMaxSize, ArrayMinSize, ArrayNotEmpty, IsArray, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, Min, ValidateNested } from "class-validator";
+import { BookingStatus, DateRange, PaymentStatus, SortBy } from "src/core/enum/bookings.enum";
 
 export class SlotType {
     @IsString()
@@ -110,16 +111,32 @@ export class BookingPaginationFilterDto {
     search: string;
 
     @IsOptional()
-    @IsString()
-    date: string;
+    @IsEnum(DateRange, {
+        message: 'dateRange must be one of: ' + Object.values(DateRange).join(', ')
+    })
+    date: DateRange;
 
     @IsOptional()
-    @IsString()
-    sort: string;
+    @IsEnum(SortBy, {
+        message: 'sortBy must be one of: ' + Object.values(SortBy).join(', ')
+    })
+    sort: SortBy;
 
     @IsOptional()
-    @IsString()
-    status: string;
+    @Transform(({ value }) => value === '' ? undefined : value)
+    @IsEnum(BookingStatus, {
+        message: 'bookingStatus must be one of: ' + Object.values(BookingStatus).join(', ')
+    })
+    bookingStatus?: BookingStatus;
+
+    @IsOptional()
+    @Transform(({ value }) => value === '' ? undefined : value)
+    @IsEnum(PaymentStatus, {
+        message: 'paymentStatus must be one of: ' + Object.values(PaymentStatus).join(', ')
+    })
+    paymentStatus?: PaymentStatus;
+
 }
 
 export type FilterFileds = Omit<BookingPaginationFilterDto, 'page'>;
+

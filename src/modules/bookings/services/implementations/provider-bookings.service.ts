@@ -6,8 +6,9 @@ import { IServiceOfferedRepository } from "../../../../core/repositories/interfa
 import { IProviderRepository } from "../../../../core/repositories/interfaces/provider-repo.interface";
 import { ICustomerRepository } from "../../../../core/repositories/interfaces/customer-repo.interface";
 import { IScheduleRepository } from "../../../../core/repositories/interfaces/schedule-repo.interface";
-import { IProviderBookingLists, IResponseProviderBookingLists } from "../../../../core/entities/interfaces/booking.entity.interface";
+import { IBookingOverviewChanges, IBookingOverviewData, IProviderBookingLists, IResponseProviderBookingLists } from "../../../../core/entities/interfaces/booking.entity.interface";
 import { FilterFileds } from "../../dtos/booking.dto";
+import { BookingStatus, DateRange, PaymentStatus } from "src/core/enum/bookings.enum";
 
 @Injectable()
 export class ProviderBookingService implements IProviderBookingService {
@@ -27,11 +28,11 @@ export class ProviderBookingService implements IProviderBookingService {
     ) { }
 
 
-    async fetchBookingsList(page: number = 1, filters: FilterFileds): Promise<IResponseProviderBookingLists> {
+    async fetchBookingsList(id: string, page: number = 1, filters: FilterFileds): Promise<IResponseProviderBookingLists> {
         const limit = 5;
         const skip = (page - 1) * limit;
 
-        const rawBookings = await this._bookingRepository.find({});
+        const rawBookings = await this._bookingRepository.find({ providerId: id });
         if (!rawBookings.length) {
             return {
                 bookingData: [],
@@ -72,6 +73,7 @@ export class ProviderBookingService implements IProviderBookingService {
 
         let filteredBookings = enrichBookings;
 
+        // Filter by search
         if (filters.search) {
             const search = filters.search.trim().toLowerCase();
             filteredBookings = enrichBookings.filter((booking) => {
@@ -84,6 +86,48 @@ export class ProviderBookingService implements IProviderBookingService {
             });
         }
 
+        // Filter by bookingStatus
+        if (filters.bookingStatus) {
+            filteredBookings = filteredBookings.filter(
+                (booking) => booking.bookingStatus === filters.bookingStatus
+            );
+        }
+
+        // Filter by paymentStatus
+        if (filters.paymentStatus) {
+            filteredBookings = filteredBookings.filter(
+                (booking) => booking.paymentStatus === filters.paymentStatus
+            );
+        }
+
+        if (filters.date) {
+            const today = new Date();
+
+            filteredBookings = filteredBookings.filter((booking) => {
+                const expectedArrivalTime = new Date(booking.expectedArrivalTime);
+
+                switch (filters.date) {
+                    case DateRange.TODAY:
+                        return expectedArrivalTime.toDateString() === today.toDateString();
+                    case DateRange.THIS_WEEK: {
+                        const weekStart = new Date(today);
+                        weekStart.setDate(today.getDate() - today.getDate());
+                        const weekEnd = new Date(weekStart);
+                        weekEnd.setDate(weekStart.getDate() + 6);
+                        return expectedArrivalTime >= weekStart && expectedArrivalTime <= weekEnd;
+                    }
+                    case DateRange.THIS_MONTH:
+                        return expectedArrivalTime.getMonth() === today.getMonth() &&
+                            expectedArrivalTime.getFullYear() === today.getFullYear();
+                    case DateRange.THIS_YEAR:
+                        return expectedArrivalTime.getFullYear() === today.getFullYear();
+                    default:
+                        return true;
+                }
+            });
+
+        }
+
         const total = filteredBookings.length;
         const paginated = filteredBookings.slice(skip, skip + limit);
 
@@ -92,4 +136,80 @@ export class ProviderBookingService implements IProviderBookingService {
             paginationData: { page, limit, total }
         }
     }
+
+    async fetchOverviewData(id: string): Promise<IBookingOverviewData> {
+        const bookings = await this._bookingRepository.find({ providerId: id });
+        const now = new Date();
+
+        const getMonthRange = (date: Date) => ({
+            start: new Date(date.getFullYear(), date.getMonth(), 1),
+            end: new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999),
+        });
+
+        // Date ranges for current and last month
+        const thisMonthRange = getMonthRange(now);
+        const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const lastMonthRange = getMonthRange(lastMonthDate);
+
+        // Filter bookings by month with safety check for createdAt
+        const bookingsThisMonth = bookings.filter(
+            b => b.createdAt !== undefined &&
+                b.createdAt >= thisMonthRange.start && b.createdAt <= thisMonthRange.end
+        );
+
+        const bookingsLastMonth = bookings.filter(
+            b => b.createdAt !== undefined &&
+                b.createdAt >= lastMonthRange.start && b.createdAt <= lastMonthRange.end
+        );
+
+        // Function to calculate summary counts
+        const summarize = (list: typeof bookings) =>
+            list.reduce(
+                (acc, b) => {
+                    if (b.bookingStatus === BookingStatus.PENDING) acc.pendingRequests++;
+                    if (b.bookingStatus === BookingStatus.COMPLETED) acc.completedJobs++;
+                    if (b.paymentStatus === PaymentStatus.UNPAID) acc.pendingPayments++;
+                    if (b.bookingStatus === BookingStatus.CANCELLED) acc.cancelledBookings++;
+                    return acc;
+                },
+                {
+                    pendingRequests: 0,
+                    completedJobs: 0,
+                    pendingPayments: 0,
+                    cancelledBookings: 0,
+                }
+            );
+
+        // Calculate summaries for this and last month
+        const summaryThisMonth = summarize(bookingsThisMonth);
+        const summaryLastMonth = summarize(bookingsLastMonth);
+
+        // Total bookings for each month
+        const totalThisMonth = bookingsThisMonth.length;
+        const totalLastMonth = bookingsLastMonth.length;
+
+        // Helper for percentage calculation with safe zero check
+        const calcPercentChange = (current: number, previous: number): number => {
+            if (previous === 0) {
+                return current === 0 ? 0 : 100;
+            }
+            return ((current - previous) / previous) * 100;
+        };
+
+        // Calculate percentage changes with correct property names matching IBookingOverviewChanges interface
+        const changes: IBookingOverviewChanges = {
+            totalBookingsChange: calcPercentChange(totalThisMonth, totalLastMonth),
+            pendingRequestsChange: calcPercentChange(summaryThisMonth.pendingRequests, summaryLastMonth.pendingRequests),
+            completedJobsChange: calcPercentChange(summaryThisMonth.completedJobs, summaryLastMonth.completedJobs),
+            pendingPaymentsChange: calcPercentChange(summaryThisMonth.pendingPayments, summaryLastMonth.pendingPayments),
+            cancelledBookingsChange: calcPercentChange(summaryThisMonth.cancelledBookings, summaryLastMonth.cancelledBookings),
+        };
+
+        return {
+            ...summaryThisMonth,
+            totalBookings: totalThisMonth,
+            changes,
+        };
+    }
+
 }

@@ -12,3 +12,17 @@ export enum PaymentStatus {
     REFUNDED = 'refunded',
     FAILED = 'failed',
 }
+
+export enum DateRange {
+    TODAY = 'today',
+    THIS_WEEK = 'thisWeek',
+    THIS_MONTH = 'thisMonth',
+    THIS_YEAR = 'thisYear'
+}
+
+export enum SortBy {
+    NEWEST = 'newest',
+    OLDEST = 'oldest',
+    NAME_ASCENDING = 'nameAsc',
+    NAME_DESCENDING = 'nameDesc'
+}

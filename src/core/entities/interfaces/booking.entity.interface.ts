@@ -1,4 +1,4 @@
-import { BookingStatus, PaymentStatus } from "../../enum/schema.enum";
+import { BookingStatus, PaymentStatus } from "../../enum/bookings.enum";
 import { IEntity } from "../base/interfaces/base-entity.entity.interface";
 
 export interface IBookingResponse {
@@ -47,7 +47,7 @@ export interface IPagination {
 }
 
 export interface IResponseProviderBookingLists {
-    bookingData: IProviderBookingLists[],
+    bookingData: IProviderBookingLists[];
     paginationData: IPagination;
 }
 
@@ -72,4 +72,21 @@ export interface IBooking extends IEntity {
     }[];
     transactionId: string | null;
     paymentStatus: PaymentStatus;
+}
+
+export interface IBookingOverviewChanges {
+    totalBookingsChange: number;
+    pendingRequestsChange: number;
+    completedJobsChange: number;
+    pendingPaymentsChange: number;
+    cancelledBookingsChange: number;
+}
+
+export interface IBookingOverviewData {
+    pendingRequests: number;
+    completedJobs: number;
+    pendingPayments: number;
+    cancelledBookings: number;
+    totalBookings: number;
+    changes?: IBookingOverviewChanges;
 }

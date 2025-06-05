@@ -1,4 +1,4 @@
-import { BookingStatus, PaymentStatus } from "../../enum/schema.enum";
+import { BookingStatus, PaymentStatus } from "../../enum/bookings.enum";
 import { BaseEntity } from "../base/implementation/base.entity";
 import { IBooking } from "../interfaces/booking.entity.interface";
 
