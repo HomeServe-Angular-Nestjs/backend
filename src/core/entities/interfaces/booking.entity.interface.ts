@@ -101,3 +101,24 @@ export interface IBookingOverviewData {
     totalBookings: number;
     changes?: IBookingOverviewChanges;
 }
+
+export interface IBookingDetails {
+    bookingId: string;
+    bookingStatus: BookingStatus;
+    paymentStatus: PaymentStatus;
+    createdAt: Date;
+    expectedArrivalTime: Date;
+    totalAmount: number;
+
+    provider: {
+        name: string;
+        email: string;
+        phone: string;
+    };
+
+    orderedServices: {
+        title: string;
+        price: string;
+        estimatedTime: string;
+    }[];
+}

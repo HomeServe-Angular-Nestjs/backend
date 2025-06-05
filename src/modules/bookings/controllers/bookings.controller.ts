@@ -1,11 +1,11 @@
 import { BadRequestException, Body, Controller, Get, Inject, InternalServerErrorException, Logger, Post, Query, Req, UnauthorizedException, UseInterceptors } from '@nestjs/common';
-import { BookingDto, BookingPaginationFilterDto, SelectedServiceDto } from '../dtos/booking.dto';
+import { BookingDto, BookingPaginationFilterDto, SelectedServiceDto, ViewBookingDetailsDto } from '../dtos/booking.dto';
 import { AuthInterceptor } from '../../auth/interceptors/auth.interceptor';
 import { Request } from 'express';
 import { IPayload } from '../../../core/misc/payload.interface';
 import { CUSTOMER_SERVICE_NAME } from '../../../core/constants/service.constant';
 import { IBookingService } from '../services/interfaces/booking-service.interface';
-import { IBooking, IBookingResponse, IBookingWithPagination } from '../../../core/entities/interfaces/booking.entity.interface';
+import { IBooking, IBookingDetails, IBookingResponse, IBookingWithPagination } from '../../../core/entities/interfaces/booking.entity.interface';
 
 @Controller('booking')
 @UseInterceptors(AuthInterceptor)
@@ -60,10 +60,27 @@ export class BookingsController {
 
             const { page, ...filter } = dto;
 
-            return this._bookingService.fetchBookings(user.sub, page);
+            return await this._bookingService.fetchBookings(user.sub, page);
         } catch (err) {
             this.logger.error(`Error fetching bookings: ${err}`);
             throw new InternalServerErrorException('Something happened while fetching booking');
+        }
+    }
+
+    @Get('view_details')
+    async getBookingDetails(@Query() dto: ViewBookingDetailsDto): Promise<IBookingDetails> {
+        try {
+            const { bookingId } = dto
+            if (!bookingId) {
+                throw new BadRequestException('Booking Id not found');
+            }
+
+            const res = await this._bookingService.fetchBookingDetails(bookingId);
+            this.logger.debug(res);
+            return res;
+        } catch (err) {
+            this.logger.error(`Error fetching booking details: ${err}`);
+            throw new InternalServerErrorException('Something happened while fetching booking details');
         }
     }
 }

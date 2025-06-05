@@ -140,3 +140,9 @@ export class BookingPaginationFilterDto {
 
 export type FilterFileds = Omit<BookingPaginationFilterDto, 'page'>;
 
+export class ViewBookingDetailsDto {
+    @IsNotEmpty()
+    @IsString()
+    bookingId: string;
+}
+
