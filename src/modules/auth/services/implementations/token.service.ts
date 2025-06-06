@@ -32,9 +32,9 @@ export class TokenService implements ITokenService {
       this._configService.get<string>('JWT_REFRESH_SECRET') ||
       'your-refresh-secret';
     this.ACCESS_EXPIRES_IN =
-      this._configService.get<string>('JWT_ACCESS_EXPIRES_IN') || '10s';
+      this._configService.get<string>('JWT_ACCESS_EXPIRES_IN') || '10m';
     this.REFRESH_EXPIRES_IN =
-      this._configService.get<string>('JWT_REFRESH_EXPIRES_IN') || '1h';
+      this._configService.get<string>('JWT_REFRESH_EXPIRES_IN') || '7d';
   }
 
   generateAccessToken(userId: string, email: string): string {

@@ -18,7 +18,7 @@ import { CustomerModule } from './modules/customer/customer.module';
     // Cache with Redis
     CacheModule.register({
       isGlobal: true,
-      ttl: 7 * 24 * 60 * 60,
+      ttl: Number(process.env.REDIS_TTL) || 7 * 24 * 60 * 60,
       store: redisStore,
     }),
 
