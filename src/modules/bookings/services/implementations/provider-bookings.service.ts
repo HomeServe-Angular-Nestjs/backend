@@ -1,4 +1,4 @@
-import { Inject, Injectable, InternalServerErrorException, Logger, Search } from "@nestjs/common";
+import { Inject, Injectable, InternalServerErrorException, Logger, NotFoundException, Search } from "@nestjs/common";
 import { IProviderBookingService } from "../interfaces/provider-booking-service.interface";
 import { BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SCHEDULE_REPOSITORY_NAME, SERVICE_OFFERED_REPOSITORY_NAME } from "../../../../core/constants/repository.constant";
 import { IBookingRepository } from "../../../../core/repositories/interfaces/bookings-repo.interface";
@@ -6,8 +6,8 @@ import { IServiceOfferedRepository } from "../../../../core/repositories/interfa
 import { IProviderRepository } from "../../../../core/repositories/interfaces/provider-repo.interface";
 import { ICustomerRepository } from "../../../../core/repositories/interfaces/customer-repo.interface";
 import { IScheduleRepository } from "../../../../core/repositories/interfaces/schedule-repo.interface";
-import { IBookingOverviewChanges, IBookingOverviewData, IProviderBookingLists, IResponseProviderBookingLists } from "../../../../core/entities/interfaces/booking.entity.interface";
-import { FilterFileds } from "../../dtos/booking.dto";
+import { IBookingDetailProvider, IBookingOverviewChanges, IBookingOverviewData, IProviderBookingLists, IResponseProviderBookingLists } from "../../../../core/entities/interfaces/booking.entity.interface";
+import { FilterFileds, UpdateBookingStatusDto } from "../../dtos/booking.dto";
 import { BookingStatus, DateRange, PaymentStatus } from "src/core/enum/bookings.enum";
 
 @Injectable()
@@ -210,6 +210,71 @@ export class ProviderBookingService implements IProviderBookingService {
             totalBookings: totalThisMonth,
             changes,
         };
+    }
+
+    async fetchBookingDetails(bookingId: string): Promise<IBookingDetailProvider> {
+        const booking = await this._bookingRepository.findById(bookingId);
+        if (!booking) {
+            throw new InternalServerErrorException(`Booking with ID ${bookingId} not found.`);
+        }
+
+        const customer = await this._customerRepository.findById(booking.customerId);
+        if (!customer) {
+            throw new InternalServerErrorException(`Provider with ID ${booking.customerId} not found.`);
+        }
+
+        const orderedServices = (
+            await Promise.all(
+                booking.services.map(async (s) => {
+                    const service = await this._serviceOfferedRepository.findById(s.serviceId);
+                    if (!service) {
+                        throw new InternalServerErrorException(`Service with ID ${s.serviceId} not found.`);
+                    }
+
+                    return service.subService
+                        .filter(sub => sub.id && s.subserviceIds.includes(sub.id))
+                        .map(sub => ({
+                            title: sub.title as string,
+                            price: sub.price as string,
+                            estimatedTime: sub.estimatedTime as string
+                        }));
+                })
+            )
+        ).flat();
+
+        return {
+            bookingId: booking.id,
+            bookingStatus: booking.bookingStatus,
+            paymentStatus: booking.paymentStatus,
+            createdAt: booking.createdAt as Date,
+            expectedArrivalTime: booking.expectedArrivalTime,
+            totalAmount: booking.totalAmount,
+            customer: {
+                name: customer.fullname || customer.username,
+                email: customer.email,
+                phone: customer.phone,
+                location: booking.location.address,
+            },
+            orderedServices
+        }
+    }
+
+    async updateBookingStatus(dto: UpdateBookingStatusDto): Promise<boolean> {
+        try {
+            const updatedBooking = await this._bookingRepository.findOneAndUpdate(
+                { _id: dto.bookingId },
+                { $set: { bookingStatus: dto.newStatus } },
+                { new: true }
+            );
+
+            if (!updatedBooking) {
+                throw new NotFoundException(`Booking with ID ${dto.bookingId} not found.`);
+            }
+            return !!updatedBooking;
+        } catch (err) {
+            this.logger.error('Error updating booking status:', err);
+            throw new InternalServerErrorException('Failed to update booking status.');
+        }
     }
 
 }

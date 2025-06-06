@@ -149,9 +149,7 @@ export class ServiceController {
         prepareDto = this._attachFilesToServiceData(dto, files);
       }
 
-      const res = await this._serviceFeature.updateService(prepareDto);
-      this.logger.debug(res);
-      return res;
+      return await this._serviceFeature.updateService(prepareDto);
     } catch (err) {
       this.logger.error(err);
       if (err instanceof NotFoundException) {

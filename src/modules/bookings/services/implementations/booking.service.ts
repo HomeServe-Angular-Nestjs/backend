@@ -6,7 +6,7 @@ import { SelectedServiceDto, IPriceBreakupDto, BookingDto, SelectedServiceType }
 import { IBookingRepository } from '../../../../core/repositories/interfaces/bookings-repo.interface';
 import { BookingStatus, PaymentStatus } from '../../../../core/enum/bookings.enum';
 import { IScheduleRepository } from '../../../../core/repositories/interfaces/schedule-repo.interface';
-import { IBooking, IBookingDetails, IBookingResponse, IBookingWithPagination } from '../../../../core/entities/interfaces/booking.entity.interface';
+import { IBookingDetailCustomer, IBookingResponse, IBookingWithPagination } from '../../../../core/entities/interfaces/booking.entity.interface';
 import { ICustomerRepository } from '../../../../core/repositories/interfaces/customer-repo.interface';
 import { ISlot } from '../../../../core/entities/interfaces/schedule.entity.interface';
 import { IProviderRepository } from '../../../../core/repositories/interfaces/provider-repo.interface';
@@ -261,7 +261,7 @@ export class BookingService implements IBookingService {
         };
     }
 
-    async fetchBookingDetails(bookingId: string): Promise<IBookingDetails> {
+    async fetchBookingDetails(bookingId: string): Promise<IBookingDetailCustomer> {
         const booking = await this._bookingRepository.findById(bookingId);
         if (!booking) {
             throw new InternalServerErrorException(`Booking with ID ${bookingId} not found.`);

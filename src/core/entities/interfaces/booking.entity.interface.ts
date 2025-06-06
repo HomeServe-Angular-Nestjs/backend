@@ -102,23 +102,33 @@ export interface IBookingOverviewData {
     changes?: IBookingOverviewChanges;
 }
 
-export interface IBookingDetails {
+export interface IBookingDetailsBase {
     bookingId: string;
     bookingStatus: BookingStatus;
     paymentStatus: PaymentStatus;
     createdAt: Date;
     expectedArrivalTime: Date;
     totalAmount: number;
-
-    provider: {
-        name: string;
-        email: string;
-        phone: string;
-    };
-
     orderedServices: {
         title: string;
         price: string;
         estimatedTime: string;
     }[];
+}
+
+export interface IBookingDetailCustomer extends IBookingDetailsBase {
+    provider: {
+        name: string;
+        email: string;
+        phone: string;
+    };
+}
+
+export interface IBookingDetailProvider extends IBookingDetailsBase {
+    customer: {
+        name: string;
+        email: string;
+        phone: string;
+        location: string;
+    };
 }

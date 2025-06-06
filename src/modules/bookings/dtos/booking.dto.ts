@@ -146,3 +146,13 @@ export class ViewBookingDetailsDto {
     bookingId: string;
 }
 
+
+export class UpdateBookingStatusDto {
+    @IsNotEmpty()
+    @IsString()
+    bookingId: string;
+
+    @IsNotEmpty()
+    @IsString()
+    newStatus: string;
+}

@@ -1,11 +1,11 @@
-import { Controller, Get, Inject, InternalServerErrorException, Logger, Query, Req, UnauthorizedException, UseInterceptors } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Inject, InternalServerErrorException, Logger, Patch, Query, Req, UnauthorizedException, UseInterceptors } from '@nestjs/common';
 import { PROVIDER_BOOKING_SERVICE_NAME } from '../../../core/constants/service.constant';
 import { AuthInterceptor } from '../../auth/interceptors/auth.interceptor';
 import { IPayload } from '../../../core/misc/payload.interface';
 import { Request } from 'express';
 import { IProviderBookingService } from '../services/interfaces/provider-booking-service.interface';
 import { IResponseProviderBookingLists } from '../../../core/entities/interfaces/booking.entity.interface';
-import { BookingPaginationFilterDto } from '../dtos/booking.dto';
+import { BookingPaginationFilterDto, UpdateBookingStatusDto, ViewBookingDetailsDto } from '../dtos/booking.dto';
 import { filter } from 'rxjs';
 
 
@@ -48,6 +48,35 @@ export class ProviderBookingsController {
         } catch (err) {
             this.logger.error(`Error fetching overview data for the provider: ${err}`);
             throw new InternalServerErrorException('Something happened while fetching overview data for the provider');
+        }
+    }
+
+    @Get('fetch_details')
+    async getBookingDetails(@Query() dto: ViewBookingDetailsDto) {
+        try {
+            const { bookingId } = dto
+            if (!bookingId) {
+                throw new BadRequestException('Booking Id not found');
+            }
+
+            return await this._providerBookingService.fetchBookingDetails(bookingId);
+        } catch (err) {
+            this.logger.error(`Error fetching booking details for the provider: ${err}`);
+            throw new InternalServerErrorException('Something happened while fetching booking details for the provider');
+        }
+    }
+
+    @Patch('b_status')
+    async updateBookingStatus(@Body() dto: UpdateBookingStatusDto) {
+        try {
+            if (!dto.bookingId || !dto.newStatus) {
+                throw new BadRequestException('Booking Id or new status not found');
+            }
+
+            return this._providerBookingService.updateBookingStatus(dto);
+        } catch (err) {
+            this.logger.error(`Error updating the booking status: ${err}`);
+            throw new InternalServerErrorException('Something happened while updating the booking status');
         }
     }
 }

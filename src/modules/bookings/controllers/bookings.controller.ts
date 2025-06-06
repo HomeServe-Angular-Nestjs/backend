@@ -5,7 +5,7 @@ import { Request } from 'express';
 import { IPayload } from '../../../core/misc/payload.interface';
 import { CUSTOMER_SERVICE_NAME } from '../../../core/constants/service.constant';
 import { IBookingService } from '../services/interfaces/booking-service.interface';
-import { IBooking, IBookingDetails, IBookingResponse, IBookingWithPagination } from '../../../core/entities/interfaces/booking.entity.interface';
+import { IBookingDetailCustomer, IBookingWithPagination } from '../../../core/entities/interfaces/booking.entity.interface';
 
 @Controller('booking')
 @UseInterceptors(AuthInterceptor)
@@ -68,16 +68,14 @@ export class BookingsController {
     }
 
     @Get('view_details')
-    async getBookingDetails(@Query() dto: ViewBookingDetailsDto): Promise<IBookingDetails> {
+    async getBookingDetails(@Query() dto: ViewBookingDetailsDto): Promise<IBookingDetailCustomer> {
         try {
             const { bookingId } = dto
             if (!bookingId) {
                 throw new BadRequestException('Booking Id not found');
             }
 
-            const res = await this._bookingService.fetchBookingDetails(bookingId);
-            this.logger.debug(res);
-            return res;
+            return await this._bookingService.fetchBookingDetails(bookingId);
         } catch (err) {
             this.logger.error(`Error fetching booking details: ${err}`);
             throw new InternalServerErrorException('Something happened while fetching booking details');
