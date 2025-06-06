@@ -51,78 +51,73 @@ export class CreateServiceDto {
 export class UpdateSubServiceDto {
   @IsOptional()
   @IsString()
-  id?: string;
+  id: string;
 
   @IsOptional()
   @IsString()
-  title?: string;
+  title: string;
 
   @IsOptional()
   @IsString()
-  desc?: string;
+  desc: string;
 
   @IsOptional()
   @IsString()
-  price?: string;
+  price: string;
 
   @IsOptional()
   @IsString()
-  estimatedTime?: string;
+  estimatedTime: string;
 
   @IsOptional()
   @IsString()
-  tag?: string;
+  tag: string;
 
   @IsOptional()
-  image?: any;
+  image: any;
 
   @IsOptional()
-  @Transform(({ value }) => value === 'true')
   @IsBoolean()
-  isActive?: boolean;
+  isActive: boolean;
 
   @IsOptional()
-  @Transform(({ value }) => value === 'true')
   @IsBoolean()
-  isDeleted?: boolean;
+  isDeleted: boolean;
 }
 
 export class UpdateServiceDto {
   @IsOptional()
   @IsString()
-  id?: string;
+  id: string;
 
   @IsOptional()
   @IsString()
-  title?: string;
+  title: string;
 
   @IsOptional()
   @IsString()
-  desc?: string;
+  desc: string;
 
   @IsOptional()
-  image?: any;
+  image: any;
 
   @IsOptional()
-  @Transform(({ value }) => value === 'true')
   @IsBoolean()
-  isActive?: boolean;
+  isActive: boolean;
 
   @IsOptional()
-  @Transform(({ value }) => value === 'true')
   @IsBoolean()
-  isDeleted?: boolean;
+  isDeleted: boolean;
 
   @IsOptional()
-  @Transform(({ value }) => value === 'true')
   @IsBoolean()
-  isVerified?: boolean;
+  isVerified: boolean;
 
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => UpdateSubServiceDto)
-  subServices?: UpdateSubServiceDto[];
+  subServices: UpdateSubServiceDto[];
 }
 
 export class UpdateSubServiceWrapperDto {

@@ -158,6 +158,9 @@ export class ServiceFeatureService implements IServiceFeatureService {
       );
     }
 
+
+    this.logger.debug(updateFields);
+
     const updatedService = await this._serviceOfferedRepository.findOneAndUpdate(
       { _id: id },
       { $set: updateFields },
