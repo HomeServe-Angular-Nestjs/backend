@@ -41,3 +41,15 @@ export class StatusUpdateDto {
     })
     role: RoleType;
 }
+
+export class RemoveUserDto {
+    @IsNotEmpty()
+    @IsString()
+    userId: string;
+
+    @IsNotEmpty()
+    @IsIn(['customer', 'provider'], {
+        message: 'Role must be either "customer" or "provider"',
+    })
+    role: RoleType;
+}

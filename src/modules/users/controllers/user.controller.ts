@@ -13,10 +13,10 @@ import {
 import { ADMIN_USERMANAGEMENT_SERVICE_NAME } from '../../../core/constants/service.constant';
 import { AuthInterceptor } from '../../auth/interceptors/auth.interceptor';
 import { IAdminUserManagementService } from '../services/interfaces/admin-user-service.interface';
-import { GetUsersWithFilterDto, StatusUpdateDto } from '../dtos/admin-user.dto';
+import { GetUsersWithFilterDto, RemoveUserDto, StatusUpdateDto } from '../dtos/admin-user.dto';
 import { IUserData } from 'src/core/entities/interfaces/admin.entity.interface';
 
-@Controller('admin')
+@Controller('admin/users')
 @UseInterceptors(AuthInterceptor)
 export class AdminController {
   private readonly logger = new Logger(AdminController.name);
@@ -27,7 +27,7 @@ export class AdminController {
 
   ) { }
 
-  @Get('users')
+  @Get('')
   async getUsers(@Query() dto: GetUsersWithFilterDto): Promise<IUserData[]> {
     try {
       if (!dto.role) {
@@ -50,12 +50,22 @@ export class AdminController {
         }
       }
 
-      return this._adminuserManagementService.updateUserStatus(dto)
+      return await this._adminuserManagementService.updateUserStatus(dto)
     } catch (err) {
       this.logger.error(`Error updating user status: ${err.message}`, err.stack);
       throw new InternalServerErrorException('Failed updating user status');
     }
   }
 
+  @Patch('remove')
+  async removeUser(@Body() dto: RemoveUserDto) {
+    try {
 
+      this.logger.debug(dto);
+      return await this._adminuserManagementService.removeUser(dto)
+    } catch (err) {
+      this.logger.error(`Error removing user: ${err.message}`, err.stack);
+      throw new InternalServerErrorException('Failed removing user');
+    }
+  }
 }
