@@ -25,7 +25,7 @@ export class AdminUserManagementService implements IAdminUserManagementService {
       * @returns {Promise<IUserData[]>} List of all customer/provider documents.
       */
     async getusers(page: number = 1, dto: Omit<GetUsersWithFilterDto, 'page'>): Promise<IUserDataWithPagination> {
-        const limit = 2;
+        const limit = 10;
         const skip = (page - 1) * limit;
 
         const query: { [key: string]: any | string } = { isDeleted: false };

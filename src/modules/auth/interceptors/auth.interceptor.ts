@@ -44,17 +44,7 @@ export class AuthInterceptor implements NestInterceptor {
     const req: Request = context.switchToHttp().getRequest();
     const res: Response = context.switchToHttp().getResponse();
 
-    const userType = req.headers['x-user-type'] as UserType;
-
-    if (!userType) {
-      throw new UnauthorizedException('Missing x-user-type header');
-    }
-
-    const accessToken = (req.cookies?.['access_token']) || (req.headers['access_token']);
-
-    if (!accessToken) {
-      throw new UnauthorizedException('Access token not found in request');
-    }
+    const accessToken = (req.cookies?.['access_token']);
 
     const attachUserFromToken = async (token: string) => {
       const payload = await this.tokenService.validateAccessToken(token);
@@ -62,37 +52,45 @@ export class AuthInterceptor implements NestInterceptor {
     };
 
     try {
+      if (!accessToken) {
+        throw new NotFoundException('Access token not found in request');
+      }
+
       await attachUserFromToken(accessToken);
       return next.handle();
     } catch (accessError) {
+      this.logger.warn('Access token invalid or missing. Trying refresh flow...', accessError);
+
+      let userId: string | undefined;
+      let email: string | undefined;
+
       try {
-        const decoded = this.tokenService.decode(accessToken);
-
-        if (!decoded || typeof decoded !== 'object') {
-          throw new BadRequestException('Malformed access token');
+        if (accessToken) {
+          const decoded = this.tokenService.decode(accessToken);
+          if (decoded && typeof decoded === 'object') {
+            userId = decoded.sub;
+            email = decoded.email;
+          }
         }
 
-        const { sub, email } = decoded;
-        const isValidRefreshToken = await this.tokenService.validateRefreshToken(sub);
-
-        if (!isValidRefreshToken) {
-          throw new UnauthorizedException('Invalid refresh token');
+        if (!userId) {
+          throw new UnauthorizedException('Cannot identify user for refresh token');
         }
 
-        const newToken = this.tokenService.generateAccessToken(sub, email);
-        if (!newToken) {
-          throw new NotFoundException('Failed to generate new access token');
-        }
+        const payload = await this.tokenService.validateRefreshToken(userId);
+        if (!payload) throw new UnauthorizedException('Invalid refresh token');
 
-        res.cookie('access_token', newToken, {
+        const newAccessToken = this.tokenService.generateAccessToken(userId, payload.email);
+
+        res.cookie('access_token', newAccessToken, {
           httpOnly: true,
           secure: false,
           sameSite: 'strict',
-          maxAge: 10 * 60 * 1000,
           path: '/',
         });
 
-        await attachUserFromToken(newToken);
+        await attachUserFromToken(newAccessToken);
+        this.logger.debug('New access token issued:', req.user);
         return next.handle();
       } catch (refreshError) {
         this.logger.error('Refresh token flow failed:', refreshError);
