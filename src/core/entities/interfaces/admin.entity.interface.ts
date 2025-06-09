@@ -1,4 +1,5 @@
 import { IEntity } from '../base/interfaces/base-entity.entity.interface';
+import { IPagination } from './booking.entity.interface';
 
 export interface IAdmin extends IEntity {
   email: string;
@@ -16,4 +17,9 @@ export interface IUserData {
   isBlocked: boolean;
   isActive: boolean;
   isDeleted: boolean
+}
+
+export interface IUserDataWithPagination {
+  data: IUserData[],
+  pagination: IPagination
 }

@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME } from "src/core/constants/repository.constant";
-import { IUserData } from "src/core/entities/interfaces/admin.entity.interface";
+import { IUserData, IUserDataWithPagination } from "src/core/entities/interfaces/admin.entity.interface";
 import { ICustomerRepository } from "src/core/repositories/interfaces/customer-repo.interface";
 import { GetUsersWithFilterDto, RemoveUserDto, StatusUpdateDto } from "../../dtos/admin-user.dto";
 import { IAdminUserManagementService } from "../interfaces/admin-user-service.interface";
@@ -20,11 +20,14 @@ export class AdminUserManagementService implements IAdminUserManagementService {
 
 
     /**
-      * Retrieves all customers from the database.
+      * Retrieves all customers/providers from the database.
       *
-      * @returns {Promise<ICustomers[]>} List of all customer documents.
+      * @returns {Promise<IUserData[]>} List of all customer/provider documents.
       */
-    async getusers(dto: GetUsersWithFilterDto): Promise<IUserData[]> {
+    async getusers(page: number = 1, dto: Omit<GetUsersWithFilterDto, 'page'>): Promise<IUserDataWithPagination> {
+        const limit = 2;
+        const skip = (page - 1) * limit;
+
         const query: { [key: string]: any | string } = { isDeleted: false };
 
         if (typeof dto.search === 'string') {
@@ -36,9 +39,12 @@ export class AdminUserManagementService implements IAdminUserManagementService {
         }
 
         const repo = dto.role === 'customer' ? this._customerRepository : this._providerRepository;
-        const users = await repo.find(query);
+        const [users, total] = await Promise.all([
+            repo.find(query, { skip, limit }),
+            repo.count(query)
+        ]);
 
-        return users.map((user: ICustomer | IProvider) => ({
+        const data: IUserData[] = users.map((user: ICustomer | IProvider) => ({
             id: user.id,
             username: user.username,
             email: user.email,
@@ -48,6 +54,8 @@ export class AdminUserManagementService implements IAdminUserManagementService {
             isBlocked: user.isBlocked,
             isDeleted: user.isDeleted,
         }));
+
+        return { data, pagination: { limit, page, total } }
     }
 
     async updateUserStatus(dto: StatusUpdateDto): Promise<boolean> {

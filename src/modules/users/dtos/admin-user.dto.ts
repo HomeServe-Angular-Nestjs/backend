@@ -1,10 +1,16 @@
 import { Transform } from "class-transformer";
-import { IsBoolean, IsIn, IsNotEmpty, IsOptional, IsString } from "class-validator";
+import { IsBoolean, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from "class-validator";
 
 export type FilterStatusType = true | false | 'all';
 export type RoleType = 'customer' | 'provider';
 
 export class GetUsersWithFilterDto {
+    @IsOptional()
+    @Transform(({ value }) => Number(value) || 1)
+    @IsNumber()
+    @Min(1)
+    page: number;
+
     @IsNotEmpty()
     @IsIn(['customer', 'provider'], {
         message: 'Role must be either "customer" or "provider"',

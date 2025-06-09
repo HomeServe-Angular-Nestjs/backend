@@ -7,26 +7,30 @@ import { InjectModel } from '@nestjs/mongoose';
 import {
   PROVIDER_MODEL_NAME,
 } from '../../constants/model.constant';
-import { Model, Types } from 'mongoose';
+import { FilterQuery, Model, Types } from 'mongoose';
 import { IProvider } from '../../entities/interfaces/user.entity.interface';
 
 @Injectable()
 export class ProviderRepository extends BaseRepository<Provider, ProviderDocument> implements IProviderRepository {
   constructor(
     @InjectModel(PROVIDER_MODEL_NAME)
-    private providerModel: Model<ProviderDocument>,
+    private _providerModel: Model<ProviderDocument>,
   ) {
-    super(providerModel);
+    super(_providerModel);
   }
 
   async findByGoogleId(id: string): Promise<Provider | null> {
-    const provider = await this.providerModel.findOne({ googleId: id });
+    const provider = await this._providerModel.findOne({ googleId: id });
     return provider ? this.toEntity(provider) : null;
   }
 
   async findByEmail(email: string): Promise<IProvider | null> {
-    const result = await this.providerModel.findOne({ email }).exec();
+    const result = await this._providerModel.findOne({ email }).exec();
     return result ? this.toEntity(result) : null;
+  }
+
+  async count(filter?: FilterQuery<ProviderDocument>): Promise<number> {
+    return await this._providerModel.countDocuments(filter);
   }
 
   protected toEntity(doc: ProviderDocument): Provider {
