@@ -6,3 +6,14 @@ export interface IAdmin extends IEntity {
   type: 'admin';
   isDeleted: boolean,
 }
+
+export interface IUserData {
+  id: string;
+  username: string;
+  email: string;
+  contact: string;
+  createdAt: Date;
+  isBlocked: boolean;
+  isActive: boolean;
+  isDeleted: boolean
+}

@@ -17,7 +17,6 @@ import {
 import { AuthInterceptor } from '../../auth/interceptors/auth.interceptor';
 import { PROVIDER_SERVICE_NAME } from '../../../core/constants/service.constant';
 import { IProviderServices } from '../services/interfaces/provider-service.interface';
-import { Provider } from '../../../core/entities/implementation/provider.entity';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Request } from 'express';
 import { IPayload } from '../../../core/misc/payload.interface';
@@ -32,25 +31,6 @@ export class ProviderController {
         @Inject(PROVIDER_SERVICE_NAME)
         private providerServices: IProviderServices,
     ) { }
-
-    /**
-     * Fetches all providers.
-     *
-     * @returns {Promise<Provider[]>} A list of provider documents.
-     * @throws {InternalServerErrorException} If any error occurs while fetching.
-     */
-    @Get('fetch_providers')
-    @UseInterceptors(AuthInterceptor)
-    async fetchProviders(@Query() filter: FilterDto): Promise<Provider[]> {
-        try {
-            return await this.providerServices.getProviders(filter);
-        } catch (err) {
-            this.logger.error(`Error fetching provider: ${err}`);
-            throw new InternalServerErrorException(
-                'Something happened while fetching providers',
-            );
-        }
-    }
 
     /**
      * Fetches a single provider by ID (either from query or from authenticated user).

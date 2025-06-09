@@ -1,32 +1,61 @@
 import {
+  BadRequestException,
+  Body,
   Controller,
   Get,
   Inject,
-  Req,
+  InternalServerErrorException,
+  Logger,
+  Patch,
+  Query,
   UseInterceptors,
 } from '@nestjs/common';
-import { CUSTOMER_SERVICE_NAME, PROVIDER_SERVICE_NAME } from '../../../core/constants/service.constant';
+import { ADMIN_USERMANAGEMENT_SERVICE_NAME } from '../../../core/constants/service.constant';
 import { AuthInterceptor } from '../../auth/interceptors/auth.interceptor';
-import { ICustomerService } from '../../customer/services/interfaces/customer-service.interface';
-import { IProviderServices } from '../../providers/services/interfaces/provider-service.interface';
+import { IAdminUserManagementService } from '../services/interfaces/admin-user-service.interface';
+import { GetUsersWithFilterDto, StatusUpdateDto } from '../dtos/admin-user.dto';
+import { IUserData } from 'src/core/entities/interfaces/admin.entity.interface';
 
-@Controller()
+@Controller('admin')
 @UseInterceptors(AuthInterceptor)
 export class AdminController {
+  private readonly logger = new Logger(AdminController.name);
+
   constructor(
-    @Inject(CUSTOMER_SERVICE_NAME)
-    private readonly customerService: ICustomerService,
-    @Inject(PROVIDER_SERVICE_NAME)
-    private readonly providerService: IProviderServices
+    @Inject(ADMIN_USERMANAGEMENT_SERVICE_NAME)
+    private readonly _adminuserManagementService: IAdminUserManagementService
+
   ) { }
 
-  @Get(['admin/customers'])
-  async getCustomer() {
-    return await this.customerService.getCustomers();
+  @Get('users')
+  async getUsers(@Query() dto: GetUsersWithFilterDto): Promise<IUserData[]> {
+    try {
+      if (!dto.role) {
+        throw new BadRequestException('Required role is missing.');
+      }
+
+      return await this._adminuserManagementService.getusers(dto);
+    } catch (err) {
+      this.logger.error(`Error fetching the customers: ${err.message}`, err.stack);
+      throw new InternalServerErrorException('Failed fetching the customers');
+    }
   }
 
-  @Get(['admin/providers'])
-  async getProvider() {
-    return await this.providerService.getProviders();
+  @Patch('status')
+  async updateUserStatus(@Body() dto: StatusUpdateDto) {
+    try {
+      for (const [key, value] of Object.entries(dto)) {
+        if (value === undefined || value === null) {
+          throw new BadRequestException(`Missing value for ${key}`);
+        }
+      }
+
+      return this._adminuserManagementService.updateUserStatus(dto)
+    } catch (err) {
+      this.logger.error(`Error updating user status: ${err.message}`, err.stack);
+      throw new InternalServerErrorException('Failed updating user status');
+    }
   }
+
+
 }

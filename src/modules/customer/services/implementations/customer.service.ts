@@ -3,7 +3,7 @@ import { CUSTOMER_REPOSITORY_INTERFACE_NAME } from "../../../../core/constants/r
 import { ICustomerRepository } from "../../../../core/repositories/interfaces/customer-repo.interface";
 import { ICustomerService } from "../interfaces/customer-service.interface";
 import { ICustomer } from "../../../../core/entities/interfaces/user.entity.interface";
-import { FilterDto, UpdateSavedProvidersDto } from "../../dtos/customer.dto";
+import { UpdateSavedProvidersDto } from "../../dtos/customer.dto";
 import { FAST2SMS_UTILITY_NAME } from "../../../../core/constants/utility.constant";
 import { IFast2SmsService } from "../../../../core/utilities/interface/fast2sms.interface";
 
@@ -17,25 +17,6 @@ export class CustomerService implements ICustomerService {
         @Inject(FAST2SMS_UTILITY_NAME)
         private readonly _fast2SmsService: IFast2SmsService
     ) { }
-
-    /**
-      * Retrieves all customers from the database.
-      *
-      * @returns {Promise<ICustomers[]>} List of all customer documents.
-      */
-    async getCustomers(filter: FilterDto): Promise<ICustomer[]> {
-        const query: { [key: string]: any | string } = { isDeleted: false };
-
-        if (filter?.search) {
-            query.email = new RegExp(filter.search, 'i')
-        }
-
-        if (filter?.status && filter.status !== 'all') {
-            query.isActive = filter.status
-        }
-
-        return await this._customerRepository.find(query);
-    }
 
     async fetchOneCustomer(id: string): Promise<ICustomer | null> {
         return await this._customerRepository.findOne({ _id: id });

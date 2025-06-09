@@ -3,7 +3,7 @@ import { AuthInterceptor } from "../../auth/interceptors/auth.interceptor";
 import { CUSTOMER_SERVICE_NAME } from "../../../core/constants/service.constant";
 import { ICustomerService } from "../services/interfaces/customer-service.interface";
 import { ICustomer } from "../../../core/entities/interfaces/user.entity.interface";
-import { FilterDto, UpdateSavedProvidersDto } from "../dtos/customer.dto";
+import { UpdateSavedProvidersDto } from "../dtos/customer.dto";
 import { IPayload } from "../../../core/misc/payload.interface";
 import { Request } from "express";
 import { dot } from "node:test/reporters";
@@ -16,17 +16,6 @@ export class CustomerController {
         @Inject(CUSTOMER_SERVICE_NAME)
         private readonly _customerService: ICustomerService
     ) { }
-
-    @Get('customers')
-    @UseInterceptors(AuthInterceptor)
-    async getCustomers(@Query() filter: FilterDto) {
-        try {
-            return await this._customerService.getCustomers(filter);
-        } catch (err) {
-            this.logger.error(`Error fetching the customers: ${err.message}`, err.stack);
-            throw new InternalServerErrorException('Failed fetching the customers');
-        }
-    }
 
     @Get('customer')
     @UseInterceptors(AuthInterceptor)
