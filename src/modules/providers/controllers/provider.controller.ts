@@ -33,6 +33,25 @@ export class ProviderController {
     ) { }
 
     /**
+ * Fetches all providers.
+ *
+ * @returns {Promise<Provider[]>} A list of provider documents.
+ * @throws {InternalServerErrorException} If any error occurs while fetching.
+ */
+    @Get('fetch_providers')
+    @UseInterceptors(AuthInterceptor)
+    async fetchProviders(@Query() filter: FilterDto): Promise<IProvider[]> {
+        try {
+            return await this.providerServices.getProviders(filter);
+        } catch (err) {
+            this.logger.error(`Error fetching provider: ${err}`);
+            throw new InternalServerErrorException(
+                'Something happened while fetching providers',
+            );
+        }
+    }
+
+    /**
      * Fetches a single provider by ID (either from query or from authenticated user).
      *
      * @param {Request} req - The request object containing user details.

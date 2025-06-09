@@ -5,6 +5,7 @@ import {
   IsIn,
   IsNotEmpty,
   IsNumber,
+  IsObject,
   IsOptional,
   IsString,
   Min,
@@ -141,13 +142,9 @@ export class DeleteSubServiceDto {
 
 export class IPriceRangeDto {
   @IsOptional()
-  @IsNumber()
-  @Min(0)
   min?: number;
 
   @IsOptional()
-  @IsNumber()
-  @Min(0)
   max?: number;
 }
 
@@ -181,7 +178,6 @@ export class FilterServiceDto {
   category?: string;
 
   @IsOptional()
-  @ValidateNested()
   @Type(() => IPriceRangeDto)
   priceRange?: IPriceRangeDto;
 

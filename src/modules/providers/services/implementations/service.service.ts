@@ -159,8 +159,6 @@ export class ServiceFeatureService implements IServiceFeatureService {
     }
 
 
-    this.logger.debug(updateFields);
-
     const updatedService = await this._serviceOfferedRepository.findOneAndUpdate(
       { _id: id },
       { $set: updateFields },
@@ -233,8 +231,7 @@ export class ServiceFeatureService implements IServiceFeatureService {
     if (filter.search) {
       const searchLower = filter.search.toLowerCase();
       filteredServices = filteredServices.filter(service =>
-        service.title.toLowerCase().includes(searchLower) ||
-        service.desc?.toLowerCase().includes(searchLower)
+        service.title.toLowerCase().includes(searchLower)
       )
     }
 
@@ -312,8 +309,7 @@ export class ServiceFeatureService implements IServiceFeatureService {
             getMinSubField(b, 'duration') - getMinSubField(a, 'duration')
           );
           break;
-        case 'popular':
-          // Add your own popularity logic if applicable
+        default:
           break;
       }
     }
