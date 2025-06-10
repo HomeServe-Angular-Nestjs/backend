@@ -1,8 +1,11 @@
-import { BadRequestException, Body, Controller, Inject, InternalServerErrorException, Logger, Post, UseInterceptors } from "@nestjs/common";
+import { BadRequestException, Body, Controller, Inject, InternalServerErrorException, Logger, NotFoundException, Post, Req, UseInterceptors } from "@nestjs/common";
 import { AuthInterceptor } from "src/modules/auth/interceptors/auth.interceptor";
 import { CreateOrderDto, RazorpayVerifyDto } from "../dtos/payment.dto";
 import { RAZORPAYMENT_SERVICE_NAME } from "src/core/constants/service.constant";
 import { IRazorPaymentService } from "../services/interfaces/razorpay-service.interface";
+import { IRazorpayOrder, IVerifiedPayment } from "src/core/entities/interfaces/transaction.entity.interface";
+import { IPayload } from "src/core/misc/payload.interface";
+import { Request } from "express";
 
 @Controller('payment')
 @UseInterceptors(AuthInterceptor)
@@ -15,7 +18,7 @@ export class RazorpayController {
     ) { }
 
     @Post('create_order')
-    async createOrder(@Body() { amount }: CreateOrderDto) {
+    async createOrder(@Body() { amount }: CreateOrderDto): Promise<IRazorpayOrder> {
         try {
             const numericAmount = Number(amount);
 
@@ -31,16 +34,21 @@ export class RazorpayController {
     }
 
     @Post('verify_signature')
-    async verifySignature(@Body() payload: RazorpayVerifyDto) {
+    async verifySignature(@Req() req: Request, @Body() dto: RazorpayVerifyDto): Promise<IVerifiedPayment> {
         try {
-            const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = payload || {};
+            const user = req.user as IPayload;
+            if (!user.sub) {
+                throw new NotFoundException('user not found');
+            }
 
-            if (!razorpay_order_id?.trim() || !razorpay_payment_id?.trim() || !razorpay_signature?.trim()) {
-                this.logger.warn('Invalid or missing payment fields in payload', payload);
+            const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = dto.verifyData;
+
+            if (![razorpay_order_id, razorpay_payment_id, razorpay_signature].every(v => v?.trim())) {
+                this.logger.warn(`Missing payment fields: orderId=${razorpay_order_id}, paymentId=${razorpay_payment_id}`);
                 throw new BadRequestException('Missing or invalid payment verification fields.');
             }
 
-            return this._paymentService.verifySignature(razorpay_order_id, razorpay_payment_id, razorpay_signature);
+            return await this._paymentService.verifySignature(user.sub, dto.role, dto.verifyData, dto.orderData);
         } catch (err) {
             this.logger.error(`Error verifying the payment: ${err.message}`, err.stack);
             throw new InternalServerErrorException('Payment verification failed');

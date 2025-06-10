@@ -95,7 +95,11 @@ export class BookingDto {
     @IsArray()
     @ValidateNested({ each: true })
     @Type(() => SelectedServiceType)
-    serviceIds: SelectedServiceType[]
+    serviceIds: SelectedServiceType[];
+
+    @IsOptional()
+    @Transform(({ value }) => typeof value === 'string' ? value : null)
+    transactionId: string | null;
 }
 
 

@@ -1,8 +1,9 @@
 import { Injectable } from "@nestjs/common";
 import Razorpay from 'razorpay';
-import { IPaymentGateway, RazorpayOrder } from "../interface/razorpay.utility.interface";
+import { IPaymentGateway } from "../interface/razorpay.utility.interface";
 import { ConfigService } from "@nestjs/config";
 import * as crypto from 'crypto';
+import { IRazorpayOrder } from "src/core/entities/interfaces/transaction.entity.interface";
 
 @Injectable()
 export class RazorpayUtility implements IPaymentGateway {
@@ -17,7 +18,7 @@ export class RazorpayUtility implements IPaymentGateway {
         });
     }
 
-    async createOrder(amount: number, currency: string = 'INR'): Promise<RazorpayOrder> {
+    async createOrder(amount: number, currency: string = 'INR'): Promise<IRazorpayOrder> {
         const options = {
             amount: amount * 100,
             currency,
@@ -25,7 +26,7 @@ export class RazorpayUtility implements IPaymentGateway {
             payment_capture: 1
         }
 
-        return this._razorpay.orders.create(options) as Promise<RazorpayOrder>;
+        return this._razorpay.orders.create(options) as Promise<IRazorpayOrder>;
     }
 
     verifySignature(orderId: string, paymentId: string, signature: string): boolean {

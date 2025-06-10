@@ -181,7 +181,6 @@ export class ServiceController {
   @UseInterceptors(AuthInterceptor)
   async fetchFilteredServices(@Query() dto: FilterServiceDto): Promise<IService[]> {
     try {
-      this.logger.debug(dto);
       const { id } = dto;
       if (!id) {
         throw new NotFoundException(`Provider with ID ${id} not found`);

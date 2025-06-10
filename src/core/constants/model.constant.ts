@@ -5,3 +5,4 @@ export const ADMIN_MODEL_NAME = 'Admin';
 export const SERVICE_OFFERED_MODEL_NAME = 'Services';
 export const SCHEDULE_MODEL_NAME = 'Schedules';
 export const BOOKINGS_MODEL_NAME = 'Bookings';
+export const TRANSACTION_MODEL_NAME = 'Transactions'

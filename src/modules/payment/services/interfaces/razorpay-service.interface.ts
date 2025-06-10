@@ -1,6 +1,7 @@
-import { RazorpayOrder } from "src/core/utilities/interface/razorpay.utility.interface";
+import { IRazorpayOrder, IVerifiedPayment } from "src/core/entities/interfaces/transaction.entity.interface";
+import { RazorpayVerifyData, VerifyOrderData } from "../../dtos/payment.dto";
 
 export interface IRazorPaymentService {
-    createOrder(amount: number, currency?: string): Promise<RazorpayOrder>;
-    verifySignature(orderId: string, paymentId: string, signature: string): boolean;
+    createOrder(amount: number, currency?: string): Promise<IRazorpayOrder>;
+    verifySignature(userId: string, role: string, verifyData: RazorpayVerifyData, orderData: VerifyOrderData): Promise<IVerifiedPayment>;
 }

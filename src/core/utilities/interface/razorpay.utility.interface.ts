@@ -1,18 +1,6 @@
-export interface RazorpayOrder {
-    id: string;
-    entity: 'order';
-    amount: number;
-    amount_paid: number;
-    amount_due: number;
-    currency: string;
-    receipt: string;
-    offer_id: string | null;
-    status: 'created' | 'attempted' | 'paid';
-    attempts: number;
-    created_at: number;
-}
+import { IRazorpayOrder } from "src/core/entities/interfaces/transaction.entity.interface";
 
 export interface IPaymentGateway {
-    createOrder(amount: number, currency?: string): Promise<RazorpayOrder>;
+    createOrder(amount: number, currency?: string): Promise<IRazorpayOrder>;
     verifySignature(orderId: string, paymentId: string, signature: string): boolean;
 }

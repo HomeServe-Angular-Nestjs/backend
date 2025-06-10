@@ -11,6 +11,7 @@ import {
   PROVIDER_MODEL_NAME,
   SCHEDULE_MODEL_NAME,
   SERVICE_OFFERED_MODEL_NAME,
+  TRANSACTION_MODEL_NAME,
 } from '../../core/constants/model.constant';
 
 
@@ -21,6 +22,7 @@ import { AdminSchema } from '../../core/schema/admin.schema';
 import { ServiceSchema } from '../../core/schema/service.schema';
 import { ScheduleSchema } from '../../core/schema/schedule.schema';
 import { BookingSchema } from '../../core/schema/bookings.schema';
+import { TransactionSchema } from 'src/core/schema/transaction.schema';
 
 
 @Global()
@@ -59,7 +61,9 @@ import { BookingSchema } from '../../core/schema/bookings.schema';
       { name: ADMIN_MODEL_NAME, schema: AdminSchema },
       { name: SERVICE_OFFERED_MODEL_NAME, schema: ServiceSchema },
       { name: SCHEDULE_MODEL_NAME, schema: ScheduleSchema },
-      { name: BOOKINGS_MODEL_NAME, schema: BookingSchema }
+      { name: BOOKINGS_MODEL_NAME, schema: BookingSchema },
+      { name: TRANSACTION_MODEL_NAME, schema: TransactionSchema },
+
     ]),
   ],
   exports: [MongooseModule],

@@ -53,7 +53,6 @@ export class BookingService implements IBookingService {
      *
      * */
     async preparePriceBreakup(dto: SelectedServiceDto[]): Promise<IPriceBreakupDto> {
-        this.logger.debug(dto);
         // Fetch all selected services from the repository
         let services = await Promise.all(
             dto.map(item => this._serviceOfferedRepository.findOne({ _id: item.serviceId }))
@@ -172,8 +171,8 @@ export class BookingService implements IBookingService {
                 bookingStatus: BookingStatus.PENDING,
                 cancellationReason: null,
                 cancelledAt: null,
-                transactionId: null,
-                paymentStatus: PaymentStatus.UNPAID,
+                transactionId: data.transactionId,
+                paymentStatus: data.transactionId ? PaymentStatus.PAID : PaymentStatus.UNPAID,
             });
 
             return !!booking.id;

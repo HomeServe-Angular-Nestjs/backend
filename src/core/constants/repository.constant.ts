@@ -5,3 +5,4 @@ export const ADMIN_REPOSITORY_INTERFACE_NAME = 'IAdminRepository';
 export const SERVICE_OFFERED_REPOSITORY_NAME = 'IServiceOfferedRepository';
 export const SCHEDULE_REPOSITORY_NAME = 'IScheduleRepository';
 export const BOOKING_REPOSITORY_NAME = 'IBookingRepository';
+export const TRANSACTION_REPOSITORY_NAME = 'ITransactionRepository';
