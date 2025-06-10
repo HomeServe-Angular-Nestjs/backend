@@ -10,6 +10,7 @@ import { IBookingDetailCustomer, IBookingResponse, IBookingWithPagination } from
 import { ICustomerRepository } from '../../../../core/repositories/interfaces/customer-repo.interface';
 import { ISlot } from '../../../../core/entities/interfaces/schedule.entity.interface';
 import { IProviderRepository } from '../../../../core/repositories/interfaces/provider-repo.interface';
+import { PAYMENT_UTILITY_NAME } from 'src/core/constants/utility.constant';
 
 
 
@@ -28,7 +29,7 @@ export class BookingService implements IBookingService {
         @Inject(CUSTOMER_REPOSITORY_INTERFACE_NAME)
         private readonly _customerRepository: ICustomerRepository,
         @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
-        private readonly _providerRepository: IProviderRepository
+        private readonly _providerRepository: IProviderRepository,
     ) { }
 
 
@@ -182,7 +183,6 @@ export class BookingService implements IBookingService {
         }
     }
 
-    // !Todo - Filter.
     async fetchBookings(id: string, page: number = 1): Promise<IBookingWithPagination> {
         const limit = 4;
         const skip = (page - 1) * limit;

@@ -10,6 +10,7 @@ import { SeedsModule } from './seed/seed.module';
 import { ProviderModule } from './modules/providers/provider.module';
 import { BookingsModule } from './modules/bookings/bookings.module';
 import { CustomerModule } from './modules/customer/customer.module';
+import { PaymentModule } from './modules/payment/payment.module';
 
 @Module({
   imports: [
@@ -28,7 +29,8 @@ import { CustomerModule } from './modules/customer/customer.module';
     AdminModule,
     ProviderModule,
     BookingsModule,
-    CustomerModule
+    CustomerModule,
+    PaymentModule
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -43,6 +43,8 @@ export class BookingsController {
                 throw new BadRequestException('Invalid serviceIds format');
             }
 
+            const paymentCompleted = '';
+
             return this._bookingService.createBooking(user.sub, dto);
         } catch (err) {
             this.logger.error(`Error creating bookings: ${err}`);
