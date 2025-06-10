@@ -90,7 +90,7 @@ export class AuthInterceptor implements NestInterceptor {
         });
 
         await attachUserFromToken(newAccessToken);
-        this.logger.debug('New access token issued:', req.user);
+        this.logger.debug('New access token issued');
         return next.handle();
       } catch (refreshError) {
         this.logger.error('Refresh token flow failed:', refreshError);

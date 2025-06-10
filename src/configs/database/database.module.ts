@@ -20,7 +20,7 @@ import { ProviderSchema } from '../../core/schema/provider.schema';
 import { AdminSchema } from '../../core/schema/admin.schema';
 import { ServiceSchema } from '../../core/schema/service.schema';
 import { ScheduleSchema } from '../../core/schema/schedule.schema';
-import { BookingDocument, BookingSchema } from '../../core/schema/bookings.schema';
+import { BookingSchema } from '../../core/schema/bookings.schema';
 
 
 @Global()
