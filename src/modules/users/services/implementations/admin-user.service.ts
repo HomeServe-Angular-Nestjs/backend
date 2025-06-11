@@ -51,7 +51,6 @@ export class AdminUserManagementService implements IAdminUserManagementService {
             contact: user.phone,
             createdAt: user.createdAt as Date,
             isActive: user.isActive,
-            isBlocked: user.isBlocked,
             isDeleted: user.isDeleted,
         }));
 

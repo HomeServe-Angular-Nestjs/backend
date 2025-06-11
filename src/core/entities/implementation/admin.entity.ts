@@ -6,6 +6,7 @@ export class Admin extends BaseEntity implements IAdmin {
   password: string;
   type: 'admin';
   isDeleted: boolean;
+  isActive: boolean;
 
   constructor(partial: Partial<Admin>) {
     super(partial);

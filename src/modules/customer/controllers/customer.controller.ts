@@ -1,5 +1,5 @@
 import { BadRequestException, Query, Body, Controller, Get, Inject, InternalServerErrorException, Logger, Patch, UseInterceptors, Req, UnauthorizedException, Post } from "@nestjs/common";
-import { AuthInterceptor } from "../../auth/interceptors/auth.interceptor";
+
 import { CUSTOMER_SERVICE_NAME } from "../../../core/constants/service.constant";
 import { ICustomerService } from "../services/interfaces/customer-service.interface";
 import { ICustomer } from "../../../core/entities/interfaces/user.entity.interface";
@@ -18,7 +18,7 @@ export class CustomerController {
     ) { }
 
     @Get('customer')
-    @UseInterceptors(AuthInterceptor)
+    //@UseInterceptors()
     async fetchOneCustomer(@Req() req: Request): Promise<ICustomer | null> {
         try {
             const user = req.user as IPayload;
@@ -34,7 +34,7 @@ export class CustomerController {
     }
 
     @Patch('partial_update')
-    @UseInterceptors(AuthInterceptor)
+    //@UseInterceptors()
     async partialUpdate(@Body() dto: Partial<ICustomer>): Promise<ICustomer> {
         try {
             const { id, ...updateData } = dto;
@@ -50,7 +50,7 @@ export class CustomerController {
     }
 
     @Patch('saved_providers')
-    @UseInterceptors(AuthInterceptor)
+    //@UseInterceptors()
     async updateSavedProviders(@Req() req: Request, @Body() dto: UpdateSavedProvidersDto): Promise<ICustomer> {
         try {
             const user = req.user as IPayload;
@@ -66,7 +66,7 @@ export class CustomerController {
     }
 
     @Post('send_otp_sms')
-    @UseInterceptors(AuthInterceptor)
+    //@UseInterceptors()
     async sendOtp(@Req() req: Request, @Body() dto: { phone: string }) {
         const user = req.user as IPayload;
         if (!user.sub) {

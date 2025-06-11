@@ -5,7 +5,8 @@ export interface IAdmin extends IEntity {
   email: string;
   password: string;
   type: 'admin';
-  isDeleted: boolean,
+  isDeleted: boolean;
+  isActive: boolean;
 }
 
 export interface IUserData {
@@ -14,7 +15,6 @@ export interface IUserData {
   email: string;
   contact: string;
   createdAt: Date;
-  isBlocked: boolean;
   isActive: boolean;
   isDeleted: boolean
 }

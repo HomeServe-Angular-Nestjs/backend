@@ -88,7 +88,7 @@ export class LoginService implements ILoginService {
         throw new UnauthorizedException('Invalid email or password.');
       }
 
-      if (user.isDeleted) {
+      if (user.isActive) {
         throw new UnauthorizedException('You are blocked by the admin.');
       }
 

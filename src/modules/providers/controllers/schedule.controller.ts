@@ -1,5 +1,5 @@
 import { BadRequestException, Body, Controller, Delete, Get, Inject, InternalServerErrorException, Logger, Put, Query, Req, UseInterceptors } from "@nestjs/common";
-import { AuthInterceptor } from "../../auth/interceptors/auth.interceptor";
+
 import { Request } from "express";
 import { IPayload } from "../../../core/misc/payload.interface";
 import { SCHEDULE_SERVICE_NAME } from "../../../core/constants/service.constant";
@@ -7,7 +7,7 @@ import { IScheduleService } from "../services/interfaces/schedule-service.interf
 import { RemoveScheduleDto, UpdateScheduleDto } from "../dtos/schedule.dto";
 
 @Controller()
-@UseInterceptors(AuthInterceptor)
+//@UseInterceptors()
 export class ScheduleController {
     private readonly logger = new Logger(ScheduleController.name);
 

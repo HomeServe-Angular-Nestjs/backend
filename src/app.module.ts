@@ -1,5 +1,5 @@
 import { AdminModule } from './modules/users/admin.module';
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { CacheModule } from '@nestjs/cache-manager';
 import { redisStore } from 'cache-manager-redis-store';
@@ -11,10 +11,16 @@ import { ProviderModule } from './modules/providers/provider.module';
 import { BookingsModule } from './modules/bookings/bookings.module';
 import { CustomerModule } from './modules/customer/customer.module';
 import { PaymentModule } from './modules/payment/payment.module';
+import { TOKEN_SERVICE_NAME } from './core/constants/service.constant';
+import { TokenService } from './modules/auth/services/implementations/token.service';
+import { AuthMiddleware } from './modules/auth/middleware/auth.middleware';
+import { JwtConfigModule } from './configs/jwt/jwt.module';
+
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    JwtConfigModule,
 
     // Cache with Redis
     CacheModule.register({
@@ -33,6 +39,16 @@ import { PaymentModule } from './modules/payment/payment.module';
     PaymentModule
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService,
+    {
+      provide: TOKEN_SERVICE_NAME,
+      useClass: TokenService,
+    },
+  ],
 })
-export class AppModule { }
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(AuthMiddleware).forRoutes('*'); // Applied globally
+  }
+
+}

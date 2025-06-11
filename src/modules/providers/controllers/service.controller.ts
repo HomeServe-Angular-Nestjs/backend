@@ -27,7 +27,7 @@ import {
   UpdateServiceDto,
   UpdateSubServiceWrapperDto,
 } from '../dtos/service.dto';
-import { AuthInterceptor } from '../../auth/interceptors/auth.interceptor';
+
 import { IPayload } from '../../../core/misc/payload.interface';
 import { IService } from '../../../core/entities/interfaces/service.entity.interface';
 
@@ -50,7 +50,7 @@ export class ServiceController {
    */
 
   @Post('provider/create_service')
-  @UseInterceptors(AuthInterceptor, AnyFilesInterceptor())
+  @UseInterceptors(AnyFilesInterceptor())
   async createNewService(
     @Req() req: Request,
     @Body() body: CreateServiceDto,
@@ -110,7 +110,7 @@ export class ServiceController {
   }
 
   @Get(['provider/offered_services'])
-  @UseInterceptors(AuthInterceptor) //! Don't touch it 'cause it is working
+  //@UseInterceptors() //! Don't touch it 'cause it is working
   async getOfferedServices(@Req() req: Request) {
     try {
       const user = req.user as IPayload;
@@ -124,7 +124,7 @@ export class ServiceController {
   }
 
   @Get(['provider/offered_service'])
-  @UseInterceptors(AuthInterceptor)
+  //@UseInterceptors()
   async getOfferedService(@Query() query: { id: string }) {
     try {
       return this._serviceFeature.fetchService(query.id);
@@ -136,7 +136,7 @@ export class ServiceController {
   }
 
   @Patch(['provider/offered_service'])
-  @UseInterceptors(AuthInterceptor, AnyFilesInterceptor())
+  @UseInterceptors( AnyFilesInterceptor())
   async updateService(@Req() req: Request, @Body() dto: UpdateServiceDto, @UploadedFiles() files: Express.Multer.File[]) {
     try {
       const user = req.user as IPayload;
@@ -167,7 +167,7 @@ export class ServiceController {
   }
 
   @Patch(['provider/subservice'])
-  @UseInterceptors(AuthInterceptor)
+  //@UseInterceptors()
   async updateSubservice(@Body() dto: UpdateSubServiceWrapperDto) {
     try {
       return await this._serviceFeature.updateSubservice(dto);
@@ -178,7 +178,7 @@ export class ServiceController {
   }
 
   @Get('provider/filter_service')
-  @UseInterceptors(AuthInterceptor)
+  //@UseInterceptors()
   async fetchFilteredServices(@Query() dto: FilterServiceDto): Promise<IService[]> {
     try {
       const { id } = dto;

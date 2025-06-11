@@ -50,7 +50,6 @@ export class ProviderRepository extends BaseRepository<Provider, ProviderDocumen
       isActive: doc.isActive,
       createdAt: doc.createdAt,
       updatedAt: doc.updatedAt,
-      isBlocked: doc.isBlocked,
       isDeleted: doc.isDeleted,
       isVerified: doc.isVerified,
       isCertified: doc.isCertified,

@@ -5,7 +5,6 @@ export interface IBaseUserEntity extends IEntity {
   email: string;
   password: string;
   username: string;
-  isBlocked: boolean;
   lastLoginAt?: Date;
   isDeleted: boolean;
   isActive: boolean;

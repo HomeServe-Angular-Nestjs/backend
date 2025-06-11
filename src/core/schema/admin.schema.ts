@@ -9,6 +9,9 @@ export class AdminDocument extends Document {
   @Prop({ required: true })
   password: string;
 
+  @Prop({ type: Boolean, default: false })
+  isActive: boolean;
+
   @Prop({ default: false })
   isDeleted: boolean;
 }

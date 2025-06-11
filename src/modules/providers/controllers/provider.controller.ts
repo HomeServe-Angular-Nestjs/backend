@@ -14,7 +14,7 @@ import {
     BadRequestException,
     UnauthorizedException,
 } from '@nestjs/common';
-import { AuthInterceptor } from '../../auth/interceptors/auth.interceptor';
+
 import { PROVIDER_SERVICE_NAME } from '../../../core/constants/service.constant';
 import { IProviderServices } from '../services/interfaces/provider-service.interface';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -39,7 +39,7 @@ export class ProviderController {
  * @throws {InternalServerErrorException} If any error occurs while fetching.
  */
     @Get('fetch_providers')
-    @UseInterceptors(AuthInterceptor)
+    //@UseInterceptors()
     async fetchProviders(@Query() filter: FilterDto): Promise<IProvider[]> {
         try {
             return await this.providerServices.getProviders(filter);
@@ -60,7 +60,7 @@ export class ProviderController {
      * @throws {InternalServerErrorException} If any error occurs while fetching.
      */
     @Get('fetch_one_provider')
-    @UseInterceptors(AuthInterceptor)
+    //@UseInterceptors()
     async fetchOneProvider(@Req() req: Request, @Query() query: { id: string | null }): Promise<IProvider> {
         try {
             const user = req.user as IPayload;
@@ -87,7 +87,7 @@ export class ProviderController {
      * @throws {InternalServerErrorException} If update fails.
      */
     @Patch('update_provider')
-    @UseInterceptors(AuthInterceptor, FileInterceptor('providerAvatar'))
+    @UseInterceptors(FileInterceptor('providerAvatar'))
     async bulkUpdateProvider(
         @Req() req: Request,
         @Body('providerData') dto: string,
@@ -116,7 +116,7 @@ export class ProviderController {
      * @throws {InternalServerErrorException} If the update operation fails.
      */
     @Patch('partial_update')
-    @UseInterceptors(AuthInterceptor)
+    //@UseInterceptors()
     async partialUpdate(@Body() dto: Partial<IProvider>): Promise<IProvider> {
         try {
             const { id, ...updateData } = dto;
@@ -140,7 +140,7 @@ export class ProviderController {
      * @throws {InternalServerErrorException} If update fails.
      */
     @Patch('default_slots')
-    @UseInterceptors(AuthInterceptor)
+    //@UseInterceptors()
     async updateDefaultSlot(@Req() req: Request, @Body() dto: UpdateDefaultSlotsDto): Promise<IProvider> {
         try {
             const user = req.user as IPayload;
@@ -159,7 +159,7 @@ export class ProviderController {
     * @throws {InternalServerErrorException} If deletion fails.
     */
     @Delete('default_slots')
-    @UseInterceptors(AuthInterceptor)
+    //@UseInterceptors()
     async deleteDefaultSlot(@Req() req: Request): Promise<void> {
         try {
             const user = req.user as IPayload;

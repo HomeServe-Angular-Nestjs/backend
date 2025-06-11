@@ -1,6 +1,6 @@
 import { BadRequestException, Body, Controller, Get, Inject, InternalServerErrorException, Logger, Patch, Query, Req, UnauthorizedException, UseInterceptors } from '@nestjs/common';
 import { PROVIDER_BOOKING_SERVICE_NAME } from '../../../core/constants/service.constant';
-import { AuthInterceptor } from '../../auth/interceptors/auth.interceptor';
+
 import { IPayload } from '../../../core/misc/payload.interface';
 import { Request } from 'express';
 import { IProviderBookingService } from '../services/interfaces/provider-booking-service.interface';
@@ -10,7 +10,7 @@ import { filter } from 'rxjs';
 
 
 @Controller('provider/bookings')
-@UseInterceptors(AuthInterceptor)
+//@UseInterceptors()
 export class ProviderBookingsController {
     private readonly logger = new Logger(ProviderBookingsController.name);
 

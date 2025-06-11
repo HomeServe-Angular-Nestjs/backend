@@ -28,7 +28,6 @@ import { ILoginService } from '../services/interfaces/login-service.interface';
 import { Request, Response } from 'express';
 import { GoogleAuthGuard } from '../guards/google-auth.guard';
 import { IUser } from '../../../core/entities/interfaces/user.entity.interface';
-import { getAccessKey } from '../interceptors/auth.interceptor';
 import { prepareResponse } from '../../../core/misc/response.util';
 import { ITokenService } from '../services/interfaces/token-service.interface';
 import { BACKEND_URL, FRONTEND_URL } from '../../../core/environments/environments';

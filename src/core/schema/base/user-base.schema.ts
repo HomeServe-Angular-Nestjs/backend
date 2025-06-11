@@ -27,8 +27,8 @@ export class BaseUserDocument extends Document {
   @Prop({ type: Boolean, default: true })
   isActive: boolean;
 
-  @Prop({ type: Boolean, default: false })
-  isBlocked: boolean;
+  // @Prop({ type: Boolean, default: false })
+  // isBlocked: boolean;
 
   @Prop({ type: Boolean, default: false })
   isDeleted: boolean;

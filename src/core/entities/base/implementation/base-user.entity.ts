@@ -9,7 +9,6 @@ export abstract class BaseUserEntity extends BaseEntity implements IBaseUserEnti
   phone: string;
   avatar: string;
   isActive: boolean;
-  isBlocked: boolean;
   isDeleted: boolean;
   lastLoginAt?: Date;
   googleId: string;

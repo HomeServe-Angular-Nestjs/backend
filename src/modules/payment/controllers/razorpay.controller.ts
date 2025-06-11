@@ -1,5 +1,5 @@
 import { BadRequestException, Body, Controller, Inject, InternalServerErrorException, Logger, NotFoundException, Post, Req, UseInterceptors } from "@nestjs/common";
-import { AuthInterceptor } from "src/modules/auth/interceptors/auth.interceptor";
+
 import { CreateOrderDto, RazorpayVerifyDto } from "../dtos/payment.dto";
 import { RAZORPAYMENT_SERVICE_NAME } from "src/core/constants/service.constant";
 import { IRazorPaymentService } from "../services/interfaces/razorpay-service.interface";
@@ -8,7 +8,7 @@ import { IPayload } from "src/core/misc/payload.interface";
 import { Request } from "express";
 
 @Controller('payment')
-@UseInterceptors(AuthInterceptor)
+//@UseInterceptors()
 export class RazorpayController {
     private readonly logger = new Logger(RazorpayController.name);
 

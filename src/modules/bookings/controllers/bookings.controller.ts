@@ -1,6 +1,6 @@
 import { BadRequestException, Body, Controller, Get, Inject, InternalServerErrorException, Logger, Post, Query, Req, UnauthorizedException, UseInterceptors } from '@nestjs/common';
 import { BookingDto, BookingPaginationFilterDto, SelectedServiceDto, ViewBookingDetailsDto } from '../dtos/booking.dto';
-import { AuthInterceptor } from '../../auth/interceptors/auth.interceptor';
+
 import { Request } from 'express';
 import { IPayload } from '../../../core/misc/payload.interface';
 import { CUSTOMER_SERVICE_NAME } from '../../../core/constants/service.constant';
@@ -8,7 +8,7 @@ import { IBookingService } from '../services/interfaces/booking-service.interfac
 import { IBookingDetailCustomer, IBookingWithPagination } from '../../../core/entities/interfaces/booking.entity.interface';
 
 @Controller('booking')
-@UseInterceptors(AuthInterceptor)
+//@UseInterceptors()
 export class BookingsController {
     private readonly logger = new Logger(BookingsController.name);
 

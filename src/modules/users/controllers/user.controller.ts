@@ -11,13 +11,12 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { ADMIN_USERMANAGEMENT_SERVICE_NAME } from '../../../core/constants/service.constant';
-import { AuthInterceptor } from '../../auth/interceptors/auth.interceptor';
+
 import { IAdminUserManagementService } from '../services/interfaces/admin-user-service.interface';
 import { GetUsersWithFilterDto, RemoveUserDto, StatusUpdateDto } from '../dtos/admin-user.dto';
 import { IUserData, IUserDataWithPagination } from 'src/core/entities/interfaces/admin.entity.interface';
 
 @Controller('admin/users')
-@UseInterceptors(AuthInterceptor)
 export class AdminController {
   private readonly logger = new Logger(AdminController.name);
 
