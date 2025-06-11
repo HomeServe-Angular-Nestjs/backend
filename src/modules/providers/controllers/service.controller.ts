@@ -24,6 +24,7 @@ import {
   CreateSubServiceDto,
   FilterServiceDto,
   ToggleServiceStatusDto,
+  ToggleSubServiceStatusDto,
   UpdateServiceDto,
   UpdateSubServiceWrapperDto,
 } from '../dtos/service.dto';
@@ -178,7 +179,6 @@ export class ServiceController {
   }
 
   @Get('provider/filter_service')
-  //@UseInterceptors()
   async fetchFilteredServices(@Query() dto: FilterServiceDto): Promise<IService[]> {
     try {
       const { id } = dto;
@@ -194,7 +194,7 @@ export class ServiceController {
   }
 
   @Patch('provider/service/status')
-  async toggleServiceStatus(@Req() req: Request, @Body() dto: ToggleServiceStatusDto) {
+  async toggleServiceStatus(@Body() dto: ToggleServiceStatusDto) {
     try {
       if (!dto.id || dto.isActive === undefined) {
         throw new BadRequestException('Required data is missinng');
@@ -203,6 +203,16 @@ export class ServiceController {
       return await this._serviceFeature.toggleServiceStatus(dto)
     } catch (err) {
       this.logger.error(`Error toggling service status for Service ID ${dto.id}: ${err.message}`, err.stack);
+      throw new InternalServerErrorException('Failed to toggle service status');
+    }
+  }
+
+  @Patch('provider/service/sub_status')
+  async toggleSubServiceStatus(@Body() dto: ToggleSubServiceStatusDto) {
+    try {
+      return await this._serviceFeature.toggleSubServiceStatus(dto);
+    } catch (err) {
+      this.logger.error(`Error toggling service status for Subervice ID ${dto.subService.id}: ${err.message}`, err.stack);
       throw new InternalServerErrorException('Failed to toggle service status');
     }
   }

@@ -196,3 +196,12 @@ export class ToggleServiceStatusDto {
   @IsBoolean()
   isActive: boolean;
 }
+export class ToggleSubServiceStatusDto {
+  @IsNotEmpty()
+  @IsString()
+  id: string;
+
+  @Type(() => ToggleServiceStatusDto)
+  @ValidateNested()
+  subService: ToggleServiceStatusDto
+}
