@@ -11,19 +11,19 @@ import {
   Post,
   Query,
   Req,
-  Res,
   UnauthorizedException,
   UploadedFiles,
   UseInterceptors,
 } from '@nestjs/common';
 import { AnyFilesInterceptor } from '@nestjs/platform-express';
-import { Request, Response } from 'express';
+import { Request } from 'express';
 import { IServiceFeatureService } from '../services/interfaces/service-service.interface';
 import { SERVICE_OFFERED_SERVICE_NAME } from '../../../core/constants/service.constant';
 import {
   CreateServiceDto,
   CreateSubServiceDto,
   FilterServiceDto,
+  ToggleServiceStatusDto,
   UpdateServiceDto,
   UpdateSubServiceWrapperDto,
 } from '../dtos/service.dto';
@@ -136,7 +136,7 @@ export class ServiceController {
   }
 
   @Patch(['provider/offered_service'])
-  @UseInterceptors( AnyFilesInterceptor())
+  @UseInterceptors(AnyFilesInterceptor())
   async updateService(@Req() req: Request, @Body() dto: UpdateServiceDto, @UploadedFiles() files: Express.Multer.File[]) {
     try {
       const user = req.user as IPayload;
@@ -190,6 +190,20 @@ export class ServiceController {
     } catch (err) {
       this.logger.error(`Error fetching filtered service: ${err.message}`, err.stack);
       throw new InternalServerErrorException('Failed to fetch filtered service');
+    }
+  }
+
+  @Patch('provider/service/status')
+  async toggleServiceStatus(@Req() req: Request, @Body() dto: ToggleServiceStatusDto) {
+    try {
+      if (!dto.id || dto.isActive === undefined) {
+        throw new BadRequestException('Required data is missinng');
+      }
+
+      return await this._serviceFeature.toggleServiceStatus(dto)
+    } catch (err) {
+      this.logger.error(`Error toggling service status for Service ID ${dto.id}: ${err.message}`, err.stack);
+      throw new InternalServerErrorException('Failed to toggle service status');
     }
   }
 

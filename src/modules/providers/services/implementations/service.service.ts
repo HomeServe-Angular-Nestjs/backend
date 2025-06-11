@@ -13,6 +13,7 @@ import {
   CreateServiceDto,
   CreateSubServiceDto,
   FilterServiceDto,
+  ToggleServiceStatusDto,
   UpdateServiceDto,
   UpdateSubServiceWrapperDto,
 } from '../../dtos/service.dto';
@@ -317,6 +318,20 @@ export class ServiceFeatureService implements IServiceFeatureService {
 
     return filteredServices;
 
+  }
+
+  async toggleServiceStatus(dto: ToggleServiceStatusDto): Promise<boolean> {
+    const updatedService = await this._serviceOfferedRepository.findOneAndUpdate(
+      { _id: dto.id },
+      { $set: { isActive: dto.isActive } },
+      { new: true }
+    );
+
+    if (!updatedService) {
+      throw new NotFoundException(`Service of ID ${dto.id} not found`);
+    }
+
+    return !!updatedService;
   }
 
   private async _handleSubServices(subServices: CreateSubServiceDto[]): Promise<ISubService[]> {

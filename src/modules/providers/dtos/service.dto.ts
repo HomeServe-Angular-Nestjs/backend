@@ -186,3 +186,13 @@ export class FilterServiceDto {
   @Type(() => IServiceDurationRangeDto)
   duration?: IServiceDurationRangeDto;
 }
+
+export class ToggleServiceStatusDto {
+  @IsNotEmpty()
+  @IsString()
+  id: string;
+
+  @IsNotEmpty()
+  @IsBoolean()
+  isActive: boolean;
+}
