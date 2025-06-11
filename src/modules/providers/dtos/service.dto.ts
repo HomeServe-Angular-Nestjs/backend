@@ -25,100 +25,71 @@ export class CreateSubServiceDto {
   @IsString()
   estimatedTime: string;
 
-  @IsString()
-  tag: string;
-
-  // This will be injected manually in the controller (not part of the body directly)
   @IsOptional()
-  imageFile?: Express.Multer.File;
+  image?: Express.Multer.File;
+
+  @IsOptional()
+  id?: string
 }
 
 export class CreateServiceDto {
   @IsString()
-  serviceTitle: string;
+  title: string;
 
   @IsString()
-  serviceDesc: string;
+  desc: string;
 
-  @IsOptional()
-  imageFile: Express.Multer.File;
+  @IsNotEmpty()
+  image: Express.Multer.File | string;
 
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CreateSubServiceDto)
-  subServices?: CreateSubServiceDto[];
+  subService?: CreateSubServiceDto[];
+
+  @IsOptional()
+  @IsString()
+  id?: string
 }
 
 export class UpdateSubServiceDto {
-  @IsOptional()
+  @IsNotEmpty()
   @IsString()
   id: string;
 
-  @IsOptional()
   @IsString()
   title: string;
 
-  @IsOptional()
   @IsString()
   desc: string;
 
-  @IsOptional()
   @IsString()
   price: string;
 
-  @IsOptional()
   @IsString()
   estimatedTime: string;
 
-  @IsOptional()
-  @IsString()
-  tag: string;
-
-  @IsOptional()
-  image: any;
-
-  @IsOptional()
-  @IsBoolean()
-  isActive: boolean;
-
-  @IsOptional()
-  @IsBoolean()
-  isDeleted: boolean;
+  @IsNotEmpty()
+  image: Express.Multer.File | string;
 }
 
 export class UpdateServiceDto {
-  @IsOptional()
   @IsString()
   id: string;
 
-  @IsOptional()
   @IsString()
   title: string;
 
-  @IsOptional()
   @IsString()
   desc: string;
 
-  @IsOptional()
-  image: any;
+  @IsNotEmpty()
+  image: Express.Multer.File | string;
 
-  @IsOptional()
-  @IsBoolean()
-  isActive: boolean;
-
-  @IsOptional()
-  @IsBoolean()
-  isDeleted: boolean;
-
-  @IsOptional()
-  @IsBoolean()
-  isVerified: boolean;
-
-  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => UpdateSubServiceDto)
-  subServices: UpdateSubServiceDto[];
+  subService: UpdateSubServiceDto[];
 }
 
 export class UpdateSubServiceWrapperDto {

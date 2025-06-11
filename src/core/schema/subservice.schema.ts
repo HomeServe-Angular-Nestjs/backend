@@ -18,9 +18,6 @@ export class SubServiceDocument extends Document {
   @Prop()
   image: string;
 
-  @Prop()
-  tag: string;
-
   @Prop({ default: true })
   isActive: boolean;
 

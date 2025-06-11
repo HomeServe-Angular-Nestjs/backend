@@ -8,7 +8,7 @@ import {
   Logger,
   NotFoundException,
   Patch,
-  Post,
+  Put,
   Query,
   Req,
   UnauthorizedException,
@@ -50,58 +50,51 @@ export class ServiceController {
    * @returns - void
    */
 
-  @Post('provider/create_service')
+  @Put('provider/service/create')
   @UseInterceptors(AnyFilesInterceptor())
-  async createNewService(
-    @Req() req: Request,
-    @Body() body: CreateServiceDto,
-    @UploadedFiles() files: Express.Multer.File[],
-  ): Promise<void> {
+  async creatOrEditService(@Body() body: CreateServiceDto, @UploadedFiles() files: Express.Multer.File[]) {
     try {
-      const user = req.user as IPayload;
+      const serviceImageFile = files.find((f) => f.fieldname === 'image');
 
-      const serviceImageFile = files.find(
-        (f) => f.fieldname === 'serviceImageFile',
-      );
       if (!serviceImageFile) {
         throw new BadRequestException('service image is missing');
       }
 
-      let subServices: CreateSubServiceDto[] = [];
+      let subService: CreateSubServiceDto[] = [];
 
-      if (body.subServices) {
+      if (body.subService) {
         // Extract and map sub-service images using regex to find their corresponding index
         const subServicesImage = files
-          .filter((f) => f.fieldname.startsWith('subServices['))
+          .filter((f) => f.fieldname.startsWith('subService['))
           .map((f) => {
-            const match = f.fieldname.match(
-              /^subServices\[(\d+)]\[imageFile]$/,
-            );
+            const match = f.fieldname.match(/^subService\[(\d+)]\[image]$/);
             return match ? { index: +match[1], file: f } : null;
           })
           .filter(Boolean) as { index: number; file: Express.Multer.File }[];
 
         // Parse the subServices from string if not already an array
-        subServices = Array.isArray(body?.subServices)
-          ? (body?.subServices ?? [])
-          : JSON.parse(body?.subServices ?? []);
+        subService = Array.isArray(body?.subService)
+          ? (body?.subService ?? [])
+          : JSON.parse(body?.subService ?? []);
 
         // Append image files to their respective sub-service entries by index
         subServicesImage.forEach(({ index, file }) => {
-          if (subServices && subServices[index]) {
-            subServices[index].imageFile = file;
+          if (subService && subService[index]) {
+            subService[index].image = file;
           }
         });
       }
 
       const serviceData: CreateServiceDto = {
-        serviceTitle: body.serviceTitle,
-        serviceDesc: body.serviceDesc,
-        imageFile: serviceImageFile,
-        subServices,
+        title: body.title,
+        desc: body.desc,
+        image: serviceImageFile,
+        subService,
       };
 
-      await this._serviceFeature.createService(serviceData, user);
+      this.logger.debug(serviceData);
+
+      // await this._serviceFeature.createService(serviceData, user);
     } catch (err) {
       this.logger.error(`Error creating service: ${err.message}`, err.stack);
       throw new InternalServerErrorException(
@@ -111,7 +104,6 @@ export class ServiceController {
   }
 
   @Get(['provider/offered_services'])
-  //@UseInterceptors() //! Don't touch it 'cause it is working
   async getOfferedServices(@Req() req: Request) {
     try {
       const user = req.user as IPayload;
@@ -125,7 +117,6 @@ export class ServiceController {
   }
 
   @Get(['provider/offered_service'])
-  //@UseInterceptors()
   async getOfferedService(@Query() query: { id: string }) {
     try {
       return this._serviceFeature.fetchService(query.id);
@@ -136,16 +127,12 @@ export class ServiceController {
     }
   }
 
-  @Patch(['provider/offered_service'])
+  @Put(['provider/service'])
   @UseInterceptors(AnyFilesInterceptor())
-  async updateService(@Req() req: Request, @Body() dto: UpdateServiceDto, @UploadedFiles() files: Express.Multer.File[]) {
+  async updateService(@Body() dto: UpdateServiceDto, @UploadedFiles() files: Express.Multer.File[]) {
     try {
-      const user = req.user as IPayload;
-      if (!user.sub) {
-        throw new UnauthorizedException(`Provider found`);
-      }
-
       let prepareDto: UpdateServiceDto = dto;
+
       if (files) {
         prepareDto = this._attachFilesToServiceData(dto, files);
       }
@@ -168,7 +155,6 @@ export class ServiceController {
   }
 
   @Patch(['provider/subservice'])
-  //@UseInterceptors()
   async updateSubservice(@Body() dto: UpdateSubServiceWrapperDto) {
     try {
       return await this._serviceFeature.updateSubservice(dto);
@@ -221,17 +207,17 @@ export class ServiceController {
     const result = { ...dto };
 
     // Attach main service image
-    const image = files.find(file => file.fieldname === 'serviceImageFile');
+    const image = files.find(file => file.fieldname === 'image');
     if (image) {
       result.image = image;
     } else if (dto.image) {
       result.image = dto.image;
     }
 
-    result.subServices = (dto.subServices || []).map((sub: any, index: number) => {
+    result.subService = (dto.subService || []).map((sub: any, index: number) => {
       const subResult: any = { ...sub };
 
-      const image = files.find(file => file.fieldname === `subServices[${index}][imageFile]`);
+      const image = files.find(file => file.fieldname === `subService[${index}][image]`);
 
       if (image) {
         subResult.image = image;

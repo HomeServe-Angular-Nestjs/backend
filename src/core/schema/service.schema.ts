@@ -19,7 +19,7 @@ export class ServiceDocument extends Document {
   @Prop({ default: true })
   isActive: boolean;
 
-  @Prop({ default: true })
+  @Prop({ default: false })
   isVerified: boolean;
 
   @Prop({ default: false })

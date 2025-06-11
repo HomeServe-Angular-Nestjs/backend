@@ -7,7 +7,6 @@ export interface ISubService {
   price: string;
   estimatedTime: string;
   image: string;
-  tag: string;
   isActive?: boolean;
   isVerified?: boolean;
   isDeleted?: boolean;

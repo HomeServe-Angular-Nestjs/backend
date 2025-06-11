@@ -49,50 +49,50 @@ export class ServiceFeatureService implements IServiceFeatureService {
   ) { }
 
 
-  async createService(dto: CreateServiceDto, user: IPayload,): Promise<ServiceOffered> {
-    try {
-      const provider = await this._providerRepository.findByEmail(user.email);
+  // async createService(dto: CreateServiceDto, user: IPayload,): Promise<ServiceOffered> {
+  //   try {
+  //     const provider = await this._providerRepository.findByEmail(user.email);
 
-      if (!provider) {
-        throw new UnauthorizedException('The user is not found');
-      }
+  //     if (!provider) {
+  //       throw new UnauthorizedException('The user is not found');
+  //     }
 
-      const serviceImageUrl = await this._uploadsUtility.uploadImage(dto.imageFile);
+  //     const serviceImageUrl = await this._uploadsUtility.uploadImage(dto.imageFile);
 
-      const subServicesWithImages = dto.subServices
-        ? await this._handleSubServices(dto.subServices)
-        : [];
+  //     const subServicesWithImages = dto.subService
+  //       ? await this._handleSubServices(dto.subService)
+  //       : [];
 
-      const newOfferedService = await this._serviceOfferedRepository.create({
-        title: dto.serviceTitle,
-        desc: dto.serviceDesc,
-        image: serviceImageUrl,
-        subService: subServicesWithImages,
-      });
+  //     const newOfferedService = await this._serviceOfferedRepository.create({
+  //       title: dto.title,
+  //       desc: dto.desc,
+  //       image: serviceImageUrl,
+  //       subService: subServicesWithImages,
+  //     });
 
-      const updatedProvider = await this._providerRepository.findOneAndUpdate(
-        { _id: provider.id },
-        {
-          $push: { servicesOffered: new Types.ObjectId(newOfferedService.id) },
-        },
-        { new: true },
-      );
+  //     const updatedProvider = await this._providerRepository.findOneAndUpdate(
+  //       { _id: provider.id },
+  //       {
+  //         $push: { servicesOffered: new Types.ObjectId(newOfferedService.id) },
+  //       },
+  //       { new: true },
+  //     );
 
-      if (!updatedProvider) {
-        throw new Error(
-          'Something happened while updating the provider schema',
-        );
-      }
+  //     if (!updatedProvider) {
+  //       throw new Error(
+  //         'Something happened while updating the provider schema',
+  //       );
+  //     }
 
-      return newOfferedService;
-    } catch (err) {
-      if (err instanceof UnauthorizedException) {
-        throw err;
-      }
+  //     return newOfferedService;
+  //   } catch (err) {
+  //     if (err instanceof UnauthorizedException) {
+  //       throw err;
+  //     }
 
-      throw new InternalServerErrorException('Something unexpected happened.');
-    }
-  }
+  //     throw new InternalServerErrorException('Something unexpected happened.');
+  //   }
+  // }
 
   async fetchServices(user: IPayload): Promise<IService[]> {
     try {
@@ -150,16 +150,15 @@ export class ServiceFeatureService implements IServiceFeatureService {
       updateFields.image = await this._processImage(updateFields.image);
     }
 
-    if (Array.isArray(updateFields.subServices) && updateFields.subServices.length > 0) {
-      updateFields.subServices = await Promise.all(
-        updateFields.subServices.map(async (sub) => {
+    if (Array.isArray(updateFields.subService) && updateFields.subService.length > 0) {
+      updateFields.subService = await Promise.all(
+        updateFields.subService.map(async (sub) => {
           const updatedSub = { ...sub };
           updatedSub.image = await this._processImage(sub.image);
           return updatedSub;
         })
       );
     }
-
 
     const updatedService = await this._serviceOfferedRepository.findOneAndUpdate(
       { _id: id },
@@ -359,17 +358,16 @@ export class ServiceFeatureService implements IServiceFeatureService {
         title: sub.title,
         desc: sub.desc,
         estimatedTime: sub.estimatedTime,
-        image: sub.imageFile
-          ? await this._uploadsUtility.uploadImage(sub.imageFile)
+        image: sub.image
+          ? await this._uploadsUtility.uploadImage(sub.image)
           : '',
         price: sub.price,
-        tag: sub.tag,
       })),
     );
   }
 
-  private async _processImage(image: string | Express.Multer.File): Promise<string | undefined> {
-    if (!image) return undefined;
+  private async _processImage(image: string | Express.Multer.File): Promise<string> {
+    if (!image) return '';
     if (typeof image === 'string') return image;
 
     try {
