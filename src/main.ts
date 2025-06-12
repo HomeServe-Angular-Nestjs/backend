@@ -56,7 +56,7 @@ async function bootstrap() {
   app.useGlobalGuards(new BlockGuard(customerRepository, providerRepository));
 
   app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,
+    whitelist: false,
     forbidNonWhitelisted: true,
     transform: true,
     transformOptions: {

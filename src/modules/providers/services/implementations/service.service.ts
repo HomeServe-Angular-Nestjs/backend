@@ -13,6 +13,7 @@ import {
   CreateServiceDto,
   CreateSubServiceDto,
   FilterServiceDto,
+  ProviderServiceFilterWithPaginationDto,
   ToggleServiceStatusDto,
   ToggleSubServiceStatusDto,
   UpdateServiceDto,
@@ -31,6 +32,7 @@ import { IUploadsUtility } from '../../../../core/utilities/interface/upload.uti
 import { IServiceOfferedRepository } from '../../../../core/repositories/interfaces/serviceOffered-repo.interface';
 import {
   IService,
+  IServicesWithPagination,
   ISubService,
 } from '../../../../core/entities/interfaces/service.entity.interface';
 import { ICustomerRepository } from '../../../../core/repositories/interfaces/customer-repo.interface';
@@ -94,32 +96,61 @@ export class ServiceFeatureService implements IServiceFeatureService {
   //   }
   // }
 
-  async fetchServices(user: IPayload): Promise<IService[]> {
+  async fetchServices(
+    providerId: string,
+    page: number = 1,
+    filter: Omit<ProviderServiceFilterWithPaginationDto, 'page'>
+  ): Promise<IServicesWithPagination> {
     try {
-      const provider = await this._providerRepository.findOne({ _id: new Types.ObjectId(user.sub) });
+      const provider = await this._providerRepository.findById(providerId);
       if (!provider) {
-        throw new Error('Could find the provider');
+        throw new Error('Provider not found');
       }
 
-      const offeredServices: (IService | undefined)[] = await Promise.all(
-        provider.servicesOffered.map(async (id: string): Promise<IService | undefined> => {
-          const service = await this._serviceOfferedRepository.findOne({ _id: new Types.ObjectId(id) });
-          return service || undefined;
-        })
-      );
+      const query: any = {
+        _id: { $in: provider.servicesOffered.map(id => new Types.ObjectId(id)) }
+      };
 
-      let result: IService[] = offeredServices.filter(service => service !== undefined);
+      if (filter.search) {
+        const regex = new RegExp(filter.search, 'i');
+        query.title = { $regex: regex };
+      }
 
-      result = result.map(service => {
-        service.subService = service.subService.filter(sub => !sub.isDeleted);
-        return service;
-      });
+      if (filter.status !== undefined && filter.status !== 'all') {
+        query.isActive = filter.status === true;
+      }
 
-      return result;
+      if (filter.isVerified !== undefined && filter.isVerified !== 'all') {
+        query.isVerified = filter.isVerified === true;
+      }
+
+      const sortMap: Record<string, any> = {
+        'a-z': { title: 1 },
+        'z-a': { title: -1 },
+        'latest': { createdAt: -1 },
+        'oldest': { createdAt: 1 },
+      };
+
+      let sort = {};
+      if (filter.sort) {
+        sort = sortMap[filter.sort] ? sortMap[filter.sort] : { createdAt: -1 }
+      }
+
+      const limit = 8;
+      const skip = (page - 1) * limit;
+
+      const [offeredServices, total] = await Promise.all([
+        this._serviceOfferedRepository.find(query, { sort, skip, limit }),
+        this._serviceOfferedRepository.count(query)
+      ]);
+
+      return {
+        services: offeredServices,
+        pagination: { limit, page, total }
+      };
+
     } catch (err) {
-      throw new InternalServerErrorException(
-        'Something happened while fetching the offered service',
-      );
+      throw new InternalServerErrorException('Something happened while fetching the offered service');
     }
   }
 

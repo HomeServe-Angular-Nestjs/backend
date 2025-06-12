@@ -1,7 +1,9 @@
+import { Optional } from '@nestjs/common';
 import { Transform, Type } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
+  IsDefined,
   IsIn,
   IsNotEmpty,
   IsNumber,
@@ -175,4 +177,41 @@ export class ToggleSubServiceStatusDto {
   @Type(() => ToggleServiceStatusDto)
   @ValidateNested()
   subService: ToggleServiceStatusDto
+}
+
+export class ProviderServiceFilterWithPaginationDto {
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsNumber()
+  page: number
+
+  @IsOptional()
+  @Transform(({ value }) => value?.trim() || undefined)
+  @IsString()
+  search?: string;
+
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (value === '') return undefined;
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+    return value;
+  })
+  @IsIn([true, false, 'all'])
+  status?: boolean | 'all';
+
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (value === '') return undefined;
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+    return value;
+  })
+  @IsIn([true, false, 'all'])
+  isVerified?: boolean | 'all';
+
+  @IsOptional()
+  @Transform(({ value }) => value === '' ? undefined : value)
+  @IsIn(['latest', 'oldest', 'a-z', 'z-a'])
+  sort?: 'latest' | 'oldest' | 'a-z' | 'z-a';
 }

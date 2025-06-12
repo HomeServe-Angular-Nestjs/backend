@@ -1,4 +1,5 @@
 import { IEntity } from '../base/interfaces/base-entity.entity.interface';
+import { IPagination } from './booking.entity.interface';
 
 export interface ISubService {
   id?: string;
@@ -22,4 +23,9 @@ export interface IService extends IEntity {
   isActive?: boolean;
   isVerified?: boolean;
   isDeleted?: boolean;
+}
+
+export interface IServicesWithPagination {
+  services: IService[];
+  pagination: IPagination;
 }

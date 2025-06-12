@@ -1,4 +1,5 @@
 import {
+  BadGatewayException,
   BadRequestException,
   Body,
   Controller,
@@ -23,6 +24,7 @@ import {
   CreateServiceDto,
   CreateSubServiceDto,
   FilterServiceDto,
+  ProviderServiceFilterWithPaginationDto,
   ToggleServiceStatusDto,
   ToggleSubServiceStatusDto,
   UpdateServiceDto,
@@ -92,8 +94,6 @@ export class ServiceController {
         subService,
       };
 
-      this.logger.debug(serviceData);
-
       // await this._serviceFeature.createService(serviceData, user);
     } catch (err) {
       this.logger.error(`Error creating service: ${err.message}`, err.stack);
@@ -103,11 +103,16 @@ export class ServiceController {
     }
   }
 
-  @Get(['provider/offered_services'])
-  async getOfferedServices(@Req() req: Request) {
+  @Get(['provider/service'])
+  async getOfferedServices(@Req() req: Request, @Query() dto: ProviderServiceFilterWithPaginationDto) {
     try {
       const user = req.user as IPayload;
-      return await this._serviceFeature.fetchServices(user);
+      if (!user.sub) {
+        throw new BadRequestException('User id is missing.');
+      }
+
+      const { page, ...filter } = dto;
+      return await this._serviceFeature.fetchServices(user.sub, page, filter);
     } catch (err) {
       console.error(err);
       throw new InternalServerErrorException(
