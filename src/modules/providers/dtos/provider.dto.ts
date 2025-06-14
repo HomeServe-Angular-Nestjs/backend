@@ -4,7 +4,7 @@ import { IsBoolean, IsIn, IsNotEmpty, IsOptional, IsString, ValidateNested } fro
 
 export type FilterStatusType = true | false | 'all';
 
-class SlotDto {
+export class SlotDto {
     @IsNotEmpty()
     @IsString()
     from: string;

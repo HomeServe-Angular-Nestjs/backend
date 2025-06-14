@@ -19,8 +19,8 @@ import {
 
 import { ProviderDocument } from '../../../core/schema/provider.schema';
 import { ServiceDocument } from '../../../core/schema/service.schema';
-import { ScheduleDocument } from '../../../core/schema/schedule.schema';
-import { ScheduleRepository } from '../../../core/repositories/implementations/schedule.repository';
+// import { ScheduleDocument } from '../../../core/schema/schedule.schema';
+// import { ScheduleRepository } from '../../../core/repositories/implementations/schedule.repository';
 
 export const repositoryProviders: Provider[] = [
   {
@@ -35,10 +35,10 @@ export const repositoryProviders: Provider[] = [
       new ServiceOfferedRepository(serviceOfferedModel),
     inject: [getModelToken(SERVICE_OFFERED_MODEL_NAME)],
   },
-  {
-    provide: SCHEDULE_REPOSITORY_NAME,
-    useFactory: (scheduleModel: Model<ScheduleDocument>) =>
-      new ScheduleRepository(scheduleModel),
-    inject: [getModelToken(SCHEDULE_MODEL_NAME)]
-  }
+  // {
+  //   provide: SCHEDULE_REPOSITORY_NAME,
+  //   useFactory: (scheduleModel: Model<ScheduleDocument>) =>
+  //     new ScheduleRepository(scheduleModel),
+  //   inject: [getModelToken(SCHEDULE_MODEL_NAME)]
+  // }
 ];

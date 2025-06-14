@@ -15,6 +15,7 @@ import { TOKEN_SERVICE_NAME } from './core/constants/service.constant';
 import { TokenService } from './modules/auth/services/implementations/token.service';
 import { AuthMiddleware } from './modules/auth/middleware/auth.middleware';
 import { JwtConfigModule } from './configs/jwt/jwt.module';
+import { SchedulesModule } from './modules/schedules/schedule.module';
 
 
 @Module({
@@ -34,9 +35,10 @@ import { JwtConfigModule } from './configs/jwt/jwt.module';
     SeedsModule,
     AdminModule,
     ProviderModule,
-    BookingsModule,
+    // BookingsModule,
     CustomerModule,
-    PaymentModule
+    SchedulesModule,
+    PaymentModule,
   ],
   controllers: [AppController],
   providers: [AppService,

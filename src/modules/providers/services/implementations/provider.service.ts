@@ -5,7 +5,7 @@ import { PROVIDER_REPOSITORY_INTERFACE_NAME } from '../../../../core/constants/r
 import { IProviderRepository } from '../../../../core/repositories/interfaces/provider-repo.interface';
 import { IProvider } from '../../../../core/entities/interfaces/user.entity.interface';
 import { CloudinaryService } from '../../../../configs/cloudinary/cloudinary.service';
-import { FilterDto, UpdateDefaultSlotsDto } from '../../dtos/provider.dto';
+import { FilterDto, SlotDto, UpdateDefaultSlotsDto } from '../../dtos/provider.dto';
 
 @Injectable()
 export class ProviderServices implements IProviderServices {
@@ -128,20 +128,18 @@ export class ProviderServices implements IProviderServices {
    * @returns {Promise<IProvider>} The updated provider document.
    * @throws {BadRequestException | NotFoundException} If update fails.
    */
-  async updateDefaultSlot(slot: UpdateDefaultSlotsDto, id: string): Promise<IProvider> {
-    if (!id) {
-      throw new BadRequestException(`Provider with ID ${id} not found`);
-    }
-
+  async updateDefaultSlot(slot: SlotDto, providerId: string): Promise<IProvider> {
     const updatedProvider = await this._providerRepository.findOneAndUpdate(
-      { _id: new Types.ObjectId(id) },
+      { _id: providerId },
       { $push: { defaultSlots: slot } },
       { new: true }
     );
 
     if (!updatedProvider) {
-      throw new NotFoundException(`Provider with ID ${id} not updated`);
+      throw new NotFoundException(`Provider with ID ${providerId} found`);
     }
+
+    this.logger.debug(updatedProvider);
 
     return updatedProvider;
   }

@@ -14,7 +14,7 @@ export class Slot implements ISlot {
 }
 
 
-export class Schedule extends BaseEntity implements ISchedule {
+class Schedule extends BaseEntity implements ISchedule {
     scheduleDate: string;
     slots: ISlot[];
 

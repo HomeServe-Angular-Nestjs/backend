@@ -7,8 +7,8 @@ import { getModelToken } from "@nestjs/mongoose";
 import { BOOKINGS_MODEL_NAME, CUSTOMER_MODEL_NAME, PROVIDER_MODEL_NAME, SCHEDULE_MODEL_NAME, SERVICE_OFFERED_MODEL_NAME } from "../../../core/constants/model.constant";
 import { BookingDocument } from "../../../core/schema/bookings.schema";
 import { BookingRepository } from "../../../core/repositories/implementations/bookings.repository";
-import { ScheduleDocument } from "../../../core/schema/schedule.schema";
-import { ScheduleRepository } from "../../../core/repositories/implementations/schedule.repository";
+// import { ScheduleDocument } from "../../../core/schema/schedule.schema";
+// import { ScheduleRepository } from "../../../core/repositories/implementations/schedule.repository";
 import { CustomerDocument } from "../../../core/schema/customer.schema";
 import { CustomerRepository } from "../../../core/repositories/implementations/customer.repository";
 import { ProviderDocument } from "../../../core/schema/provider.schema";
@@ -28,12 +28,12 @@ export const repositoryProviders: Provider[] = [
             new BookingRepository(bookingModel),
         inject: [getModelToken(BOOKINGS_MODEL_NAME)]
     },
-    {
-        provide: SCHEDULE_REPOSITORY_NAME,
-        useFactory: (scheduleModel: Model<ScheduleDocument>) =>
-            new ScheduleRepository(scheduleModel),
-        inject: [getModelToken(SCHEDULE_MODEL_NAME)]
-    },
+    // {
+    //     provide: SCHEDULE_REPOSITORY_NAME,
+    //     useFactory: (scheduleModel: Model<ScheduleDocument>) =>
+    //         new ScheduleRepository(scheduleModel),
+    //     inject: [getModelToken(SCHEDULE_MODEL_NAME)]
+    // },
     {
         provide: CUSTOMER_REPOSITORY_INTERFACE_NAME,
         useFactory: (customerModel: Model<CustomerDocument>) =>

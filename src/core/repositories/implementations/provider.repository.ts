@@ -33,6 +33,11 @@ export class ProviderRepository extends BaseRepository<Provider, ProviderDocumen
     return await this._providerModel.countDocuments(filter);
   }
 
+  async isExists(filter: FilterQuery<ProviderDocument>): Promise<boolean> {
+    const result = await this._providerModel.exists(filter);
+    return result !== null;
+  }
+
   protected toEntity(doc: ProviderDocument): Provider {
     return new Provider({
       id: (doc._id as Types.ObjectId).toString(),

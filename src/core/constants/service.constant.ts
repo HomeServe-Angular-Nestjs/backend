@@ -12,4 +12,5 @@ export const CUSTOMER_SERVICE_NAME = 'ICustomerService';
 export const PROVIDER_BOOKING_SERVICE_NAME = 'IProviderBookingService';
 export const ADMIN_USERMANAGEMENT_SERVICE_NAME = 'IAdminUserManagementService';
 export const RAZORPAYMENT_SERVICE_NAME = 'IRazorPaymentService';
+export const SCHEDULES_SERVICE_NAME = 'ISchedulesService';
 

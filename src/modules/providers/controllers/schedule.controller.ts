@@ -8,7 +8,7 @@ import { RemoveScheduleDto, UpdateScheduleDto } from "../dtos/schedule.dto";
 
 @Controller()
 //@UseInterceptors()
-export class ScheduleController {
+class ScheduleController {
     private readonly logger = new Logger(ScheduleController.name);
 
     constructor(

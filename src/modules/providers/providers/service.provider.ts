@@ -24,8 +24,8 @@ export const serviceProviders: Provider[] = [
     provide: PROVIDER_SERVICE_NAME,
     useClass: ProviderServices,
   },
-  {
-    provide: SCHEDULE_SERVICE_NAME,
-    useClass: ScheduleService
-  }
+  // {
+  //   provide: SCHEDULE_SERVICE_NAME,
+  //   useClass: ScheduleService
+  // }
 ];

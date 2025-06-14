@@ -20,7 +20,7 @@ import { IProviderServices } from '../services/interfaces/provider-service.inter
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Request } from 'express';
 import { IPayload } from '../../../core/misc/payload.interface';
-import { FilterDto, UpdateDefaultSlotsDto } from '../dtos/provider.dto';
+import { FilterDto, SlotDto, UpdateDefaultSlotsDto } from '../dtos/provider.dto';
 import { IProvider } from '../../../core/entities/interfaces/user.entity.interface';
 
 @Controller('provider')
@@ -141,9 +141,15 @@ export class ProviderController {
      */
     @Patch('default_slots')
     //@UseInterceptors()
-    async updateDefaultSlot(@Req() req: Request, @Body() dto: UpdateDefaultSlotsDto): Promise<IProvider> {
+    async updateDefaultSlot(@Req() req: Request, @Body() dto: SlotDto): Promise<IProvider> {
         try {
             const user = req.user as IPayload;
+            if (!user.sub) {
+                throw new BadRequestException('Provider id missing');
+            }
+
+            this.logger.debug(dto);
+
             return await this.providerServices.updateDefaultSlot(dto, user.sub)
         } catch (err) {
             this.logger.error(`Error updating provider: ${err.message}`, err.stack);

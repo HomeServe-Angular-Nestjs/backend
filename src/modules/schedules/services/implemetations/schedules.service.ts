@@ -1,0 +1,310 @@
+import { Inject, InternalServerErrorException, Logger, NotFoundException } from "@nestjs/common";
+import { ISchedulesService } from "../interfaces/schedules-service.interface";
+import { MonthScheduleDto, ScheduleDetailsDto, ScheduleListFilterDto, UpdateScheduleDateSlotStatusDto, UpdateScheduleDateStatusDto, UpdateScheduleStatusDto } from "../../dtos/schedules.dto";
+import { PROVIDER_REPOSITORY_INTERFACE_NAME, SCHEDULES_REPOSITORY_NAME } from "src/core/constants/repository.constant";
+import { ISchedulesRepository } from "src/core/repositories/interfaces/schedules-repo.interface";
+import { IProviderRepository } from "src/core/repositories/interfaces/provider-repo.interface";
+import { IScheduleDay, IScheduleList, IScheduleListWithPagination, ISchedules } from "src/core/entities/interfaces/schedules.entity.interface";
+import { IResponse } from "src/core/misc/response.util";
+import { Types } from "mongoose";
+import { dot } from "node:test/reporters";
+
+export class SchedulesService implements ISchedulesService {
+    private readonly logger = new Logger(SchedulesService.name);
+
+    constructor(
+        @Inject(SCHEDULES_REPOSITORY_NAME)
+        private readonly _schedulesRepository: ISchedulesRepository,
+        @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
+        private readonly _providerRepository: IProviderRepository
+    ) { }
+
+    async createSchedules(providerId: string, dto: MonthScheduleDto): Promise<IResponse> {
+        const providerExists = await this._providerRepository.isExists({ _id: providerId });
+        if (!providerExists) {
+            throw new NotFoundException(`Provider with ID ${providerId} not found.`);
+        }
+
+        const existngSchedule = await this._schedulesRepository.findOne({
+            providerId,
+            month: dto.month
+        });
+
+        const sanitizedDays: IScheduleDay[] = dto.days.map(day => ({
+            date: day.date,
+            slots: day.slots.map(slot => ({
+                from: slot.from,
+                to: slot.to,
+                takenBy: slot.takenBy ?? null,
+                isActive: true,
+            })),
+            isActive: true,
+        }));
+
+        if (!existngSchedule) {
+            try {
+                await this._schedulesRepository.create({
+                    providerId,
+                    month: dto.month,
+                    days: sanitizedDays,
+                    isActive: true,
+                    isDeleted: false
+                });
+            } catch (err) {
+                this.logger.error('Error creating a schedule: ', err.message, err.stack);
+                throw new InternalServerErrorException('Something happened while creating new schedule')
+            }
+
+            return {
+                success: true,
+                message: 'Schedule saved successfully',
+            };
+        }
+
+        const existingDates = new Set(existngSchedule.days.map(d => d.date));
+
+        const duplicateDates = sanitizedDays.reduce<string[]>((acc, day) => {
+            if (existingDates.has(day.date)) {
+                acc.push(day.date);
+            }
+            return acc;
+        }, []);
+
+        if (duplicateDates.length > 0) {
+            return {
+                success: false,
+                message: `Schedule already exists for dates`,
+                data: duplicateDates
+            };
+        }
+
+        try {
+            // Only push new unique days
+            await this._schedulesRepository.findOneAndUpdate(
+                {
+                    providerId,
+                    month: dto.month
+                },
+                {
+                    $push: {
+                        days: { $each: sanitizedDays }
+                    }
+                }
+            );
+        } catch (err) {
+            this.logger.error('Error updating schedule: ', err.message, err.stack);
+            throw new InternalServerErrorException('Something went wrong while updating the schedule');
+        }
+
+        return {
+            success: true,
+            message: 'Schedule updated successfully',
+        };
+    }
+
+    async fetchSchedules(providerId: string, dto: ScheduleListFilterDto): Promise<IResponse<IScheduleListWithPagination>> {
+        const limit = 10;
+        const skip = (dto.page - 1) * limit;
+
+        const filter = { providerId, isDeleted: false };
+
+        const [fetchedSchedules, total] = await Promise.all([
+            this._schedulesRepository.find(filter, { skip, limit, sort: { createdAt: -1 } }),
+            this._schedulesRepository.count({ providerId })
+        ]);
+
+        if (!fetchedSchedules) {
+            return {
+                success: true,
+                message: 'Schedule list fetched successfully',
+                data: {
+                    scheduleList: [],
+                    pagination: { page: dto.page, limit: 0, total: 0 }
+                }
+            }
+        }
+
+        const responseSchedules: IScheduleList[] = fetchedSchedules.map(schedule => ({
+            id: schedule.id,
+            createdAt: schedule.createdAt as Date,
+            isActive: schedule.isActive,
+            month: schedule.month,
+            totalDays: schedule.days.length,
+        }));
+
+        return {
+            success: true,
+            message: 'Schedule list fetched successfully',
+            data: {
+                scheduleList: responseSchedules,
+                pagination: { page: dto.page, limit, total }
+            }
+        }
+    }
+
+    async fetchScheduleDetails(providerId: string, dto: ScheduleDetailsDto): Promise<IResponse<IScheduleDay[]>> {
+        const schedule = await this._schedulesRepository.findOne({
+            _id: dto.id,
+            providerId,
+            month: dto.month
+        });
+
+        if (!schedule) {
+            return {
+                success: true,
+                message: 'No schedule found.',
+                data: []
+            };
+        }
+
+        let filteredDays = schedule.days;
+
+        if (dto.date && dto.date) {
+            filteredDays = filteredDays.filter(day => day.date === dto.date);
+        }
+
+        if (dto.status && dto.status !== 'all') {
+            const isActive = dto.status === 'true';
+            filteredDays = filteredDays.filter(day => day.isActive === isActive);
+        }
+
+        if (dto.availableType && dto.availableType !== 'all') {
+            filteredDays = filteredDays
+                .map(day => ({
+                    ...day,
+                    slots: day.slots.filter(s =>
+                        dto.availableType === 'booked' ? s.takenBy : !s.takenBy
+                    )
+                }))
+                .filter(day => day.slots.length > 0);
+        }
+
+        return {
+            success: true,
+            message: 'schedule fetched successfully.',
+            data: filteredDays
+        }
+    }
+
+    async updateScheduleStatus(providerId: string, dto: UpdateScheduleStatusDto): Promise<IResponse> {
+        const schedule = await this._schedulesRepository.findOneAndUpdate(
+            {
+                _id: dto.scheduleId,
+                providerId
+            },
+            {
+                $set: {
+                    isActive: dto.status
+                }
+            },
+            { new: true }
+        );
+
+        if (!schedule) {
+            throw new NotFoundException('Schedule not found');
+        }
+
+        return {
+            success: true,
+            message: 'Status updated'
+        }
+    }
+
+    async updateScheduleDateStatus(providerId: string, dto: UpdateScheduleDateStatusDto): Promise<IResponse<IScheduleDay[]>> {
+        const scheduleId = new Types.ObjectId(dto.scheduleId);
+        const dayId = new Types.ObjectId(dto.dayId);
+
+        const schedule = await this._schedulesRepository.findOneAndUpdate(
+            {
+                _id: scheduleId,
+                providerId,
+                'days._id': dayId
+            },
+            {
+                $set: {
+                    'days.$.isActive': dto.status
+                }
+            },
+            { new: true }
+        );
+
+        if (!schedule) {
+            throw new NotFoundException('Schedule not found');
+        }
+
+        return {
+            success: true,
+            message: 'Status updated',
+            data: schedule.days
+        }
+    }
+
+    // TODO - slot status update.
+    async updateScheduleDateSlotStatus(providerId: string, dto: UpdateScheduleDateSlotStatusDto): Promise<IResponse<IScheduleDay[]>> {
+        const scheduleId = new Types.ObjectId(dto.scheduleId);
+        const dayId = new Types.ObjectId(dto.dayId);
+        const slotId = new Types.ObjectId(dto.slotId);
+
+        const updatedSchedule = await this._schedulesRepository.findOneAndUpdate(
+            {
+                _id: scheduleId,
+                providerId,
+                'days._id': dayId,
+                'days.slots._id': slotId,
+            },
+            {
+                $set: {
+                    'days.$[day].slots.$[slot].isActive': dto.status,
+                },
+            },
+            {
+                arrayFilters: [
+                    { 'day._id': dayId },
+                    { 'slot._id': slotId }
+                ],
+                new: true,
+            }
+        );
+
+        if (!updatedSchedule) {
+            throw new NotFoundException('Schedule or slot not found');
+        }
+
+        const updatedDay = updatedSchedule.days.find(day => day.id === dto.dayId);
+        const updatedSlot = updatedDay?.slots.find(slot => slot.id === dto.slotId);
+
+        if (!updatedSlot) {
+            throw new NotFoundException('Updated slot not found');
+        }
+
+        return {
+            message: 'Slot status updated',
+            success: true,
+            data: updatedSchedule.days ?? []
+        };
+    }
+
+
+    async removeSchedule(providerId: string, scheduleId: string): Promise<IResponse> {
+        const schedule = await this._schedulesRepository.findOneAndUpdate(
+            {
+                _id: scheduleId,
+                providerId
+            },
+            {
+                $set: {
+                    isDeleted: true
+                }
+            }
+        );
+
+        if (!schedule) {
+            throw new NotFoundException('Schedule not found');
+        }
+
+        return {
+            success: true,
+            message: 'Schedule Deleted'
+        }
+    }
+}

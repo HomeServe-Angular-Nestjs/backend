@@ -6,3 +6,4 @@ export const SERVICE_OFFERED_REPOSITORY_NAME = 'IServiceOfferedRepository';
 export const SCHEDULE_REPOSITORY_NAME = 'IScheduleRepository';
 export const BOOKING_REPOSITORY_NAME = 'IBookingRepository';
 export const TRANSACTION_REPOSITORY_NAME = 'ITransactionRepository';
+export const SCHEDULES_REPOSITORY_NAME = 'ISchedulesRepository';

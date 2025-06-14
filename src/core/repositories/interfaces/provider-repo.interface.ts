@@ -8,5 +8,7 @@ export interface IProviderRepository
   findByGoogleId(id: string): Promise<IProvider | null>;
   findByEmail(email: string): Promise<IProvider | null>;
   count(filter?: FilterQuery<ProviderDocument>): Promise<number>;
+  isExists(filter: FilterQuery<ProviderDocument>): Promise<boolean>
+
 
 }

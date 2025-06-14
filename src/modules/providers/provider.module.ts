@@ -6,11 +6,11 @@ import { repositoryProviders } from './providers/repository.provider';
 import { JwtConfigModule } from '../../configs/jwt/jwt.module';
 import { utilityProviders } from './providers/utility.provider';
 import { ProviderController } from './controllers/provider.controller';
-import { ScheduleController } from './controllers/schedule.controller';
+// import { ScheduleController } from './controllers/schedule.controller';
 
 @Module({
   imports: [CloudinaryModule.registerAsync(), JwtConfigModule],
   providers: [...serviceProviders, ...repositoryProviders, ...utilityProviders],
-  controllers: [ServiceController, ProviderController, ScheduleController],
+  controllers: [ServiceController, ProviderController,],
 })
 export class ProviderModule { }

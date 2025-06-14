@@ -3,7 +3,7 @@ import { Document } from "mongoose";
 
 @Schema({ timestamps: true })
 export class ScheduleDocument extends Document {
-    @Prop({ required: true, unique: true })
+    @Prop({ required: true})
     scheduleDate: string;
 
     @Prop({
