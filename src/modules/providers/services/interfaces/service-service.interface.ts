@@ -1,9 +1,10 @@
+import { IResponse } from 'src/core/misc/response.util';
 import { ServiceOffered } from '../../../../core/entities/implementation/service.entity';
 import { IService, IServicesWithPagination, ISubService } from '../../../../core/entities/interfaces/service.entity.interface';
 import { CreateServiceDto, FilterServiceDto, ProviderServiceFilterWithPaginationDto, ToggleServiceStatusDto, ToggleSubServiceStatusDto, UpdateServiceDto, UpdateSubServiceDto, UpdateSubServiceWrapperDto } from '../../dtos/service.dto';
 
 export interface IServiceFeatureService {
-  // createService(dto: CreateServiceDto, user: IPayload): Promise<ServiceOffered>;
+  createService(providerID: string, dto: CreateServiceDto): Promise<IResponse<string[]>>;
   fetchServices(providerId: string, page: number, filter: Omit<ProviderServiceFilterWithPaginationDto, 'page'>): Promise<IServicesWithPagination>;
   fetchService(id: string): Promise<IService>;
   updateService(updateData: UpdateServiceDto,): Promise<IService>;

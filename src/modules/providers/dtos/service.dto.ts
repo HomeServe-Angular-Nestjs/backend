@@ -7,7 +7,6 @@ import {
   IsIn,
   IsNotEmpty,
   IsNumber,
-  IsObject,
   IsOptional,
   IsString,
   Min,
@@ -27,11 +26,8 @@ export class CreateSubServiceDto {
   @IsString()
   estimatedTime: string;
 
-  @IsOptional()
+  @Optional()
   image?: Express.Multer.File;
-
-  @IsOptional()
-  id?: string
 }
 
 export class CreateServiceDto {
@@ -41,17 +37,13 @@ export class CreateServiceDto {
   @IsString()
   desc: string;
 
-  @IsNotEmpty()
-  image: Express.Multer.File | string;
+  @Optional()
+  image?: Express.Multer.File;
 
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CreateSubServiceDto)
   subService?: CreateSubServiceDto[];
-
-  @IsOptional()
-  @IsString()
-  id?: string
 }
 
 export class UpdateSubServiceDto {

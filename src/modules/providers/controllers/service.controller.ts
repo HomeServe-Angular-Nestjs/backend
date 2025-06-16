@@ -9,6 +9,7 @@ import {
   Logger,
   NotFoundException,
   Patch,
+  Post,
   Put,
   Query,
   Req,
@@ -33,6 +34,7 @@ import {
 
 import { IPayload } from '../../../core/misc/payload.interface';
 import { IService } from '../../../core/entities/interfaces/service.entity.interface';
+import { IResponse } from 'src/core/misc/response.util';
 
 @Controller()
 export class ServiceController {
@@ -52,10 +54,16 @@ export class ServiceController {
    * @returns - void
    */
 
-  @Put('provider/service/create')
+  @Post('provider/service')
   @UseInterceptors(AnyFilesInterceptor())
-  async creatOrEditService(@Body() body: CreateServiceDto, @UploadedFiles() files: Express.Multer.File[]) {
+  async creatService(@Req() req: Request, @Body() body: CreateServiceDto, @UploadedFiles() files: Express.Multer.File[]): Promise<IResponse<string[]>> {
     try {
+
+      const user = req.user as IPayload;
+      if (!user.sub) {
+        throw new BadRequestException('user id is missing.');
+      }
+
       const serviceImageFile = files.find((f) => f.fieldname === 'image');
 
       if (!serviceImageFile) {
@@ -94,12 +102,10 @@ export class ServiceController {
         subService,
       };
 
-      // await this._serviceFeature.createService(serviceData, user);
+      return await this._serviceFeature.createService(user.sub, serviceData);
     } catch (err) {
       this.logger.error(`Error creating service: ${err.message}`, err.stack);
-      throw new InternalServerErrorException(
-        'Something happened while creating new service',
-      );
+      throw new InternalServerErrorException('Something happened while creating new service');
     }
   }
 

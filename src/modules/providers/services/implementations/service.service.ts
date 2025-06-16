@@ -36,6 +36,7 @@ import {
   ISubService,
 } from '../../../../core/entities/interfaces/service.entity.interface';
 import { ICustomerRepository } from '../../../../core/repositories/interfaces/customer-repo.interface';
+import { IResponse } from 'src/core/misc/response.util';
 
 @Injectable()
 export class ServiceFeatureService implements IServiceFeatureService {
@@ -51,56 +52,58 @@ export class ServiceFeatureService implements IServiceFeatureService {
   ) { }
 
 
-  // async createService(dto: CreateServiceDto, user: IPayload,): Promise<ServiceOffered> {
-  //   try {
-  //     const provider = await this._providerRepository.findByEmail(user.email);
+  async createService(providerId: string, dto: CreateServiceDto,): Promise<IResponse<string[]>> {
+    const provider = await this._providerRepository.findById(providerId);
 
-  //     if (!provider) {
-  //       throw new UnauthorizedException('The user is not found');
-  //     }
+    if (!provider) return {
+      success: false,
+      message: 'User not found.'
+    };
 
-  //     const serviceImageUrl = await this._uploadsUtility.uploadImage(dto.imageFile);
 
-  //     const subServicesWithImages = dto.subService
-  //       ? await this._handleSubServices(dto.subService)
-  //       : [];
+    if (!dto.image) return {
+      success: false,
+      message: 'image not found.'
+    };
 
-  //     const newOfferedService = await this._serviceOfferedRepository.create({
-  //       title: dto.title,
-  //       desc: dto.desc,
-  //       image: serviceImageUrl,
-  //       subService: subServicesWithImages,
-  //     });
+    try {
+      const serviceImageUrl = await this._uploadsUtility.uploadImage(dto.image);
 
-  //     const updatedProvider = await this._providerRepository.findOneAndUpdate(
-  //       { _id: provider.id },
-  //       {
-  //         $push: { servicesOffered: new Types.ObjectId(newOfferedService.id) },
-  //       },
-  //       { new: true },
-  //     );
+      const subServicesWithImages = dto.subService
+        ? await this._handleSubServices(dto.subService)
+        : [];
 
-  //     if (!updatedProvider) {
-  //       throw new Error(
-  //         'Something happened while updating the provider schema',
-  //       );
-  //     }
+      const newOfferedService = await this._serviceOfferedRepository.create({
+        title: dto.title,
+        desc: dto.desc,
+        image: serviceImageUrl,
+        subService: subServicesWithImages,
+      });
 
-  //     return newOfferedService;
-  //   } catch (err) {
-  //     if (err instanceof UnauthorizedException) {
-  //       throw err;
-  //     }
+      const updatedProvider = await this._providerRepository.findOneAndUpdate(
+        { _id: provider.id },
+        {
+          $push: { servicesOffered: new Types.ObjectId(newOfferedService.id) },
+        },
+        { new: true },
+      );
 
-  //     throw new InternalServerErrorException('Something unexpected happened.');
-  //   }
-  // }
+      if (!updatedProvider) {
+        throw new InternalServerErrorException('Something happened while updating the provider schema');
+      }
 
-  async fetchServices(
-    providerId: string,
-    page: number = 1,
-    filter: Omit<ProviderServiceFilterWithPaginationDto, 'page'>
-  ): Promise<IServicesWithPagination> {
+      return {
+        success: true,
+        message: 'Service created successfylly.',
+        data: updatedProvider.servicesOffered
+      };
+
+    } catch (err) {
+      throw new InternalServerErrorException('Something unexpected happened.');
+    }
+  }
+
+  async fetchServices(providerId: string, page: number = 1, filter: Omit<ProviderServiceFilterWithPaginationDto, 'page'>): Promise<IServicesWithPagination> {
     try {
       const provider = await this._providerRepository.findById(providerId);
       if (!provider) {
