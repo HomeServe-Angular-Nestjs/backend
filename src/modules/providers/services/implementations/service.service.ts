@@ -13,6 +13,7 @@ import {
   CreateSubServiceDto,
   FilterServiceDto,
   ProviderServiceFilterWithPaginationDto,
+  RemoveSubServiceDto,
   ToggleServiceStatusDto,
   ToggleSubServiceStatusDto,
   UpdateServiceDto,
@@ -32,6 +33,7 @@ import {
   ISubService,
 } from '../../../../core/entities/interfaces/service.entity.interface';
 import { IResponse } from 'src/core/misc/response.util';
+import { SubService } from 'src/core/entities/implementation/service.entity';
 
 @Injectable()
 export class ServiceFeatureService implements IServiceFeatureService {
@@ -105,9 +107,9 @@ export class ServiceFeatureService implements IServiceFeatureService {
         throw new Error('Provider not found');
       }
 
-      const query: any = {
+      const query: Record<string, any> = {
         _id: { $in: provider.servicesOffered.map(id => new Types.ObjectId(id)) },
-        isDeleted: false
+        isDeleted: false,
       };
 
       if (filter.search) {
@@ -158,17 +160,23 @@ export class ServiceFeatureService implements IServiceFeatureService {
       throw new BadRequestException('Id is required');
     }
 
-    const service = await this._serviceOfferedRepository.findOne({ _id: id });
+    const service = await this._serviceOfferedRepository.findById(id);
 
     if (!service) {
       throw new NotFoundException('Service is not found');
     }
 
-    return service;
+    const result = {
+      ...service,
+      SubService: service.subService.filter(sub => !sub.isDeleted)
+    };
+
+
+    return result
   }
 
 
-  async updateService(updateData: UpdateServiceDto): Promise<IService> {
+  async updateService(updateData: UpdateServiceDto): Promise<IResponse<IService>> {
     if (!updateData?.id) {
       throw new BadRequestException('Service ID is missing.');
     }
@@ -200,48 +208,11 @@ export class ServiceFeatureService implements IServiceFeatureService {
       throw new NotFoundException('No matching service found to update.');
     }
 
-    return updatedService;
-  }
-
-
-  async updateSubservice(updateData: UpdateSubServiceWrapperDto): Promise<{ id: string, subService: ISubService }> {
-    try {
-      const { id: serviceId, subService } = updateData;
-      const { id: subServiceId, ...subServiceFields } = subService;
-
-      if (!serviceId || !subService?.id) {
-        throw new BadRequestException('Both service ID and subService ID are required.');
-      }
-
-      const setObject: Record<string, any> = {};
-      for (const [key, value] of Object.entries(subServiceFields)) {
-        if (value !== undefined) {
-          setObject[`subService.$.${key}`] = value;
-        }
-      }
-
-      const updatedService = await this._serviceOfferedRepository.findOneAndUpdate(
-        {
-          _id: serviceId,
-          "subService._id": subServiceId
-        },
-        { $set: setObject },
-        { new: true },
-      );
-
-      if (!updatedService) {
-        throw new NotFoundException('No matching sub-service found to update.');
-      }
-
-      const updated = updatedService?.subService.find(
-        s => s.id === subServiceId
-      );
-
-      return { id: serviceId, subService: updated as ISubService };
-    } catch (err) {
-      this.logger.error('Failed to update subService', err.stack);
-      throw new InternalServerErrorException('Failed to update subService');
-    }
+    return {
+      success: true,
+      message: 'Service updated successfully.',
+      data: updatedService
+    };
   }
 
   async fetchFilteredServices(id: string, filter: FilterServiceDto): Promise<IService[]> {
@@ -407,6 +378,24 @@ export class ServiceFeatureService implements IServiceFeatureService {
     return {
       success: !!updatedService,
       message: !!updatedService ? 'Service Uppdated successfully.' : 'Failed to update',
+    }
+  }
+
+  async removeSubService(dto: RemoveSubServiceDto): Promise<IResponse> {
+    const updatedService = await this._serviceOfferedRepository.findOneAndUpdate(
+      {
+        _id: dto.serviceId,
+        'subService._id': dto.subId,
+      },
+      {
+        $set: { 'subService.$.isDeleted': true }
+      },
+      { new: true }
+    );
+
+    return {
+      success: !!updatedService,
+      message: !!updatedService ? 'Sub service updated successfully' : 'Failed to update'
     }
   }
 

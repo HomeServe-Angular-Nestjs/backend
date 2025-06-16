@@ -27,6 +27,7 @@ import {
   FilterServiceDto,
   ProviderServiceFilterWithPaginationDto,
   RemoveServiceDto,
+  RemoveSubServiceDto,
   ToggleServiceStatusDto,
   ToggleSubServiceStatusDto,
   UpdateServiceDto,
@@ -141,7 +142,7 @@ export class ServiceController {
 
   @Put(['provider/service'])
   @UseInterceptors(AnyFilesInterceptor())
-  async updateService(@Body() dto: UpdateServiceDto, @UploadedFiles() files: Express.Multer.File[]) {
+  async updateService(@Body() dto: UpdateServiceDto, @UploadedFiles() files: Express.Multer.File[]): Promise<IResponse<IService>> {
     try {
       let prepareDto: UpdateServiceDto = dto;
 
@@ -163,16 +164,6 @@ export class ServiceController {
       throw new InternalServerErrorException(
         'An error occurred while updating the service',
       );
-    }
-  }
-
-  @Patch(['provider/subservice'])
-  async updateSubservice(@Body() dto: UpdateSubServiceWrapperDto) {
-    try {
-      return await this._serviceFeature.updateSubservice(dto);
-    } catch (err) {
-      this.logger.error(`Error updating service: ${err.message}`, err.stack);
-      throw new InternalServerErrorException('Failed to update subservice');
     }
   }
 
@@ -215,7 +206,7 @@ export class ServiceController {
     }
   }
 
-  @Patch('provider/remove')
+  @Patch('provider/service/remove')
   async removeService(@Req() req: Request, @Body() dto: RemoveServiceDto) {
     try {
       const user = req.user as IPayload;
@@ -227,7 +218,17 @@ export class ServiceController {
 
     } catch (err) {
       this.logger.error(`Error removing service : ${err.message}`, err.stack);
-      throw new InternalServerErrorException('Failed to toggle service status');
+      throw new InternalServerErrorException('Failed remove service');
+    }
+  }
+
+  @Patch('provider/service/remove_sub')
+  async removeSubService(@Body() dto: RemoveSubServiceDto) {
+    try {
+      return await this._serviceFeature.removeSubService(dto);
+    } catch (err) {
+      this.logger.error(`Error removing sub service : ${err.message}`, err.stack);
+      throw new InternalServerErrorException('Failed to remove sub service.');
     }
   }
 

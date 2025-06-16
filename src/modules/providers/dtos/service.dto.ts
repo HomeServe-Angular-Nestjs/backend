@@ -47,10 +47,6 @@ export class CreateServiceDto {
 }
 
 export class UpdateSubServiceDto {
-  @IsNotEmpty()
-  @IsString()
-  id: string;
-
   @IsString()
   title: string;
 
@@ -213,4 +209,14 @@ export class RemoveServiceDto {
   @IsDefined()
   @IsString()
   serviceId: string;
+}
+
+export class RemoveSubServiceDto {
+  @IsDefined()
+  @IsString()
+  serviceId: string;
+
+  @IsDefined()
+  @IsString()
+  subId: string;
 }
