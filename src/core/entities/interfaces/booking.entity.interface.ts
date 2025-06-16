@@ -75,8 +75,12 @@ export interface IBooking extends IEntity {
         address: string;
         coordinates: [number, number];
     };
-    scheduleId: string;
-    slotId: string;
+    scheduleData: {
+        scheduleId: string;
+        month: string;
+        dayId: string;
+        slotId: string;
+    };
     services: {
         serviceId: string;
         subserviceIds: string[];

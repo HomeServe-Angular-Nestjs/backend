@@ -35,7 +35,7 @@ import { SchedulesModule } from './modules/schedules/schedule.module';
     SeedsModule,
     AdminModule,
     ProviderModule,
-    // BookingsModule,
+    BookingsModule,
     CustomerModule,
     SchedulesModule,
     PaymentModule,

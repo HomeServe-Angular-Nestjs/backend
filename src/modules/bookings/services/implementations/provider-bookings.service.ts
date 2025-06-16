@@ -19,8 +19,8 @@ export class ProviderBookingService implements IProviderBookingService {
         private readonly _serviceOfferedRepository: IServiceOfferedRepository,
         @Inject(BOOKING_REPOSITORY_NAME)
         private readonly _bookingRepository: IBookingRepository,
-        @Inject(SCHEDULE_REPOSITORY_NAME)
-        private readonly _scheduleRepository: IScheduleRepository,
+        // @Inject(SCHEDULE_REPOSITORY_NAME)
+        // private readonly _scheduleRepository: IScheduleRepository,
         @Inject(CUSTOMER_REPOSITORY_INTERFACE_NAME)
         private readonly _customerRepository: ICustomerRepository,
         @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)

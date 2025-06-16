@@ -9,7 +9,6 @@ import {
   CUSTOMER_MODEL_NAME,
   OTP_MODEL_NAME,
   PROVIDER_MODEL_NAME,
-  SCHEDULE_MODEL_NAME,
   SCHEDULES_MODEL_NAME,
   SERVICE_OFFERED_MODEL_NAME,
   TRANSACTION_MODEL_NAME,
@@ -21,7 +20,6 @@ import { OtpSchema } from '../../core/schema/otp.schema';
 import { ProviderSchema } from '../../core/schema/provider.schema';
 import { AdminSchema } from '../../core/schema/admin.schema';
 import { ServiceSchema } from '../../core/schema/service.schema';
-// import { ScheduleSchema } from '../../core/schema/schedule.schema';
 import { BookingSchema } from '../../core/schema/bookings.schema';
 import { TransactionSchema } from 'src/core/schema/transaction.schema';
 import { SchedulesSchema } from 'src/core/schema/schedules.schema';

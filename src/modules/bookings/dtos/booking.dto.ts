@@ -1,5 +1,5 @@
 import { Transform, Type } from "class-transformer";
-import { ArrayMaxSize, ArrayMinSize, ArrayNotEmpty, IsArray, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, Min, ValidateNested } from "class-validator";
+import { ArrayMaxSize, ArrayMinSize, ArrayNotEmpty, IsArray, IsDefined, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, Min, ValidateNested } from "class-validator";
 import { BookingStatus, DateRange, PaymentStatus, SortBy } from "src/core/enum/bookings.enum";
 
 export class SlotType {
@@ -40,12 +40,20 @@ export class SelectedServiceType {
 
 export class SlotDataType {
     @IsString()
-    @IsNotEmpty({ message: "'scheduleId' is required" })
+    @IsDefined({ message: "'scheduleId' is required" })
     scheduleId: string;
 
     @IsString()
-    @IsNotEmpty({ message: "'slotId' is required" })
+    @IsDefined({ message: "'slotId' is required" })
     slotId: string;
+
+    @IsString()
+    @IsDefined({ message: "'dayId' is required" })
+    dayId: string;
+
+    @IsString()
+    @IsDefined({ message: "'month' is required" })
+    month: string;
 }
 
 export class SelectedServiceDto {

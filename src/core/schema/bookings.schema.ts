@@ -39,11 +39,20 @@ export class BookingDocument extends Document {
         coordinates: [number, number];
     };
 
-    @Prop({ type: String, required: true })
-    scheduleId: string;
-
-    @Prop({ type: String, required: true })
-    slotId: string;
+    @Prop({
+        type: {
+            scheduleID: { type: String },
+            month: { type: String },
+            dayId: { type: String },
+            slotId: { type: String }
+        }
+    })
+    scheduleData: {
+        scheduleId: string;
+        month: string;
+        dayId: string;
+        slotId: string;
+    }
 
     @Prop({
         type: [

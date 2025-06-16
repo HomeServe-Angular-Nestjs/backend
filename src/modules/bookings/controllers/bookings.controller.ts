@@ -6,6 +6,7 @@ import { IPayload } from '../../../core/misc/payload.interface';
 import { CUSTOMER_SERVICE_NAME } from '../../../core/constants/service.constant';
 import { IBookingService } from '../services/interfaces/booking-service.interface';
 import { IBookingDetailCustomer, IBookingWithPagination } from '../../../core/entities/interfaces/booking.entity.interface';
+import { IResponse } from 'src/core/misc/response.util';
 
 @Controller('booking')
 //@UseInterceptors()
@@ -32,7 +33,7 @@ export class BookingsController {
     }
 
     @Post('confirm')
-    async handleBooking(@Req() req: Request, @Body() dto: BookingDto): Promise<boolean> {
+    async handleBooking(@Req() req: Request, @Body() dto: BookingDto): Promise<IResponse> {
         try {
             const user = req.user as IPayload;
             if (!user.sub) {

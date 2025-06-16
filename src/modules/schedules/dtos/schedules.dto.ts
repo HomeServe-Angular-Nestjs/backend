@@ -157,3 +157,15 @@ export class RemoveScheduleDto {
     @IsString()
     scheduleId: string
 }
+
+//* Customer's
+
+export class FetchShcedulesDto {
+    @IsDefined()
+    @IsString()
+    @Transform(({ value }) => {
+        console.log(value);
+        return value
+    })
+    providerId: string;
+}

@@ -7,7 +7,6 @@ import { IProviderRepository } from "src/core/repositories/interfaces/provider-r
 import { IScheduleDay, IScheduleList, IScheduleListWithPagination, ISchedules } from "src/core/entities/interfaces/schedules.entity.interface";
 import { IResponse } from "src/core/misc/response.util";
 import { Types } from "mongoose";
-import { dot } from "node:test/reporters";
 
 export class SchedulesService implements ISchedulesService {
     private readonly logger = new Logger(SchedulesService.name);
@@ -102,7 +101,20 @@ export class SchedulesService implements ISchedulesService {
         };
     }
 
-    async fetchSchedules(providerId: string, dto: ScheduleListFilterDto): Promise<IResponse<IScheduleListWithPagination>> {
+    async fetchSchedules(providerId: string): Promise<IResponse<ISchedules[]>> {
+        const schedules = await this._schedulesRepository.find({ providerId });
+        if (!schedules) {
+            throw new NotFoundException(`Schedules with provider ID ${providerId} not found`);
+        }
+
+        return {
+            success: true,
+            message: 'schedules fetched',
+            data: schedules
+        }
+    }
+
+    async fetchScheduleList(providerId: string, dto: ScheduleListFilterDto): Promise<IResponse<IScheduleListWithPagination>> {
         const limit = 10;
         const skip = (dto.page - 1) * limit;
 

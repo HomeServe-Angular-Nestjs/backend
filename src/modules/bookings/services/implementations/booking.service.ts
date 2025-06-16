@@ -1,16 +1,17 @@
 import { ConflictException, Inject, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
-import { BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SCHEDULE_REPOSITORY_NAME, SERVICE_OFFERED_REPOSITORY_NAME } from '../../../../core/constants/repository.constant';
-import { IServiceOfferedRepository } from '../../../../core/repositories/interfaces/serviceOffered-repo.interface';
-import { IBookingService } from '../interfaces/booking-service.interface';
-import { SelectedServiceDto, IPriceBreakupDto, BookingDto, SelectedServiceType } from '../../dtos/booking.dto';
-import { IBookingRepository } from '../../../../core/repositories/interfaces/bookings-repo.interface';
-import { BookingStatus, PaymentStatus } from '../../../../core/enum/bookings.enum';
-import { IScheduleRepository } from '../../../../core/repositories/interfaces/schedule-repo.interface';
+import { BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SCHEDULES_REPOSITORY_NAME, SERVICE_OFFERED_REPOSITORY_NAME } from '../../../../core/constants/repository.constant';
 import { IBookingDetailCustomer, IBookingResponse, IBookingWithPagination } from '../../../../core/entities/interfaces/booking.entity.interface';
-import { ICustomerRepository } from '../../../../core/repositories/interfaces/customer-repo.interface';
-import { ISlot } from '../../../../core/entities/interfaces/schedule.entity.interface';
+import { BookingStatus, PaymentStatus } from '../../../../core/enum/bookings.enum';
+import { IServiceOfferedRepository } from '../../../../core/repositories/interfaces/serviceOffered-repo.interface';
+import { ISchedulesRepository } from '../../../../core/repositories/interfaces/schedules-repo.interface';
 import { IProviderRepository } from '../../../../core/repositories/interfaces/provider-repo.interface';
-import { PAYMENT_UTILITY_NAME } from 'src/core/constants/utility.constant';
+import { ICustomerRepository } from '../../../../core/repositories/interfaces/customer-repo.interface';
+import { IBookingRepository } from '../../../../core/repositories/interfaces/bookings-repo.interface';
+import { SelectedServiceDto, IPriceBreakupDto, BookingDto } from '../../dtos/booking.dto';
+import { IBookingService } from '../interfaces/booking-service.interface';
+import { Types } from 'mongoose';
+import { IResponse } from 'src/core/misc/response.util';
+import { IScheduleDay, ISlot } from 'src/core/entities/interfaces/schedules.entity.interface';
 
 
 
@@ -24,8 +25,8 @@ export class BookingService implements IBookingService {
         private readonly _serviceOfferedRepository: IServiceOfferedRepository,
         @Inject(BOOKING_REPOSITORY_NAME)
         private readonly _bookingRepository: IBookingRepository,
-        @Inject(SCHEDULE_REPOSITORY_NAME)
-        private readonly _scheduleRepository: IScheduleRepository,
+        @Inject(SCHEDULES_REPOSITORY_NAME)
+        private readonly _scheduleRepository: ISchedulesRepository,
         @Inject(CUSTOMER_REPOSITORY_INTERFACE_NAME)
         private readonly _customerRepository: ICustomerRepository,
         @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
@@ -114,33 +115,50 @@ export class BookingService implements IBookingService {
      * @throws {ConflictException} - If the slot is already taken.
      * @throws {InternalServerErrorException} - If any unexpected issue occurs during the update or booking creation.
      */
-    async createBooking(customerId: string, data: BookingDto): Promise<boolean> {
+    async createBooking(customerId: string, data: BookingDto): Promise<IResponse> {
+        const { dayId, month, scheduleId, slotId } = data.slotData;
+        const scheduleObjectId = new Types.ObjectId(scheduleId);
+        const dayObjectId = new Types.ObjectId(dayId);
+        const slotObjectId = new Types.ObjectId(slotId);
+        const customerObjectId = new Types.ObjectId(customerId);
 
-        const schedule = await this._scheduleRepository.findById(data.slotData.scheduleId);
+        const schedule = await this._scheduleRepository.findById(scheduleObjectId);
         if (!schedule) {
-            throw new NotFoundException(`Schedule ID ${data.slotData.scheduleId} not found`)
+            throw new NotFoundException(`Schedule ID ${scheduleId} not found`)
         }
 
         let updatedSlot: ISlot | undefined;
+        let updatedDay: IScheduleDay | undefined;
 
         try {
             const result = await this._scheduleRepository.findOneAndUpdate(
                 {
-                    _id: schedule.id,
-                    'slots._id': data.slotData.slotId,
-                    'slots.takenBy': { $in: [null, ''] },
+                    _id: scheduleObjectId,
+                    month,
+                    'days._id': dayObjectId,
+                    'days.slots._id': slotObjectId
                 },
                 {
-                    $set: { 'slots.$.takenBy': customerId }
+                    $set: {
+                        'days.$[day].slots.$[slot].takenBy': customerObjectId
+                    }
                 },
-                { new: true }
+                {
+                    arrayFilters: [
+                        { 'day._id': dayObjectId },
+                        { 'slot._id': slotObjectId }
+                    ],
+                    new: true
+                }
             );
 
             if (!result) {
                 throw new ConflictException('Slot has already been taken');
             }
 
-            updatedSlot = result.slots.find(slot => slot.id === data.slotData.slotId);
+            updatedDay = result.days.find(day => day.id === dayId);
+            updatedSlot = updatedDay?.slots.find(slot => slot.id === slotId);
+
             if (!updatedSlot) {
                 throw new NotFoundException(`Slot ID ${data.slotData.slotId} not found`);
             }
@@ -149,15 +167,23 @@ export class BookingService implements IBookingService {
             throw new InternalServerErrorException(err.message);
         }
 
-        const expectedArrivalTime = this._combineDateAndTime(schedule.scheduleDate, updatedSlot.from);
+        if (!updatedDay || !updatedSlot) {
+            throw new NotFoundException('slot data missing.');
+        }
+
+        const expectedArrivalTime = this._combineDateAndTime(updatedDay.date, updatedSlot.from);
 
         try {
-            const booking = await this._bookingRepository.create({
+            await this._bookingRepository.create({
                 customerId,
                 providerId: data.providerId,
                 totalAmount: data.total,
-                scheduleId: data.slotData.scheduleId,
-                slotId: data.slotData.slotId,
+                scheduleData: {
+                    scheduleId,
+                    month,
+                    dayId,
+                    slotId,
+                },
                 actualArrivalTime: null,
                 expectedArrivalTime,
                 location: {
@@ -175,10 +201,14 @@ export class BookingService implements IBookingService {
                 paymentStatus: data.transactionId ? PaymentStatus.PAID : PaymentStatus.UNPAID,
             });
 
-            return !!booking.id;
         } catch (err) {
             this.logger.error('Failed to create booking', err);
             throw new InternalServerErrorException('Failed to create booking');
+        }
+
+        return {
+            success: true,
+            message: 'Service booked successfully.'
         }
     }
 

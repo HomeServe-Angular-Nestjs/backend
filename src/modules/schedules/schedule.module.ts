@@ -1,8 +1,7 @@
 import { Module } from "@nestjs/common";
-import { SchedulesController } from "./controllers/schedule.controller";
-import { SchedulesService } from "./services/implemetations/schedules.service";
 import { schedulesServiceProviders } from "./providers/service.provider";
 import { schedulesRepositoryProviders } from "./providers/repository.provider";
+import { SchedulesController } from "./controllers/schedule.controller";
 
 @Module({
     imports: [],

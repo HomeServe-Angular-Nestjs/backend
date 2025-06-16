@@ -1,5 +1,5 @@
 import { BadRequestException, Body, Controller, Get, Inject, InternalServerErrorException, Logger, Patch, Post, Query, Req } from "@nestjs/common";
-import { MonthScheduleDto, RemoveScheduleDto, ScheduleDetailsDto, ScheduleListFilterDto, UpdateScheduleDateSlotStatusDto, UpdateScheduleDateStatusDto, UpdateScheduleStatusDto } from "../dtos/schedules.dto";
+import { FetchShcedulesDto, MonthScheduleDto, RemoveScheduleDto, ScheduleDetailsDto, ScheduleListFilterDto, UpdateScheduleDateSlotStatusDto, UpdateScheduleDateStatusDto, UpdateScheduleStatusDto } from "../dtos/schedules.dto";
 import { IPayload } from "src/core/misc/payload.interface";
 import { Request } from "express";
 import { SCHEDULES_SERVICE_NAME } from "src/core/constants/service.constant";
@@ -32,18 +32,33 @@ export class SchedulesController {
         }
     }
 
+    @Get('')
+    async fetchSchedules(@Query() dto: FetchShcedulesDto): Promise<IResponse<ISchedules[]>> {
+        try {
+            if (!dto.providerId) {
+                throw new BadRequestException('provider id is missing.');
+            }
+
+            return await this._schedulesService.fetchSchedules(dto.providerId);
+        } catch (err) {
+            this.logger.error(`Error fetching the schedules: ${err.message}`, err.stack);
+            throw new InternalServerErrorException('Error while fetching schedules');
+        }
+    }
+
+
     @Get('list')
-    async fetchSchedules(@Req() req: Request, @Query() dto: ScheduleListFilterDto): Promise<IResponse<IScheduleListWithPagination>> {
+    async fetchScheduleList(@Req() req: Request, @Query() dto: ScheduleListFilterDto): Promise<IResponse<IScheduleListWithPagination>> {
         try {
             const user = req.user as IPayload;
             if (!user.sub) {
                 throw new BadRequestException('Provider id is missing');
             }
 
-            return await this._schedulesService.fetchSchedules(user.sub, dto);
+            return await this._schedulesService.fetchScheduleList(user.sub, dto);
         } catch (err) {
-            this.logger.error(`Error fetching the schedules: ${err.message}`, err.stack);
-            throw new InternalServerErrorException('Error while fetching schedules');
+            this.logger.error(`Error fetching the schedule list: ${err.message}`, err.stack);
+            throw new InternalServerErrorException('Error while fetching schedule list.');
         }
     }
 

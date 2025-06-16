@@ -3,7 +3,7 @@ import { Document } from "mongoose";
 import { IScheduleDay } from "../entities/interfaces/schedules.entity.interface";
 
 @Schema({ timestamps: true })
-export class SchedulesDocumnet extends Document {
+export class SchedulesDocument extends Document {
     @Prop({
         type: String,
         required: true
@@ -46,4 +46,4 @@ export class SchedulesDocumnet extends Document {
     updatedAt: Date;
 }
 
-export const SchedulesSchema = SchemaFactory.createForClass(SchedulesDocumnet);
+export const SchedulesSchema = SchemaFactory.createForClass(SchedulesDocument);

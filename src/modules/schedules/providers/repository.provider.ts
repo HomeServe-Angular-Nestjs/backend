@@ -6,12 +6,12 @@ import { PROVIDER_REPOSITORY_INTERFACE_NAME, SCHEDULES_REPOSITORY_NAME } from "s
 import { ProviderRepository } from "src/core/repositories/implementations/provider.repository";
 import { SchedulesRepository } from "src/core/repositories/implementations/schedules.repository";
 import { ProviderDocument } from "src/core/schema/provider.schema";
-import { SchedulesDocumnet } from "src/core/schema/schedules.schema";
+import { SchedulesDocument } from "src/core/schema/schedules.schema";
 
 export const schedulesRepositoryProviders: Provider[] = [
     {
         provide: SCHEDULES_REPOSITORY_NAME,
-        useFactory: (schedulesModel: Model<SchedulesDocumnet>) =>
+        useFactory: (schedulesModel: Model<SchedulesDocument>) =>
             new SchedulesRepository(schedulesModel),
         inject: [getModelToken(SCHEDULES_MODEL_NAME)]
     },
