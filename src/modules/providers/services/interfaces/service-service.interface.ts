@@ -1,5 +1,4 @@
 import { IResponse } from 'src/core/misc/response.util';
-import { ServiceOffered } from '../../../../core/entities/implementation/service.entity';
 import { IService, IServicesWithPagination, ISubService } from '../../../../core/entities/interfaces/service.entity.interface';
 import { CreateServiceDto, FilterServiceDto, ProviderServiceFilterWithPaginationDto, ToggleServiceStatusDto, ToggleSubServiceStatusDto, UpdateServiceDto, UpdateSubServiceDto, UpdateSubServiceWrapperDto } from '../../dtos/service.dto';
 
@@ -12,4 +11,5 @@ export interface IServiceFeatureService {
   fetchFilteredServices(id: string, filter: FilterServiceDto): Promise<IService[]>;
   toggleServiceStatus(dto: ToggleServiceStatusDto): Promise<boolean>;
   toggleSubServiceStatus(dto: ToggleSubServiceStatusDto): Promise<boolean>;
+  removeService(providerID: string, serviceId: string): Promise<IResponse>;
 }

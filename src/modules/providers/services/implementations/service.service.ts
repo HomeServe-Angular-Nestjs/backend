@@ -4,7 +4,6 @@ import {
   Injectable,
   InternalServerErrorException,
   NotFoundException,
-  UnauthorizedException,
   Logger,
 } from '@nestjs/common';
 import { Types } from 'mongoose';
@@ -21,12 +20,9 @@ import {
 } from '../../dtos/service.dto';
 import { IProviderRepository } from '../../../../core/repositories/interfaces/provider-repo.interface';
 import {
-  CUSTOMER_REPOSITORY_INTERFACE_NAME,
   PROVIDER_REPOSITORY_INTERFACE_NAME,
   SERVICE_OFFERED_REPOSITORY_NAME,
 } from '../../../../core/constants/repository.constant';
-import { IPayload } from '../../../../core/misc/payload.interface';
-import { ServiceOffered } from '../../../../core/entities/implementation/service.entity';
 import { UPLOAD_UTILITY_NAME } from '../../../../core/constants/utility.constant';
 import { IUploadsUtility } from '../../../../core/utilities/interface/upload.utility.interface';
 import { IServiceOfferedRepository } from '../../../../core/repositories/interfaces/serviceOffered-repo.interface';
@@ -35,7 +31,6 @@ import {
   IServicesWithPagination,
   ISubService,
 } from '../../../../core/entities/interfaces/service.entity.interface';
-import { ICustomerRepository } from '../../../../core/repositories/interfaces/customer-repo.interface';
 import { IResponse } from 'src/core/misc/response.util';
 
 @Injectable()
@@ -111,7 +106,8 @@ export class ServiceFeatureService implements IServiceFeatureService {
       }
 
       const query: any = {
-        _id: { $in: provider.servicesOffered.map(id => new Types.ObjectId(id)) }
+        _id: { $in: provider.servicesOffered.map(id => new Types.ObjectId(id)) },
+        isDeleted: false
       };
 
       if (filter.search) {
@@ -384,6 +380,34 @@ export class ServiceFeatureService implements IServiceFeatureService {
       throw new NotFoundException(`subService of ID ${dto.subService.id} not found`);
     }
     return !!updatedSubService;
+  }
+
+  async removeService(providerId: string, serviceId: string): Promise<IResponse> {
+
+    const updatedService = await this._serviceOfferedRepository.findOneAndUpdate(
+      { _id: serviceId },
+      {
+        $set: {
+          isDeleted: true
+        }
+      },
+      { new: true }
+    );
+
+    await this._providerRepository.findOneAndUpdate(
+      { _id: providerId },
+      {
+        $pull: {
+          servicesOffered: serviceId
+        }
+      },
+      { new: true }
+    );
+
+    return {
+      success: !!updatedService,
+      message: !!updatedService ? 'Service Uppdated successfully.' : 'Failed to update',
+    }
   }
 
   private async _handleSubServices(subServices: CreateSubServiceDto[]): Promise<ISubService[]> {

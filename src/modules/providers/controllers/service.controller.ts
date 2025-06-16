@@ -26,6 +26,7 @@ import {
   CreateSubServiceDto,
   FilterServiceDto,
   ProviderServiceFilterWithPaginationDto,
+  RemoveServiceDto,
   ToggleServiceStatusDto,
   ToggleSubServiceStatusDto,
   UpdateServiceDto,
@@ -210,6 +211,22 @@ export class ServiceController {
       return await this._serviceFeature.toggleSubServiceStatus(dto);
     } catch (err) {
       this.logger.error(`Error toggling service status for Subervice ID ${dto.subService.id}: ${err.message}`, err.stack);
+      throw new InternalServerErrorException('Failed to toggle service status');
+    }
+  }
+
+  @Patch('provider/remove')
+  async removeService(@Req() req: Request, @Body() dto: RemoveServiceDto) {
+    try {
+      const user = req.user as IPayload;
+      if (!user.sub) {
+        throw new BadRequestException('User id is missing.');
+      }
+
+      return await this._serviceFeature.removeService(user.sub, dto.serviceId);
+
+    } catch (err) {
+      this.logger.error(`Error removing service : ${err.message}`, err.stack);
       throw new InternalServerErrorException('Failed to toggle service status');
     }
   }

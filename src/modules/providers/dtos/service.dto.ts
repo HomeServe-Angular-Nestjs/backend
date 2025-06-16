@@ -207,3 +207,10 @@ export class ProviderServiceFilterWithPaginationDto {
   @IsIn(['latest', 'oldest', 'a-z', 'z-a'])
   sort?: 'latest' | 'oldest' | 'a-z' | 'z-a';
 }
+
+
+export class RemoveServiceDto {
+  @IsDefined()
+  @IsString()
+  serviceId: string;
+}
