@@ -16,6 +16,7 @@ import { TokenService } from './modules/auth/services/implementations/token.serv
 import { AuthMiddleware } from './modules/auth/middleware/auth.middleware';
 import { JwtConfigModule } from './configs/jwt/jwt.module';
 import { SchedulesModule } from './modules/schedules/schedule.module';
+import { ChatModule } from './modules/chat/chat.module';
 
 
 @Module({
@@ -39,6 +40,7 @@ import { SchedulesModule } from './modules/schedules/schedule.module';
     CustomerModule,
     SchedulesModule,
     PaymentModule,
+    ChatModule
   ],
   controllers: [AppController],
   providers: [AppService,
