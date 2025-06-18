@@ -6,7 +6,9 @@ import { Connection, ConnectionStates } from 'mongoose';
 import {
   ADMIN_MODEL_NAME,
   BOOKINGS_MODEL_NAME,
+  CHAT_MODEL_NAME,
   CUSTOMER_MODEL_NAME,
+  MESSAGE_MODEL_NAME,
   OTP_MODEL_NAME,
   PROVIDER_MODEL_NAME,
   SCHEDULES_MODEL_NAME,
@@ -23,6 +25,8 @@ import { ServiceSchema } from '../../core/schema/service.schema';
 import { BookingSchema } from '../../core/schema/bookings.schema';
 import { TransactionSchema } from 'src/core/schema/transaction.schema';
 import { SchedulesSchema } from 'src/core/schema/schedules.schema';
+import { ChatSchema } from 'src/core/schema/chat.schema';
+import { MessageSchema } from 'src/core/schema/message.schema';
 
 
 @Global()
@@ -60,11 +64,11 @@ import { SchedulesSchema } from 'src/core/schema/schedules.schema';
       { name: OTP_MODEL_NAME, schema: OtpSchema },
       { name: ADMIN_MODEL_NAME, schema: AdminSchema },
       { name: SERVICE_OFFERED_MODEL_NAME, schema: ServiceSchema },
-      //
-      // { name: SCHEDULE_MODEL_NAME, schema: ScheduleSchema },
       { name: BOOKINGS_MODEL_NAME, schema: BookingSchema },
       { name: TRANSACTION_MODEL_NAME, schema: TransactionSchema },
       { name: SCHEDULES_MODEL_NAME, schema: SchedulesSchema },
+      { name: CHAT_MODEL_NAME, schema: ChatSchema },
+      { name: MESSAGE_MODEL_NAME, schema: MessageSchema }
 
     ]),
   ],

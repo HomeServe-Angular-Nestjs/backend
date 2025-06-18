@@ -91,18 +91,10 @@ export class ScheduleDetailsDto extends ScheduleDetailsFilterDto {
 export class UpdateScheduleStatusDto {
     @IsDefined()
     @IsString()
-    @Transform(({ value }) => {
-        console.log(value)
-        return value;
-    })
     scheduleId: string
 
     @IsDefined()
     @IsBoolean()
-    @Transform(({ value }) => {
-        console.log(value)
-        return value;
-    })
     status: boolean;
 }
 
@@ -163,9 +155,5 @@ export class RemoveScheduleDto {
 export class FetchShcedulesDto {
     @IsDefined()
     @IsString()
-    @Transform(({ value }) => {
-        console.log(value);
-        return value
-    })
     providerId: string;
 }

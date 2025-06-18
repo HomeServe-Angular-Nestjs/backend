@@ -1,4 +1,4 @@
-import { Inject, InternalServerErrorException, Logger, NotFoundException } from "@nestjs/common";
+import { Inject, Injectable, InternalServerErrorException, Logger, NotFoundException } from "@nestjs/common";
 import { ISchedulesService } from "../interfaces/schedules-service.interface";
 import { MonthScheduleDto, ScheduleDetailsDto, ScheduleListFilterDto, UpdateScheduleDateSlotStatusDto, UpdateScheduleDateStatusDto, UpdateScheduleStatusDto } from "../../dtos/schedules.dto";
 import { PROVIDER_REPOSITORY_INTERFACE_NAME, SCHEDULES_REPOSITORY_NAME } from "src/core/constants/repository.constant";
@@ -8,6 +8,7 @@ import { IScheduleDay, IScheduleList, IScheduleListWithPagination, ISchedules } 
 import { IResponse } from "src/core/misc/response.util";
 import { Types } from "mongoose";
 
+@Injectable()
 export class SchedulesService implements ISchedulesService {
     private readonly logger = new Logger(SchedulesService.name);
 
@@ -252,47 +253,14 @@ export class SchedulesService implements ISchedulesService {
     }
 
     // TODO - slot status update.
-    async updateScheduleDateSlotStatus(providerId: string, dto: UpdateScheduleDateSlotStatusDto): Promise<IResponse<IScheduleDay[]>> {
-        const scheduleId = new Types.ObjectId(dto.scheduleId);
-        const dayId = new Types.ObjectId(dto.dayId);
-        const slotId = new Types.ObjectId(dto.slotId);
+    async updateScheduleDateSlotStatus(providerId: string, dto: UpdateScheduleDateSlotStatusDto): Promise<IResponse> {
+        const { scheduleId, dayId, slotId, status } = dto;
 
-        const updatedSchedule = await this._schedulesRepository.findOneAndUpdate(
-            {
-                _id: scheduleId,
-                providerId,
-                'days._id': dayId,
-                'days.slots._id': slotId,
-            },
-            {
-                $set: {
-                    'days.$[day].slots.$[slot].isActive': dto.status,
-                },
-            },
-            {
-                arrayFilters: [
-                    { 'day._id': dayId },
-                    { 'slot._id': slotId }
-                ],
-                new: true,
-            }
-        );
-
-        if (!updatedSchedule) {
-            throw new NotFoundException('Schedule or slot not found');
-        }
-
-        const updatedDay = updatedSchedule.days.find(day => day.id === dto.dayId);
-        const updatedSlot = updatedDay?.slots.find(slot => slot.id === dto.slotId);
-
-        if (!updatedSlot) {
-            throw new NotFoundException('Updated slot not found');
-        }
+       
 
         return {
-            message: 'Slot status updated',
+            message: 'Slot status updated successfully',
             success: true,
-            data: updatedSchedule.days ?? []
         };
     }
 

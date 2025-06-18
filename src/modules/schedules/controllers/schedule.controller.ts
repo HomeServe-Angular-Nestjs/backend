@@ -5,7 +5,7 @@ import { Request } from "express";
 import { SCHEDULES_SERVICE_NAME } from "src/core/constants/service.constant";
 import { ISchedulesService } from "../services/interfaces/schedules-service.interface";
 import { IResponse } from "src/core/misc/response.util";
-import { IScheduleDay, IScheduleList, IScheduleListWithPagination, ISchedules } from "src/core/entities/interfaces/schedules.entity.interface";
+import { IScheduleDay, IScheduleListWithPagination, ISchedules } from "src/core/entities/interfaces/schedules.entity.interface";
 
 @Controller('schedule')
 export class SchedulesController {

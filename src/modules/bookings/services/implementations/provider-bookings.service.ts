@@ -1,14 +1,13 @@
 import { Inject, Injectable, InternalServerErrorException, Logger, NotFoundException, Search } from "@nestjs/common";
 import { IProviderBookingService } from "../interfaces/provider-booking-service.interface";
-import { BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SCHEDULE_REPOSITORY_NAME, SERVICE_OFFERED_REPOSITORY_NAME } from "../../../../core/constants/repository.constant";
+import { BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, SERVICE_OFFERED_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME } from "../../../../core/constants/repository.constant";
 import { IBookingRepository } from "../../../../core/repositories/interfaces/bookings-repo.interface";
 import { IServiceOfferedRepository } from "../../../../core/repositories/interfaces/serviceOffered-repo.interface";
-import { IProviderRepository } from "../../../../core/repositories/interfaces/provider-repo.interface";
 import { ICustomerRepository } from "../../../../core/repositories/interfaces/customer-repo.interface";
-import { IScheduleRepository } from "../../../../core/repositories/interfaces/schedule-repo.interface";
-import { IBookingDetailProvider, IBookingOverviewChanges, IBookingOverviewData, IProviderBookingLists, IResponseProviderBookingLists } from "../../../../core/entities/interfaces/booking.entity.interface";
+import { IBookingDetailProvider, IBookingOverviewChanges, IBookingOverviewData, IResponseProviderBookingLists } from "../../../../core/entities/interfaces/booking.entity.interface";
 import { FilterFileds, UpdateBookingStatusDto } from "../../dtos/booking.dto";
 import { BookingStatus, DateRange, PaymentStatus } from "src/core/enum/bookings.enum";
+import { ITransactionRepository } from "src/core/repositories/interfaces/transaction-repo.interface";
 
 @Injectable()
 export class ProviderBookingService implements IProviderBookingService {
@@ -19,12 +18,10 @@ export class ProviderBookingService implements IProviderBookingService {
         private readonly _serviceOfferedRepository: IServiceOfferedRepository,
         @Inject(BOOKING_REPOSITORY_NAME)
         private readonly _bookingRepository: IBookingRepository,
-        // @Inject(SCHEDULE_REPOSITORY_NAME)
-        // private readonly _scheduleRepository: IScheduleRepository,
         @Inject(CUSTOMER_REPOSITORY_INTERFACE_NAME)
         private readonly _customerRepository: ICustomerRepository,
-        @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
-        private readonly _providerRepository: IProviderRepository
+        @Inject(TRANSACTION_REPOSITORY_NAME)
+        private readonly _transactionRepository: ITransactionRepository,
     ) { }
 
 
@@ -223,6 +220,8 @@ export class ProviderBookingService implements IProviderBookingService {
             throw new InternalServerErrorException(`Provider with ID ${booking.customerId} not found.`);
         }
 
+        const transaction = await this._transactionRepository.findById(booking.transactionId ?? '');
+
         const orderedServices = (
             await Promise.all(
                 booking.services.map(async (s) => {
@@ -255,7 +254,12 @@ export class ProviderBookingService implements IProviderBookingService {
                 phone: customer.phone,
                 location: booking.location.address,
             },
-            orderedServices
+            orderedServices,
+            transaction: transaction ? {
+                id: transaction.id,
+                paymentDate: transaction.createdAt as Date,
+                paymentMethod: transaction.method as string
+            } : null
         }
     }
 

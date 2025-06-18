@@ -1,5 +1,5 @@
 import { ConflictException, Inject, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
-import { BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SCHEDULES_REPOSITORY_NAME, SERVICE_OFFERED_REPOSITORY_NAME } from '../../../../core/constants/repository.constant';
+import { BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SCHEDULES_REPOSITORY_NAME, SERVICE_OFFERED_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME } from '../../../../core/constants/repository.constant';
 import { IBookingDetailCustomer, IBookingResponse, IBookingWithPagination } from '../../../../core/entities/interfaces/booking.entity.interface';
 import { BookingStatus, PaymentStatus } from '../../../../core/enum/bookings.enum';
 import { IServiceOfferedRepository } from '../../../../core/repositories/interfaces/serviceOffered-repo.interface';
@@ -12,6 +12,7 @@ import { IBookingService } from '../interfaces/booking-service.interface';
 import { Types } from 'mongoose';
 import { IResponse } from 'src/core/misc/response.util';
 import { IScheduleDay, ISlot } from 'src/core/entities/interfaces/schedules.entity.interface';
+import { ITransactionRepository } from 'src/core/repositories/interfaces/transaction-repo.interface';
 
 
 
@@ -31,6 +32,8 @@ export class BookingService implements IBookingService {
         private readonly _customerRepository: ICustomerRepository,
         @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
         private readonly _providerRepository: IProviderRepository,
+        @Inject(TRANSACTION_REPOSITORY_NAME)
+        private readonly _transactionRepository: ITransactionRepository,
     ) { }
 
 
@@ -301,6 +304,8 @@ export class BookingService implements IBookingService {
             throw new InternalServerErrorException(`Provider with ID ${booking.providerId} not found.`);
         }
 
+        const transaction = await this._transactionRepository.findById(booking.transactionId ?? '');
+
         const orderedServices = (
             await Promise.all(
                 booking.services.map(async (s) => {
@@ -320,6 +325,8 @@ export class BookingService implements IBookingService {
             )
         ).flat();
 
+
+
         return {
             bookingId: booking.id,
             bookingStatus: booking.bookingStatus,
@@ -332,7 +339,12 @@ export class BookingService implements IBookingService {
                 email: provider.email,
                 phone: provider.phone
             },
-            orderedServices
+            orderedServices,
+            transaction: transaction ? {
+                id: transaction.id,
+                paymentDate: transaction.createdAt as Date,
+                paymentMethod: transaction.method as string
+            } : null
         }
     }
 

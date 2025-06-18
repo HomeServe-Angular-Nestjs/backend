@@ -1,7 +1,7 @@
 import { ScheduleDay, Schedules, Slot } from "src/core/entities/implementation/schedules.entity";
 import { BaseRepository } from "../base/implementations/base.repository";
 import { SchedulesDocument } from "src/core/schema/schedules.schema";
-import { FilterQuery, Model, Types } from "mongoose";
+import { FilterQuery, Model, Types, UpdateQuery } from "mongoose";
 import { InjectModel } from "@nestjs/mongoose";
 import { SCHEDULES_MODEL_NAME } from "src/core/constants/model.constant";
 import { ISchedulesRepository } from "../interfaces/schedules-repo.interface";
@@ -22,6 +22,19 @@ export class SchedulesRepository extends BaseRepository<Schedules, SchedulesDocu
 
     async count(filter?: FilterQuery<SchedulesDocument>): Promise<number> {
         return await this._schedulesModel.countDocuments(filter);
+    }
+
+
+    async updateOne(
+        filter: FilterQuery<SchedulesDocument>,
+        update: UpdateQuery<SchedulesDocument>,
+    ): Promise<{ matchedCount: number; modifiedCount: number }> {
+        const result = await this._schedulesModel.updateOne(filter, update);
+
+        return {
+            matchedCount: result.matchedCount,
+            modifiedCount: result.modifiedCount
+        };
     }
 
     protected toEntity(doc: SchedulesDocument | Record<string, any>): Schedules {

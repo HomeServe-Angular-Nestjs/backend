@@ -40,7 +40,6 @@ export class CreateServiceDto {
   @Optional()
   image?: Express.Multer.File;
 
-  @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CreateSubServiceDto)
   subService?: CreateSubServiceDto[];
@@ -59,7 +58,7 @@ export class UpdateSubServiceDto {
   @IsString()
   estimatedTime: string;
 
-  @IsNotEmpty()
+  @Optional()
   image: Express.Multer.File | string;
 }
 
@@ -73,13 +72,12 @@ export class UpdateServiceDto {
   @IsString()
   desc: string;
 
-  @IsNotEmpty()
+  @Optional()
   image: Express.Multer.File | string;
 
-  @IsArray()
   @ValidateNested({ each: true })
   @Type(() => UpdateSubServiceDto)
-  subService: UpdateSubServiceDto[];
+  subService?: UpdateSubServiceDto[];
 }
 
 export class UpdateSubServiceWrapperDto {

@@ -142,7 +142,7 @@ export class ServiceController {
 
   @Put(['provider/service'])
   @UseInterceptors(AnyFilesInterceptor())
-  async updateService(@Body() dto: UpdateServiceDto, @UploadedFiles() files: Express.Multer.File[]): Promise<IResponse<IService>> {
+  async updateService(@Body() dto: any, @UploadedFiles() files: Express.Multer.File[]): Promise<IResponse<IService>> {
     try {
       let prepareDto: UpdateServiceDto = dto;
 
