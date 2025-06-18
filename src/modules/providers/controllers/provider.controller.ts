@@ -13,6 +13,7 @@ import {
     Logger,
     BadRequestException,
     UnauthorizedException,
+    Put,
 } from '@nestjs/common';
 
 import { PROVIDER_SERVICE_NAME } from '../../../core/constants/service.constant';
@@ -178,4 +179,20 @@ export class ProviderController {
             throw new InternalServerErrorException('Failed to update provider');
         }
     }
+
+    @Put('bio')
+    async updateBio(@Req() req: Request, @Body() dto: any) {
+        try {
+            const user = req.user as IPayload;
+            if (!user.sub) {
+                throw new UnauthorizedException(`Provider found`);
+            }
+
+            console.log(dto)
+        } catch (err) {
+            this.logger.error(`Error updating provider bio: ${err.message}`, err.stack);
+            throw new InternalServerErrorException('Failed to update provider bio.');
+        }
+    }
+
 }

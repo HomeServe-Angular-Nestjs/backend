@@ -7,6 +7,7 @@ import { UpdateSavedProvidersDto } from "../dtos/customer.dto";
 import { IPayload } from "../../../core/misc/payload.interface";
 import { Request } from "express";
 import { dot } from "node:test/reporters";
+import { IResponse } from "src/core/misc/response.util";
 
 @Controller('')
 export class CustomerController {
@@ -18,7 +19,6 @@ export class CustomerController {
     ) { }
 
     @Get('customer')
-    //@UseInterceptors()
     async fetchOneCustomer(@Req() req: Request): Promise<ICustomer | null> {
         try {
             const user = req.user as IPayload;
@@ -34,7 +34,6 @@ export class CustomerController {
     }
 
     @Patch('partial_update')
-    //@UseInterceptors()
     async partialUpdate(@Body() dto: Partial<ICustomer>): Promise<ICustomer> {
         try {
             const { id, ...updateData } = dto;
@@ -50,7 +49,6 @@ export class CustomerController {
     }
 
     @Patch('saved_providers')
-    //@UseInterceptors()
     async updateSavedProviders(@Req() req: Request, @Body() dto: UpdateSavedProvidersDto): Promise<ICustomer> {
         try {
             const user = req.user as IPayload;
@@ -65,8 +63,8 @@ export class CustomerController {
         }
     }
 
+    // TODO - otp
     @Post('send_otp_sms')
-    //@UseInterceptors()
     async sendOtp(@Req() req: Request, @Body() dto: { phone: string }) {
         const user = req.user as IPayload;
         if (!user.sub) {
@@ -76,4 +74,15 @@ export class CustomerController {
         this.logger.debug(dto);
         this._customerService.sendOtp(Number(dto.phone))
     }
+
+    @Get('search_providers')
+    async searchProvider(@Query() { search }: { search: string }): Promise<IResponse> {
+        try {
+            return this._customerService.searchProviders(search);
+        } catch (err) {
+            this.logger.error(`Error updating customer saved providers: ${err.message}`, err.stack);
+            throw new InternalServerErrorException('Failed to update the customer saved providers');
+        }
+    }
+
 }

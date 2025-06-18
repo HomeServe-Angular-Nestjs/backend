@@ -1,5 +1,5 @@
 import { IProvider } from '../../../../core/entities/interfaces/user.entity.interface';
-import { FilterDto, SlotDto, UpdateDefaultSlotsDto } from '../../dtos/provider.dto';
+import { FilterDto, SlotDto } from '../../dtos/provider.dto';
 
 export interface IProviderServices {
   getProviders(filter?: FilterDto): Promise<IProvider[]>;

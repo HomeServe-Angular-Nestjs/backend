@@ -1,11 +1,13 @@
 import { Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
-import { CUSTOMER_REPOSITORY_INTERFACE_NAME } from "../../../../core/constants/repository.constant";
+import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME } from "../../../../core/constants/repository.constant";
 import { ICustomerRepository } from "../../../../core/repositories/interfaces/customer-repo.interface";
 import { ICustomerService } from "../interfaces/customer-service.interface";
-import { ICustomer } from "../../../../core/entities/interfaces/user.entity.interface";
+import { ICustomer, ISearchedProviders } from "../../../../core/entities/interfaces/user.entity.interface";
 import { UpdateSavedProvidersDto } from "../../dtos/customer.dto";
 import { FAST2SMS_UTILITY_NAME } from "../../../../core/constants/utility.constant";
 import { IFast2SmsService } from "../../../../core/utilities/interface/fast2sms.interface";
+import { IResponse } from "src/core/misc/response.util";
+import { IProviderRepository } from "src/core/repositories/interfaces/provider-repo.interface";
 
 @Injectable()
 export class CustomerService implements ICustomerService {
@@ -14,6 +16,8 @@ export class CustomerService implements ICustomerService {
     constructor(
         @Inject(CUSTOMER_REPOSITORY_INTERFACE_NAME)
         private readonly _customerRepository: ICustomerRepository,
+        @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
+        private readonly _providerRepository: IProviderRepository,
         @Inject(FAST2SMS_UTILITY_NAME)
         private readonly _fast2SmsService: IFast2SmsService
     ) { }
@@ -70,4 +74,28 @@ export class CustomerService implements ICustomerService {
         this._fast2SmsService.sendOtp(phone)
     }
 
+
+    async searchProviders(search: string): Promise<IResponse> {
+        let result: ISearchedProviders[] = [];
+
+        if (search) {
+            const regex = new RegExp(search, 'i');
+            const providers = await this._providerRepository.find({ 'location.address': regex });
+
+            result = providers.map(prov => ({
+                id: prov.id,
+                avatar: prov.avatar,
+                name: prov.fullname ?? prov.username,
+                address: prov.location ? prov.location.address : ''
+            }));
+
+            this.logger.debug(providers);
+        }
+
+        return {
+            success: true,
+            message: 'success',
+            data: result
+        }
+    }
 }

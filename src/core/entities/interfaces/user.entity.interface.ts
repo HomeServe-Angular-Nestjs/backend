@@ -72,3 +72,10 @@ export interface IProvider extends IBaseUserEntity {
 }
 
 export type IUser = ICustomer | IProvider | IAdmin;
+
+export interface ISearchedProviders {
+  id: string;
+  avatar: string;
+  name: string;
+  address: string;
+}
