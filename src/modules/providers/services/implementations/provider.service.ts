@@ -1,11 +1,14 @@
-import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { IProviderServices } from '../interfaces/provider-service.interface';
 import { PROVIDER_REPOSITORY_INTERFACE_NAME } from '../../../../core/constants/repository.constant';
 import { IProviderRepository } from '../../../../core/repositories/interfaces/provider-repo.interface';
-import { IProvider } from '../../../../core/entities/interfaces/user.entity.interface';
+import { IDoc, IProvider } from '../../../../core/entities/interfaces/user.entity.interface';
 import { CloudinaryService } from '../../../../configs/cloudinary/cloudinary.service';
-import { FilterDto, SlotDto, UpdateDefaultSlotsDto } from '../../dtos/provider.dto';
+import { FilterDto, SlotDto, UpdateBioDto, UpdateDefaultSlotsDto } from '../../dtos/provider.dto';
+import { IResponse } from 'src/core/misc/response.util';
+import { NotFoundError } from 'rxjs';
+import { ErrorMessage } from 'src/core/enum/error.enum';
 
 @Injectable()
 export class ProviderServices implements IProviderServices {
@@ -70,9 +73,7 @@ export class ProviderServices implements IProviderServices {
       const response = await this._cloudinaryService.uploadImage(file);
 
       if (!response) {
-        throw new NotFoundException(
-          'Avatar not updated to cloudinary successfully',
-        );
+        throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
       }
       updateData.avatar = response.url;
     }
@@ -124,7 +125,7 @@ export class ProviderServices implements IProviderServices {
    * Appends a default slot to the provider's schedule.
    *
    * @param {UpdateDefaultSlotsDto} slot - The slot data to be added.
-   * @param {string} id - The provider's unique ID.
+   * @param {string} providerId - The provider's unique ID.
    * @returns {Promise<IProvider>} The updated provider document.
    * @throws {BadRequestException | NotFoundException} If update fails.
    */
@@ -167,4 +168,94 @@ export class ProviderServices implements IProviderServices {
       throw new Error('Failed to delete default slots');
     }
   }
+
+  async updateBio(providerId: string, dto: UpdateBioDto): Promise<IResponse<IProvider>> {
+    const updateData: Partial<IProvider> = {
+      additionalSkills: dto.additionalSkills,
+      expertise: dto.expertises,
+      languages: dto.languages,
+      bio: dto.providerBio,
+    };
+
+    const updatedProvider = await this._providerRepository.findOneAndUpdate(
+      { _id: providerId },
+      { $set: updateData },
+      { new: true }
+    );
+
+    if (!updatedProvider) {
+      throw new NotFoundException(ErrorMessage.PROVIDER_NOT_FOUND_WITH_ID, providerId);
+    }
+
+    return {
+      message: 'Updated successsfully',
+      success: true,
+      data: updatedProvider
+    }
+  }
+
+  async uploadCertificate(providerId: string, label: string, file: Express.Multer.File): Promise<IResponse> {
+
+    const uploaded = await this._cloudinaryService.uploadImage(file);
+
+    if (!uploaded || !uploaded.url) {
+      throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+    }
+
+    const doc = {
+      label,
+      fileUrl: uploaded.url,
+      uploadedAt: new Date(),
+    }
+
+    const updatedProvider = await this._providerRepository.findOneAndUpdate(
+      { _id: providerId },
+      { $push: { docs: doc } },
+      { new: true }
+    );
+
+    if (!updatedProvider) {
+      throw new NotFoundException(ErrorMessage.PROVIDER_NOT_FOUND, providerId);
+    }
+
+    const filtered: IProvider = {
+      ...updatedProvider,
+      docs: updatedProvider.docs.filter(d => !d.isDeleted)
+    };
+
+    return {
+      success: true,
+      message: 'Updated successfully',
+      data: filtered
+    }
+  }
+
+  async removeCertificate(providerId: string, docId: string): Promise<IResponse<IProvider>> {
+    const updatedProvider = await this._providerRepository.findOneAndUpdate(
+      {
+        _id: providerId,
+        'docs._id': docId
+      },
+      {
+        $set: { 'docs.$.isDeleted': true }
+      },
+      { new: true }
+    );
+
+    if (!updatedProvider) {
+      throw new NotFoundException(ErrorMessage.PROVIDER_NOT_FOUND, providerId);
+    }
+
+    const filtered: IProvider = {
+      ...updatedProvider,
+      docs: updatedProvider.docs.filter(d => !d.isDeleted)
+    };
+
+    return {
+      success: true,
+      message: 'Removed successfully',
+      data: filtered
+    }
+  }
+
 }

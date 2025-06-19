@@ -29,35 +29,37 @@ export interface ICustomer extends IBaseUserEntity {
   savedProviders?: string[] | null;
 }
 
+export interface IExpertise {
+  specialization: string;
+  label: string;
+};
+
+export interface ILanguage {
+  language: string;
+  proficiency: string;
+}
+
+export interface IDoc {
+  id: string;
+  label: string;
+  fileUrl: string;
+  uploadedAt: Date;
+  verificationStatus: 'pending' | 'verified' | 'rejected';
+  verifiedAt?: Date;
+  isDeleted: boolean
+};
+
 export interface IProvider extends IBaseUserEntity {
   isVerified: boolean;
   bio: string;
-  expertise:
-  | {
-    specialization: string;
-    label: string;
-    tag: string;
-  }[];
+  expertise: IExpertise[];
   additionalSkills: string[];
-  languages: string[];
+  languages: ILanguage[];
   location?: Address;
   workImages: string[];
   awards: string[];
   isCertified: boolean;
-  verification: {
-    pcc: {
-      fileUrl: string;
-      uploadedAt: Date;
-    };
-    additionalDocs:
-    | {
-      type: string;
-      fileUrl: string;
-      uploadedAt: Date;
-    }[];
-    verificationStatus: boolean;
-    verifiedAt: Date;
-  };
+  docs: IDoc[];
   servicesOffered: string[];
   schedules: string[];
   defaultSlots: SlotType[];

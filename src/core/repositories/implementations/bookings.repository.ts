@@ -31,7 +31,7 @@ export class BookingRepository extends BaseRepository<Booking, BookingDocument> 
             customerId: doc.customerId,
             providerId: doc.providerId,
             totalAmount: doc.totalAmount,
-            
+
             services: doc.services,
             bookingStatus: doc.bookingStatus,
             paymentStatus: doc.paymentStatus,

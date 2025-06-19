@@ -3,6 +3,7 @@ import { BaseUserDocument } from './base/user-base.schema';
 import { Types } from 'mongoose';
 import { SERVICE_OFFERED_MODEL_NAME } from '../constants/model.constant';
 import { ServiceDocument } from './service.schema';
+import { IDoc, IExpertise, ILanguage } from '../entities/interfaces/user.entity.interface';
 
 @Schema({ timestamps: true })
 export class ProviderDocument extends BaseUserDocument {
@@ -17,21 +18,23 @@ export class ProviderDocument extends BaseUserDocument {
       {
         specialization: { type: String },
         label: { type: String },
-        tag: { type: String },
       },
     ],
   })
-  expertise: {
-    specialization: string;
-    label: string;
-    tag: string;
-  }[];
+  expertise: IExpertise[]
 
   @Prop({ type: [String] })
   additionalSkills: string[];
 
-  @Prop({ type: [String] })
-  languages: string[];
+  @Prop({
+    type: [
+      {
+        language: String,
+        proficiency: String
+      }
+    ],
+  })
+  languages: ILanguage[];
 
   @Prop({
     type: {
@@ -63,35 +66,22 @@ export class ProviderDocument extends BaseUserDocument {
   isCertified: boolean;
 
   @Prop({
-    type: {
-      pcc: {
+    type: [
+      {
+        label: { type: String },
         fileUrl: { type: String },
         uploadedAt: { type: Date },
-      },
-      additionalDocs: [
-        {
-          docType: { type: String },
-          fileUrl: { type: String },
-          uploadedAt: { type: Date },
+        verificationStatus: {
+          type: String,
+          enum: ['pending', 'verified', 'rejected'],
+          default: 'pending'
         },
-      ],
-      verificationStatus: { type: Boolean, default: false },
-      verifiedAt: { type: Date, default: null },
-    },
+        verifiedAt: { type: Date },
+        isDeleted: { type: Boolean, default: false }
+      }
+    ]
   })
-  verification: {
-    pcc: {
-      fileUrl: string;
-      uploadedAt: Date;
-    };
-    additionalDocs: {
-      docType: string;
-      fileUrl: string;
-      uploadedAt: Date;
-    }[];
-    verificationStatus: boolean;
-    verifiedAt: Date | null;
-  };
+  docs: IDoc[];
 
   @Prop({
     type: [{ type: Types.ObjectId, ref: SERVICE_OFFERED_MODEL_NAME }],

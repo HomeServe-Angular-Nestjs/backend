@@ -21,8 +21,9 @@ import { IProviderServices } from '../services/interfaces/provider-service.inter
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Request } from 'express';
 import { IPayload } from '../../../core/misc/payload.interface';
-import { FilterDto, SlotDto, UpdateDefaultSlotsDto } from '../dtos/provider.dto';
+import { FilterDto, RemoveCertificateDto, SlotDto, UpdateBioDto, UploadCertificateDto } from '../dtos/provider.dto';
 import { IProvider } from '../../../core/entities/interfaces/user.entity.interface';
+import { ErrorMessage } from 'src/core/enum/error.enum';
 
 @Controller('provider')
 export class ProviderController {
@@ -30,7 +31,7 @@ export class ProviderController {
 
     constructor(
         @Inject(PROVIDER_SERVICE_NAME)
-        private providerServices: IProviderServices,
+        private readonly _providerServices: IProviderServices,
     ) { }
 
     /**
@@ -40,15 +41,12 @@ export class ProviderController {
  * @throws {InternalServerErrorException} If any error occurs while fetching.
  */
     @Get('fetch_providers')
-    //@UseInterceptors()
     async fetchProviders(@Query() filter: FilterDto): Promise<IProvider[]> {
         try {
-            return await this.providerServices.getProviders(filter);
+            return await this._providerServices.getProviders(filter);
         } catch (err) {
             this.logger.error(`Error fetching provider: ${err}`);
-            throw new InternalServerErrorException(
-                'Something happened while fetching providers',
-            );
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -61,7 +59,6 @@ export class ProviderController {
      * @throws {InternalServerErrorException} If any error occurs while fetching.
      */
     @Get('fetch_one_provider')
-    //@UseInterceptors()
     async fetchOneProvider(@Req() req: Request, @Query() query: { id: string | null }): Promise<IProvider> {
         try {
             const user = req.user as IPayload;
@@ -69,12 +66,10 @@ export class ProviderController {
             if (query && query.id !== null && query.id !== 'null') {
                 arg = query.id;
             }
-            return await this.providerServices.fetchOneProvider(arg);
+            return await this._providerServices.fetchOneProvider(arg);
         } catch (err) {
             this.logger.error(`Error fetching provider: ${err}`);
-            throw new InternalServerErrorException(
-                'Something happened while fetching providers',
-            );
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -97,14 +92,15 @@ export class ProviderController {
         try {
             const user = req.user as IPayload;
             if (!user.sub) {
-                throw new UnauthorizedException(`Provider found`);
+                throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
+
             }
             const updateData = JSON.parse(dto);
 
-            return await this.providerServices.bulkUpdateProvider(user.sub, updateData, file);
+            return await this._providerServices.bulkUpdateProvider(user.sub, updateData, file);
         } catch (err) {
             this.logger.error(`Error updating provider: ${err.message}`, err.stack);
-            throw new InternalServerErrorException('Failed to update provider');
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -117,7 +113,6 @@ export class ProviderController {
      * @throws {InternalServerErrorException} If the update operation fails.
      */
     @Patch('partial_update')
-    //@UseInterceptors()
     async partialUpdate(@Body() dto: Partial<IProvider>): Promise<IProvider> {
         try {
             const { id, ...updateData } = dto;
@@ -125,10 +120,10 @@ export class ProviderController {
                 throw new BadRequestException('Id is is not found in the request');
             }
 
-            return this.providerServices.partialUpdate(id, updateData);
+            return this._providerServices.partialUpdate(id, updateData);
         } catch (err) {
             this.logger.error(`Error updating provider: ${err.message}`, err.stack);
-            throw new InternalServerErrorException('Failed to partially update the provider');
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -141,7 +136,6 @@ export class ProviderController {
      * @throws {InternalServerErrorException} If update fails.
      */
     @Patch('default_slots')
-    //@UseInterceptors()
     async updateDefaultSlot(@Req() req: Request, @Body() dto: SlotDto): Promise<IProvider> {
         try {
             const user = req.user as IPayload;
@@ -151,10 +145,10 @@ export class ProviderController {
 
             this.logger.debug(dto);
 
-            return await this.providerServices.updateDefaultSlot(dto, user.sub)
+            return await this._providerServices.updateDefaultSlot(dto, user.sub)
         } catch (err) {
             this.logger.error(`Error updating provider: ${err.message}`, err.stack);
-            throw new InternalServerErrorException('Failed to update provider');
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -166,33 +160,75 @@ export class ProviderController {
     * @throws {InternalServerErrorException} If deletion fails.
     */
     @Delete('default_slots')
-    //@UseInterceptors()
     async deleteDefaultSlot(@Req() req: Request): Promise<void> {
         try {
             const user = req.user as IPayload;
             if (!user.sub) {
-                throw new UnauthorizedException(`Provider found`);
+                throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
+
             }
-            this.providerServices.deleteDefaultSlot(user.sub);
+            this._providerServices.deleteDefaultSlot(user.sub);
         } catch (err) {
             this.logger.error(`Error updating provider: ${err.message}`, err.stack);
-            throw new InternalServerErrorException('Failed to update provider');
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
         }
     }
 
     @Put('bio')
-    async updateBio(@Req() req: Request, @Body() dto: any) {
+    async updateBio(@Req() req: Request, @Body() dto: UpdateBioDto) {
         try {
             const user = req.user as IPayload;
             if (!user.sub) {
-                throw new UnauthorizedException(`Provider found`);
+                throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
+
             }
 
-            console.log(dto)
+            this.logger.debug('dto', dto);
+            return await this._providerServices.updateBio(user.sub, dto);
+
         } catch (err) {
             this.logger.error(`Error updating provider bio: ${err.message}`, err.stack);
-            throw new InternalServerErrorException('Failed to update provider bio.');
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
         }
     }
 
+    @Put('cert_upload')
+    @UseInterceptors(FileInterceptor('doc'))
+    async uploadCertificate(@Req() req: Request, @Body() { label }: UploadCertificateDto, @UploadedFile() file: Express.Multer.File) {
+        try {
+            const user = req.user as IPayload;
+            if (!user.sub) {
+                throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
+            }
+
+            if (!label || !file) {
+                throw new BadRequestException(ErrorMessage.MISSING_FIELDS);
+            }
+
+            return await this._providerServices.uploadCertificate(user.sub, label, file);
+        } catch (err) {
+            this.logger.error(`Error uploading provider certificate: ${err.message}`, err.stack);
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Patch('cert_remove')
+    @UseInterceptors(FileInterceptor('doc'))
+    async removeCertificate(@Req() req: Request, @Body() { docId }: RemoveCertificateDto) {
+        try {
+            const user = req.user as IPayload;
+            if (!user.sub) {
+                throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
+            }
+
+            if (!docId) {
+                throw new BadRequestException(ErrorMessage.MISSING_FIELDS);
+            }
+
+            // return await this._providerServices.uploadCertificate(user.sub, label, file);
+        } catch (err) {
+            this.logger.error(`Error uploading provider certificate: ${err.message}`, err.stack);
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+        }
+    }
 }

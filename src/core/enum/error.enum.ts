@@ -1,0 +1,26 @@
+export enum ErrorMessage {
+    // Not Found
+    PROVIDER_NOT_FOUND = 'Provider not found',
+    SERVICE_NOT_FOUND = 'Service not found',
+    USER_NOT_FOUND = 'User not found',
+    DOCUMENT_NOT_FOUND = 'Document not found',
+
+    // With ID placeholders
+    PROVIDER_NOT_FOUND_WITH_ID = 'Provider not found with ID: ',
+    SERVICE_NOT_FOUND_WITH_ID = 'Service not found with ID: ',
+
+    // Bad Request
+    INVALID_INPUT = 'Invalid input data',
+    MISSING_FIELDS = 'Required fields are missing',
+    FILE_UPLOAD_FAILED = 'File upload failed',
+    INVALID_CREDENTIALS = 'Invalid email or password',
+
+    // Forbidden
+    FORBIDDEN_ACTION = 'You are not allowed to perform this action',
+
+    // Unauthorized
+    UNAUTHORIZED_ACCESS = 'Unauthorized access, please login',
+
+    // Server Errors
+    INTERNAL_SERVER_ERROR = 'An unexpected error occurred. Please try again later',
+}

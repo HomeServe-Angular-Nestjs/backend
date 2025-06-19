@@ -70,7 +70,16 @@ export class ProviderRepository extends BaseRepository<Provider, ProviderDocumen
       location: doc.location,
       bookingLimit: doc.bookingLimit,
       bufferTime: doc.bufferTime,
-      enableSR: doc.enableSR
+      enableSR: doc.enableSR,
+      docs: doc.docs.map(d => ({
+        id: d.id,
+        fileUrl: d.fileUrl,
+        isDeleted: d.isDeleted,
+        label: d.label,
+        uploadedAt: d.uploadedAt,
+        verificationStatus: d.verificationStatus,
+        verifiedAt: d.verifiedAt
+      }))
     });
   }
 }

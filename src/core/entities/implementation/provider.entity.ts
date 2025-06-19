@@ -1,34 +1,18 @@
-import { Address, Availability, IProvider } from '../interfaces/user.entity.interface';
+import { Address, Availability, IDoc, IExpertise, ILanguage, IProvider } from '../interfaces/user.entity.interface';
 import { BaseUserEntity } from '../base/implementation/base-user.entity';
 import { SlotType } from '../interfaces/schedule.entity.interface';
 
 export class Provider extends BaseUserEntity implements IProvider {
   bio: string;
   isVerified: boolean;
-  expertise: {
-    specialization: string;
-    label: string;
-    tag: string;
-  }[];
+  expertise: IExpertise[];
   additionalSkills: string[];
-  languages: string[];
+  languages: ILanguage[];
   location?: Address;
   workImages: string[];
   awards: string[];
   isCertified: boolean;
-  verification: {
-    pcc: {
-      fileUrl: string;
-      uploadedAt: Date;
-    };
-    additionalDocs: {
-      type: string;
-      fileUrl: string;
-      uploadedAt: Date;
-    }[];
-    verificationStatus: boolean;
-    verifiedAt: Date;
-  };
+  docs: IDoc[];
   servicesOffered: string[] = [];
   schedules: string[];
   subscriptionID: string | null;
