@@ -49,8 +49,10 @@ export interface IDoc {
   isDeleted: boolean
 };
 
+export type VerificationStatusType = 'pending' | 'verified' | 'rejected';
+
 export interface IProvider extends IBaseUserEntity {
-  isVerified: boolean;
+  verificationStatus: VerificationStatusType;
   bio: string;
   expertise: IExpertise[];
   additionalSkills: string[];
@@ -80,4 +82,15 @@ export interface ISearchedProviders {
   avatar: string;
   name: string;
   address: string;
+}
+
+export interface IVerificationStatusMetrics {
+  count: number;
+  percentage: string;
+}
+
+export interface IApprovalOverviewData {
+  pending: IVerificationStatusMetrics;
+  verified: IVerificationStatusMetrics;
+  rejected: IVerificationStatusMetrics;
 }

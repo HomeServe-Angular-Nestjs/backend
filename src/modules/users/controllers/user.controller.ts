@@ -8,7 +8,6 @@ import {
   Logger,
   Patch,
   Query,
-  UseInterceptors,
 } from '@nestjs/common';
 import { ADMIN_USERMANAGEMENT_SERVICE_NAME } from '../../../core/constants/service.constant';
 
@@ -17,8 +16,8 @@ import { GetUsersWithFilterDto, RemoveUserDto, StatusUpdateDto } from '../dtos/a
 import { IUserData, IUserDataWithPagination } from 'src/core/entities/interfaces/admin.entity.interface';
 
 @Controller('admin/users')
-export class AdminController {
-  private readonly logger = new Logger(AdminController.name);
+export class AdminUserController {
+  private readonly logger = new Logger(AdminUserController.name);
 
   constructor(
     @Inject(ADMIN_USERMANAGEMENT_SERVICE_NAME)

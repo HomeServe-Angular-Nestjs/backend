@@ -3,15 +3,19 @@ import { BaseUserDocument } from './base/user-base.schema';
 import { Types } from 'mongoose';
 import { SERVICE_OFFERED_MODEL_NAME } from '../constants/model.constant';
 import { ServiceDocument } from './service.schema';
-import { IDoc, IExpertise, ILanguage } from '../entities/interfaces/user.entity.interface';
+import { IDoc, IExpertise, ILanguage, VerificationStatusType } from '../entities/interfaces/user.entity.interface';
 
 @Schema({ timestamps: true })
 export class ProviderDocument extends BaseUserDocument {
   @Prop()
   bio: string;
 
-  @Prop({ default: false })
-  isVerified: boolean;
+  @Prop({
+    type: String,
+    enum: ['pending', 'verified', 'rejected'],
+    default: 'pending'
+  })
+  verificationStatus: VerificationStatusType
 
   @Prop({
     type: [

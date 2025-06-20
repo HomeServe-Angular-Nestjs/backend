@@ -1,10 +1,10 @@
-import { Address, Availability, IDoc, IExpertise, ILanguage, IProvider } from '../interfaces/user.entity.interface';
+import { Address, Availability, IDoc, IExpertise, ILanguage, IProvider, VerificationStatusType } from '../interfaces/user.entity.interface';
 import { BaseUserEntity } from '../base/implementation/base-user.entity';
 import { SlotType } from '../interfaces/schedule.entity.interface';
 
 export class Provider extends BaseUserEntity implements IProvider {
   bio: string;
-  isVerified: boolean;
+  verificationStatus: VerificationStatusType;
   expertise: IExpertise[];
   additionalSkills: string[];
   languages: ILanguage[];

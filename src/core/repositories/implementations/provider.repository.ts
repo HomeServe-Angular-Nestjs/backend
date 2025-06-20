@@ -56,7 +56,7 @@ export class ProviderRepository extends BaseRepository<Provider, ProviderDocumen
       createdAt: doc.createdAt,
       updatedAt: doc.updatedAt,
       isDeleted: doc.isDeleted,
-      isVerified: doc.isVerified,
+      verificationStatus: doc.verificationStatus,
       isCertified: doc.isCertified,
       servicesOffered: doc.servicesOffered.map((id: Types.ObjectId) =>
         id.toString(),
