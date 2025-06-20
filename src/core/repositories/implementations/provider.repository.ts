@@ -71,8 +71,8 @@ export class ProviderRepository extends BaseRepository<Provider, ProviderDocumen
       bookingLimit: doc.bookingLimit,
       bufferTime: doc.bufferTime,
       enableSR: doc.enableSR,
-      docs: doc.docs.map(d => ({
-        id: d.id,
+      docs: (doc.docs ?? []).map(d => ({
+        id: (doc._id as Types.ObjectId).toString(),
         fileUrl: d.fileUrl,
         isDeleted: d.isDeleted,
         label: d.label,
