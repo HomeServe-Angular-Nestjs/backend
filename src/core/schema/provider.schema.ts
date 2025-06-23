@@ -3,7 +3,7 @@ import { BaseUserDocument } from './base/user-base.schema';
 import { Types } from 'mongoose';
 import { SERVICE_OFFERED_MODEL_NAME } from '../constants/model.constant';
 import { ServiceDocument } from './service.schema';
-import { IDoc, IExpertise, ILanguage, VerificationStatusType } from '../entities/interfaces/user.entity.interface';
+import { IAddress, IDoc, IExpertise, ILanguage, VerificationStatusType } from '../entities/interfaces/user.entity.interface';
 
 @Schema({ timestamps: true })
 export class ProviderDocument extends BaseUserDocument {
@@ -39,26 +39,6 @@ export class ProviderDocument extends BaseUserDocument {
     ],
   })
   languages: ILanguage[];
-
-  @Prop({
-    type: {
-      type: String,
-      enum: ['Point'],
-      default: 'Point',
-    },
-    coordinates: {
-      type: [Number],
-      index: '2dsphere',
-    },
-    address: {
-      type: String,
-    },
-  })
-  location: {
-    type: 'Point';
-    coordinates: [number, number];
-    address: string;
-  };
 
   @Prop({ type: [String] })
   workImages: string[];

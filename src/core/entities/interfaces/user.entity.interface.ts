@@ -13,19 +13,14 @@ export type Availability = {
   };
 };
 
-export type Address = {
+export interface IAddress {
   type: 'Point',
   address: string,
   coordinates: [number, number];
 }
 
 export interface ICustomer extends IBaseUserEntity {
-  locations?:
-  | {
-    lat: number;
-    lng: number;
-  }[]
-  | null;
+  location?: IAddress;
   savedProviders?: string[] | null;
 }
 
@@ -44,7 +39,7 @@ export interface IDoc {
   label: string;
   fileUrl: string;
   uploadedAt: Date;
-  verificationStatus: 'pending' | 'verified' | 'rejected';
+  verificationStatus: VerificationStatusType;
   verifiedAt?: Date;
   isDeleted: boolean
 };
@@ -57,7 +52,7 @@ export interface IProvider extends IBaseUserEntity {
   expertise: IExpertise[];
   additionalSkills: string[];
   languages: ILanguage[];
-  location?: Address;
+  location?: IAddress;
   workImages: string[];
   awards: string[];
   isCertified: boolean;
@@ -94,3 +89,13 @@ export interface IApprovalOverviewData {
   verified: IVerificationStatusMetrics;
   rejected: IVerificationStatusMetrics;
 }
+
+export interface IApprovalTableDetails {
+  id: string;
+  avatar: string;
+  name: string;
+  email: string;
+  documentCount: number;
+  date: Date;
+  verificationStatus: VerificationStatusType
+} 

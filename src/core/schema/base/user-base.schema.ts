@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
+import { IAddress } from 'src/core/entities/interfaces/user.entity.interface';
 
 @Schema({ discriminatorKey: 'kind', timestamps: true })
 export class BaseUserDocument extends Document {
@@ -24,11 +25,24 @@ export class BaseUserDocument extends Document {
   @Prop({ type: String, default: null })
   googleId: string;
 
+  @Prop({
+    type: {
+      type: String,
+      enum: ['Point'],
+      default: 'Point',
+    },
+    coordinates: {
+      type: [Number],
+      index: '2dsphere',
+    },
+    address: {
+      type: String,
+    },
+  })
+  location: IAddress;
+
   @Prop({ type: Boolean, default: true })
   isActive: boolean;
-
-  // @Prop({ type: Boolean, default: false })
-  // isBlocked: boolean;
 
   @Prop({ type: Boolean, default: false })
   isDeleted: boolean;
