@@ -7,6 +7,7 @@ export enum ErrorMessage {
 
     // With ID placeholders
     PROVIDER_NOT_FOUND_WITH_ID = 'Provider not found with ID: ',
+    CUSTOMER_NOT_FOUND_WITH_ID = 'Customer not found with ID: ',
     SERVICE_NOT_FOUND_WITH_ID = 'Service not found with ID: ',
 
     // Bad Request

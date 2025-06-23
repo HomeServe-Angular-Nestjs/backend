@@ -8,7 +8,6 @@ export class Provider extends BaseUserEntity implements IProvider {
   expertise: IExpertise[];
   additionalSkills: string[];
   languages: ILanguage[];
-  location?: IAddress;
   workImages: string[];
   awards: string[];
   isCertified: boolean;

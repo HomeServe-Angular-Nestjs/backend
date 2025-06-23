@@ -20,7 +20,6 @@ export interface IAddress {
 }
 
 export interface ICustomer extends IBaseUserEntity {
-  location?: IAddress;
   savedProviders?: string[] | null;
 }
 
@@ -52,7 +51,6 @@ export interface IProvider extends IBaseUserEntity {
   expertise: IExpertise[];
   additionalSkills: string[];
   languages: ILanguage[];
-  location?: IAddress;
   workImages: string[];
   awards: string[];
   isCertified: boolean;
