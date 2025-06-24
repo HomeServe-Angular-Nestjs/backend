@@ -256,7 +256,7 @@ export class SchedulesService implements ISchedulesService {
     async updateScheduleDateSlotStatus(providerId: string, dto: UpdateScheduleDateSlotStatusDto): Promise<IResponse> {
         const { scheduleId, dayId, slotId, status } = dto;
 
-       
+
 
         return {
             message: 'Slot status updated successfully',

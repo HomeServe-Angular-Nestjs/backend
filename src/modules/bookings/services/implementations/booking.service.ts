@@ -325,8 +325,6 @@ export class BookingService implements IBookingService {
             )
         ).flat();
 
-
-
         return {
             bookingId: booking.id,
             bookingStatus: booking.bookingStatus,

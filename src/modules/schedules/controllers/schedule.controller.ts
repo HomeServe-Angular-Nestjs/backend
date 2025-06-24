@@ -6,6 +6,7 @@ import { SCHEDULES_SERVICE_NAME } from "src/core/constants/service.constant";
 import { ISchedulesService } from "../services/interfaces/schedules-service.interface";
 import { IResponse } from "src/core/misc/response.util";
 import { IScheduleDay, IScheduleListWithPagination, ISchedules } from "src/core/entities/interfaces/schedules.entity.interface";
+import { ErrorMessage } from "src/core/enum/error.enum";
 
 @Controller('schedule')
 export class SchedulesController {
@@ -22,13 +23,13 @@ export class SchedulesController {
             const user = req.user as IPayload;
 
             if (!user.sub) {
-                throw new BadRequestException('Provider id is missing');
+                throw new BadRequestException(ErrorMessage.UNAUTHORIZED_ACCESS);
             }
 
             return await this._schedulesService.createSchedules(user.sub, dto);
         } catch (err) {
             this.logger.error(`Error saving the schedule: ${err.message}`, err.stack);
-            throw new InternalServerErrorException('Error while saving schedules');
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR)
         }
     }
 
@@ -36,13 +37,13 @@ export class SchedulesController {
     async fetchSchedules(@Query() dto: FetchShcedulesDto): Promise<IResponse<ISchedules[]>> {
         try {
             if (!dto.providerId) {
-                throw new BadRequestException('provider id is missing.');
+                throw new BadRequestException(ErrorMessage.UNAUTHORIZED_ACCESS);
             }
 
             return await this._schedulesService.fetchSchedules(dto.providerId);
         } catch (err) {
             this.logger.error(`Error fetching the schedules: ${err.message}`, err.stack);
-            throw new InternalServerErrorException('Error while fetching schedules');
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR)
         }
     }
 
@@ -52,13 +53,13 @@ export class SchedulesController {
         try {
             const user = req.user as IPayload;
             if (!user.sub) {
-                throw new BadRequestException('Provider id is missing');
+                throw new BadRequestException(ErrorMessage.UNAUTHORIZED_ACCESS);
             }
 
             return await this._schedulesService.fetchScheduleList(user.sub, dto);
         } catch (err) {
             this.logger.error(`Error fetching the schedule list: ${err.message}`, err.stack);
-            throw new InternalServerErrorException('Error while fetching schedule list.');
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR)
         }
     }
 
@@ -67,13 +68,13 @@ export class SchedulesController {
         try {
             const user = req.user as IPayload;
             if (!user.sub) {
-                throw new BadRequestException('Provider id is missing');
+                throw new BadRequestException(ErrorMessage.UNAUTHORIZED_ACCESS);
             }
 
             return await this._schedulesService.fetchScheduleDetails(user.sub, dto);
         } catch (err) {
             this.logger.error(`Error fetching schedule details: ${err.message}`, err.stack);
-            throw new InternalServerErrorException('Error while fetching schedule details');
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR)
         }
     }
 
@@ -82,18 +83,18 @@ export class SchedulesController {
         try {
             const user = req.user as IPayload;
             if (!user.sub) {
-                throw new BadRequestException('Provider id is missing');
+                throw new BadRequestException(ErrorMessage.UNAUTHORIZED_ACCESS);
             }
 
             if (typeof dto.status !== 'boolean') {
-                throw new BadRequestException('Invalid status value');
+                throw new BadRequestException(ErrorMessage.INVALID_INPUT);
             }
 
             return await this._schedulesService.updateScheduleStatus(user.sub, dto);
 
         } catch (err) {
             this.logger.error(`Error updating schedule status: ${err.message}`, err.stack);
-            throw new InternalServerErrorException('Error while updating schedule details');
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR)
         }
     }
 
@@ -102,17 +103,17 @@ export class SchedulesController {
         try {
             const user = req.user as IPayload;
             if (!user.sub) {
-                throw new BadRequestException('Provider id is missing');
+                throw new BadRequestException(ErrorMessage.UNAUTHORIZED_ACCESS);
             }
 
             if (typeof dto.status !== 'boolean') {
-                throw new BadRequestException('Invalid status value');
+                throw new BadRequestException(ErrorMessage.INVALID_INPUT);
             }
 
             return await this._schedulesService.updateScheduleDateStatus(user.sub, dto);
         } catch (err) {
             this.logger.error(`Error updating schedule date status: ${err.message}`, err.stack);
-            throw new InternalServerErrorException('Error while updating schedule date details');
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR)
         }
     }
 
@@ -121,17 +122,17 @@ export class SchedulesController {
         try {
             const user = req.user as IPayload;
             if (!user.sub) {
-                throw new BadRequestException('Provider id is missing');
+                throw new BadRequestException(ErrorMessage.UNAUTHORIZED_ACCESS);
             }
 
             if (typeof dto.status !== 'boolean') {
-                throw new BadRequestException('Invalid status value');
+                throw new BadRequestException(ErrorMessage.INVALID_INPUT);
             }
 
             return await this._schedulesService.updateScheduleDateSlotStatus(user.sub, dto);
         } catch (err) {
             this.logger.error(`Error updating schedule slot status: ${err.message}`, err.stack);
-            throw new InternalServerErrorException('Error while updating schedule slot status');
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR)
         }
     }
 
@@ -140,13 +141,13 @@ export class SchedulesController {
         try {
             const user = req.user as IPayload;
             if (!user.sub) {
-                throw new BadRequestException('Provider id is missing');
+                throw new BadRequestException(ErrorMessage.UNAUTHORIZED_ACCESS);
             }
 
             return await this._schedulesService.removeSchedule(user.sub, scheduleId);
         } catch (err) {
             this.logger.error(`Error removing schedule: ${err.message}`, err.stack);
-            throw new InternalServerErrorException('Error while removing schedule.');
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR)
         }
     }
 }

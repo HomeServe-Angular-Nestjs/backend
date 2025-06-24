@@ -7,6 +7,7 @@ import { CUSTOMER_SERVICE_NAME } from '../../../core/constants/service.constant'
 import { IBookingService } from '../services/interfaces/booking-service.interface';
 import { IBookingDetailCustomer, IBookingWithPagination } from '../../../core/entities/interfaces/booking.entity.interface';
 import { IResponse } from 'src/core/misc/response.util';
+import { ErrorMessage } from 'src/core/enum/error.enum';
 
 @Controller('booking')
 //@UseInterceptors()
@@ -22,13 +23,13 @@ export class BookingsController {
     async calcPriceBreakup(@Body() dto: SelectedServiceDto[]) {
         try {
             if (!dto || dto.length === 0) {
-                throw new Error('No services selected for price calculation.');
+                throw new BadRequestException(ErrorMessage.MISSING_FIELDS);
             }
 
             return await this._bookingService.preparePriceBreakup(dto);
         } catch (err) {
-            this.logger.error(`Error fetching provider: ${err}`);
-            throw new InternalServerErrorException('Something happened while price calculation');
+            this.logger.error(`Error while price calculation: ${err}`);
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -37,7 +38,7 @@ export class BookingsController {
         try {
             const user = req.user as IPayload;
             if (!user.sub) {
-                throw new UnauthorizedException('User not found');
+                throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
             }
 
             if (!Array.isArray(dto.serviceIds) || dto.serviceIds.some(s => !s.id || !Array.isArray(s.selectedIds))) {
@@ -47,7 +48,7 @@ export class BookingsController {
             return this._bookingService.createBooking(user.sub, dto);
         } catch (err) {
             this.logger.error(`Error creating bookings: ${err}`);
-            throw new InternalServerErrorException('Something happened while creating booking');
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -56,7 +57,7 @@ export class BookingsController {
         try {
             const user = req.user as IPayload;
             if (!user.sub) {
-                throw new UnauthorizedException('User not found');
+                throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
             }
 
             const { page, ...filter } = dto;
@@ -64,7 +65,7 @@ export class BookingsController {
             return await this._bookingService.fetchBookings(user.sub, page);
         } catch (err) {
             this.logger.error(`Error fetching bookings: ${err}`);
-            throw new InternalServerErrorException('Something happened while fetching booking');
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -73,13 +74,13 @@ export class BookingsController {
         try {
             const { bookingId } = dto
             if (!bookingId) {
-                throw new BadRequestException('Booking Id not found');
+                throw new BadRequestException(ErrorMessage.MISSING_FIELDS);
             }
 
             return await this._bookingService.fetchBookingDetails(bookingId);
         } catch (err) {
             this.logger.error(`Error fetching booking details: ${err}`);
-            throw new InternalServerErrorException('Something happened while fetching booking details');
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
         }
     }
 }
