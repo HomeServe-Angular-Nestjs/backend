@@ -1,4 +1,4 @@
-import { BadRequestException, Query, Body, Controller, Get, Inject, InternalServerErrorException, Logger, Patch, Req, UnauthorizedException, Post, Put } from "@nestjs/common";
+import { BadRequestException, Query, Body, Controller, Get, Inject, InternalServerErrorException, Logger, Patch, Req, UnauthorizedException, Post, Put, UseInterceptors, UploadedFile } from "@nestjs/common";
 import { CUSTOMER_SERVICE_NAME } from "../../../core/constants/service.constant";
 import { ICustomerService } from "../services/interfaces/customer-service.interface";
 import { ICustomer } from "../../../core/entities/interfaces/user.entity.interface";
@@ -7,6 +7,7 @@ import { IPayload } from "../../../core/misc/payload.interface";
 import { Request } from "express";
 import { IResponse } from "src/core/misc/response.util";
 import { ErrorMessage } from "src/core/enum/error.enum";
+import { FileInterceptor } from "@nestjs/platform-express";
 
 @Controller('')
 export class CustomerController {
@@ -22,7 +23,7 @@ export class CustomerController {
         try {
             const user = req.user as IPayload;
             if (!user || !user.sub) {
-                throw new UnauthorizedException('User not found');
+                throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
             }
 
             return await this._customerService.fetchOneCustomer(user.sub);
@@ -62,7 +63,7 @@ export class CustomerController {
         try {
             const { id, ...updateData } = dto;
             if (!id) {
-                throw new BadRequestException('Id is is not found in the request');
+                throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
             }
 
             return this._customerService.partialUpdate(id, updateData);
@@ -77,7 +78,7 @@ export class CustomerController {
         try {
             const user = req.user as IPayload;
             if (!user.sub) {
-                throw new BadRequestException('customerId is not found in the request');
+                throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
             }
 
             return this._customerService.updateSavedProviders(user.sub, dto);
@@ -92,10 +93,31 @@ export class CustomerController {
         try {
             const user = req.user as IPayload;
             if (!user.sub) {
-                throw new BadRequestException('customerId is not found in the request');
+                throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
             }
 
             return await this._customerService.changePassword(user.sub, dto);
+        } catch (err) {
+            this.logger.error(`Error updating customer saved providers: ${err.message}`, err.stack);
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Patch('avatar')
+    @UseInterceptors(FileInterceptor('customerAvatar'))
+    async changeAvatar(@Req() req: Request, @Body() dto: any, @UploadedFile() file: Express.Multer.File) {
+        try {
+            const user = req.user as IPayload;
+            if (!user.sub) {
+                throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
+            }
+
+            if (!file) {
+                throw new BadRequestException(ErrorMessage.MISSING_FIELDS);
+            }
+
+            return await this._customerService.changeAvatar(user.sub, file);
+
         } catch (err) {
             this.logger.error(`Error updating customer saved providers: ${err.message}`, err.stack);
             throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);

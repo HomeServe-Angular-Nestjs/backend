@@ -1,15 +1,16 @@
-import { Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
+import { Inject, Injectable, InternalServerErrorException, Logger, NotFoundException } from "@nestjs/common";
 import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME } from "../../../../core/constants/repository.constant";
 import { ICustomerRepository } from "../../../../core/repositories/interfaces/customer-repo.interface";
 import { ICustomerService } from "../interfaces/customer-service.interface";
 import { ICustomer, ISearchedProviders } from "../../../../core/entities/interfaces/user.entity.interface";
 import { ChangePasswordDto, UpdateProfileDto, UpdateSavedProvidersDto } from "../../dtos/customer.dto";
-import { ARGON_UTILITY_NAME, FAST2SMS_UTILITY_NAME } from "../../../../core/constants/utility.constant";
+import { ARGON_UTILITY_NAME, FAST2SMS_UTILITY_NAME, UPLOAD_UTILITY_NAME } from "../../../../core/constants/utility.constant";
 import { IFast2SmsService } from "../../../../core/utilities/interface/fast2sms.interface";
 import { IResponse } from "src/core/misc/response.util";
 import { IProviderRepository } from "src/core/repositories/interfaces/provider-repo.interface";
 import { ErrorMessage } from "src/core/enum/error.enum";
 import { IArgonUtility } from "src/core/utilities/interface/argon.utility.interface";
+import { IUploadsUtility } from "src/core/utilities/interface/upload.utility.interface";
 
 @Injectable()
 export class CustomerService implements ICustomerService {
@@ -23,7 +24,9 @@ export class CustomerService implements ICustomerService {
         @Inject(FAST2SMS_UTILITY_NAME)
         private readonly _fast2SmsService: IFast2SmsService,
         @Inject(ARGON_UTILITY_NAME)
-        private readonly _argonUtility: IArgonUtility
+        private readonly _argonUtility: IArgonUtility,
+        @Inject(UPLOAD_UTILITY_NAME)
+        private readonly _uploadsUtility: IUploadsUtility,
     ) { }
 
     async fetchOneCustomer(id: string): Promise<ICustomer | null> {
@@ -152,6 +155,33 @@ export class CustomerService implements ICustomerService {
         return {
             success: !!updatedCustomer,
             message: 'password changed successfully',
+            data: updatedCustomer
+        }
+    }
+
+    async changeAvatar(customerId: string, file: Express.Multer.File): Promise<IResponse<ICustomer>> {
+
+        const avatarUrl = await this._uploadsUtility.uploadImage(file);
+
+        if (!avatarUrl) {
+            throw new InternalServerErrorException(ErrorMessage.FILE_UPLOAD_FAILED);
+        }
+
+        const updatedCustomer = await this._customerRepository.findOneAndUpdate(
+            { _id: customerId },
+            {
+                $set: { avatar: avatarUrl }
+            },
+            { nw: true }
+        );
+
+        if (!updatedCustomer) {
+            throw new NotFoundException(ErrorMessage.CUSTOMER_NOT_FOUND_WITH_ID, customerId);
+        }
+
+        return {
+            success: !!updatedCustomer,
+            message: 'image updated',
             data: updatedCustomer
         }
     }

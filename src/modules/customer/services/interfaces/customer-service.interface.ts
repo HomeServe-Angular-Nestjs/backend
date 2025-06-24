@@ -10,4 +10,5 @@ export interface ICustomerService {
     searchProviders(search: string): Promise<IResponse>;
     updateProfile(customerId: string, updateData: UpdateProfileDto): Promise<IResponse<ICustomer>>;
     changePassword(customerId: string, data: ChangePasswordDto): Promise<IResponse<ICustomer>>;
+    changeAvatar(customerId: string, file: Express.Multer.File): Promise<IResponse<ICustomer>>;
 }

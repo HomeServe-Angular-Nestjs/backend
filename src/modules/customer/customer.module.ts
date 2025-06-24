@@ -5,9 +5,10 @@ import { JwtConfigModule } from "../../configs/jwt/jwt.module";
 import { customerServiceProviders } from "./providers/service.provider";
 import { customerUtilityProviders } from "./providers/utility.provider";
 import { HttpModule } from "@nestjs/axios";
+import { CloudinaryModule } from "src/configs/cloudinary/cloudinary.module";
 
 @Module({
-    imports: [JwtConfigModule, HttpModule],
+    imports: [JwtConfigModule, HttpModule, CloudinaryModule.registerAsync()],
     controllers: [CustomerController],
     providers: [
         ...customerRepositoryProviders,
