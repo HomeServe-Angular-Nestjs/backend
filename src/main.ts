@@ -1,4 +1,4 @@
-import { NestFactory, Reflector } from '@nestjs/core';
+import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
@@ -9,6 +9,7 @@ import { BlockGuard } from './modules/auth/guards/block.guard';
 import { ICustomerRepository } from './core/repositories/interfaces/customer-repo.interface';
 import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME } from './core/constants/repository.constant';
 import { IProviderRepository } from './core/repositories/interfaces/provider-repo.interface';
+import { FRONTEND_URL } from './core/environments/environments';
 
 async function bootstrap() {
   if (process.argv.includes('seed:admin')) {
@@ -35,7 +36,7 @@ async function bootstrap() {
 
   // Configure cors options
   app.enableCors({
-    origin: 'http://localhost:4200',
+    origin: FRONTEND_URL,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });

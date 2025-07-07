@@ -10,6 +10,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ITokenService } from '../interfaces/token-service.interface';
 import Redis from 'ioredis';
 import { IPayload } from '../../../../core/misc/payload.interface';
+import { REDIS_CLIENT } from 'src/configs/redis/redis.module';
 
 @Injectable()
 export class TokenService implements ITokenService {
@@ -23,22 +24,17 @@ export class TokenService implements ITokenService {
   constructor(
     private readonly _jwtService: JwtService,
     private readonly _configService: ConfigService,
-    @Inject('REDIS_CLIENT') private readonly _redis: Redis,
+    @Inject(REDIS_CLIENT)
+    private readonly _redis: Redis,
   ) {
-    this.ACCESS_SECRET =
-      this._configService.get<string>('JWT_ACCESS_SECRET') ||
-      'your-access-secret';
-    this.REFRESH_SECRET =
-      this._configService.get<string>('JWT_REFRESH_SECRET') ||
-      'your-refresh-secret';
-    this.ACCESS_EXPIRES_IN =
-      this._configService.get<string>('JWT_ACCESS_EXPIRES_IN') || '10m';
-    this.REFRESH_EXPIRES_IN =
-      this._configService.get<string>('JWT_REFRESH_EXPIRES_IN') || '7d';
+    this.ACCESS_SECRET = this._configService.get<string>('JWT_ACCESS_SECRET') || 'your-access-secret';
+    this.REFRESH_SECRET = this._configService.get<string>('JWT_REFRESH_SECRET') || 'your-refresh-secret';
+    this.ACCESS_EXPIRES_IN = this._configService.get<string>('JWT_ACCESS_EXPIRES_IN') || '10m';
+    this.REFRESH_EXPIRES_IN = this._configService.get<string>('JWT_REFRESH_EXPIRES_IN') || '7d';
   }
 
-  generateAccessToken(userId: string, email: string): string {
-    const accessPayload = { sub: userId, email };
+  generateAccessToken(userId: string, email: string, type: string): string {
+    const accessPayload = { sub: userId, email, type };
 
     try {
       const accessToken = this._jwtService.sign(accessPayload, {
@@ -53,8 +49,8 @@ export class TokenService implements ITokenService {
     }
   }
 
-  async generateRefreshToken(userId: string, email: string): Promise<string> {
-    const refreshPayload = { sub: userId, email };
+  async generateRefreshToken(userId: string, email: string, type: string): Promise<string> {
+    const refreshPayload = { sub: userId, email, type };
     try {
       const refreshToken = this._jwtService.sign(refreshPayload, {
         secret: this.REFRESH_SECRET,

@@ -40,6 +40,7 @@ export class AuthMiddleware implements NestMiddleware {
 
             let userId: string | undefined;
             let email: string | undefined;
+            let userType: string | undefined;
 
             try {
                 if (accessToken) {
@@ -47,17 +48,18 @@ export class AuthMiddleware implements NestMiddleware {
                     if (decoded && typeof decoded === 'object') {
                         userId = decoded.sub;
                         email = decoded.email;
+                        userType = decoded.type
                     }
                 }
 
-                if (!userId) {
+                if (!userId || !userType) {
                     throw new UnauthorizedException('Cannot identify user for refresh token');
                 }
 
                 const payload = await this.tokenService.validateRefreshToken(userId);
                 if (!payload) throw new UnauthorizedException('Invalid refresh token');
 
-                const newAccessToken = this.tokenService.generateAccessToken(userId, payload.email);
+                const newAccessToken = this.tokenService.generateAccessToken(userId, payload.email, userType);
 
                 res.cookie('access_token', newAccessToken, {
                     httpOnly: true,

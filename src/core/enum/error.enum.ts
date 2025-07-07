@@ -21,7 +21,16 @@ export enum ErrorMessage {
 
     // Unauthorized
     UNAUTHORIZED_ACCESS = 'Unauthorized access, please login',
+    USER_BLOCKED = 'You are blocked by the admin.',
 
     // Server Errors
     INTERNAL_SERVER_ERROR = 'An unexpected error occurred. Please try again later',
+
+    // Socket Error
+    SOCKET_CONNECTION_REJECTED = 'Socket connection rejected: ',
+
+
+    // Token Errors
+    NO_TOKEN_FOUND = 'No token provided.',
+    INVALID_REFRESH_TOKEN = 'Invalid or expired refresh token.'
 }

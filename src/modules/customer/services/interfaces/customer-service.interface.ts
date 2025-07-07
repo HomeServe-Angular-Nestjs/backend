@@ -6,7 +6,6 @@ export interface ICustomerService {
     fetchOneCustomer(id: string): Promise<ICustomer | null>;
     partialUpdate(id: string, data: Partial<ICustomer>): Promise<ICustomer>;
     updateSavedProviders(id: string, dto: UpdateSavedProvidersDto): Promise<ICustomer>;
-    sendOtp(phone: number): Promise<any>;
     searchProviders(search: string): Promise<IResponse>;
     updateProfile(customerId: string, updateData: UpdateProfileDto): Promise<IResponse<ICustomer>>;
     changePassword(customerId: string, data: ChangePasswordDto): Promise<IResponse<ICustomer>>;

@@ -4,8 +4,7 @@ import { ICustomerRepository } from "../../../../core/repositories/interfaces/cu
 import { ICustomerService } from "../interfaces/customer-service.interface";
 import { ICustomer, ISearchedProviders } from "../../../../core/entities/interfaces/user.entity.interface";
 import { ChangePasswordDto, UpdateProfileDto, UpdateSavedProvidersDto } from "../../dtos/customer.dto";
-import { ARGON_UTILITY_NAME, FAST2SMS_UTILITY_NAME, UPLOAD_UTILITY_NAME } from "../../../../core/constants/utility.constant";
-import { IFast2SmsService } from "../../../../core/utilities/interface/fast2sms.interface";
+import { ARGON_UTILITY_NAME, UPLOAD_UTILITY_NAME } from "../../../../core/constants/utility.constant";
 import { IResponse } from "src/core/misc/response.util";
 import { IProviderRepository } from "src/core/repositories/interfaces/provider-repo.interface";
 import { ErrorMessage } from "src/core/enum/error.enum";
@@ -21,8 +20,6 @@ export class CustomerService implements ICustomerService {
         private readonly _customerRepository: ICustomerRepository,
         @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
         private readonly _providerRepository: IProviderRepository,
-        @Inject(FAST2SMS_UTILITY_NAME)
-        private readonly _fast2SmsService: IFast2SmsService,
         @Inject(ARGON_UTILITY_NAME)
         private readonly _argonUtility: IArgonUtility,
         @Inject(UPLOAD_UTILITY_NAME)
@@ -76,11 +73,6 @@ export class CustomerService implements ICustomerService {
 
         return updatedCustomer;
     }
-
-    async sendOtp(phone: number): Promise<any> {
-        this._fast2SmsService.sendOtp(phone)
-    }
-
 
     async searchProviders(search: string): Promise<IResponse> {
         let result: ISearchedProviders[] = [];

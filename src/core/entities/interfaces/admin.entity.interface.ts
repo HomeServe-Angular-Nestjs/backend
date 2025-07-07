@@ -4,6 +4,8 @@ import { IPagination } from './booking.entity.interface';
 export interface IAdmin extends IEntity {
   email: string;
   password: string;
+  fullname?: string;
+  username?: string;
   type: 'admin';
   isDeleted: boolean;
   isActive: boolean;

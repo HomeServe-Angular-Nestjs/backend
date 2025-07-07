@@ -1,24 +1,40 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Document, Types } from "mongoose";
+import { IBlockedInfo, IParticipant } from "../entities/interfaces/chat.entity.interface";
+
+@Schema({ _id: false })
+class Participant {
+    @Prop({ type: Types.ObjectId, required: true })
+    id: Types.ObjectId;
+
+    @Prop({ type: String, enum: ['customer', 'provider', 'admin'], required: true })
+    type: string;
+}
+
+export const ParticipantSchema = SchemaFactory.createForClass(Participant);
 
 @Schema({ timestamps: true })
 export class ChatDocument extends Document {
     @Prop({
-        type: [Types.ObjectId],
-        required: true,
-        validate: [(val: Types.ObjectId[]) => val.length === 2, 'Chat must have 2 paricipants'],
+        type: [ParticipantSchema],
         index: true
     })
-    participants: Types.ObjectId[];
+    participants: [IParticipant, IParticipant];
+
+    @Prop({ type: String, default: '' })
+    lastMessage: string;
 
     @Prop({ type: Date })
     lastSeenAt: Date;
 
-    @Prop({ type: Boolean })
-    isBlocked: boolean;
-
-    @Prop({ type: Types.ObjectId })
-    blockedBy: Types.ObjectId;
+    @Prop({
+        type: {
+            by: { type: Types.ObjectId },
+            at: { type: Date }
+        },
+        default: null
+    })
+    blockedInfo: IBlockedInfo | null;
 
     @Prop({ type: Date })
     createdAt: Date;
@@ -28,3 +44,5 @@ export class ChatDocument extends Document {
 }
 
 export const ChatSchema = SchemaFactory.createForClass(ChatDocument);
+
+ChatSchema.index({ 'participants.id': 1, 'participants.type': 1, 'participants.role': 1 });

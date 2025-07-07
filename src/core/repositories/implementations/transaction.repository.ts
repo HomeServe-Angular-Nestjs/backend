@@ -14,7 +14,7 @@ export class TransactionRepository extends BaseRepository<Transaction, Transacti
         super(_transactionModel);
     }
 
-    protected toEntity(doc: TransactionDocument | Record<string, any>): Transaction {
+    protected toEntity(doc: TransactionDocument): Transaction {
         return new Transaction({
             id: (doc._id as Types.ObjectId).toString(),
             userId: doc.userId,

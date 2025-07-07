@@ -48,6 +48,7 @@ import {
 } from '../../dtos/login.dto';
 import { UserReposType } from '../../../../core/misc/repo.type';
 import { IAdminRepository } from '../../../../core/repositories/interfaces/admin-repo.interface';
+import { ErrorMessage } from 'src/core/enum/error.enum';
 
 @Injectable()
 export class LoginService implements ILoginService {
@@ -106,11 +107,19 @@ export class LoginService implements ILoginService {
   }
 
   generateAccessToken(user: IUser): string {
-    return this._tokenService.generateAccessToken(user.id, user.email);
+    if (!user.type) {
+      throw new Error('User type missing in the user.');
+    }
+
+    return this._tokenService.generateAccessToken(user.id, user.email, user.type);
   }
 
   async generateRefreshToken(user: IUser): Promise<string> {
-    return this._tokenService.generateRefreshToken(user.id, user.email);
+    if (!user.type) {
+      throw new Error('User type missing in the user.');
+    }
+    
+    return this._tokenService.generateRefreshToken(user.id, user.email, user.type);
   }
 
   async findOrCreateUser(user: GoogleLoginDto): Promise<IUser> {

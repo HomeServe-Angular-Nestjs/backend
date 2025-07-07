@@ -4,6 +4,9 @@ import { BaseEntity } from '../base/implementation/base.entity';
 export class Admin extends BaseEntity implements IAdmin {
   email: string;
   password: string;
+  fullname?: string;
+  username?: string;
+  avatar?: string;
   type: 'admin';
   isDeleted: boolean;
   isActive: boolean;

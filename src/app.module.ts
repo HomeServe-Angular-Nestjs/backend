@@ -16,7 +16,9 @@ import { TokenService } from './modules/auth/services/implementations/token.serv
 import { AuthMiddleware } from './modules/auth/middleware/auth.middleware';
 import { JwtConfigModule } from './configs/jwt/jwt.module';
 import { SchedulesModule } from './modules/schedules/schedule.module';
-import { ChatModule } from './modules/chat/chat.module';
+import { WebSocketModule } from './modules/websockets/websocket.module';
+import { APP_FILTER } from '@nestjs/core';
+import { appProviders } from './app.provider';
 
 
 @Module({
@@ -40,19 +42,17 @@ import { ChatModule } from './modules/chat/chat.module';
     CustomerModule,
     SchedulesModule,
     PaymentModule,
-    ChatModule
+    WebSocketModule
   ],
   controllers: [AppController],
-  providers: [AppService,
-    {
-      provide: TOKEN_SERVICE_NAME,
-      useClass: TokenService,
-    },
+  providers: [
+    AppService,
+    ...appProviders
   ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(AuthMiddleware).forRoutes('*'); // Applied globally
+    consumer.apply(AuthMiddleware).forRoutes('*');
   }
 
 }

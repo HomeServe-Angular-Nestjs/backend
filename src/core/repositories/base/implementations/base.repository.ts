@@ -19,7 +19,7 @@ export abstract class BaseRepository<T extends IEntity, TDocument extends Docume
       sort?: Record<string, 1 | -1>;
     },
   ): Promise<T[]> {
-    let query = this.model.find(filter).lean();
+    let query = this.model.find(filter);
 
     if (options?.limit) query = query.limit(options.limit);
     if (options?.skip) query = query.skip(options.skip);
@@ -60,5 +60,5 @@ export abstract class BaseRepository<T extends IEntity, TDocument extends Docume
     return { deletedCount: result.deletedCount };
   }
 
-  protected abstract toEntity(doc: TDocument | Record<string, any>): T;
+  protected abstract toEntity(doc: TDocument): T;
 }

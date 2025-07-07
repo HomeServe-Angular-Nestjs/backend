@@ -16,3 +16,9 @@ export const PROVIDER_BOOKING_SERVICE_NAME = 'IProviderBookingService';
 export const RAZORPAYMENT_SERVICE_NAME = 'IRazorPaymentService';
 export const SCHEDULES_SERVICE_NAME = 'ISchedulesService';
 
+
+export const AUTH_SOCKET_SERVICE_NAME = 'IAuthSocketService';
+export const CHAT_SOCKET_SERVICE_NAME = 'IChatSocketService';
+export const USER_SOCKET_STORE_SERVICE_NAME = 'IUserSocketStoreService';
+
+export const MESSAGE_SERVICE_NAME = 'IMessageService';

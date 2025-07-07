@@ -68,7 +68,7 @@ export class LoginController {
         path: '/',
       });
 
-      return prepareResponse(true, 'Login Successful');
+      return { email: user.email, id: user.id, type: user.type };
     } catch (error: unknown) {
       if (error instanceof Error) {
         this.logger.error('Login Error:', error.message);
@@ -177,8 +177,8 @@ export class LoginController {
 
       const frontendUrl =
         user.type === 'provider'
-          ? `${FRONTEND_URL}/provider/dashboard?loggedIn=true&email=${user.email}`
-          : `${FRONTEND_URL}/homepage?loggedIn=true&email=${user.email}`;
+          ? `${FRONTEND_URL}/provider/dashboard?loggedIn=true&email=${user.email}&id=${user.id}`
+          : `${FRONTEND_URL}/homepage?loggedIn=true&email=${user.email}&id=${user.id}`;
 
       return res.redirect(frontendUrl);
     } catch (error) {

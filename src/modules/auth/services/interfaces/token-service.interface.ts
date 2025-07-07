@@ -5,6 +5,6 @@ export interface ITokenService {
   validateRefreshToken(userId: string): Promise<IPayload | null>;
   invalidateTokens(userId: string): Promise<void>;
   decode(token: string): IPayload | null;
-  generateAccessToken(userId: string, email: string): string;
-  generateRefreshToken(userId: string, email: string): Promise<string>;
+  generateAccessToken(userId: string, email: string, type: string): string;
+  generateRefreshToken(userId: string, email: string, type: string): Promise<string>;
 }

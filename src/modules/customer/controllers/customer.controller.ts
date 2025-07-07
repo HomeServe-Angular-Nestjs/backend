@@ -123,17 +123,4 @@ export class CustomerController {
             throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
         }
     }
-
-    // TODO - otp
-    @Post('send_otp_sms')
-    async sendOtp(@Req() req: Request, @Body() dto: { phone: string }) {
-        const user = req.user as IPayload;
-        if (!user.sub) {
-            throw new UnauthorizedException('User not found');
-        }
-
-        this.logger.debug(dto);
-        this._customerService.sendOtp(Number(dto.phone))
-    }
-
 }
