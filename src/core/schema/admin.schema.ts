@@ -14,6 +14,12 @@ export class AdminDocument extends Document {
 
   @Prop({ default: false })
   isDeleted: boolean;
+
+  @Prop({})
+  createdAt: Date;
+
+  @Prop({})
+  updatedAt: Date
 }
 
 export const AdminSchema = SchemaFactory.createForClass(AdminDocument);

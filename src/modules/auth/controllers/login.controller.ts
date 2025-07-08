@@ -44,13 +44,15 @@ export class LoginController {
   ) { }
 
   @Post('auth')
-  @HttpCode(200)
   async validateCredentials(
     @Body() dto: AuthLoginDto,
     @Res({ passthrough: true }) response: Response,
   ) {
     try {
       const user = await this._loginService.validateUserCredentials(dto);
+      if (dto.type) {
+        user['type'] = dto.type;
+      }
       const accessToken = this._loginService.generateAccessToken(user);
       if (!accessToken) {
         throw new NotFoundException('Access token is missing');

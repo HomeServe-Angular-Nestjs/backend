@@ -45,7 +45,6 @@ export class ChatGateway extends BaseSocketGateway {
             const token = this._authSokectService.extractTokenFromCookie(client);
             const payload = await this._authSokectService.validateTokenWithRetry(token);
 
-
             if (!payload.sub || !payload.type) {
                 throw new Error('Payload not found');
             }

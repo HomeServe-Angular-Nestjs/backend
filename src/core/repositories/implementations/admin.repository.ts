@@ -26,7 +26,10 @@ export class AdminRepository extends BaseRepository<Admin, AdminDocument> implem
       id: (doc._id as Types.ObjectId).toString(),
       email: doc.email,
       password: doc.password,
-      isActive: doc.isActive
+      isActive: doc.isActive,
+      createdAt: doc.createdAt,
+      updatedAt: doc.updatedAt
     });
   }
 }
+ 
