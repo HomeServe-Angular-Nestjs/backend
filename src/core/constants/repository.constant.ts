@@ -8,3 +8,4 @@ export const TRANSACTION_REPOSITORY_NAME = 'ITransactionRepository';
 export const SCHEDULES_REPOSITORY_NAME = 'ISchedulesRepository';
 export const CHAT_REPOSITORY_INTERFACE_NAME = 'IChatRepository';
 export const MESSAGE_REPOSITORY_INTERFACE_NAME = 'IMessageRepository';
+export const PLAN_REPOSITORY_INTERFACE_NAME = 'IPlanRepository';

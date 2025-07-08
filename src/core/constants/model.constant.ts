@@ -8,3 +8,4 @@ export const TRANSACTION_MODEL_NAME = 'Transactions';
 export const SCHEDULES_MODEL_NAME = 'Schedules';
 export const CHAT_MODEL_NAME = 'Chat';
 export const MESSAGE_MODEL_NAME = 'Message';
+export const PLAN_MODEL_NAME = 'Plan';
