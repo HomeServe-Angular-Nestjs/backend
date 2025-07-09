@@ -1,4 +1,4 @@
-import { Inject, NotFoundException, UnauthorizedException } from "@nestjs/common";
+import { Inject, NotFoundException, UnauthorizedException, UseFilters } from "@nestjs/common";
 import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer } from "@nestjs/websockets";
 import { Server, Socket } from "socket.io";
 import { Types } from "mongoose";
@@ -16,12 +16,14 @@ import { CUSTOM_DTO_VALIDATOR_NAME } from "src/core/constants/utility.constant";
 import { ICustomDtoValidator } from "src/core/utilities/interface/custom-dto-validator.utility.interface";
 import { ICreateMessage, IMessage } from "src/core/entities/interfaces/message.entity.interface";
 import { IParticipant } from "src/core/entities/interfaces/chat.entity.interface";
+import { GlobalWsExceptionFilter } from "src/core/exception-filters/ws-exception.filters";
 
 const cors: CorsOptions = {
     origin: FRONTEND_URL,
     credentials: true
 }
 
+@UseFilters(GlobalWsExceptionFilter)
 @WebSocketGateway({ cors })
 export class ChatGateway extends BaseSocketGateway {
     @WebSocketServer()

@@ -6,7 +6,9 @@ import { PLAN_MODEL_NAME } from "src/core/constants/model.constant";
 import { Model } from "mongoose";
 import { Plan } from "src/core/entities/implementation/plans.entity";
 import { IPlanRepository } from "../interfaces/plans-repo.interface";
+import { Injectable } from "@nestjs/common";
 
+@Injectable()
 export class PlanRepository extends BaseRepository<IPlan, PlanDocument> implements IPlanRepository {
     constructor(
         @InjectModel(PLAN_MODEL_NAME)

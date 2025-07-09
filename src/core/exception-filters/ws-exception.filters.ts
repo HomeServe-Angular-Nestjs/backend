@@ -1,6 +1,7 @@
-import { ArgumentsHost, BadRequestException, Catch, WsExceptionFilter } from "@nestjs/common";
+import { ArgumentsHost, BadRequestException, Catch, Logger, WsExceptionFilter } from "@nestjs/common";
+import { WsException } from "@nestjs/websockets";
 
-@Catch()
+@Catch(BadRequestException, WsException)
 export class GlobalWsExceptionFilter implements WsExceptionFilter {
     catch(exception: any, host: ArgumentsHost) {
         const client = host.switchToWs().getClient();

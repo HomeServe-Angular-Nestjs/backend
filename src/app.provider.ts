@@ -9,8 +9,8 @@ export const appProviders: Provider[] = [
         provide: TOKEN_SERVICE_NAME,
         useClass: TokenService,
     },
-    {
-        provide: APP_FILTER,
-        useClass: GlobalWsExceptionFilter
-    },
+    // {
+    //     provide: APP_FILTER,
+    //     useClass: GlobalWsExceptionFilter
+    // },
 ];

@@ -1,6 +1,6 @@
 import { IEntity } from "../base/interfaces/base-entity.entity.interface";
 
-export type PlanDurationType = 'monthly' | 'yearly';
+export type PlanDurationType = 'monthly' | 'yearly' | 'lifetime';
 export type PlanRoleType = 'customer' | 'provider';
 
 export interface IPlan extends IEntity {

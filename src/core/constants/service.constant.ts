@@ -15,7 +15,7 @@ export const CUSTOMER_SERVICE_NAME = 'ICustomerService';
 export const PROVIDER_BOOKING_SERVICE_NAME = 'IProviderBookingService';
 export const RAZORPAYMENT_SERVICE_NAME = 'IRazorPaymentService';
 export const SCHEDULES_SERVICE_NAME = 'ISchedulesService';
-
+export const PLAN_SERVICE_NAME = 'IPlanService';
 
 export const AUTH_SOCKET_SERVICE_NAME = 'IAuthSocketService';
 export const CHAT_SOCKET_SERVICE_NAME = 'IChatSocketService';

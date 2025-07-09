@@ -20,7 +20,7 @@ export class PlanDocument extends Document {
 
     @Prop({
         type: String,
-        enum: ['monthly', 'yearly'],
+        enum: ['monthly', 'yearly', 'lifetime'],
         required: true
     })
     duration: PlanDurationType;

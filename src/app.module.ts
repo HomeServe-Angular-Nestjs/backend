@@ -19,6 +19,7 @@ import { SchedulesModule } from './modules/schedules/schedule.module';
 import { WebSocketModule } from './modules/websockets/websocket.module';
 import { APP_FILTER } from '@nestjs/core';
 import { appProviders } from './app.provider';
+import { PlanModule } from './modules/plans/plans.module';
 
 
 @Module({
@@ -42,7 +43,8 @@ import { appProviders } from './app.provider';
     CustomerModule,
     SchedulesModule,
     PaymentModule,
-    WebSocketModule
+    WebSocketModule,
+    PlanModule
   ],
   controllers: [AppController],
   providers: [
