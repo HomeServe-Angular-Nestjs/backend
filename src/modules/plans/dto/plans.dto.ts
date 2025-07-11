@@ -1,15 +1,17 @@
 import { Transform } from "class-transformer";
-import { IsArray, IsBoolean, IsIn, IsNotEmpty, IsNumber, IsString } from "class-validator";
+import { IsArray, IsBoolean, IsIn, IsNotEmpty, IsNumber, IsString, Min } from "class-validator";
 import { PlanDurationType, PlanRoleType } from "src/core/entities/interfaces/plans.entity.interface";
 
-export class CreatePlanDto {
+export class SavePlanDto {
     @IsNotEmpty()
     @IsString()
+    @Transform(({ value }) => value.toLowerCase())
     name: string;
 
     @IsNotEmpty()
     @Transform(({ value }) => Number(value))
     @IsNumber()
+    @Min(0)
     price: number;
 
     @IsNotEmpty()
@@ -27,6 +29,12 @@ export class CreatePlanDto {
     features: string[];
 }
 
+export class UpdatePlanDto extends SavePlanDto {
+    @IsNotEmpty()
+    @IsString()
+    id: string;
+}
+
 export class UpdatePlanStatusDto {
     @IsNotEmpty()
     @IsString()
@@ -35,4 +43,10 @@ export class UpdatePlanStatusDto {
     @IsNotEmpty()
     @IsBoolean()
     status: boolean;
+}
+
+export class GetOnePlanDto {
+    @IsNotEmpty()
+    @IsString()
+    planId: string;
 }

@@ -29,10 +29,8 @@ export abstract class BaseRepository<T extends IEntity, TDocument extends Docume
     return result ? result.map((doc) => this.toEntity(doc)) : [];
   }
 
-  async findOne(filter: FilterQuery<TDocument>, session?: ClientSession): Promise<T | null> {
+  async findOne(filter: FilterQuery<TDocument>): Promise<T | null> {
     let query = this.model.findOne(filter);
-    if (session) query = query.session(session);
-
     const result = await query.exec();
     return result ? this.toEntity(result) : null;
   }

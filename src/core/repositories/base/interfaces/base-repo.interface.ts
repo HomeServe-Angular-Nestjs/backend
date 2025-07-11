@@ -17,7 +17,7 @@ export interface IBaseRepository<T extends IEntity, TDocument extends Document,>
 
   findById(id: string | Types.ObjectId): Promise<T | null>;
 
-  findOne(filter: FilterQuery<TDocument>, session?: ClientSession): Promise<T | null>;
+  findOne(filter: FilterQuery<TDocument>): Promise<T | null>;
 
   findOneAndUpdate(
     query: FilterQuery<TDocument>,

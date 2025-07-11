@@ -7,7 +7,6 @@ export class PlanDocument extends Document {
     @Prop({
         type: String,
         required: true,
-        unique: true
     })
     name: string;
 
