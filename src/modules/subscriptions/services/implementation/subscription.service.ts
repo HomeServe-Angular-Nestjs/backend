@@ -1,4 +1,4 @@
-import { Inject, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
+import { Inject, Injectable, InternalServerErrorException, Logger, NotFoundException } from "@nestjs/common";
 import { ISubscriptionService } from "../interface/subscription-service.interface";
 import { ISubscription } from "src/core/entities/interfaces/subscription.entity.interface";
 import { IResponse } from "src/core/misc/response.util";
@@ -10,6 +10,7 @@ import { ErrorMessage } from "src/core/enum/error.enum";
 
 @Injectable()
 export class SubscriptionService implements ISubscriptionService {
+    private logger = new Logger(SubscriptionService.name);
     constructor(
         @Inject(SUBSCRIPTION_REPOSITORY_NAME)
         private readonly _subscriptionRepository: ISubscriptionRepository,
@@ -37,6 +38,8 @@ export class SubscriptionService implements ISubscriptionService {
             isDeleted: false,
             paymentStatus: dto.paymentStatus,
         });
+
+        this.logger.debug(newSubscription)
 
         if (!newSubscription) {
             throw new InternalServerErrorException(ErrorMessage.DOCUMENT_CREATION_ERROR);

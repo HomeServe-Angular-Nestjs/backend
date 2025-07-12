@@ -5,6 +5,8 @@ import { ErrorMessage } from "src/core/enum/error.enum";
 import { ISubscriptionService } from "../services/interface/subscription-service.interface";
 import { IPayload } from "src/core/misc/payload.interface";
 import { CreateSubscriptionDto } from "../dto/subscription.dto";
+import { IResponse } from "src/core/misc/response.util";
+import { ISubscription } from "src/core/entities/interfaces/subscription.entity.interface";
 
 @Controller('subscription')
 export class SubscriptionController {
@@ -16,14 +18,14 @@ export class SubscriptionController {
     ) { }
 
     @Post('')
-    async createSubscription(@Req() req: Request, @Body() dto: CreateSubscriptionDto) {
+    async createSubscription(@Req() req: Request, @Body() dto: CreateSubscriptionDto): Promise<IResponse<ISubscription>> {
         try {
             const user = req.user as IPayload;
             if (!user.sub) {
                 throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
             }
 
-            this._subscriptionService.createSubscription(user.sub, dto)
+            return await this._subscriptionService.createSubscription(user.sub, dto);
         } catch (err) {
             this.logger.error('Error caught while creating subscription: ', err.message, err.stack);
             throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);

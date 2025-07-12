@@ -65,6 +65,12 @@ export class SubscriptionDocument extends Document {
 
     @Prop({ type: SchemaTypes.Mixed })
     metadata?: Record<string, any>;
+
+    @Prop({ type: Date })
+    createdAt?: Date;
+
+    @Prop({ type: Date })
+    updatedAt?: Date;
 }
 
 export const SubscriptionSchema = SchemaFactory.createForClass(SubscriptionDocument);
