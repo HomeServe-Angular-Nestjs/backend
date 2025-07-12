@@ -2,8 +2,10 @@ import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Document, model } from "mongoose";
 import { PlanDurationType, PlanRoleType } from "../entities/interfaces/plans.entity.interface";
 
+export type PlanDocumentType = PlanDocument & Document;
+
 @Schema({ timestamps: true })
-export class PlanDocument extends Document {
+export class PlanDocument {
     @Prop({
         type: String,
         required: true,

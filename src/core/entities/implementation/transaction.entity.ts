@@ -1,4 +1,4 @@
-import { TransactionStatus } from "src/core/enum/transaction.enum";
+import { TransactionStatus, TransactionType } from "src/core/enum/transaction.enum";
 import { BaseEntity } from "../base/implementation/base.entity";
 import { ITransaction } from "../interfaces/transaction.entity.interface";
 
@@ -14,6 +14,7 @@ export class Transaction extends BaseEntity implements ITransaction {
     email?: string;
     contact?: string;
     receipt?: string;
+    transactionType: TransactionType;
 
     constructor(partial: Partial<Transaction>) {
         super(partial);

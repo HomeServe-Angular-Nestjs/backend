@@ -1,6 +1,6 @@
 import { Transform, Type } from "class-transformer";
 import { IsNotEmpty, IsString, IsIn, IsNumber, IsOptional, ValidateNested, IsEmail, IsPhoneNumber, IsPositive, IsArray, Min } from 'class-validator';
-import { TransactionStatus } from "src/core/enum/transaction.enum";
+import { TransactionStatus, TransactionType } from "src/core/enum/transaction.enum";
 
 export class CreateOrderDto {
     @IsNotEmpty()
@@ -28,7 +28,8 @@ export class VerifyOrderData {
     id: string;
 
     @IsString()
-    entity: string;
+    @IsIn(Object.values(TransactionType))
+    transactionType: TransactionType;
 
     @Transform(({ value }) => Number(value))
     @IsNumber()

@@ -25,6 +25,7 @@ export enum ErrorMessage {
 
     // Server Errors
     INTERNAL_SERVER_ERROR = 'An unexpected error occurred. Please try again later',
+    DOCUMENT_CREATION_ERROR = 'Error creating document',
 
     // Socket Error
     SOCKET_CONNECTION_REJECTED = 'Socket connection rejected: ',

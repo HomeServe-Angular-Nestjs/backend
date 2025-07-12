@@ -9,7 +9,7 @@ import {
   Patch,
   Query,
 } from '@nestjs/common';
-import { ADMIN_USERMANAGEMENT_SERVICE_NAME } from '../../../core/constants/service.constant';
+import { ADMIN_USER_MANAGEMENT_SERVICE_NAME } from '../../../core/constants/service.constant';
 
 import { IAdminUserManagementService } from '../services/interfaces/admin-user-service.interface';
 import { GetUsersWithFilterDto, RemoveUserDto, StatusUpdateDto } from '../dtos/admin-user.dto';
@@ -20,7 +20,7 @@ export class AdminUserController {
   private readonly logger = new Logger(AdminUserController.name);
 
   constructor(
-    @Inject(ADMIN_USERMANAGEMENT_SERVICE_NAME)
+    @Inject(ADMIN_USER_MANAGEMENT_SERVICE_NAME)
     private readonly _adminuserManagementService: IAdminUserManagementService
 
   ) { }

@@ -8,6 +8,7 @@ import { IRazorpayOrder, IVerifiedPayment } from "src/core/entities/interfaces/t
 import { RazorpayVerifyData, VerifyOrderData } from "../../dtos/payment.dto";
 import { ICustomerRepository } from "src/core/repositories/interfaces/customer-repo.interface";
 import { IProviderRepository } from "src/core/repositories/interfaces/provider-repo.interface";
+import { TransactionType } from "src/core/enum/transaction.enum";
 
 @Injectable()
 export class RazorPaymentService implements IRazorPaymentService {
@@ -36,7 +37,7 @@ export class RazorPaymentService implements IRazorPaymentService {
 
         const user = await repo.findById(userId);
         if (!user) {
-            throw new NotFoundException(`${role} with ID ${userId} not found.`)
+            throw new NotFoundException(`${role} with ID ${userId} not found.`);
         }
 
         const verified = this._paymentService.verifySignature(
@@ -57,7 +58,8 @@ export class RazorPaymentService implements IRazorPaymentService {
                 status: orderData.status,
                 userId: user.id,
                 method: orderData.method,
-                receipt: orderData.receipt
+                receipt: orderData.receipt,
+                transactionType: orderData.transactionType,
             });
 
             return { verified, transaction };

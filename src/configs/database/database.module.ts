@@ -14,6 +14,7 @@ import {
   PROVIDER_MODEL_NAME,
   SCHEDULES_MODEL_NAME,
   SERVICE_OFFERED_MODEL_NAME,
+  SUBSCRIPTION_MODEL_NAME,
   TRANSACTION_MODEL_NAME,
 } from '../../core/constants/model.constant';
 
@@ -29,6 +30,7 @@ import { SchedulesSchema } from 'src/core/schema/schedules.schema';
 import { ChatSchema } from 'src/core/schema/chat.schema';
 import { MessageSchema } from 'src/core/schema/message.schema';
 import { PlanSchema } from 'src/core/schema/plans.schema';
+import { SubscriptionSchema } from 'src/core/schema/subscription.schema';
 
 
 @Global()
@@ -71,7 +73,8 @@ import { PlanSchema } from 'src/core/schema/plans.schema';
       { name: SCHEDULES_MODEL_NAME, schema: SchedulesSchema },
       { name: CHAT_MODEL_NAME, schema: ChatSchema },
       { name: MESSAGE_MODEL_NAME, schema: MessageSchema },
-      { name: PLAN_MODEL_NAME, schema: PlanSchema }
+      { name: PLAN_MODEL_NAME, schema: PlanSchema },
+      { name: SUBSCRIPTION_MODEL_NAME, schema: SubscriptionSchema },
 
     ]),
   ],

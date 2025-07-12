@@ -5,3 +5,8 @@ export enum TransactionStatus {
     FAILED = 'failed',
     REFUNDED = 'refunded'
 }
+
+export enum TransactionType {
+    BOOKING = 'Booking',
+    SUBSCRIPTION = 'Subscription',
+}

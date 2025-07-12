@@ -29,7 +29,8 @@ export class TransactionRepository extends BaseRepository<Transaction, Transacti
             contact: doc.contact,
             receipt: doc.receipt,
             createdAt: doc.createdAt,
-            updatedAt: doc.updatedAt
+            updatedAt: doc.updatedAt,
+            transactionType: doc.transactionType
         });
     }
 }

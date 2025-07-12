@@ -39,8 +39,8 @@ export class SubscriptionDocument extends Document {
     @Prop({ type: Date, required: true })
     startTime: Date;
 
-    @Prop({ type: Date, required: true })
-    endDate: Date;
+    @Prop({ type: Date, required: true, default: null })
+    endDate: Date | null;
 
     @Prop({ type: Boolean, default: true })
     isActive: boolean;

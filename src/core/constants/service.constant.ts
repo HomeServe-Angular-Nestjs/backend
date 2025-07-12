@@ -1,5 +1,5 @@
 export const ADMIN_SEED_SERVICE_NAME = 'ISeedAdminService';
-export const ADMIN_USERMANAGEMENT_SERVICE_NAME = 'IAdminUserManagementService';
+export const ADMIN_USER_MANAGEMENT_SERVICE_NAME = 'IAdminUserManagementService';
 export const ADMIN_APPROVAL_SERVICE_NAME = 'IAdminApprovalService'
 
 export const OTP_SERVICE_INTERFACE_NAME = 'IOtpService';
@@ -16,6 +16,7 @@ export const PROVIDER_BOOKING_SERVICE_NAME = 'IProviderBookingService';
 export const RAZORPAYMENT_SERVICE_NAME = 'IRazorPaymentService';
 export const SCHEDULES_SERVICE_NAME = 'ISchedulesService';
 export const PLAN_SERVICE_NAME = 'IPlanService';
+export const SUBSCRIPTION_SERVICE_NAME = 'SubscriptionService';
 
 export const AUTH_SOCKET_SERVICE_NAME = 'IAuthSocketService';
 export const CHAT_SOCKET_SERVICE_NAME = 'IChatSocketService';

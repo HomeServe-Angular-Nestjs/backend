@@ -1,7 +1,7 @@
 import { Provider } from '@nestjs/common';
 import {
   ADMIN_APPROVAL_SERVICE_NAME,
-  ADMIN_USERMANAGEMENT_SERVICE_NAME,
+  ADMIN_USER_MANAGEMENT_SERVICE_NAME,
   TOKEN_SERVICE_NAME,
 } from '../../../core/constants/service.constant';
 import { TokenService } from '../../auth/services/implementations/token.service';
@@ -10,7 +10,7 @@ import { AdminApprovalService } from '../services/implementations/admin-approval
 
 export const userServiceProvider: Provider[] = [
   {
-    provide: ADMIN_USERMANAGEMENT_SERVICE_NAME,
+    provide: ADMIN_USER_MANAGEMENT_SERVICE_NAME,
     useClass: AdminUserManagementService
   },
   {

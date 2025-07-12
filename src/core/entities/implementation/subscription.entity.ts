@@ -14,7 +14,7 @@ export class Subscription extends BaseEntity implements ISubscription {
     features: string[];
 
     startTime: string;
-    endDate: string;
+    endDate: string | null;
     isActive: boolean;
     isDeleted: boolean;
 

@@ -1,6 +1,6 @@
 import { IPlan } from "src/core/entities/interfaces/plans.entity.interface";
 import { BaseRepository } from "../base/implementations/base.repository";
-import { PlanDocument } from "src/core/schema/plans.schema";
+import { PlanDocumentType } from "src/core/schema/plans.schema";
 import { InjectModel } from "@nestjs/mongoose";
 import { PLAN_MODEL_NAME } from "src/core/constants/model.constant";
 import { Model } from "mongoose";
@@ -9,15 +9,15 @@ import { IPlanRepository } from "../interfaces/plans-repo.interface";
 import { Injectable } from "@nestjs/common";
 
 @Injectable()
-export class PlanRepository extends BaseRepository<IPlan, PlanDocument> implements IPlanRepository {
+export class PlanRepository extends BaseRepository<IPlan, PlanDocumentType> implements IPlanRepository {
     constructor(
         @InjectModel(PLAN_MODEL_NAME)
-        private readonly _planmodel: Model<PlanDocument>,
+        private readonly _planModel: Model<PlanDocumentType>,
     ) {
-        super(_planmodel);
+        super(_planModel);
     }
 
-    protected override toEntity(doc: PlanDocument): IPlan {
+    protected override toEntity(doc: PlanDocumentType): IPlan {
         return new Plan({
             id: doc.id,
             name: doc.name,

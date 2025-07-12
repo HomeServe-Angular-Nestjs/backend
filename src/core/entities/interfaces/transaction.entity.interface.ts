@@ -1,5 +1,6 @@
-import { TransactionStatus } from "src/core/enum/transaction.enum";
+import { TransactionStatus, TransactionType } from "src/core/enum/transaction.enum";
 import { IEntity } from "../base/interfaces/base-entity.entity.interface";
+
 
 export interface ITransaction extends IEntity {
     userId: string;
@@ -13,6 +14,7 @@ export interface ITransaction extends IEntity {
     email?: string;
     contact?: string;
     receipt?: string;
+    transactionType: TransactionType;
 }
 
 export interface IRazorpayOrder {

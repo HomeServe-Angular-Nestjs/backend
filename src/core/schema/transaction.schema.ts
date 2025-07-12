@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Document } from "mongoose";
-import { TransactionStatus } from "../enum/transaction.enum";
+import { TransactionStatus, TransactionType } from "../enum/transaction.enum";
 
 @Schema({ timestamps: true })
 export class TransactionDocument extends Document {
@@ -42,7 +42,7 @@ export class TransactionDocument extends Document {
 
     @Prop({
         type: String,
-        enum: ['created', 'attempted', 'paid', 'failed', 'refunded'],
+        enum: Object.values(TransactionStatus),
         default: 'created'
     })
     status: TransactionStatus;
@@ -64,6 +64,13 @@ export class TransactionDocument extends Document {
         default: null
     })
     receipt: string;
+
+    @Prop({
+        type: String,
+        required: true,
+        enum: Object.values(TransactionType)
+    })
+    transactionType: TransactionType
 
     @Prop({ type: Date })
     createdAt: Date;

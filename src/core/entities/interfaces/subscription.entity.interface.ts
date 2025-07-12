@@ -3,7 +3,7 @@ import { IEntity } from "../base/interfaces/base-entity.entity.interface";
 import { PlanRoleType } from "./plans.entity.interface";
 
 export type RenewalType = 'auto' | 'manual';
-export type SubsDurationType = 'monthly' | 'yearly'
+export type SubsDurationType = 'monthly' | 'yearly';
 
 export interface ISubscription extends IEntity {
     userId: string;
@@ -16,7 +16,7 @@ export interface ISubscription extends IEntity {
     features: string[];
 
     startTime: string;
-    endDate: string;
+    endDate: string | null;
     isActive: boolean;
     isDeleted: boolean;
 
