@@ -1,4 +1,4 @@
-import { BookingStatus, PaymentStatus } from "../../enum/bookings.enum";
+import { BookingStatus, CancelStatus, PaymentStatus } from "../../enum/bookings.enum";
 import { IEntity } from "../base/interfaces/base-entity.entity.interface";
 
 export interface IBookingResponse {
@@ -16,8 +16,10 @@ export interface IBookingResponse {
     expectedArrivalTime: Date | string;
     bookingStatus: BookingStatus;
     paymentStatus: PaymentStatus;
+    cancelStatus: CancelStatus | null;
     totalAmount: number;
     createdAt: Date;
+    transactionId: string | null;
 }
 
 export interface IPagination {
@@ -48,6 +50,7 @@ export interface IProviderBookingLists {
     totalAmount: number;
     createdAt: Date;
     paymentStatus: PaymentStatus;
+    cancelStatus: CancelStatus | null;
     bookingStatus: BookingStatus;
 }
 
@@ -70,6 +73,7 @@ export interface IBooking extends IEntity {
     actualArrivalTime: Date | null;
     bookingStatus: BookingStatus;
     cancellationReason: string | null;
+    cancelStatus: CancelStatus | null;
     cancelledAt: Date | null;
     location: {
         address: string;
@@ -111,6 +115,9 @@ export interface IBookingDetailsBase {
     bookingStatus: BookingStatus;
     paymentStatus: PaymentStatus;
     createdAt: Date;
+    cancelStatus: CancelStatus | null;
+    cancelReason: string | null;
+    cancelledAt: Date | null;
     expectedArrivalTime: Date;
     totalAmount: number;
     orderedServices: {

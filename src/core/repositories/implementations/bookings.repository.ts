@@ -31,7 +31,6 @@ export class BookingRepository extends BaseRepository<Booking, BookingDocument> 
             customerId: doc.customerId,
             providerId: doc.providerId,
             totalAmount: doc.totalAmount,
-
             services: doc.services,
             bookingStatus: doc.bookingStatus,
             paymentStatus: doc.paymentStatus,
@@ -39,6 +38,7 @@ export class BookingRepository extends BaseRepository<Booking, BookingDocument> 
             actualArrivalTime: doc.actualArrivalTime,
             expectedArrivalTime: doc.expectedArrivalTime,
             cancellationReason: doc.cancellationReason,
+            cancelStatus: doc.cancelStatus,
             cancelledAt: doc.cancelledAt,
             transactionId: doc.transactionId,
             createdAt: doc.createdAt,

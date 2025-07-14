@@ -1,3 +1,4 @@
+import { Optional } from "@nestjs/common";
 import { Transform, Type } from "class-transformer";
 import { ArrayMaxSize, ArrayMinSize, ArrayNotEmpty, IsArray, IsDefined, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, Min, ValidateNested } from "class-validator";
 import { BookingStatus, DateRange, PaymentStatus, SortBy } from "src/core/enum/bookings.enum";
@@ -147,7 +148,6 @@ export class BookingPaginationFilterDto {
         message: 'paymentStatus must be one of: ' + Object.values(PaymentStatus).join(', ')
     })
     paymentStatus?: PaymentStatus;
-
 }
 
 export type FilterFields = Omit<BookingPaginationFilterDto, 'page'>;
@@ -174,4 +174,15 @@ export class CancelBookingDto extends BookingIdDto {
     @IsNotEmpty()
     @IsString()
     reason: string
+}
+
+
+export class UpdateBookingDto {
+    @IsNotEmpty()
+    @IsString()
+    bookingId: string;
+
+    @Optional()
+    @IsString()
+    transactionId: string;
 }

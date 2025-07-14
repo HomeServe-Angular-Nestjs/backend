@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
-import { BookingStatus, PaymentStatus } from '../enum/bookings.enum';
+import { BookingStatus, CancelStatus, PaymentStatus } from '../enum/bookings.enum';
 
 @Schema({ timestamps: true })
 export class BookingDocument extends Document {
@@ -24,6 +24,13 @@ export class BookingDocument extends Document {
 
     @Prop({ type: String, default: null })
     cancellationReason: string;
+
+    @Prop({
+        type: String,
+        enum: Object.values(CancelStatus),
+        default: null
+    })
+    cancelStatus: CancelStatus;
 
     @Prop({ type: Date, default: null })
     cancelledAt: Date;

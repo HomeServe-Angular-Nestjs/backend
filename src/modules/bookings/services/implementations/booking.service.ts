@@ -1,13 +1,13 @@
 import { ConflictException, Inject, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
 import { BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SCHEDULES_REPOSITORY_NAME, SERVICE_OFFERED_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME } from '../../../../core/constants/repository.constant';
 import { IBookingDetailCustomer, IBookingResponse, IBookingWithPagination } from '../../../../core/entities/interfaces/booking.entity.interface';
-import { BookingStatus, PaymentStatus } from '../../../../core/enum/bookings.enum';
+import { BookingStatus, CancelStatus, PaymentStatus } from '../../../../core/enum/bookings.enum';
 import { IServiceOfferedRepository } from '../../../../core/repositories/interfaces/serviceOffered-repo.interface';
 import { ISchedulesRepository } from '../../../../core/repositories/interfaces/schedules-repo.interface';
 import { IProviderRepository } from '../../../../core/repositories/interfaces/provider-repo.interface';
 import { ICustomerRepository } from '../../../../core/repositories/interfaces/customer-repo.interface';
 import { IBookingRepository } from '../../../../core/repositories/interfaces/bookings-repo.interface';
-import { SelectedServiceDto, IPriceBreakupDto, BookingDto, CancelBookingDto } from '../../dtos/booking.dto';
+import { SelectedServiceDto, IPriceBreakupDto, BookingDto, CancelBookingDto, UpdateBookingDto } from '../../dtos/booking.dto';
 import { IBookingService } from '../interfaces/booking-service.interface';
 import { Types } from 'mongoose';
 import { IResponse } from 'src/core/misc/response.util';
@@ -88,7 +88,7 @@ export class BookingService implements IBookingService {
         };
     }
 
-    //   Creates a booking for a customer by selecting an available slot from a given schedule.
+    // Creates a booking for a customer by selecting an available slot from a given schedule.
     async createBooking(customerId: string, data: BookingDto): Promise<IResponse> {
         const { dayId, month, scheduleId, slotId } = data.slotData;
         const scheduleObjectId = new Types.ObjectId(scheduleId);
@@ -170,6 +170,7 @@ export class BookingService implements IBookingService {
                 })),
                 bookingStatus: BookingStatus.PENDING,
                 cancellationReason: null,
+                cancelStatus: null,
                 cancelledAt: null,
                 transactionId: data.transactionId,
                 paymentStatus: data.transactionId ? PaymentStatus.PAID : PaymentStatus.UNPAID,
@@ -246,9 +247,11 @@ export class BookingService implements IBookingService {
                     services,
                     expectedArrivalTime: booking.expectedArrivalTime,
                     bookingStatus: booking.bookingStatus,
+                    cancelStatus: booking.cancelStatus,
                     paymentStatus: booking.paymentStatus,
                     totalAmount: booking.totalAmount,
                     createdAt: booking.createdAt as Date,
+                    transactionId: booking.transactionId ?? null
                 };
             })
         );
@@ -303,6 +306,9 @@ export class BookingService implements IBookingService {
             createdAt: booking.createdAt as Date,
             expectedArrivalTime: booking.expectedArrivalTime,
             totalAmount: booking.totalAmount,
+            cancelledAt: booking.cancelledAt,
+            cancelReason: booking.cancellationReason,
+            cancelStatus: booking.cancelStatus,
             provider: {
                 name: provider.fullname || provider.username,
                 email: provider.email,
@@ -345,9 +351,31 @@ export class BookingService implements IBookingService {
             },
             {
                 $set: {
-                    bookingStatus: BookingStatus.CANCELLED,
+                    cancelStatus: CancelStatus.IN_PROGRESS,
                     cancellationReason: dto.reason,
                     cancelledAt: new Date()
+                }
+            },
+            { new: true }
+        );
+
+        if (!updatedBooking) {
+            throw new NotFoundException('Booking ', ErrorMessage.DOCUMENT_NOT_FOUND);
+        }
+
+        return {
+            success: true,
+            message: 'Booking cancelled successfully'
+        }
+    }
+
+    async updateBooking(dto: UpdateBookingDto): Promise<IResponse<IBookingResponse>> {
+        const updatedBooking = await this._bookingRepository.findOneAndUpdate(
+            { _id: dto.bookingId },
+            {
+                $set: {
+                    transactionId: dto.transactionId ?? null,
+                    paymentStatus: dto.transactionId ? PaymentStatus.PAID : PaymentStatus.UNPAID,
                 }
             },
             { new: true }
@@ -357,9 +385,47 @@ export class BookingService implements IBookingService {
             throw new NotFoundException(ErrorMessage.DOCUMENT_NOT_FOUND);
         }
 
+        const provider = await this._providerRepository.findById(updatedBooking.providerId);
+        if (!provider) {
+            throw new NotFoundException('Provider ', ErrorMessage.DOCUMENT_NOT_FOUND);
+        }
+
+        const services = await Promise.all(
+            updatedBooking.services.map(async (s) => {
+                const service = await this._serviceOfferedRepository.findById(s.serviceId);
+                if (!service) {
+                    throw new InternalServerErrorException(`Service with ID ${s.serviceId} not found.`);
+                }
+
+                return {
+                    id: service.id,
+                    name: service.title
+                };
+            })
+        );
+
+        const updatedData: IBookingResponse = {
+            bookingId: updatedBooking.id,
+            bookingStatus: updatedBooking.bookingStatus,
+            createdAt: updatedBooking.createdAt as Date,
+            expectedArrivalTime: updatedBooking.expectedArrivalTime,
+            paymentStatus: updatedBooking.paymentStatus,
+            cancelStatus: updatedBooking.cancelStatus,
+            provider: {
+                email: provider?.email,
+                id: provider.id,
+                name: provider?.fullname || provider?.username,
+                phone: provider.phone
+            },
+            services,
+            totalAmount: updatedBooking.totalAmount,
+            transactionId: updatedBooking.transactionId
+        }
+
         return {
             success: true,
-            message: 'Booking cancelled successfully'
+            message: 'Successfully booked the service',
+            data: updatedData
         }
     }
 }

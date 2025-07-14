@@ -1,4 +1,4 @@
-import { BookingStatus, PaymentStatus } from "../../enum/bookings.enum";
+import { BookingStatus, CancelStatus, PaymentStatus } from "../../enum/bookings.enum";
 import { BaseEntity } from "../base/implementation/base.entity";
 import { IBooking } from "../interfaces/booking.entity.interface";
 
@@ -26,6 +26,7 @@ export class Booking extends BaseEntity implements IBooking {
         subserviceIds: string[];
     }[];
     paymentStatus: PaymentStatus;
+    cancelStatus: CancelStatus | null;
     transactionId: string | null;
 
     constructor(partial: Partial<Booking>) {

@@ -1,11 +1,11 @@
 import { BadRequestException, Body, Controller, Get, Inject, InternalServerErrorException, Logger, Patch, Post, Query, Req, UnauthorizedException, UseInterceptors } from '@nestjs/common';
-import { BookingDto, BookingPaginationFilterDto, SelectedServiceDto, BookingIdDto, CancelBookingDto } from '../dtos/booking.dto';
+import { BookingDto, BookingPaginationFilterDto, SelectedServiceDto, BookingIdDto, CancelBookingDto, UpdateBookingDto } from '../dtos/booking.dto';
 
 import { Request } from 'express';
 import { IPayload } from '../../../core/misc/payload.interface';
 import { CUSTOMER_SERVICE_NAME } from '../../../core/constants/service.constant';
 import { IBookingService } from '../services/interfaces/booking-service.interface';
-import { IBookingDetailCustomer, IBookingWithPagination } from '../../../core/entities/interfaces/booking.entity.interface';
+import { IBookingDetailCustomer, IBookingResponse, IBookingWithPagination } from '../../../core/entities/interfaces/booking.entity.interface';
 import { IResponse } from 'src/core/misc/response.util';
 import { ErrorMessage } from 'src/core/enum/error.enum';
 
@@ -84,9 +84,19 @@ export class BookingsController {
     }
 
     @Patch('cancel')
-    async cancelBooking(@Body() dto: CancelBookingDto) {
+    async cancelBooking(@Body() dto: CancelBookingDto): Promise<IResponse> {
         try {
             return await this._bookingService.cancelBooking(dto);
+        } catch (err) {
+            this.logger.error(`Error cancelling a booking: ${err}`);
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Patch('update')
+    async updateBooking(@Body() dto: UpdateBookingDto): Promise<IResponse<IBookingResponse>> {
+        try {
+            return await this._bookingService.updateBooking(dto);
         } catch (err) {
             this.logger.error(`Error cancelling a booking: ${err}`);
             throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);

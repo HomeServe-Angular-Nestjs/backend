@@ -4,10 +4,11 @@ import { BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, SERVICE_OF
 import { IBookingRepository } from "../../../../core/repositories/interfaces/bookings-repo.interface";
 import { IServiceOfferedRepository } from "../../../../core/repositories/interfaces/serviceOffered-repo.interface";
 import { ICustomerRepository } from "../../../../core/repositories/interfaces/customer-repo.interface";
-import { IBookingDetailProvider, IBookingOverviewChanges, IBookingOverviewData, IResponseProviderBookingLists } from "../../../../core/entities/interfaces/booking.entity.interface";
+import { IBookingDetailProvider, IBookingOverviewChanges, IBookingOverviewData, IProviderBookingLists, IResponseProviderBookingLists } from "../../../../core/entities/interfaces/booking.entity.interface";
 import { FilterFields, UpdateBookingStatusDto } from "../../dtos/booking.dto";
-import { BookingStatus, DateRange, PaymentStatus } from "src/core/enum/bookings.enum";
+import { BookingStatus, CancelStatus, DateRange, PaymentStatus } from "src/core/enum/bookings.enum";
 import { ITransactionRepository } from "src/core/repositories/interfaces/transaction-repo.interface";
+import { IResponse } from "src/core/misc/response.util";
 
 @Injectable()
 export class ProviderBookingService implements IProviderBookingService {
@@ -63,6 +64,7 @@ export class ProviderBookingService implements IProviderBookingService {
                     totalAmount: booking.totalAmount,
                     createdAt: booking.createdAt as Date,
                     paymentStatus: booking.paymentStatus,
+                    cancelStatus: booking.cancelStatus,
                     bookingStatus: booking.bookingStatus,
                 };
             })
@@ -248,6 +250,9 @@ export class ProviderBookingService implements IProviderBookingService {
             createdAt: booking.createdAt as Date,
             expectedArrivalTime: booking.expectedArrivalTime,
             totalAmount: booking.totalAmount,
+            cancelStatus: booking.cancelStatus,
+            cancelReason: booking.cancellationReason,
+            cancelledAt: booking.cancelledAt,
             customer: {
                 name: customer.fullname || customer.username,
                 email: customer.email,
@@ -263,18 +268,84 @@ export class ProviderBookingService implements IProviderBookingService {
         }
     }
 
-    async updateBookingStatus(dto: UpdateBookingStatusDto): Promise<boolean> {
+    async updateBookingStatus(dto: UpdateBookingStatusDto): Promise<IResponse<IBookingDetailProvider>> {
         try {
+            const updateData: Record<string, string | Date> = {
+                bookingStatus: dto.newStatus
+            }
+
+            if (dto.newStatus === 'cancelled') {
+                updateData.cancelStatus = 'cancelled';
+                updateData.paymentStatus = 'refunded';
+                updateData.cancelledAt = new Date();
+            }
+
             const updatedBooking = await this._bookingRepository.findOneAndUpdate(
                 { _id: dto.bookingId },
-                { $set: { bookingStatus: dto.newStatus } },
+                { $set: updateData },
                 { new: true }
             );
 
             if (!updatedBooking) {
                 throw new NotFoundException(`Booking with ID ${dto.bookingId} not found.`);
             }
-            return !!updatedBooking;
+
+            const customer = await this._customerRepository.findById(updatedBooking.customerId);
+            if (!customer) {
+                throw new InternalServerErrorException(`Provider with ID ${updatedBooking.customerId} not found.`);
+            }
+
+
+            const orderedServices = (
+                await Promise.all(
+                    updatedBooking.services.map(async (s) => {
+                        const service = await this._serviceOfferedRepository.findById(s.serviceId);
+                        if (!service) {
+                            throw new InternalServerErrorException(`Service with ID ${s.serviceId} not found.`);
+                        }
+
+                        return service.subService
+                            .filter(sub => sub.id && s.subserviceIds.includes(sub.id))
+                            .map(sub => ({
+                                title: sub.title as string,
+                                price: sub.price as string,
+                                estimatedTime: sub.estimatedTime as string
+                            }));
+                    })
+                )
+            ).flat();
+
+            const transaction = await this._transactionRepository.findById(updatedBooking.transactionId ?? '');
+
+            const updateDate: IBookingDetailProvider = {
+                bookingId: updatedBooking.id,
+                bookingStatus: updatedBooking.bookingStatus,
+                paymentStatus: updatedBooking.paymentStatus,
+                createdAt: updatedBooking.createdAt as Date,
+                expectedArrivalTime: updatedBooking.expectedArrivalTime,
+                totalAmount: updatedBooking.totalAmount,
+                cancelStatus: updatedBooking.cancelStatus,
+                cancelReason: updatedBooking.cancellationReason,
+                cancelledAt: updatedBooking.cancelledAt,
+                customer: {
+                    name: customer.fullname || customer.username,
+                    email: customer.email,
+                    phone: customer.phone,
+                    location: updatedBooking.location.address,
+                },
+                orderedServices,
+                transaction: transaction ? {
+                    id: transaction.id,
+                    paymentDate: transaction.createdAt as Date,
+                    paymentMethod: transaction.method as string
+                } : null
+            }
+
+            return {
+                success: true,
+                message: 'Status updated successfully',
+                data: updateDate
+            };
         } catch (err) {
             this.logger.error('Error updating booking status:', err);
             throw new InternalServerErrorException('Failed to update booking status.');
