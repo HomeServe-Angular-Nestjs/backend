@@ -7,12 +7,13 @@ import { ISchedulesRepository } from '../../../../core/repositories/interfaces/s
 import { IProviderRepository } from '../../../../core/repositories/interfaces/provider-repo.interface';
 import { ICustomerRepository } from '../../../../core/repositories/interfaces/customer-repo.interface';
 import { IBookingRepository } from '../../../../core/repositories/interfaces/bookings-repo.interface';
-import { SelectedServiceDto, IPriceBreakupDto, BookingDto } from '../../dtos/booking.dto';
+import { SelectedServiceDto, IPriceBreakupDto, BookingDto, CancelBookingDto } from '../../dtos/booking.dto';
 import { IBookingService } from '../interfaces/booking-service.interface';
 import { Types } from 'mongoose';
 import { IResponse } from 'src/core/misc/response.util';
 import { IScheduleDay, ISlot } from 'src/core/entities/interfaces/schedules.entity.interface';
 import { ITransactionRepository } from 'src/core/repositories/interfaces/transaction-repo.interface';
+import { ErrorMessage } from 'src/core/enum/error.enum';
 
 
 
@@ -36,26 +37,12 @@ export class BookingService implements IBookingService {
         private readonly _transactionRepository: ITransactionRepository,
     ) { }
 
+    private _combineDateAndTime(dateStr: string, timeStr: string): Date {
+        const fullDateTimeStr = `${dateStr} ${timeStr}`;
+        return new Date(fullDateTimeStr);
+    }
 
-
-    /**
-     * Calculates the detailed price breakup for a list of selected services and subServices.
-     *
-     * This method performs the following:
-     * - Retrieves services by IDs from the database.
-     * - Filters each service’s subServices based on the user’s selected subservice IDs.
-     * - Computes the subtotal from the matched subServices' prices.
-     * - Adds a fixed visiting fee and applies an 18% tax rate.
-     *
-     * @param {SelectedServiceDto[]} dto - Array of user-selected service and subservice identifiers.
-     * @returns {Promise<IPriceBreakupData>} An object containing subtotal, tax, visiting fee, and total amount.
-     *
-     * @throws {Error} If:
-     * - The `dto` array is empty or undefined.
-     * - A service is not found for a given service ID.
-     * - Any subservice contains a non-numeric or invalid price.
-     *
-     * */
+    // Calculates the detailed price breakup for a list of selected services and subServices.
     async preparePriceBreakup(dto: SelectedServiceDto[]): Promise<IPriceBreakupDto> {
         // Fetch all selected services from the repository
         let services = await Promise.all(
@@ -101,23 +88,7 @@ export class BookingService implements IBookingService {
         };
     }
 
-    /**
-     * Creates a booking for a customer by selecting an available slot from a given schedule.
-     * 
-     * This method:
-     * 1. Verifies the existence of the schedule.
-     * 2. Atomically attempts to mark the selected slot as taken by the customer (ensures no race conditions).
-     * 3. Calculates the expected arrival time based on schedule date and slot's start time.
-     * 4. Creates a booking entry in the booking repository.
-     * 
-     * @param {string} customerId - ID of the customer making the booking.
-     * @param {BookingDto} data - Booking data including slot info, location, provider, and selected services.
-     * @returns {Promise<boolean>} - Returns true if the booking is successfully created; otherwise, throws an error.
-     * 
-     * @throws {NotFoundException} - If the schedule or slot is not found.
-     * @throws {ConflictException} - If the slot is already taken.
-     * @throws {InternalServerErrorException} - If any unexpected issue occurs during the update or booking creation.
-     */
+    //   Creates a booking for a customer by selecting an available slot from a given schedule.
     async createBooking(customerId: string, data: BookingDto): Promise<IResponse> {
         const { dayId, month, scheduleId, slotId } = data.slotData;
         const scheduleObjectId = new Types.ObjectId(scheduleId);
@@ -346,8 +317,49 @@ export class BookingService implements IBookingService {
         }
     }
 
-    private _combineDateAndTime(dateStr: string, timeStr: string): Date {
-        const fullDateTimeStr = `${dateStr} ${timeStr}`;
-        return new Date(fullDateTimeStr);
+    async cancelBooking(dto: CancelBookingDto): Promise<IResponse> {
+        const booking = await this._bookingRepository.findById(dto.bookingId);
+        if (!booking) {
+            throw new NotFoundException(ErrorMessage.DOCUMENT_NOT_FOUND);
+        }
+
+        if (booking.bookingStatus === BookingStatus.CANCELLED) {
+            throw new ConflictException('Booking is already cancelled.');
+        }
+
+        const bookingDate = new Date(booking.createdAt ?? 0);
+        const now = new Date();
+        const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+
+        const isWithin24Hours = (now.getTime() - bookingDate.getTime()) <= TWENTY_FOUR_HOURS;
+
+        if (!isWithin24Hours) {
+            throw new ConflictException('Cancellation is allowed only within 24 hours of booking.');
+        }
+
+
+        const updatedBooking = await this._bookingRepository.findOneAndUpdate(
+            {
+                _id: dto.bookingId,
+                bookingStatus: { $ne: BookingStatus.CANCELLED }
+            },
+            {
+                $set: {
+                    bookingStatus: BookingStatus.CANCELLED,
+                    cancellationReason: dto.reason,
+                    cancelledAt: new Date()
+                }
+            },
+            { new: true }
+        );
+
+        if (!updatedBooking) {
+            throw new NotFoundException(ErrorMessage.DOCUMENT_NOT_FOUND);
+        }
+
+        return {
+            success: true,
+            message: 'Booking cancelled successfully'
+        }
     }
 }

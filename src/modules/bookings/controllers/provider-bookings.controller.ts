@@ -5,12 +5,10 @@ import { IPayload } from '../../../core/misc/payload.interface';
 import { Request } from 'express';
 import { IProviderBookingService } from '../services/interfaces/provider-booking-service.interface';
 import { IResponseProviderBookingLists } from '../../../core/entities/interfaces/booking.entity.interface';
-import { BookingPaginationFilterDto, UpdateBookingStatusDto, ViewBookingDetailsDto } from '../dtos/booking.dto';
-import { filter } from 'rxjs';
+import { BookingPaginationFilterDto, UpdateBookingStatusDto, BookingIdDto } from '../dtos/booking.dto';
 
 
 @Controller('provider/bookings')
-//@UseInterceptors()
 export class ProviderBookingsController {
     private readonly logger = new Logger(ProviderBookingsController.name);
 
@@ -52,7 +50,7 @@ export class ProviderBookingsController {
     }
 
     @Get('fetch_details')
-    async getBookingDetails(@Query() dto: ViewBookingDetailsDto) {
+    async getBookingDetails(@Query() dto: BookingIdDto) {
         try {
             const { bookingId } = dto
             if (!bookingId) {

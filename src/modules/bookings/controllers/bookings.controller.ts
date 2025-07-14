@@ -1,5 +1,5 @@
-import { BadRequestException, Body, Controller, Get, Inject, InternalServerErrorException, Logger, Post, Query, Req, UnauthorizedException, UseInterceptors } from '@nestjs/common';
-import { BookingDto, BookingPaginationFilterDto, SelectedServiceDto, ViewBookingDetailsDto } from '../dtos/booking.dto';
+import { BadRequestException, Body, Controller, Get, Inject, InternalServerErrorException, Logger, Patch, Post, Query, Req, UnauthorizedException, UseInterceptors } from '@nestjs/common';
+import { BookingDto, BookingPaginationFilterDto, SelectedServiceDto, BookingIdDto, CancelBookingDto } from '../dtos/booking.dto';
 
 import { Request } from 'express';
 import { IPayload } from '../../../core/misc/payload.interface';
@@ -10,7 +10,6 @@ import { IResponse } from 'src/core/misc/response.util';
 import { ErrorMessage } from 'src/core/enum/error.enum';
 
 @Controller('booking')
-//@UseInterceptors()
 export class BookingsController {
     private readonly logger = new Logger(BookingsController.name);
 
@@ -70,7 +69,7 @@ export class BookingsController {
     }
 
     @Get('view_details')
-    async getBookingDetails(@Query() dto: ViewBookingDetailsDto): Promise<IBookingDetailCustomer> {
+    async getBookingDetails(@Query() dto: BookingIdDto): Promise<IBookingDetailCustomer> {
         try {
             const { bookingId } = dto
             if (!bookingId) {
@@ -80,6 +79,16 @@ export class BookingsController {
             return await this._bookingService.fetchBookingDetails(bookingId);
         } catch (err) {
             this.logger.error(`Error fetching booking details: ${err}`);
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Patch('cancel')
+    async cancelBooking(@Body() dto: CancelBookingDto) {
+        try {
+            return await this._bookingService.cancelBooking(dto);
+        } catch (err) {
+            this.logger.error(`Error cancelling a booking: ${err}`);
             throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
         }
     }

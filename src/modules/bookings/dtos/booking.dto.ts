@@ -150,9 +150,9 @@ export class BookingPaginationFilterDto {
 
 }
 
-export type FilterFileds = Omit<BookingPaginationFilterDto, 'page'>;
+export type FilterFields = Omit<BookingPaginationFilterDto, 'page'>;
 
-export class ViewBookingDetailsDto {
+export class BookingIdDto {
     @IsNotEmpty()
     @IsString()
     bookingId: string;
@@ -167,4 +167,11 @@ export class UpdateBookingStatusDto {
     @IsNotEmpty()
     @IsString()
     newStatus: string;
+}
+
+
+export class CancelBookingDto extends BookingIdDto {
+    @IsNotEmpty()
+    @IsString()
+    reason: string
 }

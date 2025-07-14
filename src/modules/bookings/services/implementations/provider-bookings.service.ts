@@ -5,7 +5,7 @@ import { IBookingRepository } from "../../../../core/repositories/interfaces/boo
 import { IServiceOfferedRepository } from "../../../../core/repositories/interfaces/serviceOffered-repo.interface";
 import { ICustomerRepository } from "../../../../core/repositories/interfaces/customer-repo.interface";
 import { IBookingDetailProvider, IBookingOverviewChanges, IBookingOverviewData, IResponseProviderBookingLists } from "../../../../core/entities/interfaces/booking.entity.interface";
-import { FilterFileds, UpdateBookingStatusDto } from "../../dtos/booking.dto";
+import { FilterFields, UpdateBookingStatusDto } from "../../dtos/booking.dto";
 import { BookingStatus, DateRange, PaymentStatus } from "src/core/enum/bookings.enum";
 import { ITransactionRepository } from "src/core/repositories/interfaces/transaction-repo.interface";
 
@@ -25,7 +25,7 @@ export class ProviderBookingService implements IProviderBookingService {
     ) { }
 
 
-    async fetchBookingsList(id: string, page: number = 1, filters: FilterFileds): Promise<IResponseProviderBookingLists> {
+    async fetchBookingsList(id: string, page: number = 1, filters: FilterFields): Promise<IResponseProviderBookingLists> {
         const limit = 5;
         const skip = (page - 1) * limit;
 
