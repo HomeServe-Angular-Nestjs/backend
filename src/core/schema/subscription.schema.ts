@@ -50,7 +50,8 @@ export class SubscriptionDocument extends Document {
 
     @Prop({
         type: String,
-        enum: Object.values(RenewalType)
+        enum: Object.values(RenewalType),
+        default: 'auto'
     })
     renewalType?: RenewalType;
 

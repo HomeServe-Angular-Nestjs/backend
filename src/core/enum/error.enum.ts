@@ -27,9 +27,11 @@ export enum ErrorMessage {
     INTERNAL_SERVER_ERROR = 'An unexpected error occurred. Please try again later',
     DOCUMENT_CREATION_ERROR = 'Error creating document',
 
+    // Conflict Error
+    DOCUMENT_ALREADY_EXISTS = 'Already exists',
+    
     // Socket Error
     SOCKET_CONNECTION_REJECTED = 'Socket connection rejected: ',
-
 
     // Token Errors
     NO_TOKEN_FOUND = 'No token provided.',

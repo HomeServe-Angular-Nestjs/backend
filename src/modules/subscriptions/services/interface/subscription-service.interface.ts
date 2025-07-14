@@ -4,4 +4,5 @@ import { CreateSubscriptionDto } from "../../dto/subscription.dto";
 
 export interface ISubscriptionService {
     createSubscription(userId: string, dto: CreateSubscriptionDto): Promise<IResponse<ISubscription>>;
+    fetchSubscription(userId: string): Promise<IResponse<ISubscription | null>>
 }

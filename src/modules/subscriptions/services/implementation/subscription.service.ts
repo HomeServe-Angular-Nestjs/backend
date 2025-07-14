@@ -1,4 +1,4 @@
-import { Inject, Injectable, InternalServerErrorException, Logger, NotFoundException } from "@nestjs/common";
+import { ConflictException, Inject, Injectable, InternalServerErrorException, Logger, NotFoundException } from "@nestjs/common";
 import { ISubscriptionService } from "../interface/subscription-service.interface";
 import { ISubscription } from "src/core/entities/interfaces/subscription.entity.interface";
 import { IResponse } from "src/core/misc/response.util";
@@ -19,6 +19,11 @@ export class SubscriptionService implements ISubscriptionService {
     ) { }
 
     async createSubscription(userId: string, dto: CreateSubscriptionDto): Promise<IResponse<ISubscription>> {
+        const isSubscriptionExists = await this._subscriptionRepository.findOne({ userId });
+        if (isSubscriptionExists) {
+            throw new ConflictException(ErrorMessage.DOCUMENT_ALREADY_EXISTS);
+        }
+
         const plan = await this._planRepository.findById(dto.planId);
         if (!plan) {
             throw new NotFoundException(ErrorMessage.DOCUMENT_NOT_FOUND);
@@ -39,8 +44,6 @@ export class SubscriptionService implements ISubscriptionService {
             paymentStatus: dto.paymentStatus,
         });
 
-        this.logger.debug(newSubscription)
-
         if (!newSubscription) {
             throw new InternalServerErrorException(ErrorMessage.DOCUMENT_CREATION_ERROR);
         }
@@ -49,6 +52,16 @@ export class SubscriptionService implements ISubscriptionService {
             success: true,
             message: 'Subscription created successfully.',
             data: newSubscription
+        }
+    }
+
+    async fetchSubscription(userId: string): Promise<IResponse<ISubscription | null>> {
+        const subscription = await this._subscriptionRepository.findOne({ userId });
+
+        return {
+            success: true,
+            message: 'Subscription fetched successfully',
+            data: subscription
         }
     }
 }

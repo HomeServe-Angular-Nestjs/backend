@@ -1,4 +1,4 @@
-import { Body, Controller, Inject, InternalServerErrorException, Logger, Post, Req, UnauthorizedException } from "@nestjs/common";
+import { Body, Controller, Get, Inject, InternalServerErrorException, Logger, Post, Req, UnauthorizedException } from "@nestjs/common";
 import { Request } from "express";
 import { SUBSCRIPTION_SERVICE_NAME } from "src/core/constants/service.constant";
 import { ErrorMessage } from "src/core/enum/error.enum";
@@ -28,6 +28,21 @@ export class SubscriptionController {
             return await this._subscriptionService.createSubscription(user.sub, dto);
         } catch (err) {
             this.logger.error('Error caught while creating subscription: ', err.message, err.stack);
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Get('')
+    async fetchSubscription(@Req() req: Request) {
+        try {
+            const user = req.user as IPayload;
+            if (!user.sub) {
+                throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
+            }
+            
+            return await this._subscriptionService.fetchSubscription(user.sub);
+        } catch (err) {
+            this.logger.error('Error caught while fetching the subscription: ', err.message, err.stack);
             throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
         }
     }
