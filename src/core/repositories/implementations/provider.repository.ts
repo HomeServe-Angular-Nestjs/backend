@@ -38,6 +38,13 @@ export class ProviderRepository extends BaseRepository<Provider, ProviderDocumen
     return result !== null;
   }
 
+  async getCurrentRatingCountAndAverage(providerId: string): Promise<{ currentRatingCount: number, currentRatingAvg: number } | null> {
+    const result = await this._providerModel.findOne({ _id: providerId }, { _id: -1, ratingCount: 1, avgRating: 1 });
+
+    return result ? { currentRatingAvg: result.avgRating, currentRatingCount: result.ratingCount } : null
+  }
+
+
   protected toEntity(doc: ProviderDocument): Provider {
     return new Provider({
       id: (doc._id as Types.ObjectId).toString(),
@@ -79,7 +86,10 @@ export class ProviderRepository extends BaseRepository<Provider, ProviderDocumen
         uploadedAt: d.uploadedAt,
         verificationStatus: d.verificationStatus,
         verifiedAt: d.verifiedAt
-      }))
+      })),
+      ratingCount: doc.ratingCount,
+      avgRating: doc.avgRating,
+      reviews: doc.reviews
     });
   }
 }

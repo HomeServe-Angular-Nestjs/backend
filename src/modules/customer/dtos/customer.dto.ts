@@ -1,5 +1,5 @@
 import { Type } from "class-transformer";
-import { ArrayMinSize, IsArray, IsDefined, IsEmail, IsNotEmpty, IsString, Matches, ValidateNested } from "class-validator";
+import { ArrayMinSize, IsArray, IsDefined, IsEmail, IsNotEmpty, IsNumber, IsString, Matches, Max, Min, ValidateNested } from "class-validator";
 
 export class UpdateSavedProvidersDto {
     @IsNotEmpty()
@@ -53,4 +53,20 @@ export class ChangePasswordDto {
     @IsDefined()
     @IsString()
     newPassword: string;
+}
+
+export class SubmitReviewDto {
+    @IsNotEmpty()
+    @IsString()
+    providerId: string;
+
+    @IsNotEmpty()
+    @IsString()
+    desc: string;
+
+    @IsNotEmpty()
+    @IsNumber()
+    @Min(1)
+    @Max(5)
+    ratings: number;
 }

@@ -21,6 +21,7 @@ export interface IAddress {
 
 export interface ICustomer extends IBaseUserEntity {
   savedProviders?: string[] | null;
+  isReviewed: boolean;
 }
 
 export interface IExpertise {
@@ -73,7 +74,8 @@ export interface IProvider extends IBaseUserEntity {
   bookingLimit: number | null;
   bufferTime: number | null;
   enableSR: boolean;
-  ratings: number;
+  ratingCount: number;
+  avgRating: number;
   reviews: IReview[];
 }
 

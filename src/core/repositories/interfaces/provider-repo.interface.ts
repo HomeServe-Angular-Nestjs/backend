@@ -9,6 +9,5 @@ export interface IProviderRepository
   findByEmail(email: string): Promise<IProvider | null>;
   count(filter?: FilterQuery<ProviderDocument>): Promise<number>;
   isExists(filter: FilterQuery<ProviderDocument>): Promise<boolean>
-
-
+  getCurrentRatingCountAndAverage(providerId: string): Promise<{ currentRatingCount: number, currentRatingAvg: number } | null>
 }

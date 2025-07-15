@@ -3,7 +3,7 @@ import { BaseUserDocument } from './base/user-base.schema';
 import { Types } from 'mongoose';
 import { SERVICE_OFFERED_MODEL_NAME } from '../constants/model.constant';
 import { ServiceDocument } from './service.schema';
-import { IAddress, IDoc, IExpertise, ILanguage, VerificationStatusType } from '../entities/interfaces/user.entity.interface';
+import { IDoc, IExpertise, ILanguage, VerificationStatusType } from '../entities/interfaces/user.entity.interface';
 
 @Schema()
 export class Review {
@@ -135,8 +135,11 @@ export class ProviderDocument extends BaseUserDocument {
   @Prop({ default: false })
   enableSR: boolean
 
-  @Prop({ type: Number })
-  rating: number;
+  @Prop({ type: Number, default: 0 })
+  ratingCount: number;
+
+  @Prop({ type: Number, default: 0 })
+  avgRating: number;
 
   @Prop({ type: [Review], default: [] })
   reviews: Review[];

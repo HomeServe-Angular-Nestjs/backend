@@ -23,7 +23,8 @@ export class Provider extends BaseUserEntity implements IProvider {
   bookingLimit: number | null;
   bufferTime: number | null;
   enableSR: boolean;
-  ratings: number;
+  ratingCount: number;
+  avgRating: number;
   reviews: IReview[];
 
   constructor(partial: Partial<Provider>) {

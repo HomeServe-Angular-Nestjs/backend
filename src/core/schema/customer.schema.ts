@@ -8,5 +8,8 @@ export class CustomerDocument extends BaseUserDocument {
     required: true,
   })
   savedProviders: string[];
+
+  @Prop({ type: Boolean, default: false })
+  isReviewed: boolean;
 }
 export const CustomerSchema = SchemaFactory.createForClass(CustomerDocument);

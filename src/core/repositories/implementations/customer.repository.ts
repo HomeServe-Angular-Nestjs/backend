@@ -44,7 +44,8 @@ export class CustomerRepository extends BaseRepository<Customer, CustomerDocumen
       isDeleted: doc.isDeleted,
       savedProviders: doc.savedProviders,
       phone: doc.phone,
-      location: doc.location
+      location: doc.location,
+      isReviewed: doc.isReviewed,
     });
   }
 }

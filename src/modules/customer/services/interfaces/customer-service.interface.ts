@@ -1,6 +1,6 @@
 import { IResponse } from "src/core/misc/response.util";
-import { ICustomer } from "../../../../core/entities/interfaces/user.entity.interface";
-import { ChangePasswordDto, UpdateProfileDto, UpdateSavedProvidersDto } from "../../dtos/customer.dto";
+import { ICustomer, IReview } from "../../../../core/entities/interfaces/user.entity.interface";
+import { ChangePasswordDto, SubmitReviewDto, UpdateProfileDto, UpdateSavedProvidersDto } from "../../dtos/customer.dto";
 
 export interface ICustomerService {
     fetchOneCustomer(id: string): Promise<ICustomer | null>;
@@ -11,4 +11,5 @@ export interface ICustomerService {
     updateProfile(customerId: string, updateData: UpdateProfileDto): Promise<IResponse<ICustomer>>;
     changePassword(customerId: string, data: ChangePasswordDto): Promise<IResponse<ICustomer>>;
     changeAvatar(customerId: string, file: Express.Multer.File): Promise<IResponse<ICustomer>>;
+    submitReview(customerId: string, dto: SubmitReviewDto): Promise<IResponse<IReview>>;
 }

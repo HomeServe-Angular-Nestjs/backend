@@ -2,8 +2,8 @@ import { Inject, Injectable, InternalServerErrorException, Logger, NotFoundExcep
 import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SERVICE_OFFERED_REPOSITORY_NAME } from "../../../../core/constants/repository.constant";
 import { ICustomerRepository } from "../../../../core/repositories/interfaces/customer-repo.interface";
 import { ICustomerService } from "../interfaces/customer-service.interface";
-import { ICustomer, ISearchedProviders } from "../../../../core/entities/interfaces/user.entity.interface";
-import { ChangePasswordDto, UpdateProfileDto, UpdateSavedProvidersDto } from "../../dtos/customer.dto";
+import { ICustomer, IReview, ISearchedProviders } from "../../../../core/entities/interfaces/user.entity.interface";
+import { ChangePasswordDto, SubmitReviewDto, UpdateProfileDto, UpdateSavedProvidersDto } from "../../dtos/customer.dto";
 import { ARGON_UTILITY_NAME, UPLOAD_UTILITY_NAME } from "../../../../core/constants/utility.constant";
 import { IResponse } from "src/core/misc/response.util";
 import { IProviderRepository } from "src/core/repositories/interfaces/provider-repo.interface";
@@ -246,6 +246,59 @@ export class CustomerService implements ICustomerService {
             success: true,
             message: 'Services fetched successfully',
             data: filteredServices
+        }
+    }
+
+    async submitReview(customerId: string, dto: SubmitReviewDto): Promise<IResponse<IReview>> {
+        const review: IReview = {
+            desc: dto.desc,
+            isReported: false,
+            reviewedBy: customerId,
+            writtenAt: new Date()
+        };
+
+        const currentRating = await this._providerRepository.getCurrentRatingCountAndAverage(dto.providerId);
+
+        if (!currentRating) {
+            throw new NotFoundException('Current rating not found.');
+        }
+
+        const newRatingCount = currentRating.currentRatingCount + 1;
+        const newAverageRating = (currentRating.currentRatingAvg * currentRating.currentRatingCount + dto.ratings) / newRatingCount;
+
+        const [updatedProvider, updatedCustomer] = await Promise.all([
+            this._providerRepository.findOneAndUpdate(
+                { _id: dto.providerId },
+                {
+                    $set: {
+                        ratingCount: newRatingCount,
+                        avgRating: newAverageRating
+                    },
+                    $push: {
+                        reviews: { $each: [review] }
+                    }
+                },
+                { new: true }
+            ),
+            this._customerRepository.findOneAndUpdate(
+                { _id: customerId },
+                { $set: { isReviewed: true } },
+                { new: true }
+            )
+        ]);
+
+        if (!updatedProvider) {
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+        }
+
+        if (!updatedCustomer) {
+            throw new NotFoundException(ErrorMessage.CUSTOMER_NOT_FOUND_WITH_ID, customerId);
+        }
+
+        return {
+            success: true,
+            message: 'Review Submitted successfully.',
+            data: review
         }
     }
 }

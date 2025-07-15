@@ -176,6 +176,11 @@ export class BookingService implements IBookingService {
                 paymentStatus: data.transactionId ? PaymentStatus.PAID : PaymentStatus.UNPAID,
             });
 
+            await this._customerRepository.findOneAndUpdate(
+                { _id: customerId },
+                { $set: { isReviewed: false } },
+            );
+
         } catch (err) {
             this.logger.error('Failed to create booking', err);
             throw new InternalServerErrorException('Failed to create booking');

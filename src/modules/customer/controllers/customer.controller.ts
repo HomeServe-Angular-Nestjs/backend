@@ -1,8 +1,8 @@
 import { BadRequestException, Query, Body, Controller, Get, Inject, InternalServerErrorException, Logger, Patch, Req, UnauthorizedException, Post, Put, UseInterceptors, UploadedFile } from "@nestjs/common";
 import { CUSTOMER_SERVICE_NAME } from "../../../core/constants/service.constant";
 import { ICustomerService } from "../services/interfaces/customer-service.interface";
-import { ICustomer } from "../../../core/entities/interfaces/user.entity.interface";
-import { ChangePasswordDto, UpdateProfileDto, UpdateSavedProvidersDto } from "../dtos/customer.dto";
+import { ICustomer, IReview } from "../../../core/entities/interfaces/user.entity.interface";
+import { ChangePasswordDto, SubmitReviewDto, UpdateProfileDto, UpdateSavedProvidersDto } from "../dtos/customer.dto";
 import { IPayload } from "../../../core/misc/payload.interface";
 import { Request } from "express";
 import { IResponse } from "src/core/misc/response.util";
@@ -130,6 +130,21 @@ export class CustomerController {
 
         } catch (err) {
             this.logger.error(`Error updating customer saved providers: ${err.message}`, err.stack);
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Post('reviews')
+    async submitReview(@Req() req: Request, @Body() dto: SubmitReviewDto): Promise<IResponse<IReview>> {
+        try {
+            const user = req.user as IPayload;
+            if (!user.sub) {
+                throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
+            }
+
+            return await this._customerService.submitReview(user.sub, dto);
+        } catch (err) {
+            this.logger.error(`Error submitting reviews for the provider: ${err.message}`, err.stack);
             throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
         }
     }
