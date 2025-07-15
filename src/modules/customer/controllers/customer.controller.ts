@@ -38,7 +38,17 @@ export class CustomerController {
         try {
             return this._customerService.searchProviders(search);
         } catch (err) {
-            this.logger.error(`Error updating customer saved providers: ${err.message}`, err.stack);
+            this.logger.error(`Error fetching providers for search: ${err.message}`, err.stack);
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Get('search_services')
+    async searchServices(@Query() { search }: { search: string }) {
+        try {
+            return this._customerService.searchServices(search);
+        } catch (err) {
+            this.logger.error(`Error fetching services for search: ${err.message}`, err.stack);
             throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
         }
     }

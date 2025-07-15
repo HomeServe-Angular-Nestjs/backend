@@ -29,3 +29,11 @@ export interface IServicesWithPagination {
   services: IService[];
   pagination: IPagination;
 }
+
+export interface ICustomerSearchServices {
+  id: string;
+  title: string;
+  image: string;
+  provider: string;
+  offeredServiceIds: string[];
+}

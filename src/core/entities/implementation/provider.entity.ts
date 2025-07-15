@@ -1,4 +1,4 @@
-import { IAddress, Availability, IDoc, IExpertise, ILanguage, IProvider, VerificationStatusType } from '../interfaces/user.entity.interface';
+import { IAddress, Availability, IDoc, IExpertise, ILanguage, IProvider, VerificationStatusType, IReview } from '../interfaces/user.entity.interface';
 import { BaseUserEntity } from '../base/implementation/base-user.entity';
 import { SlotType } from '../interfaces/schedule.entity.interface';
 
@@ -23,6 +23,8 @@ export class Provider extends BaseUserEntity implements IProvider {
   bookingLimit: number | null;
   bufferTime: number | null;
   enableSR: boolean;
+  ratings: number;
+  reviews: IReview[];
 
   constructor(partial: Partial<Provider>) {
     super(partial);

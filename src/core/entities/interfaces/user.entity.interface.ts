@@ -43,6 +43,13 @@ export interface IDoc {
   isDeleted: boolean
 };
 
+export interface IReview {
+  reviewedBy: string;
+  desc: string;
+  writtenAt: Date;
+  isReported: boolean;
+}
+
 export type VerificationStatusType = 'pending' | 'verified' | 'rejected';
 
 export interface IProvider extends IBaseUserEntity {
@@ -66,6 +73,8 @@ export interface IProvider extends IBaseUserEntity {
   bookingLimit: number | null;
   bufferTime: number | null;
   enableSR: boolean;
+  ratings: number;
+  reviews: IReview[];
 }
 
 export type IUser = ICustomer | IProvider | IAdmin;

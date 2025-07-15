@@ -5,6 +5,21 @@ import { SERVICE_OFFERED_MODEL_NAME } from '../constants/model.constant';
 import { ServiceDocument } from './service.schema';
 import { IAddress, IDoc, IExpertise, ILanguage, VerificationStatusType } from '../entities/interfaces/user.entity.interface';
 
+@Schema()
+export class Review {
+  @Prop({ required: true })
+  reviewedBy: string;
+
+  @Prop({ required: true })
+  desc: string;
+
+  @Prop({ default: () => new Date() })
+  writtenAt: Date;
+
+  @Prop({ default: false })
+  isReported: boolean;
+}
+
 @Schema({ timestamps: true })
 export class ProviderDocument extends BaseUserDocument {
   @Prop()
@@ -120,6 +135,11 @@ export class ProviderDocument extends BaseUserDocument {
   @Prop({ default: false })
   enableSR: boolean
 
+  @Prop({ type: Number })
+  rating: number;
+
+  @Prop({ type: [Review], default: [] })
+  reviews: Review[];
 }
 
 export const ProviderSchema = SchemaFactory.createForClass(ProviderDocument);

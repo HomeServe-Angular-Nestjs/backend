@@ -1,5 +1,5 @@
 import { Inject, Injectable, InternalServerErrorException, Logger, NotFoundException } from "@nestjs/common";
-import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME } from "../../../../core/constants/repository.constant";
+import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SERVICE_OFFERED_REPOSITORY_NAME } from "../../../../core/constants/repository.constant";
 import { ICustomerRepository } from "../../../../core/repositories/interfaces/customer-repo.interface";
 import { ICustomerService } from "../interfaces/customer-service.interface";
 import { ICustomer, ISearchedProviders } from "../../../../core/entities/interfaces/user.entity.interface";
@@ -10,6 +10,9 @@ import { IProviderRepository } from "src/core/repositories/interfaces/provider-r
 import { ErrorMessage } from "src/core/enum/error.enum";
 import { IArgonUtility } from "src/core/utilities/interface/argon.utility.interface";
 import { IUploadsUtility } from "src/core/utilities/interface/upload.utility.interface";
+import { IServiceOfferedRepository } from "src/core/repositories/interfaces/serviceOffered-repo.interface";
+import { Types } from "mongoose";
+import { ICustomerSearchServices } from "src/core/entities/interfaces/service.entity.interface";
 
 @Injectable()
 export class CustomerService implements ICustomerService {
@@ -24,6 +27,8 @@ export class CustomerService implements ICustomerService {
         private readonly _argonUtility: IArgonUtility,
         @Inject(UPLOAD_UTILITY_NAME)
         private readonly _uploadsUtility: IUploadsUtility,
+        @Inject(SERVICE_OFFERED_REPOSITORY_NAME)
+        private readonly _serviceOfferedRepository: IServiceOfferedRepository,
     ) { }
 
     async fetchOneCustomer(id: string): Promise<ICustomer | null> {
@@ -175,6 +180,72 @@ export class CustomerService implements ICustomerService {
             success: !!updatedCustomer,
             message: 'image updated',
             data: updatedCustomer
+        }
+    }
+
+    async searchServices(search: string): Promise<IResponse<ICustomerSearchServices[]>> {
+        if (!search.trim()) {
+            return {
+                success: true,
+                message: 'empty search.',
+                data: []
+            };
+        }
+
+        const services = await this._serviceOfferedRepository.find({
+            $or: [
+                { title: { $regex: search, $options: 'i' } },
+                { 'subService.title': { $regex: search, $options: 'i' } }
+            ],
+            isDeleted: false,
+            isActive: true
+        });
+
+        if (services.length === 0) {
+            return {
+                success: true,
+                message: 'No services matched your search.',
+                data: []
+            };
+        }
+
+        const serviceIdSet = new Set(services.map(s => s.id));
+
+        const providers = await this._providerRepository.find({
+            servicesOffered: { $in: [...serviceIdSet].map(id => new Types.ObjectId(id)) }
+        });
+
+        const serviceToProviderMap = new Map<string, { providerId: string; offeredServiceIds: string[] }>();
+
+        for (const provider of providers) {
+            const offeredServiceIds = provider.servicesOffered.map(id => id.toString());
+
+            for (const serviceId of offeredServiceIds) {
+                if (serviceIdSet.has(serviceId) && !serviceToProviderMap.has(serviceId)) {
+                    serviceToProviderMap.set(serviceId, {
+                        providerId: provider.id,
+                        offeredServiceIds
+                    });
+                }
+            }
+        }
+
+        const filteredServices = services.map(service => {
+            const providerData = serviceToProviderMap.get(service.id);
+
+            return {
+                id: service.id,
+                title: service.title,
+                image: service.image,
+                provider: providerData?.providerId as string,
+                offeredServiceIds: providerData?.offeredServiceIds ?? []
+            };
+        });
+
+        return {
+            success: true,
+            message: 'Services fetched successfully',
+            data: filteredServices
         }
     }
 }
