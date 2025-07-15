@@ -5,6 +5,8 @@ import { IMessageService } from "../interface/message-service.interface";
 import { MessageType, IMessage, ICreateMessage } from "src/core/entities/interfaces/message.entity.interface";
 import { ObjectId, Types } from "mongoose";
 import { IResponse } from "src/core/misc/response.util";
+import { USER_SOCKET_STORE_SERVICE_NAME } from "src/core/constants/service.constant";
+import { IUserSocketStoreService } from "../interface/user-socket-store-service.interface";
 
 @Injectable()
 export class MessageService implements IMessageService {
@@ -12,7 +14,9 @@ export class MessageService implements IMessageService {
 
     constructor(
         @Inject(MESSAGE_REPOSITORY_INTERFACE_NAME)
-        private readonly _messageRepository: IMessagesRepository
+        private readonly _messageRepository: IMessagesRepository,
+        @Inject(USER_SOCKET_STORE_SERVICE_NAME)
+        private readonly _userSocketService: IUserSocketStoreService
     ) { }
 
     async createMessage(messageData: ICreateMessage): Promise<IMessage> {
@@ -57,16 +61,16 @@ export class MessageService implements IMessageService {
                 { _id: { $in: unreadMessageIds.map(id => new Types.ObjectId(id)) } },
                 { $set: { isRead: true } }
             );
-        } 
+        }
 
         // Reverse for chronological order (oldest first)
         const orderedMessages = messages.reverse();
 
         return {
-            success: true, 
+            success: true,
             message: orderedMessages.length > 0
                 ? 'Messages fetched and updated successfully.'
-                : 'No messages found for this chat.', 
+                : 'No messages found for this chat.',
             data: orderedMessages
         };
     }

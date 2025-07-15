@@ -29,5 +29,5 @@ export interface IUserPreview extends IParticipant {
 
 export interface IChatData extends Omit<IChat, 'participants'> {
     receiver: IUserPreview;
-    totalMessages: number;
+    unreadMessages: number;
 }

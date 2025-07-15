@@ -31,7 +31,7 @@ export class ChatGateway extends BaseSocketGateway {
 
     constructor(
         @Inject(AUTH_SOCKET_SERVICE_NAME)
-        private readonly _authSokectService: IAuthSocketService,
+        private readonly _authSocketService: IAuthSocketService,
         @Inject(USER_SOCKET_STORE_SERVICE_NAME)
         private readonly _userSocketService: IUserSocketStoreService,
         @Inject(CHAT_SOCKET_SERVICE_NAME)
@@ -44,8 +44,8 @@ export class ChatGateway extends BaseSocketGateway {
 
     protected override async onClientConnect(client: Socket): Promise<void> {
         try {
-            const token = this._authSokectService.extractTokenFromCookie(client);
-            const payload = await this._authSokectService.validateTokenWithRetry(token);
+            const token = this._authSocketService.extractTokenFromCookie(client);
+            const payload = await this._authSocketService.validateTokenWithRetry(token);
 
             if (!payload.sub || !payload.type) {
                 throw new Error('Payload not found');
@@ -99,7 +99,7 @@ export class ChatGateway extends BaseSocketGateway {
             }
 
 
-            const mesageData: ICreateMessage = {
+            const messageData: ICreateMessage = {
                 chatId: new Types.ObjectId(chat.id),
                 content: bodyPayload.message,
                 senderId: sender.id,
@@ -107,15 +107,15 @@ export class ChatGateway extends BaseSocketGateway {
                 receiverId: receiver.id,
             }
 
-            const newMessage = await this._messageService.createMessage(mesageData);
+            const newMessage = await this._messageService.createMessage(messageData);
 
             if (!newMessage) {
                 this.logger.error('Error creating new message.');
                 throw new NotFoundException(ErrorMessage.DOCUMENT_NOT_FOUND);
             }
 
-            const senderSockets = await this._userSocketService.getsockets(receiver.id.toString());
-            const receiverSockets = await this._userSocketService.getsockets(sender.id.toString());
+            const senderSockets = await this._userSocketService.getSockets(receiver.id.toString());
+            const receiverSockets = await this._userSocketService.getSockets(sender.id.toString());
 
             const allSockets = [...new Set([...senderSockets, ...receiverSockets])];
 

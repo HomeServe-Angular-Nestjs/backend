@@ -69,8 +69,6 @@ export class ChatSocketService implements IChatSocketService {
             $expr: { $eq: [{ $size: '$participants' }, 2], }
         });
 
-        const messageCount = await this._messageRepository.count({ isRead: false });
-
         const result: IChatData[] = await Promise.all(
             chats.map(async (chat): Promise<IChatData> => {
                 const receiver = chat.participants.find(
@@ -89,7 +87,13 @@ export class ChatSocketService implements IChatSocketService {
                     type: receiver.type,
                     name: receiverDetail?.fullname || receiverDetail?.username || '',
                     avatar: receiverDetail?.avatar || '',
-                }
+                };
+
+                const unreadMessages = await this._messageRepository.count({
+                    chatId: chat.id,
+                    senderId: sender.id,
+                    isRead: false,
+                });
 
                 return {
                     id: chat.id.toString(),
@@ -97,7 +101,7 @@ export class ChatSocketService implements IChatSocketService {
                     lastMessage: chat.lastMessage ?? '',
                     receiver: filteredReceiverDetails,
                     lastSeenAt: chat.lastSeenAt,
-                    totalMessages: messageCount
+                    unreadMessages: unreadMessages
                 };
             })
         );

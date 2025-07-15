@@ -28,7 +28,7 @@ export class UserSocketStoreService implements IUserSocketStoreService {
         }
     }
 
-    async getsockets(userId: string): Promise<string[]> {
+    async getSockets(userId: string): Promise<string[]> {
         const key = this._getRedisKey(userId);
         return await this._redis.smembers(key);
     }

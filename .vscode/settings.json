@@ -4,7 +4,10 @@
         "dtos",
         "homeserve",
         "RAZORPAYMENT",
+        "sadd",
+        "smembers",
         "SMTPS",
+        "srem",
         "uuidv"
     ],
     "postman.settings.dotenv-detection-notification-visibility": false
