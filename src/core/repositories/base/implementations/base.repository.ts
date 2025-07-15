@@ -1,4 +1,4 @@
-import { ClientSession, Document, FilterQuery, Model, QueryOptions, Types, UpdateQuery } from 'mongoose';
+import { ClientSession, Document, FilterQuery, Model, QueryOptions, Types, UpdateQuery, UpdateWriteOpResult } from 'mongoose';
 import { IBaseRepository } from '../interfaces/base-repo.interface';
 import { IEntity } from '../../../entities/base/interfaces/base-entity.entity.interface';
 

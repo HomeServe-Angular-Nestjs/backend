@@ -3,5 +3,5 @@ import { IResponse } from "src/core/misc/response.util";
 
 export interface IMessageService {
     createMessage(messageData: ICreateMessage): Promise<IMessage>;
-    getAllMessage(chatId: string): Promise<IResponse<IMessage[]>>
+    getAllMessage(chatId: string, beforeMessageId?: string): Promise<IResponse<IMessage[]>>
 }

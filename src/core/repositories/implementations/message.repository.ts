@@ -4,7 +4,7 @@ import { MessageDocument } from "src/core/schema/message.schema";
 import { IMessagesRepository } from "../interfaces/message-repo.interface";
 import { InjectModel } from "@nestjs/mongoose";
 import { MESSAGE_MODEL_NAME } from "src/core/constants/model.constant";
-import { Model } from "mongoose";
+import { FilterQuery, Model, UpdateQuery, UpdateWriteOpResult } from "mongoose";
 
 export class MessageRepository extends BaseRepository<Message, MessageDocument> implements IMessagesRepository {
     constructor(
@@ -12,6 +12,14 @@ export class MessageRepository extends BaseRepository<Message, MessageDocument> 
         private readonly _messageModel: Model<MessageDocument>,
     ) {
         super(_messageModel)
+    }
+
+    async count(filter?: FilterQuery<MessageDocument>): Promise<number> {
+        return await this._messageModel.countDocuments(filter);
+    }
+
+    async updateMany(filter: FilterQuery<MessageDocument>, update: UpdateQuery<MessageDocument>): Promise<UpdateWriteOpResult> {
+        return this.model.updateMany(filter, update).exec();
     }
 
     protected override toEntity(doc: MessageDocument): Message {

@@ -16,7 +16,7 @@ export class MessagesController {
     @Get('')
     async getAllMessages(@Query() dto: GetMessagesDto) {
         try {
-            return this._messagesService.getAllMessage(dto.chatId);
+            return this._messagesService.getAllMessage(dto.chatId, dto.beforeMessageId);
         } catch (err) {
             this.logger.error(`Error fetching messages of chat: ${dto.chatId}`, err.message, err.stack);
             throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);

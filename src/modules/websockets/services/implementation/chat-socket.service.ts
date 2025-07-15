@@ -9,6 +9,7 @@ import { ICustomerRepository } from "src/core/repositories/interfaces/customer-r
 import { IProviderRepository } from "src/core/repositories/interfaces/provider-repo.interface";
 import { IAdminRepository } from "src/core/repositories/interfaces/admin-repo.interface";
 import { UserType } from "src/modules/auth/dtos/login.dto";
+import { IMessagesRepository } from "src/core/repositories/interfaces/message-repo.interface";
 
 @Injectable()
 export class ChatSocketService implements IChatSocketService {
@@ -22,7 +23,9 @@ export class ChatSocketService implements IChatSocketService {
         @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
         private readonly _providerRepository: IProviderRepository,
         @Inject(ADMIN_REPOSITORY_INTERFACE_NAME)
-        private readonly _adminRepository: IAdminRepository
+        private readonly _adminRepository: IAdminRepository,
+        @Inject(MESSAGE_REPOSITORY_INTERFACE_NAME)
+        private readonly _messageRepository: IMessagesRepository
     ) { }
 
     private async _findUserByType(type: UserType, id: Types.ObjectId) {
@@ -65,8 +68,8 @@ export class ChatSocketService implements IChatSocketService {
             },
             $expr: { $eq: [{ $size: '$participants' }, 2], }
         });
- 
-        this.logger.debug('chats');
+
+        const messageCount = await this._messageRepository.count({ isRead: false });
 
         const result: IChatData[] = await Promise.all(
             chats.map(async (chat): Promise<IChatData> => {
@@ -93,7 +96,8 @@ export class ChatSocketService implements IChatSocketService {
                     createdAt: chat.createdAt,
                     lastMessage: chat.lastMessage ?? '',
                     receiver: filteredReceiverDetails,
-                    lastSeenAt: chat.lastSeenAt
+                    lastSeenAt: chat.lastSeenAt,
+                    totalMessages: messageCount
                 };
             })
         );
@@ -138,4 +142,3 @@ export class ChatSocketService implements IChatSocketService {
     }
 }
 
- 

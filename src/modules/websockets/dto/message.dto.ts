@@ -1,10 +1,14 @@
-import { IsDefined, IsIn, IsNotEmpty, IsString } from "class-validator";
+import { IsDefined, IsIn, IsNotEmpty, IsOptional, IsString } from "class-validator";
 import { UserType } from "src/modules/auth/dtos/login.dto";
 
 export class GetMessagesDto {
-    @IsDefined()
+    @IsNotEmpty()
     @IsString()
     chatId: string;
+
+    @IsOptional()
+    @IsString()
+    beforeMessageId: string;
 }
 
 export class SendMessageDto {

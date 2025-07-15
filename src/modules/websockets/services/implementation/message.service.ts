@@ -3,7 +3,7 @@ import { MESSAGE_REPOSITORY_INTERFACE_NAME } from "src/core/constants/repository
 import { IMessagesRepository } from "src/core/repositories/interfaces/message-repo.interface";
 import { IMessageService } from "../interface/message-service.interface";
 import { MessageType, IMessage, ICreateMessage } from "src/core/entities/interfaces/message.entity.interface";
-import { Types } from "mongoose";
+import { ObjectId, Types } from "mongoose";
 import { IResponse } from "src/core/misc/response.util";
 
 @Injectable()
@@ -23,22 +23,51 @@ export class MessageService implements IMessageService {
         });
     }
 
-    async getAllMessage(chatId: string): Promise<IResponse<IMessage[]>> {
+    async getAllMessage(chatId: string, beforeMessageId?: string): Promise<IResponse<IMessage[]>> {
+        const objectId = new Types.ObjectId(chatId);
+        const filter: any = { chatId: objectId };
+
+        // Apply pagination filter if beforeMessageId is passed
+        if (beforeMessageId) {
+            const beforeMsg = await this._messageRepository.findOne({ _id: new Types.ObjectId(beforeMessageId) });
+            if (beforeMsg) {
+                filter.createdAt = {
+                    $lt: beforeMsg.createdAt
+                }
+            }
+        }
+
+        // Fetch the messages with filter applied
         const messages = await this._messageRepository.find(
-            {
-                chatId: new Types.ObjectId(chatId)
-            },
+            filter,
             {
                 sort: { createdAt: -1 },
-                limit: 10,
-            });
+                limit: 10
+            }
+        );
 
+        // Identify unread messages
+        const unreadMessageIds = messages
+            .filter(msg => !msg.isRead)
+            .map(msg => msg.id);
+
+        // Update isRead = true in bulk
+        if (unreadMessageIds.length > 0) {
+            await this._messageRepository.updateMany(
+                { _id: { $in: unreadMessageIds.map(id => new Types.ObjectId(id)) } },
+                { $set: { isRead: true } }
+            );
+        } 
+
+        // Reverse for chronological order (oldest first)
         const orderedMessages = messages.reverse();
 
         return {
-            success: true,
-            message: !!orderedMessages ? 'Messages fetched successfully.' : 'No messages found for this chat.',
+            success: true, 
+            message: orderedMessages.length > 0
+                ? 'Messages fetched and updated successfully.'
+                : 'No messages found for this chat.', 
             data: orderedMessages
-        }
+        };
     }
 }

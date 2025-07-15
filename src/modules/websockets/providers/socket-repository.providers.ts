@@ -14,7 +14,7 @@ import { CustomerDocument } from "src/core/schema/customer.schema";
 import { MessageDocument } from "src/core/schema/message.schema";
 import { ProviderDocument } from "src/core/schema/provider.schema";
 
-export const socketRespositoryProviders: Provider[] = [
+export const socketRepositoryProviders: Provider[] = [
     {
         provide: CUSTOMER_REPOSITORY_INTERFACE_NAME,
         useFactory: (customerModel: Model<CustomerDocument>) =>
@@ -45,4 +45,4 @@ export const socketRespositoryProviders: Provider[] = [
             new MessageRepository(messageModel),
         inject: [getModelToken(MESSAGE_MODEL_NAME)]
     }
-]
+];
