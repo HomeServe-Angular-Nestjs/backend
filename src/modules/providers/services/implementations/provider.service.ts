@@ -1,30 +1,27 @@
-import { BadRequestException, Inject, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { IProviderServices } from '../interfaces/provider-service.interface';
-import { PROVIDER_REPOSITORY_INTERFACE_NAME } from '../../../../core/constants/repository.constant';
+import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME } from '../../../../core/constants/repository.constant';
 import { IProviderRepository } from '../../../../core/repositories/interfaces/provider-repo.interface';
-import { IDoc, IProvider } from '../../../../core/entities/interfaces/user.entity.interface';
+import { IFetchReviews, IProvider } from '../../../../core/entities/interfaces/user.entity.interface';
 import { CloudinaryService } from '../../../../configs/cloudinary/cloudinary.service';
 import { FilterDto, SlotDto, UpdateBioDto, UpdateDefaultSlotsDto } from '../../dtos/provider.dto';
 import { IResponse } from 'src/core/misc/response.util';
-import { NotFoundError } from 'rxjs';
 import { ErrorMessage } from 'src/core/enum/error.enum';
+import { ICustomerRepository } from 'src/core/repositories/interfaces/customer-repo.interface';
 
 @Injectable()
 export class ProviderServices implements IProviderServices {
   private readonly logger = new Logger(ProviderServices.name);
 
   constructor(
+    private _cloudinaryService: CloudinaryService,
     @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
     private _providerRepository: IProviderRepository,
-    private _cloudinaryService: CloudinaryService,
+    @Inject(CUSTOMER_REPOSITORY_INTERFACE_NAME)
+    private _customerService: ICustomerRepository,
   ) { }
 
-  /**
-   * Retrieves all providers from the database.
-   *
-   * @returns {Promise<IProvider[]>} List of all provider documents.
-   */
   async getProviders(filter?: FilterDto): Promise<IProvider[]> {
     const query: { [key: string]: any } = { isDeleted: false };
 
@@ -43,13 +40,6 @@ export class ProviderServices implements IProviderServices {
     return await this._providerRepository.find(query);
   }
 
-  /**
-   * Fetches a single provider by ID.
-   *
-   * @param {string} id - The unique identifier of the provider.
-   * @returns {Promise<IProvider>} The provider document if found.
-   * @throws {NotFoundException} If the provider is not found.
-   */
   async fetchOneProvider(id: string): Promise<IProvider> {
     const result = await this._providerRepository.findOne({ _id: id });
 
@@ -59,15 +49,7 @@ export class ProviderServices implements IProviderServices {
     return result;
   }
 
-  /**
-   * Performs a full update on the provider's data including avatar upload if a file is provided.
-   *
-   * @param {string} id - The unique identifier of the provider.
-   * @param {Partial<IProvider>} updateData - The data to update the provider with.
-   * @param {Express.Multer.File} [file] - Optional avatar image file.
-   * @returns {Promise<Provider>} The updated provider document.
-   * @throws {NotFoundException} If the provider or avatar upload fails.
-   */
+  // Performs a full update on the provider's data including avatar upload if a file is provided.
   async bulkUpdateProvider(id: string, updateData: Partial<IProvider>, file?: Express.Multer.File,): Promise<IProvider> {
     if (file) {
       const response = await this._cloudinaryService.uploadImage(file);
@@ -99,14 +81,6 @@ export class ProviderServices implements IProviderServices {
     return updatedProvider;
   }
 
-  /**
-   * Partially updates provider information.
-   *
-   * @param {string} id - The provider's unique ID.
-   * @param {Partial<IProvider>} updateData - The fields to update.
-   * @returns {Promise<IProvider>} The updated provider document.
-   * @throws {NotFoundException} If the provider is not found.
-   */
   async partialUpdate(id: string, updateData: Partial<IProvider>): Promise<IProvider> {
     const updatedProvider = await this._providerRepository.findOneAndUpdate(
       { _id: id },
@@ -121,14 +95,6 @@ export class ProviderServices implements IProviderServices {
     return updatedProvider;
   }
 
-  /**
-   * Appends a default slot to the provider's schedule.
-   *
-   * @param {UpdateDefaultSlotsDto} slot - The slot data to be added.
-   * @param {string} providerId - The provider's unique ID.
-   * @returns {Promise<IProvider>} The updated provider document.
-   * @throws {BadRequestException | NotFoundException} If update fails.
-   */
   async updateDefaultSlot(slot: SlotDto, providerId: string): Promise<IProvider> {
     const updatedProvider = await this._providerRepository.findOneAndUpdate(
       { _id: providerId },
@@ -140,18 +106,9 @@ export class ProviderServices implements IProviderServices {
       throw new NotFoundException(`Provider with ID ${providerId} found`);
     }
 
-    this.logger.debug(updatedProvider);
-
     return updatedProvider;
   }
 
-  /**
-  * Deletes all default slots associated with a provider.
-  *
-  * @param {string} id - The provider's unique ID.
-  * @returns {Promise<void>} Resolves if deletion is successful.
-  * @throws {NotFoundException | Error} If provider is not found or update fails.
-  */
   async deleteDefaultSlot(id: string): Promise<void> {
     if (!id) {
       throw new NotFoundException(`Provider with ID ${id} not found`);
@@ -257,5 +214,48 @@ export class ProviderServices implements IProviderServices {
       data: filtered
     }
   }
+
+
+  async getReviews(providerId: string): Promise<IResponse> {
+
+    const provider = await this._providerRepository.findById(providerId);
+    if (!provider) {
+      throw new NotFoundException(ErrorMessage.PROVIDER_NOT_FOUND_WITH_ID, providerId);
+    }
+
+    const reviews = provider.reviews;
+
+    if (reviews.length === 0) {
+      return {
+        success: true,
+        message: 'No reviews found'
+      }
+    }
+
+    const enrichedReviews: IFetchReviews[] = await Promise.all(
+      reviews.map(async review => {
+        const customer = await this._customerService.findById(review.reviewedBy);
+
+        if (!customer) {
+          throw new NotFoundException(ErrorMessage.CUSTOMER_NOT_FOUND_WITH_ID, review.reviewedBy);
+        }
+
+        return {
+          avatar: customer.avatar,
+          name: customer.fullname ?? customer.username,
+          avgRating: provider.avgRating,
+          writtenAt: review.writtenAt,
+          desc: review.desc,
+        }
+      })
+    );
+
+    return {
+      success: true,
+      message: 'Review Successfully fetched.',
+      data: enrichedReviews
+    }
+  }
+
 
 }

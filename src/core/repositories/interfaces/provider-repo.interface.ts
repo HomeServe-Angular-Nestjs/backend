@@ -1,7 +1,7 @@
 import { IBaseRepository } from '../base/interfaces/base-repo.interface';
 import { ProviderDocument } from '../../schema/provider.schema';
 import { FilterQuery } from 'mongoose';
-import { IProvider } from 'src/core/entities/interfaces/user.entity.interface';
+import { IProvider, IReview } from 'src/core/entities/interfaces/user.entity.interface';
 
 export interface IProviderRepository
   extends IBaseRepository<IProvider, ProviderDocument> {
@@ -10,4 +10,5 @@ export interface IProviderRepository
   count(filter?: FilterQuery<ProviderDocument>): Promise<number>;
   isExists(filter: FilterQuery<ProviderDocument>): Promise<boolean>
   getCurrentRatingCountAndAverage(providerId: string): Promise<{ currentRatingCount: number, currentRatingAvg: number } | null>
+  getReviews(_id: string): Promise<IReview[]>;
 }

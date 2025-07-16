@@ -49,6 +49,7 @@ export interface IReview {
   desc: string;
   writtenAt: Date;
   isReported: boolean;
+  rating: number;
 }
 
 export type VerificationStatusType = 'pending' | 'verified' | 'rejected';
@@ -107,4 +108,12 @@ export interface IApprovalTableDetails {
   documentCount: number;
   date: Date;
   verificationStatus: VerificationStatusType
-} 
+}
+
+export interface IFetchReviews {
+  avatar: string;
+  name: string;
+  avgRating: number;
+  writtenAt: Date;
+  desc: string;
+}

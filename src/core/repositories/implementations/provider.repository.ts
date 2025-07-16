@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Provider } from '../../entities/implementation/provider.entity';
+import { Provider, Review } from '../../entities/implementation/provider.entity';
 import { BaseRepository } from '../base/implementations/base.repository';
 import { ProviderDocument } from '../../schema/provider.schema';
 import { IProviderRepository } from '../interfaces/provider-repo.interface';
@@ -8,7 +8,7 @@ import {
   PROVIDER_MODEL_NAME,
 } from '../../constants/model.constant';
 import { FilterQuery, Model, Types } from 'mongoose';
-import { IProvider } from '../../entities/interfaces/user.entity.interface';
+import { IProvider, IReview } from '../../entities/interfaces/user.entity.interface';
 
 @Injectable()
 export class ProviderRepository extends BaseRepository<Provider, ProviderDocument> implements IProviderRepository {
@@ -40,10 +40,19 @@ export class ProviderRepository extends BaseRepository<Provider, ProviderDocumen
 
   async getCurrentRatingCountAndAverage(providerId: string): Promise<{ currentRatingCount: number, currentRatingAvg: number } | null> {
     const result = await this._providerModel.findOne({ _id: providerId }, { _id: -1, ratingCount: 1, avgRating: 1 });
-
     return result ? { currentRatingAvg: result.avgRating, currentRatingCount: result.ratingCount } : null
   }
 
+  async getReviews(_id: string): Promise<IReview[]> {
+    const provider = await this._providerModel.findOne({ _id });
+    return (provider?.reviews || []).map(r => new Review({
+      id: (r._id)?.toString(),
+      desc: r.desc,
+      isReported: r.isReported,
+      reviewedBy: r.reviewedBy,
+      writtenAt: r.writtenAt,
+    })) ?? []
+  }
 
   protected toEntity(doc: ProviderDocument): Provider {
     return new Provider({

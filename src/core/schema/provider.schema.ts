@@ -7,11 +7,16 @@ import { IDoc, IExpertise, ILanguage, VerificationStatusType } from '../entities
 
 @Schema()
 export class Review {
+  _id?: Types.ObjectId;
+
   @Prop({ required: true })
   reviewedBy: string;
 
   @Prop({ required: true })
   desc: string;
+
+  @Prop({ required: true })
+  rating: number;
 
   @Prop({ default: () => new Date() })
   writtenAt: Date;

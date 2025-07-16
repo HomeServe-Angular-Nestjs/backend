@@ -2,7 +2,7 @@ import { Inject, Injectable, InternalServerErrorException, Logger, NotFoundExcep
 import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SERVICE_OFFERED_REPOSITORY_NAME } from "../../../../core/constants/repository.constant";
 import { ICustomerRepository } from "../../../../core/repositories/interfaces/customer-repo.interface";
 import { ICustomerService } from "../interfaces/customer-service.interface";
-import { ICustomer, IReview, ISearchedProviders } from "../../../../core/entities/interfaces/user.entity.interface";
+import { ICustomer, IFetchReviews, IReview, ISearchedProviders } from "../../../../core/entities/interfaces/user.entity.interface";
 import { ChangePasswordDto, SubmitReviewDto, UpdateProfileDto, UpdateSavedProvidersDto } from "../../dtos/customer.dto";
 import { ARGON_UTILITY_NAME, UPLOAD_UTILITY_NAME } from "../../../../core/constants/utility.constant";
 import { IResponse } from "src/core/misc/response.util";
@@ -249,12 +249,13 @@ export class CustomerService implements ICustomerService {
         }
     }
 
-    async submitReview(customerId: string, dto: SubmitReviewDto): Promise<IResponse<IReview>> {
+    async submitReview(customerId: string, dto: SubmitReviewDto): Promise<IResponse<IFetchReviews>> {
         const review: IReview = {
             desc: dto.desc,
             isReported: false,
             reviewedBy: customerId,
-            writtenAt: new Date()
+            writtenAt: new Date(),
+            rating: dto.ratings,
         };
 
         const currentRating = await this._providerRepository.getCurrentRatingCountAndAverage(dto.providerId);
@@ -287,6 +288,8 @@ export class CustomerService implements ICustomerService {
             )
         ]);
 
+
+
         if (!updatedProvider) {
             throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
         }
@@ -295,10 +298,19 @@ export class CustomerService implements ICustomerService {
             throw new NotFoundException(ErrorMessage.CUSTOMER_NOT_FOUND_WITH_ID, customerId);
         }
 
+        const enrichedReview: IFetchReviews = {
+            avatar: updatedCustomer.avatar,
+            name: updatedCustomer.fullname ?? updatedCustomer.username,
+            avgRating: newAverageRating,
+            desc: review.desc,
+            writtenAt: review.writtenAt,
+        }
+
+        this.logger.debug(enrichedReview);
         return {
             success: true,
             message: 'Review Submitted successfully.',
-            data: review
+            data: enrichedReview
         }
     }
 }

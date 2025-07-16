@@ -32,3 +32,15 @@ export class Provider extends BaseUserEntity implements IProvider {
     Object.assign(this, partial);
   }
 }
+
+export class Review {
+  id: string;
+  reviewedBy: string;
+  desc: string;
+  writtenAt: Date;
+  isReported: boolean;
+
+  constructor(review: Partial<Review>) {
+    Object.assign(this, review);
+  }
+}

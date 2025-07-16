@@ -11,5 +11,6 @@ export interface IProviderServices {
   deleteDefaultSlot(id: string): Promise<void>;
   updateBio(providerId: string, dto: UpdateBioDto): Promise<IResponse<IProvider>>;
   uploadCertificate(providerId: string, label: string, file: Express.Multer.File): Promise<IResponse<IProvider>>;
-  removeCertificate(providerId: string, docId: string): Promise<IResponse<IProvider>>
+  removeCertificate(providerId: string, docId: string): Promise<IResponse<IProvider>>;
+  getReviews(providerId: string): Promise<IResponse>;
 }

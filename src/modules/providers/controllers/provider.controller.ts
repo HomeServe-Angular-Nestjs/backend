@@ -34,12 +34,6 @@ export class ProviderController {
         private readonly _providerServices: IProviderServices,
     ) { }
 
-    /**
- * Fetches all providers.
- *
- * @returns {Promise<Provider[]>} A list of provider documents.
- * @throws {InternalServerErrorException} If any error occurs while fetching.
- */
     @Get('fetch_providers')
     async fetchProviders(@Query() filter: FilterDto): Promise<IProvider[]> {
         try {
@@ -50,14 +44,6 @@ export class ProviderController {
         }
     }
 
-    /**
-     * Fetches a single provider by ID (either from query or from authenticated user).
-     *
-     * @param {Request} req - The request object containing user details.
-     * @param {{ id: string | null }} query - Optional query parameter for provider ID.
-     * @returns {Promise<Provider>} The requested provider document.
-     * @throws {InternalServerErrorException} If any error occurs while fetching.
-     */
     @Get('fetch_one_provider')
     async fetchOneProvider(@Req() req: Request, @Query() query: { id: string | null }): Promise<IProvider> {
         try {
@@ -73,15 +59,7 @@ export class ProviderController {
         }
     }
 
-    /**
-     * Performs a bulk update of provider data, including optional avatar upload.
-     *
-     * @param {Request} req - Request containing authenticated user.
-     * @param {string} dto - JSON stringified provider data in the body.
-     * @param {Express.Multer.File} file - Optional uploaded avatar file.
-     * @returns {Promise<Provider>} The updated provider document.
-     * @throws {InternalServerErrorException} If update fails.
-     */
+    // Performs a bulk update of provider data, including optional avatar upload.
     @Patch('update_provider')
     @UseInterceptors(FileInterceptor('providerAvatar'))
     async bulkUpdateProvider(
@@ -104,14 +82,6 @@ export class ProviderController {
         }
     }
 
-    /**
-     * Partially updates a provider by ID.
-     *
-     * @param {Partial<IProvider>} dto - The request body containing the provider's `id` and fields to update.
-     * @returns {Promise<IProvider>} The updated provider document.
-     * @throws {BadRequestException} If the `id` is missing from the request.
-     * @throws {InternalServerErrorException} If the update operation fails.
-     */
     @Patch('partial_update')
     async partialUpdate(@Body() dto: Partial<IProvider>): Promise<IProvider> {
         try {
@@ -127,14 +97,6 @@ export class ProviderController {
         }
     }
 
-    /**
-     * Updates the default slots configuration for the authenticated provider.
-     *
-     * @param {Request} req - Request object containing user payload.
-     * @param {UpdateDefaultSlotsDto} dto - DTO with updated default slot values.
-     * @returns {Promise<IProvider>} Result of the update operation.
-     * @throws {InternalServerErrorException} If update fails.
-     */
     @Patch('default_slots')
     async updateDefaultSlot(@Req() req: Request, @Body() dto: SlotDto): Promise<IProvider> {
         try {
@@ -152,13 +114,6 @@ export class ProviderController {
         }
     }
 
-    /**
-    * Deletes the default slot settings for the authenticated provider.
-    *
-    * @param {Request} req - Request object containing user payload.
-    * @returns {Promise<void>} Resolves on success.
-    * @throws {InternalServerErrorException} If deletion fails.
-    */
     @Delete('default_slots')
     async deleteDefaultSlot(@Req() req: Request): Promise<void> {
         try {
@@ -228,6 +183,16 @@ export class ProviderController {
             // return await this._providerServices.uploadCertificate(user.sub, label, file);
         } catch (err) {
             this.logger.error(`Error uploading provider certificate: ${err.message}`, err.stack);
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Get('reviews')
+    async getReviews(@Query() { providerId }: { providerId: string }) {
+        try {
+            return await this._providerServices.getReviews(providerId);
+        } catch (err) {
+            this.logger.error(`Error fetching provider reviews: ${err.message}`, err.stack);
             throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
         }
     }
