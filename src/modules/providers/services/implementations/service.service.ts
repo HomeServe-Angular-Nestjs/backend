@@ -1,39 +1,14 @@
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  InternalServerErrorException,
-  NotFoundException,
-  Logger,
-} from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException, Logger, } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { IServiceFeatureService } from '../interfaces/service-service.interface';
-import {
-  CreateServiceDto,
-  CreateSubServiceDto,
-  FilterServiceDto,
-  ProviderServiceFilterWithPaginationDto,
-  RemoveSubServiceDto,
-  ToggleServiceStatusDto,
-  ToggleSubServiceStatusDto,
-  UpdateServiceDto,
-  UpdateSubServiceWrapperDto,
-} from '../../dtos/service.dto';
+import { CreateServiceDto, CreateSubServiceDto, FilterServiceDto, ProviderServiceFilterWithPaginationDto, RemoveSubServiceDto, ToggleServiceStatusDto, ToggleSubServiceStatusDto, UpdateServiceDto, } from '../../dtos/service.dto';
 import { IProviderRepository } from '../../../../core/repositories/interfaces/provider-repo.interface';
-import {
-  PROVIDER_REPOSITORY_INTERFACE_NAME,
-  SERVICE_OFFERED_REPOSITORY_NAME,
-} from '../../../../core/constants/repository.constant';
+import { PROVIDER_REPOSITORY_INTERFACE_NAME, SERVICE_OFFERED_REPOSITORY_NAME, } from '../../../../core/constants/repository.constant';
 import { UPLOAD_UTILITY_NAME } from '../../../../core/constants/utility.constant';
 import { IUploadsUtility } from '../../../../core/utilities/interface/upload.utility.interface';
 import { IServiceOfferedRepository } from '../../../../core/repositories/interfaces/serviceOffered-repo.interface';
-import {
-  IService,
-  IServicesWithPagination,
-  ISubService,
-} from '../../../../core/entities/interfaces/service.entity.interface';
+import { IGetServiceTitle, IService, IServicesWithPagination, ISubService, } from '../../../../core/entities/interfaces/service.entity.interface';
 import { IResponse } from 'src/core/misc/response.util';
-import { SubService } from 'src/core/entities/implementation/service.entity';
 
 @Injectable()
 export class ServiceFeatureService implements IServiceFeatureService {
@@ -91,7 +66,7 @@ export class ServiceFeatureService implements IServiceFeatureService {
 
       return {
         success: true,
-        message: 'Service created successfylly.',
+        message: 'Service created successfully.',
         data: updatedProvider.servicesOffered
       };
 
@@ -377,7 +352,7 @@ export class ServiceFeatureService implements IServiceFeatureService {
 
     return {
       success: !!updatedService,
-      message: !!updatedService ? 'Service Uppdated successfully.' : 'Failed to update',
+      message: !!updatedService ? 'Service Updated successfully.' : 'Failed to update',
     }
   }
 
@@ -396,6 +371,17 @@ export class ServiceFeatureService implements IServiceFeatureService {
     return {
       success: !!updatedService,
       message: !!updatedService ? 'Sub service updated successfully' : 'Failed to update'
+    }
+  }
+
+  async getServiceTitles(): Promise<IResponse<IGetServiceTitle[]>> {
+
+    const titles = await this._serviceOfferedRepository.getServiceTitles();
+
+    return {
+      success: true,
+      message: 'Service titles fetched success fully',
+      data: titles
     }
   }
 

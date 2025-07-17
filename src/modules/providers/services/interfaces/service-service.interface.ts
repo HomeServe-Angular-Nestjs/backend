@@ -1,6 +1,6 @@
 import { IResponse } from 'src/core/misc/response.util';
-import { IService, IServicesWithPagination, ISubService } from '../../../../core/entities/interfaces/service.entity.interface';
-import { CreateServiceDto, FilterServiceDto, ProviderServiceFilterWithPaginationDto, RemoveSubServiceDto, ToggleServiceStatusDto, ToggleSubServiceStatusDto, UpdateServiceDto, UpdateSubServiceDto, UpdateSubServiceWrapperDto } from '../../dtos/service.dto';
+import { IGetServiceTitle, IService, IServicesWithPagination } from '../../../../core/entities/interfaces/service.entity.interface';
+import { CreateServiceDto, FilterServiceDto, ProviderServiceFilterWithPaginationDto, RemoveSubServiceDto, ToggleServiceStatusDto, ToggleSubServiceStatusDto, UpdateServiceDto } from '../../dtos/service.dto';
 
 export interface IServiceFeatureService {
   createService(providerID: string, dto: CreateServiceDto): Promise<IResponse<string[]>>;
@@ -12,4 +12,5 @@ export interface IServiceFeatureService {
   toggleSubServiceStatus(dto: ToggleSubServiceStatusDto): Promise<boolean>;
   removeService(providerID: string, serviceId: string): Promise<IResponse>;
   removeSubService(dto: RemoveSubServiceDto): Promise<IResponse>;
+  getServiceTitles(): Promise<IResponse<IGetServiceTitle[]>>;
 }

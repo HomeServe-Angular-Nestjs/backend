@@ -37,8 +37,9 @@ import {
 import { IPayload } from '../../../core/misc/payload.interface';
 import { IService } from '../../../core/entities/interfaces/service.entity.interface';
 import { IResponse } from 'src/core/misc/response.util';
+import { ErrorMessage } from 'src/core/enum/error.enum';
 
-@Controller()
+@Controller('provider')
 export class ServiceController {
   private readonly logger = new Logger(ServiceController.name);
 
@@ -49,21 +50,17 @@ export class ServiceController {
 
   /**
    * Handles the creation of a new service along with its associated sub - services and image uploads.
-   * @param req - The HTTP request object provided by Express.
-   * @param res - The HTTP response object provided by Express.
    * @param body - The parsed body of the request, expected to include service details and sub - services.
    * @param files - An array of uploaded files(service image + sub - service images).
-   * @returns - void
    */
-
-  @Post('provider/service')
+  @Post('service')
   @UseInterceptors(AnyFilesInterceptor())
-  async creatService(@Req() req: Request, @Body() body: CreateServiceDto, @UploadedFiles() files: Express.Multer.File[]): Promise<IResponse<string[]>> {
+  async createService(@Req() req: Request, @Body() body: CreateServiceDto, @UploadedFiles() files: Express.Multer.File[]): Promise<IResponse<string[]>> {
     try {
 
       const user = req.user as IPayload;
       if (!user.sub) {
-        throw new BadRequestException('user id is missing.');
+        throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
       }
 
       const serviceImageFile = files.find((f) => f.fieldname === 'image');
@@ -107,11 +104,11 @@ export class ServiceController {
       return await this._serviceFeature.createService(user.sub, serviceData);
     } catch (err) {
       this.logger.error(`Error creating service: ${err.message}`, err.stack);
-      throw new InternalServerErrorException('Something happened while creating new service');
+      throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
     }
   }
 
-  @Get(['provider/service'])
+  @Get(['service'])
   async getOfferedServices(@Req() req: Request, @Query() dto: ProviderServiceFilterWithPaginationDto) {
     try {
       const user = req.user as IPayload;
@@ -123,24 +120,20 @@ export class ServiceController {
       return await this._serviceFeature.fetchServices(user.sub, page, filter);
     } catch (err) {
       console.error(err);
-      throw new InternalServerErrorException(
-        'Something happened while fetching offered services',
-      );
+      throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
     }
   }
 
-  @Get(['provider/offered_service'])
+  @Get(['offered_service'])
   async getOfferedService(@Query() query: { id: string }) {
     try {
       return this._serviceFeature.fetchService(query.id);
     } catch (err) {
-      throw new InternalServerErrorException(
-        'Something happened while fetching offered services',
-      );
+      throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
     }
   }
 
-  @Put(['provider/service'])
+  @Put(['service'])
   @UseInterceptors(AnyFilesInterceptor())
   async updateService(@Body() dto: any, @UploadedFiles() files: Express.Multer.File[]): Promise<IResponse<IService>> {
     try {
@@ -152,22 +145,12 @@ export class ServiceController {
 
       return await this._serviceFeature.updateService(prepareDto);
     } catch (err) {
-      this.logger.error(err);
-      if (err instanceof NotFoundException) {
-        throw new NotFoundException(err.message);
-      }
-
-      if (err instanceof BadRequestException) {
-        throw new BadRequestException(err.message);
-      }
-
-      throw new InternalServerErrorException(
-        'An error occurred while updating the service',
-      );
+      this.logger.error('Error updating services: ', err.message, err.stack);
+      throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
     }
   }
 
-  @Get('provider/filter_service')
+  @Get('filter_service')
   async fetchFilteredServices(@Query() dto: FilterServiceDto): Promise<IService[]> {
     try {
       const { id } = dto;
@@ -178,57 +161,67 @@ export class ServiceController {
       return await this._serviceFeature.fetchFilteredServices(id, dto);
     } catch (err) {
       this.logger.error(`Error fetching filtered service: ${err.message}`, err.stack);
-      throw new InternalServerErrorException('Failed to fetch filtered service');
+      throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
     }
   }
 
-  @Patch('provider/service/status')
+  @Patch('service/status')
   async toggleServiceStatus(@Body() dto: ToggleServiceStatusDto) {
     try {
       if (!dto.id || dto.isActive === undefined) {
-        throw new BadRequestException('Required data is missinng');
+        throw new BadRequestException('Required data is missing');
       }
 
       return await this._serviceFeature.toggleServiceStatus(dto)
     } catch (err) {
       this.logger.error(`Error toggling service status for Service ID ${dto.id}: ${err.message}`, err.stack);
-      throw new InternalServerErrorException('Failed to toggle service status');
+      throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
     }
   }
 
-  @Patch('provider/service/sub_status')
+  @Patch('service/sub_status')
   async toggleSubServiceStatus(@Body() dto: ToggleSubServiceStatusDto) {
     try {
       return await this._serviceFeature.toggleSubServiceStatus(dto);
     } catch (err) {
-      this.logger.error(`Error toggling service status for Subervice ID ${dto.subService.id}: ${err.message}`, err.stack);
-      throw new InternalServerErrorException('Failed to toggle service status');
+      this.logger.error(`Error toggling service status for SubService ID ${dto.subService.id}: ${err.message}`, err.stack);
+      throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
     }
   }
 
-  @Patch('provider/service/remove')
+  @Patch('service/remove')
   async removeService(@Req() req: Request, @Body() dto: RemoveServiceDto) {
     try {
       const user = req.user as IPayload;
       if (!user.sub) {
-        throw new BadRequestException('User id is missing.');
+        throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
       }
 
       return await this._serviceFeature.removeService(user.sub, dto.serviceId);
 
     } catch (err) {
       this.logger.error(`Error removing service : ${err.message}`, err.stack);
-      throw new InternalServerErrorException('Failed remove service');
+      throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
     }
   }
 
-  @Patch('provider/service/remove_sub')
+  @Patch('service/remove_sub')
   async removeSubService(@Body() dto: RemoveSubServiceDto) {
     try {
       return await this._serviceFeature.removeSubService(dto);
     } catch (err) {
       this.logger.error(`Error removing sub service : ${err.message}`, err.stack);
-      throw new InternalServerErrorException('Failed to remove sub service.');
+      throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  @Get('service/titles')
+  async getServiceTitle() {
+    try {
+      return await this._serviceFeature.getServiceTitles();
+    } catch (err) {
+      this.logger.error(`Error fetching service titles : ${err.message}`, err.stack);
+      throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
     }
   }
 

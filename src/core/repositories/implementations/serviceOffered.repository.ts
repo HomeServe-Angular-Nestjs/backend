@@ -6,6 +6,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { SERVICE_OFFERED_MODEL_NAME } from '../../constants/model.constant';
 import { FilterQuery, Model, Types } from 'mongoose';
 import { IServiceOfferedRepository } from '../interfaces/serviceOffered-repo.interface';
+import { IGetServiceTitle } from 'src/core/entities/interfaces/service.entity.interface';
 
 @Injectable()
 export class ServiceOfferedRepository extends BaseRepository<ServiceOffered, ServiceDocument> implements IServiceOfferedRepository {
@@ -18,6 +19,14 @@ export class ServiceOfferedRepository extends BaseRepository<ServiceOffered, Ser
 
   async count(filter: FilterQuery<ServiceDocument>): Promise<number> {
     return await this._serviceModel.countDocuments(filter);
+  }
+
+  async getServiceTitles(): Promise<IGetServiceTitle[]> {
+    const result = await this._serviceModel.find({}, { title: -1 });
+    return (result ?? []).map(doc => ({
+      id: doc.id,
+      title: doc.title
+    }));
   }
 
   protected toEntity(doc: ServiceDocument): ServiceOffered {

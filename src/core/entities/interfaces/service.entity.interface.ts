@@ -37,3 +37,8 @@ export interface ICustomerSearchServices {
   provider: string;
   offeredServiceIds: string[];
 }
+
+export interface IGetServiceTitle {
+  id: string;
+  title: string;
+}
