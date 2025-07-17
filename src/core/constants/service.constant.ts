@@ -1,6 +1,7 @@
 export const ADMIN_SEED_SERVICE_NAME = 'ISeedAdminService';
 export const ADMIN_USER_MANAGEMENT_SERVICE_NAME = 'IAdminUserManagementService';
-export const ADMIN_APPROVAL_SERVICE_NAME = 'IAdminApprovalService'
+export const ADMIN_APPROVAL_SERVICE_NAME = 'IAdminApprovalService';
+export const ADMIN_BOOKINGS_SERVICE_NAME = 'IAdminBookingService';
 
 export const OTP_SERVICE_INTERFACE_NAME = 'IOtpService';
 export const SIGNUP_SERVICE_INTERFACE_NAME = 'ISignupService';

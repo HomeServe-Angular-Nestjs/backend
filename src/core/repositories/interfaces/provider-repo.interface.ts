@@ -10,5 +10,4 @@ export interface IProviderRepository
   count(filter?: FilterQuery<ProviderDocument>): Promise<number>;
   isExists(filter: FilterQuery<ProviderDocument>): Promise<boolean>
   getCurrentRatingCountAndAverage(providerId: string): Promise<{ currentRatingCount: number, currentRatingAvg: number } | null>
-  getReviews(_id: string): Promise<IReview[]>;
 }

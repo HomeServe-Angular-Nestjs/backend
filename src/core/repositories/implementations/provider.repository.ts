@@ -43,17 +43,6 @@ export class ProviderRepository extends BaseRepository<Provider, ProviderDocumen
     return result ? { currentRatingAvg: result.avgRating, currentRatingCount: result.ratingCount } : null
   }
 
-  async getReviews(_id: string): Promise<IReview[]> {
-    const provider = await this._providerModel.findOne({ _id });
-    return (provider?.reviews || []).map(r => new Review({
-      id: (r._id)?.toString(),
-      desc: r.desc,
-      isReported: r.isReported,
-      reviewedBy: r.reviewedBy,
-      writtenAt: r.writtenAt,
-    })) ?? []
-  }
-
   protected toEntity(doc: ProviderDocument): Provider {
     return new Provider({
       id: (doc._id as Types.ObjectId).toString(),

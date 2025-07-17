@@ -21,7 +21,7 @@ export class AdminUserController {
 
   constructor(
     @Inject(ADMIN_USER_MANAGEMENT_SERVICE_NAME)
-    private readonly _adminuserManagementService: IAdminUserManagementService
+    private readonly _adminUserManagementService: IAdminUserManagementService
 
   ) { }
 
@@ -33,7 +33,7 @@ export class AdminUserController {
       }
       const { page, ...filter } = dto;
 
-      return await this._adminuserManagementService.getusers(page, filter);
+      return await this._adminUserManagementService.getusers(page, filter);
     } catch (err) {
       this.logger.error(`Error fetching the customers: ${err.message}`, err.stack);
       throw new InternalServerErrorException('Failed fetching the customers');
@@ -49,7 +49,7 @@ export class AdminUserController {
         }
       }
 
-      return await this._adminuserManagementService.updateUserStatus(dto)
+      return await this._adminUserManagementService.updateUserStatus(dto)
     } catch (err) {
       this.logger.error(`Error updating user status: ${err.message}`, err.stack);
       throw new InternalServerErrorException('Failed updating user status');
@@ -65,7 +65,7 @@ export class AdminUserController {
         }
       }
 
-      return await this._adminuserManagementService.removeUser(dto)
+      return await this._adminUserManagementService.removeUser(dto)
     } catch (err) {
       this.logger.error(`Error removing user: ${err.message}`, err.stack);
       throw new InternalServerErrorException('Failed removing user');

@@ -281,14 +281,13 @@ export class CustomerService implements ICustomerService {
                 },
                 { new: true }
             ),
+            
             this._customerRepository.findOneAndUpdate(
                 { _id: customerId },
                 { $set: { isReviewed: true } },
                 { new: true }
             )
         ]);
-
-
 
         if (!updatedProvider) {
             throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
