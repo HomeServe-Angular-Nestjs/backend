@@ -1,5 +1,5 @@
 import { UserType } from '../../../../modules/auth/dtos/login.dto';
-import { IAddress } from '../../interfaces/user.entity.interface';
+import { ILocation } from '../../interfaces/user.entity.interface';
 import { IEntity } from './base-entity.entity.interface';
 
 export interface IBaseUserEntity extends IEntity {
@@ -14,5 +14,6 @@ export interface IBaseUserEntity extends IEntity {
   phone: string;
   googleId: string;
   type?: UserType;
-  location?: IAddress;
+  location?: ILocation;
+  address: string;
 }

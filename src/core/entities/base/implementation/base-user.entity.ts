@@ -1,4 +1,4 @@
-import { IAddress } from '../../interfaces/user.entity.interface';
+import { ILocation } from '../../interfaces/user.entity.interface';
 import { IBaseUserEntity } from '../interfaces/base-user.entity.interface';
 import { BaseEntity } from './base.entity';
 
@@ -11,9 +11,10 @@ export abstract class BaseUserEntity extends BaseEntity implements IBaseUserEnti
   avatar: string;
   isActive: boolean;
   isDeleted: boolean;
-  location?: IAddress;
+  location?: ILocation;
   lastLoginAt?: Date;
   googleId: string;
+  address: string;
 
   constructor(partial: Partial<BaseUserEntity>) {
     super(partial);

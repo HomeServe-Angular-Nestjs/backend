@@ -1,14 +1,15 @@
 import { Inject, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { IProviderServices } from '../interfaces/provider-service.interface';
-import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME } from '../../../../core/constants/repository.constant';
+import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SERVICE_OFFERED_REPOSITORY_NAME } from '../../../../core/constants/repository.constant';
 import { IProviderRepository } from '../../../../core/repositories/interfaces/provider-repo.interface';
 import { IFetchReviews, IProvider } from '../../../../core/entities/interfaces/user.entity.interface';
 import { CloudinaryService } from '../../../../configs/cloudinary/cloudinary.service';
-import { FilterDto, SlotDto, UpdateBioDto, UpdateDefaultSlotsDto } from '../../dtos/provider.dto';
+import { FilterDto, GetProvidersFromLocationSearch, SlotDto, UpdateBioDto, UpdateDefaultSlotsDto } from '../../dtos/provider.dto';
 import { IResponse } from 'src/core/misc/response.util';
 import { ErrorMessage } from 'src/core/enum/error.enum';
 import { ICustomerRepository } from 'src/core/repositories/interfaces/customer-repo.interface';
+import { IServiceOfferedRepository } from 'src/core/repositories/interfaces/serviceOffered-repo.interface';
 
 @Injectable()
 export class ProviderServices implements IProviderServices {
@@ -20,9 +21,11 @@ export class ProviderServices implements IProviderServices {
     private _providerRepository: IProviderRepository,
     @Inject(CUSTOMER_REPOSITORY_INTERFACE_NAME)
     private _customerService: ICustomerRepository,
+    @Inject(SERVICE_OFFERED_REPOSITORY_NAME)
+    private _serviceOfferedRepository: IServiceOfferedRepository
   ) { }
 
-  async getProviders(filter?: FilterDto): Promise<IProvider[]> {
+  async getProviders(filter?: FilterDto): Promise<IResponse<IProvider[]>> {
     const query: { [key: string]: any } = { isDeleted: false };
 
     if (filter?.search) {
@@ -37,7 +40,41 @@ export class ProviderServices implements IProviderServices {
       query.isCertified = filter.isCertified
     }
 
-    return await this._providerRepository.find(query);
+    const providers = await this._providerRepository.find(query);
+
+    return {
+      success: true,
+      message: 'Providers fetched successfully.',
+      data: providers
+    }
+  }
+
+  async getProvidersLocationBasedSearch(searchData: GetProvidersFromLocationSearch): Promise<IResponse<IProvider[]>> {
+    const [providers, services] = await Promise.all([
+      this._providerRepository.getProvidersBasedOnLocation(searchData.lng, searchData.lat),
+      this._serviceOfferedRepository.find(
+        {
+          $or: [
+            { title: { $regex: searchData.title, $options: 'i' } },
+            { 'subService.title': { $regex: searchData.title, $options: 'i' } }
+          ],
+          isDeleted: false,
+          isActive: true
+        }
+      )
+    ])
+
+    const targetServiceIds = new Set(services.map(service => service.id));
+
+    const searchedProviders = (providers ?? []).filter(provider =>
+      provider.servicesOffered.some(id => targetServiceIds.has(id))
+    );
+
+    return {
+      success: true,
+      message: 'Providers successfully fetched.',
+      data: searchedProviders
+    }
   }
 
   async fetchOneProvider(id: string): Promise<IProvider> {
@@ -145,7 +182,7 @@ export class ProviderServices implements IProviderServices {
     }
 
     return {
-      message: 'Updated successsfully',
+      message: 'Updated successfully',
       success: true,
       data: updatedProvider
     }

@@ -90,7 +90,7 @@ export class CustomerService implements ICustomerService {
                 id: prov.id,
                 avatar: prov.avatar,
                 name: prov.fullname ?? prov.username,
-                address: prov.location ? prov.location.address : ''
+                address: prov.address ?? ''
             }));
         }
 
@@ -281,7 +281,7 @@ export class CustomerService implements ICustomerService {
                 },
                 { new: true }
             ),
-            
+
             this._customerRepository.findOneAndUpdate(
                 { _id: customerId },
                 { $set: { isReviewed: true } },

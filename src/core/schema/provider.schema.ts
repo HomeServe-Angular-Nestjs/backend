@@ -151,3 +151,4 @@ export class ProviderDocument extends BaseUserDocument {
 }
 
 export const ProviderSchema = SchemaFactory.createForClass(ProviderDocument);
+ProviderSchema.index({ location: '2dsphere' });

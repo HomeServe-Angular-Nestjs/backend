@@ -13,9 +13,8 @@ export type Availability = {
   };
 };
 
-export interface IAddress {
+export interface ILocation {
   type: 'Point',
-  address: string,
   coordinates: [number, number];
 }
 

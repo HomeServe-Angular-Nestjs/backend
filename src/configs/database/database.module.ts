@@ -18,7 +18,6 @@ import {
   TRANSACTION_MODEL_NAME,
 } from '../../core/constants/model.constant';
 
-
 import { CustomerSchema } from '../../core/schema/customer.schema';
 import { OtpSchema } from '../../core/schema/otp.schema';
 import { ProviderSchema } from '../../core/schema/provider.schema';
@@ -45,6 +44,7 @@ import { SubscriptionSchema } from 'src/core/schema/subscription.schema';
           uri,
           retryAttempts: 5,
           retryDelay: 3000,
+          autoIndex: true,
           connectionFactory: (connection: Connection): Connection => {
             if (connection.readyState === ConnectionStates.connected) {
               console.log('Successfully connected to MongoDB');
@@ -60,6 +60,7 @@ import { SubscriptionSchema } from 'src/core/schema/subscription.schema';
           },
         };
       },
+
     }),
 
     MongooseModule.forFeature([
@@ -75,7 +76,6 @@ import { SubscriptionSchema } from 'src/core/schema/subscription.schema';
       { name: MESSAGE_MODEL_NAME, schema: MessageSchema },
       { name: PLAN_MODEL_NAME, schema: PlanSchema },
       { name: SUBSCRIPTION_MODEL_NAME, schema: SubscriptionSchema },
-
     ]),
   ],
   exports: [MongooseModule],

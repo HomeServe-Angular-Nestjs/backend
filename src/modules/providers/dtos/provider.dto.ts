@@ -1,6 +1,6 @@
 import { Optional } from "@nestjs/common";
 import { Transform, Type } from "class-transformer";
-import { IsBoolean, IsDefined, IsIn, IsNotEmpty, IsOptional, IsString, ValidateNested } from "class-validator";
+import { ArrayMaxSize, ArrayMinSize, IsArray, IsBoolean, IsDefined, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from "class-validator";
 
 
 export type FilterStatusType = true | false | 'all';
@@ -42,7 +42,6 @@ export class FilterDto {
     @IsBoolean()
     isCertified: boolean;
 }
-
 
 class ExpertiseDto {
     @IsDefined()
@@ -95,4 +94,36 @@ export class RemoveCertificateDto {
     @IsDefined()
     @IsString()
     docId: string;
+}
+
+export class GetProvidersFromLocationSearch {
+    @IsNotEmpty()
+    @IsNumber()
+    @Transform(({ value }) => {
+        if (!value) return null;
+        const num = Number(value);
+
+        if (isNaN(num)) {
+            throw new Error('Invalid coordinates format. Expected as number.');
+        }
+        return num;
+    })
+    lng: number;
+
+    @IsNotEmpty()
+    @IsNumber()
+    @Transform(({ value }) => {
+        if (!value) return null;
+        const num = Number(value);
+
+        if (isNaN(num)) {
+            throw new Error('Invalid coordinates format. Expected as number.');
+        }
+        return num;
+    })
+    lat: number;
+
+    @IsNotEmpty()
+    @IsString()
+    title: string;
 }

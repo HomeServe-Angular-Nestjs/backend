@@ -1,4 +1,4 @@
-import { IAddress, Availability, IDoc, IExpertise, ILanguage, IProvider, VerificationStatusType, IReview } from '../interfaces/user.entity.interface';
+import { Availability, IDoc, IExpertise, ILanguage, IProvider, VerificationStatusType, IReview } from '../interfaces/user.entity.interface';
 import { BaseUserEntity } from '../base/implementation/base-user.entity';
 import { SlotType } from '../interfaces/schedule.entity.interface';
 

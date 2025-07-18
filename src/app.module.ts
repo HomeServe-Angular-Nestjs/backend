@@ -11,13 +11,10 @@ import { ProviderModule } from './modules/providers/provider.module';
 import { BookingsModule } from './modules/bookings/bookings.module';
 import { CustomerModule } from './modules/customer/customer.module';
 import { PaymentModule } from './modules/payment/payment.module';
-import { TOKEN_SERVICE_NAME } from './core/constants/service.constant';
-import { TokenService } from './modules/auth/services/implementations/token.service';
 import { AuthMiddleware } from './modules/auth/middleware/auth.middleware';
 import { JwtConfigModule } from './configs/jwt/jwt.module';
 import { SchedulesModule } from './modules/schedules/schedule.module';
 import { WebSocketModule } from './modules/websockets/websocket.module';
-import { APP_FILTER } from '@nestjs/core';
 import { appProviders } from './app.provider';
 import { PlanModule } from './modules/plans/plans.module';
 import { SubscriptionModules } from './modules/subscriptions/subscription.module';
@@ -58,5 +55,4 @@ export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer.apply(AuthMiddleware).forRoutes('*');
   }
-
 }

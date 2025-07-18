@@ -1,29 +1,13 @@
-import {
-    Controller,
-    Get,
-    Patch,
-    Inject,
-    InternalServerErrorException,
-    UseInterceptors,
-    Req,
-    UploadedFile,
-    Query,
-    Body,
-    Delete,
-    Logger,
-    BadRequestException,
-    UnauthorizedException,
-    Put,
-} from '@nestjs/common';
-
+import { Controller, Get, Patch, Inject, InternalServerErrorException, UseInterceptors, Req, UploadedFile, Query, Body, Delete, Logger, BadRequestException, UnauthorizedException, Put, } from '@nestjs/common';
 import { PROVIDER_SERVICE_NAME } from '../../../core/constants/service.constant';
 import { IProviderServices } from '../services/interfaces/provider-service.interface';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Request } from 'express';
 import { IPayload } from '../../../core/misc/payload.interface';
-import { FilterDto, RemoveCertificateDto, SlotDto, UpdateBioDto, UploadCertificateDto } from '../dtos/provider.dto';
+import { FilterDto, GetProvidersFromLocationSearch, RemoveCertificateDto, SlotDto, UpdateBioDto, UploadCertificateDto } from '../dtos/provider.dto';
 import { IProvider } from '../../../core/entities/interfaces/user.entity.interface';
 import { ErrorMessage } from 'src/core/enum/error.enum';
+import { IResponse } from 'src/core/misc/response.util';
 
 @Controller('provider')
 export class ProviderController {
@@ -35,11 +19,18 @@ export class ProviderController {
     ) { }
 
     @Get('fetch_providers')
-    async fetchProviders(@Query() filter: FilterDto): Promise<IProvider[]> {
+    async fetchProviders(@Query() dto: FilterDto & GetProvidersFromLocationSearch) {
         try {
-            return await this._providerServices.getProviders(filter);
+            const { lat, lng, title, ...filter } = dto;
+
+            if (lat && lng && title) {
+                const locationSearch = { lat, lng, title };
+                return await this._providerServices.getProvidersLocationBasedSearch(locationSearch);
+            } else {
+                return await this._providerServices.getProviders(filter);
+            }
         } catch (err) {
-            this.logger.error(`Error fetching provider: ${err}`);
+            this.logger.error(`Error fetching providers: ${err}`);
             throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
         }
     }

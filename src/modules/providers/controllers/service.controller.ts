@@ -216,7 +216,7 @@ export class ServiceController {
   }
 
   @Get('service/titles')
-  async getServiceTitle() {
+  async getServiceTitle(): Promise<IResponse<string[]>> {
     try {
       return await this._serviceFeature.getServiceTitles();
     } catch (err) {

@@ -22,7 +22,7 @@ export class ServiceOfferedRepository extends BaseRepository<ServiceOffered, Ser
   }
 
   async getServiceTitles(): Promise<IGetServiceTitle[]> {
-    const result = await this._serviceModel.find({}, { title: -1 });
+    const result = await this._serviceModel.find({});
     return (result ?? []).map(doc => ({
       id: doc.id,
       title: doc.title

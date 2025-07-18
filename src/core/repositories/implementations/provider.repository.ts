@@ -43,6 +43,24 @@ export class ProviderRepository extends BaseRepository<Provider, ProviderDocumen
     return result ? { currentRatingAvg: result.avgRating, currentRatingCount: result.ratingCount } : null
   }
 
+  async getProvidersBasedOnLocation(lng: number, lat: number): Promise<IProvider[]> {
+    const result = await this._providerModel.find({
+      location: {
+        $near: {
+          $geometry: {
+            type: 'Point',
+            coordinates: [lng, lat]
+          },
+          // $maxDistance: 50000,
+          // $minDistance: 0
+        },
+      },
+    }).exec();
+
+    return (result ?? []).map(r => this.toEntity(r));
+  }
+
+
   protected toEntity(doc: ProviderDocument): Provider {
     return new Provider({
       id: (doc._id as Types.ObjectId).toString(),
@@ -73,6 +91,7 @@ export class ProviderRepository extends BaseRepository<Provider, ProviderDocumen
       defaultSlots: doc.defaultSlots,
       schedules: doc.schedules.map(id => id.toString()),
       location: doc.location,
+      address: doc.address,
       bookingLimit: doc.bookingLimit,
       bufferTime: doc.bufferTime,
       enableSR: doc.enableSR,

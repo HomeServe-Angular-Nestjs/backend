@@ -7,7 +7,7 @@ import { PROVIDER_REPOSITORY_INTERFACE_NAME, SERVICE_OFFERED_REPOSITORY_NAME, } 
 import { UPLOAD_UTILITY_NAME } from '../../../../core/constants/utility.constant';
 import { IUploadsUtility } from '../../../../core/utilities/interface/upload.utility.interface';
 import { IServiceOfferedRepository } from '../../../../core/repositories/interfaces/serviceOffered-repo.interface';
-import { IGetServiceTitle, IService, IServicesWithPagination, ISubService, } from '../../../../core/entities/interfaces/service.entity.interface';
+import { IService, IServicesWithPagination, ISubService, } from '../../../../core/entities/interfaces/service.entity.interface';
 import { IResponse } from 'src/core/misc/response.util';
 
 @Injectable()
@@ -374,14 +374,20 @@ export class ServiceFeatureService implements IServiceFeatureService {
     }
   }
 
-  async getServiceTitles(): Promise<IResponse<IGetServiceTitle[]>> {
+  async getServiceTitles(): Promise<IResponse<string[]>> {
 
-    const titles = await this._serviceOfferedRepository.getServiceTitles();
+    const serviceTitles = await this._serviceOfferedRepository.getServiceTitles();
+
+    const removedDuplicates = [... new Set((serviceTitles ?? []).map(s => s.title))];
+
+    const formatted = removedDuplicates.map(title =>
+      title[0].toUpperCase() + title.slice(1).toLowerCase()
+    );
 
     return {
       success: true,
       message: 'Service titles fetched success fully',
-      data: titles
+      data: formatted
     }
   }
 

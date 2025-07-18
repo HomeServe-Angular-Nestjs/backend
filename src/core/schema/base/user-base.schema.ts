@@ -1,6 +1,26 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
-import { IAddress } from 'src/core/entities/interfaces/user.entity.interface';
+
+@Schema({ _id: false })
+export class LocationDocument {
+  @Prop({
+    type: String,
+    enum: ['Point'],
+    default: 'Point',
+    required: true,
+  })
+  type: string;
+
+  @Prop({
+    type: [Number],
+    required: true, // [longitude, latitude]
+  })
+  coordinates: [number, number];
+}
+
+export const LocationSchema = SchemaFactory.createForClass(LocationDocument);
+
+
 
 @Schema({ discriminatorKey: 'kind', timestamps: true })
 export class BaseUserDocument extends Document {
@@ -26,20 +46,16 @@ export class BaseUserDocument extends Document {
   googleId: string;
 
   @Prop({
-    type: {
-      type: String,
-      enum: ['Point'],
-      default: 'Point',
-    },
-    coordinates: {
-      type: [Number],
-      index: '2dsphere',
-    },
-    address: {
-      type: String,
-    },
+    type: LocationSchema,
+    required: true,
   })
-  location: IAddress;
+  location: {
+    type: 'Point';
+    coordinates: [number, number];
+  };
+
+  @Prop({ type: String })
+  address: string;
 
   @Prop({ type: Boolean, default: true })
   isActive: boolean;
