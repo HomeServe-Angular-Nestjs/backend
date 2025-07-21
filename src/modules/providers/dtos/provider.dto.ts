@@ -1,6 +1,7 @@
 import { Optional } from "@nestjs/common";
 import { Transform, Type } from "class-transformer";
 import { ArrayMaxSize, ArrayMinSize, IsArray, IsBoolean, IsDefined, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from "class-validator";
+import { UploadsType } from "src/core/enum/uploads.enum";
 
 
 export type FilterStatusType = true | false | 'all';
@@ -126,4 +127,10 @@ export class GetProvidersFromLocationSearch {
     @IsNotEmpty()
     @IsString()
     title: string;
+}
+
+export class UploadGalleryImageDto {
+    @IsNotEmpty()
+    @IsIn(Object.values(UploadsType))
+    type: UploadsType;
 }

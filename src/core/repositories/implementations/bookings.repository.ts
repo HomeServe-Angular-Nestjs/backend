@@ -43,7 +43,7 @@ export class BookingRepository extends BaseRepository<Booking, BookingDocument> 
             transactionId: doc.transactionId,
             createdAt: doc.createdAt,
             updatedAt: doc.updatedAt,
-        })
+        });
     }
 
 }

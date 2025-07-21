@@ -1,10 +1,10 @@
-import { Controller, Get, Patch, Inject, InternalServerErrorException, UseInterceptors, Req, UploadedFile, Query, Body, Delete, Logger, BadRequestException, UnauthorizedException, Put, } from '@nestjs/common';
+import { Controller, Get, Patch, Inject, InternalServerErrorException, UseInterceptors, Req, UploadedFile, Query, Body, Delete, Logger, BadRequestException, UnauthorizedException, Put, Param, } from '@nestjs/common';
 import { PROVIDER_SERVICE_NAME } from '../../../core/constants/service.constant';
 import { IProviderServices } from '../services/interfaces/provider-service.interface';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Request } from 'express';
 import { IPayload } from '../../../core/misc/payload.interface';
-import { FilterDto, GetProvidersFromLocationSearch, RemoveCertificateDto, SlotDto, UpdateBioDto, UploadCertificateDto } from '../dtos/provider.dto';
+import { FilterDto, GetProvidersFromLocationSearch, RemoveCertificateDto, SlotDto, UpdateBioDto, UploadCertificateDto, UploadGalleryImageDto } from '../dtos/provider.dto';
 import { IProvider } from '../../../core/entities/interfaces/user.entity.interface';
 import { ErrorMessage } from 'src/core/enum/error.enum';
 import { IResponse } from 'src/core/misc/response.util';
@@ -46,6 +46,54 @@ export class ProviderController {
             return await this._providerServices.fetchOneProvider(arg);
         } catch (err) {
             this.logger.error(`Error fetching provider: ${err}`);
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Get('reviews')
+    async getReviews(@Query() { providerId }: { providerId: string }) {
+        try {
+            return await this._providerServices.getReviews(providerId);
+        } catch (err) {
+            this.logger.error(`Error fetching provider reviews: ${err.message}`, err.stack);
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Put('bio')
+    async updateBio(@Req() req: Request, @Body() dto: UpdateBioDto) {
+        try {
+            const user = req.user as IPayload;
+            if (!user.sub) {
+                throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
+
+            }
+
+            this.logger.debug('dto', dto);
+            return await this._providerServices.updateBio(user.sub, dto);
+
+        } catch (err) {
+            this.logger.error(`Error updating provider bio: ${err.message}`, err.stack);
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Put('cert_upload')
+    @UseInterceptors(FileInterceptor('doc'))
+    async uploadCertificate(@Req() req: Request, @Body() { label }: UploadCertificateDto, @UploadedFile() file: Express.Multer.File) {
+        try {
+            const user = req.user as IPayload;
+            if (!user.sub) {
+                throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
+            }
+
+            if (!label || !file) {
+                throw new BadRequestException(ErrorMessage.MISSING_FIELDS);
+            }
+
+            return await this._providerServices.uploadCertificate(user.sub, label, file);
+        } catch (err) {
+            this.logger.error(`Error uploading provider certificate: ${err.message}`, err.stack);
             throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
         }
     }
@@ -120,44 +168,6 @@ export class ProviderController {
         }
     }
 
-    @Put('bio')
-    async updateBio(@Req() req: Request, @Body() dto: UpdateBioDto) {
-        try {
-            const user = req.user as IPayload;
-            if (!user.sub) {
-                throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
-
-            }
-
-            this.logger.debug('dto', dto);
-            return await this._providerServices.updateBio(user.sub, dto);
-
-        } catch (err) {
-            this.logger.error(`Error updating provider bio: ${err.message}`, err.stack);
-            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    @Put('cert_upload')
-    @UseInterceptors(FileInterceptor('doc'))
-    async uploadCertificate(@Req() req: Request, @Body() { label }: UploadCertificateDto, @UploadedFile() file: Express.Multer.File) {
-        try {
-            const user = req.user as IPayload;
-            if (!user.sub) {
-                throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
-            }
-
-            if (!label || !file) {
-                throw new BadRequestException(ErrorMessage.MISSING_FIELDS);
-            }
-
-            return await this._providerServices.uploadCertificate(user.sub, label, file);
-        } catch (err) {
-            this.logger.error(`Error uploading provider certificate: ${err.message}`, err.stack);
-            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
-        }
-    }
-
     @Patch('cert_remove')
     @UseInterceptors(FileInterceptor('doc'))
     async removeCertificate(@Req() req: Request, @Body() { docId }: RemoveCertificateDto) {
@@ -178,12 +188,33 @@ export class ProviderController {
         }
     }
 
-    @Get('reviews')
-    async getReviews(@Query() { providerId }: { providerId: string }) {
+    @Get('work_images')
+    async getWorkImage(@Req() req: Request) {
         try {
-            return await this._providerServices.getReviews(providerId);
+            const user = req.user as IPayload;
+            if (!user.sub || !user.type) {
+                throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
+            }
+
+            return await this._providerServices.getWorkImages(user.sub);
         } catch (err) {
-            this.logger.error(`Error fetching provider reviews: ${err.message}`, err.stack);
+            this.logger.error(`Error uploading provider gallery image: ${err.message}`, err.stack);
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Patch('gallery_upload')
+    @UseInterceptors(FileInterceptor('gallery_image'))
+    async uploadWorkImage(@Req() req: Request, @Body() dto: UploadGalleryImageDto, @UploadedFile() file: Express.Multer.File) {
+        try {
+            const user = req.user as IPayload;
+            if (!user.sub || !user.type) {
+                throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
+            }
+
+            return await this._providerServices.uploadWorkImage(user.sub, user.type, dto.type, file);
+        } catch (err) {
+            this.logger.error(`Error uploading provider gallery image: ${err.message}`, err.stack);
             throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
         }
     }

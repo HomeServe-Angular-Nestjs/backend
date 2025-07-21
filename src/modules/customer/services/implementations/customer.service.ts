@@ -35,14 +35,6 @@ export class CustomerService implements ICustomerService {
         return await this._customerRepository.findOne({ _id: id });
     }
 
-    /**
-   * Partially updates customer information.
-   *
-   * @param {string} id - The customer's unique ID.
-   * @param {Partial<ICustomer>} data - The fields to update.
-   * @returns {Promise<ICustomer>} The updated customer document.
-   * @throws {NotFoundException} If the customer is not found.
-   */
     async partialUpdate(id: string, data: Partial<ICustomer>): Promise<ICustomer> {
         const updatedCustomer = await this._customerRepository.findOneAndUpdate(
             { _id: id },

@@ -46,6 +46,7 @@ export class CustomerRepository extends BaseRepository<Customer, CustomerDocumen
       phone: doc.phone,
       location: doc.location,
       isReviewed: doc.isReviewed,
+      address: doc.address
     });
   }
 }

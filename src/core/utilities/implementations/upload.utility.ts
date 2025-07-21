@@ -1,10 +1,18 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { CloudinaryService } from '../../../configs/cloudinary/cloudinary.service';
 import { IUploadsUtility } from '../interface/upload.utility.interface';
+import { UploadApiResponse } from 'cloudinary';
+import { HttpService } from '@nestjs/axios';
+import { lastValueFrom } from 'rxjs';
 
 @Injectable()
 export class UploadsUtility implements IUploadsUtility {
-  constructor(private readonly cloudinaryService: CloudinaryService) {}
+  private readonly logger = new Logger(UploadsUtility.name);
+
+  constructor(
+    private readonly _httpService: HttpService,
+    private readonly _cloudinaryService: CloudinaryService
+  ) { }
 
   async uploadImage(file: Express.Multer.File): Promise<string> {
     try {
@@ -12,13 +20,29 @@ export class UploadsUtility implements IUploadsUtility {
       if (!file.mimetype.startsWith('image/')) {
         throw new Error('Invalid file type. Only images are allowed.');
       }
-      const result = await this.cloudinaryService.uploadImage(file);
+      const result = await this._cloudinaryService.uploadImage(file);
       return result.url;
     } catch (err) {
       console.error(err);
-      throw new InternalServerErrorException(
-        'Something happened while uploading image',
-      );
+      throw new InternalServerErrorException('Something happened while uploading image');
     }
+  }
+
+  async uploadsImage(file: Express.Multer.File, publicId: string): Promise<UploadApiResponse> {
+    try {
+      if (!file) throw new Error('No file provided');
+      if (!file.mimetype.startsWith('image/')) {
+        throw new Error('Invalid file type. Only images are allowed.');
+      }
+
+      return await this._cloudinaryService.uploadsImage(file, publicId);
+    } catch (err) {
+      this.logger.error('Error uploading image: ', err.message, err.stack);
+      throw new InternalServerErrorException('Something happened while uploading image');
+    }
+  }
+
+  getSignedImageUrl(publicId: string, expiresIn: number = 300): string {
+    return this._cloudinaryService.generateSignedUrl(publicId, expiresIn)
   }
 }

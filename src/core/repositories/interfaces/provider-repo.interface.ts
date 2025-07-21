@@ -10,4 +10,6 @@ export interface IProviderRepository extends IBaseRepository<IProvider, Provider
   isExists(filter: FilterQuery<ProviderDocument>): Promise<boolean>
   getCurrentRatingCountAndAverage(providerId: string): Promise<{ currentRatingCount: number, currentRatingAvg: number } | null>
   getProvidersBasedOnLocation(lng: number, lat: number): Promise<IProvider[]>;
+  addWorkImage(providerId: string, publicId: string): Promise<IProvider | null>;
+  getWorkImages(providerId: string): Promise<string[]>;
 }

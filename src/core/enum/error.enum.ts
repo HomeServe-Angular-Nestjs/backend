@@ -29,11 +29,13 @@ export enum ErrorMessage {
 
     // Conflict Error
     DOCUMENT_ALREADY_EXISTS = 'Already exists',
-    
+
     // Socket Error
     SOCKET_CONNECTION_REJECTED = 'Socket connection rejected: ',
 
     // Token Errors
     NO_TOKEN_FOUND = 'No token provided.',
-    INVALID_REFRESH_TOKEN = 'Invalid or expired refresh token.'
+    INVALID_REFRESH_TOKEN = 'Invalid or expired refresh token.',
+
+    UPLOAD_FAILED = 'Failed to upload an image.',
 }

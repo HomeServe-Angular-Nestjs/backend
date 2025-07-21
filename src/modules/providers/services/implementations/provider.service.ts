@@ -5,11 +5,16 @@ import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME,
 import { IProviderRepository } from '../../../../core/repositories/interfaces/provider-repo.interface';
 import { IFetchReviews, IProvider } from '../../../../core/entities/interfaces/user.entity.interface';
 import { CloudinaryService } from '../../../../configs/cloudinary/cloudinary.service';
-import { FilterDto, GetProvidersFromLocationSearch, SlotDto, UpdateBioDto, UpdateDefaultSlotsDto } from '../../dtos/provider.dto';
+import { FilterDto, GetProvidersFromLocationSearch, SlotDto, UpdateBioDto } from '../../dtos/provider.dto';
 import { IResponse } from 'src/core/misc/response.util';
 import { ErrorMessage } from 'src/core/enum/error.enum';
 import { ICustomerRepository } from 'src/core/repositories/interfaces/customer-repo.interface';
 import { IServiceOfferedRepository } from 'src/core/repositories/interfaces/serviceOffered-repo.interface';
+import { UploadsType } from 'src/core/enum/uploads.enum';
+import { UserType } from 'src/modules/auth/dtos/login.dto';
+import { UPLOAD_UTILITY_NAME } from 'src/core/constants/utility.constant';
+import { IUploadsUtility } from 'src/core/utilities/interface/upload.utility.interface';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class ProviderServices implements IProviderServices {
@@ -22,7 +27,9 @@ export class ProviderServices implements IProviderServices {
     @Inject(CUSTOMER_REPOSITORY_INTERFACE_NAME)
     private _customerService: ICustomerRepository,
     @Inject(SERVICE_OFFERED_REPOSITORY_NAME)
-    private _serviceOfferedRepository: IServiceOfferedRepository
+    private _serviceOfferedRepository: IServiceOfferedRepository,
+    @Inject(UPLOAD_UTILITY_NAME)
+    private readonly _uploadsUtility: IUploadsUtility,
   ) { }
 
   async getProviders(filter?: FilterDto): Promise<IResponse<IProvider[]>> {
@@ -294,5 +301,43 @@ export class ProviderServices implements IProviderServices {
     }
   }
 
+  async getWorkImages(providerId: string): Promise<IResponse<string[]>> {
+    const workImages = await this._providerRepository.getWorkImages(providerId);
+    const urls = workImages.map(imageUrl => this._uploadsUtility.getSignedImageUrl(imageUrl, 5));
 
+    return {
+      success: true,
+      message: 'Work images fetched successfully',
+      data: urls
+    }
+  }
+
+  async uploadWorkImage(providerId: string, userType: UserType, uploadType: UploadsType, file: Express.Multer.File): Promise<IResponse<string>> {
+    const provider = await this._providerRepository.isExists({ _id: providerId });
+    if (!provider) {
+      throw new NotFoundException(ErrorMessage.PROVIDER_NOT_FOUND_WITH_ID, providerId);
+    }
+
+    const uniqueId = uuidv4();
+    const publicId = `${userType}/${providerId}/${uploadType}/${uniqueId}`;
+    const result = await this._uploadsUtility.uploadsImage(file, publicId);
+
+    if (!result) {
+      throw new InternalServerErrorException(ErrorMessage.UPLOAD_FAILED);
+    }
+
+    const updatedProvider = await this._providerRepository.addWorkImage(providerId, result.public_id);
+    if (!updatedProvider) {
+      throw new NotFoundException(ErrorMessage.PROVIDER_NOT_FOUND_WITH_ID, providerId);
+    }
+
+    const signedUrl = this._uploadsUtility.getSignedImageUrl(result.public_id, 5);
+
+    return {
+      success: true,
+      message: 'Image uploaded successfully.',
+      data: signedUrl
+    }
+  }
 }
+

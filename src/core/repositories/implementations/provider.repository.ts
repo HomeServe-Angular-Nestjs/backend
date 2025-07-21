@@ -51,13 +51,38 @@ export class ProviderRepository extends BaseRepository<Provider, ProviderDocumen
             type: 'Point',
             coordinates: [lng, lat]
           },
-          // $maxDistance: 50000,
-          // $minDistance: 0
+          $maxDistance: 50000,
+          $minDistance: 0
         },
       },
     }).exec();
 
     return (result ?? []).map(r => this.toEntity(r));
+  }
+
+  async addWorkImage(providerId: string, publicId: string): Promise<IProvider | null> {
+    const result = await this._providerModel.findOneAndUpdate(
+      { _id: providerId },
+      {
+        $push: {
+          workImages: {
+            $each: [publicId],
+            $position: 0
+          }
+        }
+      },
+      { new: true }
+    );
+
+    return result ? this.toEntity(result) : null;
+  }
+
+  async getWorkImages(providerId: string): Promise<string[]> {
+    const result = await this._providerModel.findOne(
+      { _id: providerId },
+      { workImages: 1 }
+    );
+    return result ? result.workImages : [];
   }
 
 
@@ -106,7 +131,8 @@ export class ProviderRepository extends BaseRepository<Provider, ProviderDocumen
       })),
       ratingCount: doc.ratingCount,
       avgRating: doc.avgRating,
-      reviews: doc.reviews
+      reviews: doc.reviews,
+      workImages: doc.workImages,
     });
   }
 }
