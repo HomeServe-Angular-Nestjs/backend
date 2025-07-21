@@ -1,4 +1,4 @@
-import { BadRequestException, Query, Body, Controller, Get, Inject, InternalServerErrorException, Logger, Patch, Req, UnauthorizedException, Post, Put, UseInterceptors, UploadedFile } from "@nestjs/common";
+import { BadRequestException, Query, Body, Controller, Get, Inject, InternalServerErrorException, Logger, Patch, Req, UnauthorizedException, Post, Put, UseInterceptors, UploadedFile, Param } from "@nestjs/common";
 import { CUSTOMER_SERVICE_NAME } from "../../../core/constants/service.constant";
 import { ICustomerService } from "../services/interfaces/customer-service.interface";
 import { ICustomer, IFetchReviews, IReview } from "../../../core/entities/interfaces/user.entity.interface";
@@ -145,6 +145,20 @@ export class CustomerController {
             return await this._customerService.submitReview(user.sub, dto);
         } catch (err) {
             this.logger.error(`Error submitting reviews for the provider: ${err.message}`, err.stack);
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Get('gallery_images/:providerId')
+    async getGalleryImages(@Param('providerId') providerId: string) {
+        try {
+            if (!providerId) {
+                throw new BadRequestException(ErrorMessage.MISSING_FIELDS, providerId);
+            }
+            
+            return await this._customerService.getProviderGalleryImages(providerId);
+        } catch (err) {
+            this.logger.error(`Error fetching provider's gallery images: ${err.message}`, err.stack);
             throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
         }
     }

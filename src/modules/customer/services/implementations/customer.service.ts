@@ -297,11 +297,21 @@ export class CustomerService implements ICustomerService {
             writtenAt: review.writtenAt,
         }
 
-        this.logger.debug(enrichedReview);
         return {
             success: true,
             message: 'Review Submitted successfully.',
             data: enrichedReview
+        }
+    }
+
+    async getProviderGalleryImages(providerId: string): Promise<IResponse<string[]>> {
+        const workImages = await this._providerRepository.getWorkImages(providerId);
+        const urls = workImages.map(imageUrl => this._uploadsUtility.getSignedImageUrl(imageUrl, 5));
+
+        return {
+            success: true,
+            message: 'successfully fetched',
+            data: urls ?? []
         }
     }
 }
