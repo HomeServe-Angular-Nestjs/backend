@@ -8,7 +8,8 @@ import {
   PROVIDER_MODEL_NAME,
 } from '../../constants/model.constant';
 import { FilterQuery, Model, Types } from 'mongoose';
-import { IProvider, IReview } from '../../entities/interfaces/user.entity.interface';
+import { IProvider, IReview, IReviewFilters } from '../../entities/interfaces/user.entity.interface';
+import { FilterWithPaginationDto } from 'src/modules/users/dtos/admin-user.dto';
 
 @Injectable()
 export class ProviderRepository extends BaseRepository<Provider, ProviderDocument> implements IProviderRepository {
@@ -84,7 +85,6 @@ export class ProviderRepository extends BaseRepository<Provider, ProviderDocumen
     );
     return result ? result.workImages : [];
   }
-
 
   protected toEntity(doc: ProviderDocument): Provider {
     return new Provider({

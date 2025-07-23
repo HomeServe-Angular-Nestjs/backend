@@ -1,14 +1,15 @@
 import { Injectable } from "@nestjs/common";
 import { BaseRepository } from "../base/implementations/base.repository";
-import { IBooking } from "../../entities/interfaces/booking.entity.interface";
+import { IBooking, IBookingStats } from "../../entities/interfaces/booking.entity.interface";
 import { BookingDocument } from "../../schema/bookings.schema";
 import { InjectModel } from "@nestjs/mongoose";
 import { BOOKINGS_MODEL_NAME } from "../../constants/model.constant";
 import { FilterQuery, Model, Types } from "mongoose";
 import { Booking } from "../../entities/implementation/bookings.entity";
+import { IBookingRepository } from "../interfaces/bookings-repo.interface";
 
 @Injectable()
-export class BookingRepository extends BaseRepository<Booking, BookingDocument> {
+export class BookingRepository extends BaseRepository<Booking, BookingDocument> implements IBookingRepository {
     constructor(
         @InjectModel(BOOKINGS_MODEL_NAME)
         private readonly _bookingModel: Model<BookingDocument>
@@ -20,9 +21,56 @@ export class BookingRepository extends BaseRepository<Booking, BookingDocument> 
         return await this._bookingModel.countDocuments(filter);
     }
 
-    async aggregate(pipeline: any[]): Promise<any[]> {
-        return await this._bookingModel.aggregate(pipeline).exec();
+    async bookingStatus(): Promise<IBookingStats | null> {
+        const result = await this._bookingModel.aggregate([
+            {
+                $group: {
+                    _id: null,
+                    total: { $sum: 1 },
+                    completed: {
+                        $sum: {
+                            $cond: [{ $eq: ["$bookingStatus", "completed"] }, 1, 0]
+                        }
+                    },
+                    pending: {
+                        $sum: {
+                            $cond: [{ $eq: ["$bookingStatus", "pending"] }, 1, 0]
+                        }
+                    },
+                    cancelled: {
+                        $sum: {
+                            $cond: [{ $eq: ["$bookingStatus", "cancelled"] }, 1, 0]
+                        }
+                    },
+                    unpaid: {
+                        $sum: {
+                            $cond: [{ $eq: ["$paymentStatus", "unpaid"] }, 1, 0]
+                        }
+                    },
+                    refunded: {
+                        $sum: {
+                            $cond: [{ $eq: ["$paymentStatus", "refunded"] }, 1, 0]
+                        }
+                    }
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    total: 1,
+                    completed: 1,
+                    pending: 1,
+                    cancelled: 1,
+                    unpaid: 1,
+                    refunded: 1
+                }
+            }
+        ]);
+
+        return result ? result[0] : null;
     }
+
+
 
 
     protected toEntity(doc: BookingDocument | Record<string, any>): IBooking {

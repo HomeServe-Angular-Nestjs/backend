@@ -23,6 +23,9 @@ export class Review {
 
   @Prop({ default: false })
   isReported: boolean;
+
+  @Prop({ default: true })
+  isActive: boolean;
 }
 
 @Schema({ timestamps: true })

@@ -248,6 +248,7 @@ export class CustomerService implements ICustomerService {
             reviewedBy: customerId,
             writtenAt: new Date(),
             rating: dto.ratings,
+            isActive: true,
         };
 
         const currentRating = await this._providerRepository.getCurrentRatingCountAndAverage(dto.providerId);

@@ -8,10 +8,11 @@ import { adminRepositoryProviders } from './providers/repository.provider';
 import { adminUtilityProviders } from './providers/utility.provider';
 import { userServiceProvider } from './providers/service.provider';
 import { AdminBookingController } from './controllers/bookings.controller';
+import { ReviewController } from './controllers/reviews.controller';
 
 @Module({
   imports: [CloudinaryModule.registerAsync(), JwtConfigModule, HttpModule],
-  controllers: [AdminUserController, AdminApprovalsController, AdminBookingController],
+  controllers: [AdminUserController, AdminApprovalsController, AdminBookingController, ReviewController],
   providers: [...userServiceProvider, ...adminRepositoryProviders, ...adminUtilityProviders],
 })
 export class AdminModule { }

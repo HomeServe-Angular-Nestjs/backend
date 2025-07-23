@@ -1,6 +1,7 @@
 import { IAdmin } from './admin.entity.interface';
 import { IBaseUserEntity } from '../base/interfaces/base-user.entity.interface';
 import { SlotType } from './schedule.entity.interface';
+import { IPagination } from './booking.entity.interface';
 
 export type Availability = {
   day: {
@@ -44,11 +45,13 @@ export interface IDoc {
 };
 
 export interface IReview {
+  id?: string;
   reviewedBy: string;
   desc: string;
   writtenAt: Date;
   isReported: boolean;
   rating: number;
+  isActive: boolean;
 }
 
 export type VerificationStatusType = 'pending' | 'verified' | 'rejected';
@@ -115,4 +118,51 @@ export interface IFetchReviews {
   avgRating: number;
   writtenAt: Date;
   desc: string;
+}
+
+export interface IReviewCustomerInfo {
+  customerId: string;
+  customerName: string;
+  customerEmail: string;
+  customerAvatar: string;
+}
+
+export interface IAdminReviewData {
+  reviewId: string;
+  reviewedBy: {
+    customerId: string;
+    customerName: string;
+    customerEmail: string;
+    customerAvatar: string;
+  };
+  providerId: string;
+  providerName: string;
+  providerEmail: string;
+  providerAvatar: string;
+  isReported: boolean;
+  desc: string;
+  rating: number;
+  writtenAt: Date;
+  isActive: boolean;
+}
+
+export interface PaginatedReviewResponse {
+  reviews: IAdminReviewData[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
+export type SortByRatingType = 'latest' | 'oldest' | 'highest' | 'lowest';
+export type SearchByReviewType = 'review id' | 'customer' | 'provider' | 'content';
+
+export interface IReviewFilters {
+  minRating?: string;
+  sortBy?: SortByRatingType;
+  search?: string;
+  searchBy?: SearchByReviewType;
+  page?: number;
 }

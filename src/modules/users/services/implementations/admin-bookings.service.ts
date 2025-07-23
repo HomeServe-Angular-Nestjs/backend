@@ -1,11 +1,11 @@
-import { Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
+import { Inject, Injectable, InternalServerErrorException, Logger, NotFoundException } from "@nestjs/common";
 import { IAdminBookingService } from "../interfaces/admin-bookings-service.interface";
 import { IResponse } from "src/core/misc/response.util";
 import { BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME } from "src/core/constants/repository.constant";
 import { IBookingRepository } from "src/core/repositories/interfaces/bookings-repo.interface";
 import { ICustomerRepository } from "src/core/repositories/interfaces/customer-repo.interface";
 import { ErrorMessage } from "src/core/enum/error.enum";
-import { IAdminBookingForTable } from "src/core/entities/interfaces/booking.entity.interface";
+import { IAdminBookingForTable, IBookingStats } from "src/core/entities/interfaces/booking.entity.interface";
 import { IProviderRepository } from "src/core/repositories/interfaces/provider-repo.interface";
 
 @Injectable()
@@ -71,6 +71,19 @@ export class AdminBookingService implements IAdminBookingService {
             success: true,
             message: 'Booking data fetched successfully',
             data: bookingResponseData
+        }
+    }
+
+    async getBookingStats(): Promise<IResponse<IBookingStats>> {
+        const bookingStats = await this._bookingRepository.bookingStatus();
+        if (!bookingStats) {
+            throw new InternalServerErrorException('Mongo aggregation failed.');
+        }
+
+        return {
+            success: true,
+            message: 'Booking stats fetched.',
+            data: bookingStats
         }
     }
 }
