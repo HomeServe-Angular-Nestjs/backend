@@ -3,10 +3,11 @@ import { BaseRepository } from "../base/implementations/base.repository";
 import { IBooking, IBookingStats } from "../../entities/interfaces/booking.entity.interface";
 import { BookingDocument } from "../../schema/bookings.schema";
 import { InjectModel } from "@nestjs/mongoose";
-import { BOOKINGS_MODEL_NAME } from "../../constants/model.constant";
+import { BOOKINGS_MODEL_NAME, PROVIDER_MODEL_NAME } from "../../constants/model.constant";
 import { FilterQuery, Model, Types } from "mongoose";
 import { Booking } from "../../entities/implementation/bookings.entity";
 import { IBookingRepository } from "../interfaces/bookings-repo.interface";
+import { ITopProviders } from "src/core/entities/interfaces/user.entity.interface";
 
 @Injectable()
 export class BookingRepository extends BaseRepository<Booking, BookingDocument> implements IBookingRepository {
@@ -70,8 +71,51 @@ export class BookingRepository extends BaseRepository<Booking, BookingDocument> 
         return result ? result[0] : null;
     }
 
+    async getTopProviders(): Promise<ITopProviders[]> {
+        const result = await this._bookingModel.aggregate([
+            {
+                $match: {
+                    bookingStatus: { $ne: 'cancelled' },
+                    paymentStatus: { $nin: ['failed', 'refunded'] },
+                }
+            },
+            {
+                $addFields: {
+                    providerObjectId: { $toObjectId: "$providerId" }
+                }
+            },
+            {
+                $group: {
+                    _id: "$providerObjectId",
+                    totalEarnings: { $sum: "$totalAmount" },
+                }
+            },
+            {
+                $lookup: {
+                    from: 'providers',
+                    localField: "_id",
+                    foreignField: "_id",
+                    as: "provider"
+                }
+            },
+            {
+                $unwind: "$provider"
+            },
+            {
+                $project: {
+                    _id: 0,
+                    totalEarnings: 1,
+                    providerId: "$provider._id",
+                    username: "$provider.username",
+                    email: "$provider.email",
+                }
+            },
+            { $sort: { totalEarnings: -1 } },
+            { $limit: 10 }
+        ]);
 
-
+        return result.length > 0 ? result : [];
+    }
 
     protected toEntity(doc: BookingDocument | Record<string, any>): IBooking {
         return new Booking({

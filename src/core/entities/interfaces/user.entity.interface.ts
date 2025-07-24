@@ -161,3 +161,10 @@ export interface IReviewFilters {
   searchBy?: SearchByReviewType;
   page?: number;
 }
+
+export interface ITopProviders {
+  totalEarnings: number;
+  providerId: string;
+  username: string;
+  email: string;
+}

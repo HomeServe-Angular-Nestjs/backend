@@ -1,15 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { Provider, Review } from '../../entities/implementation/provider.entity';
+import { Provider } from '../../entities/implementation/provider.entity';
 import { BaseRepository } from '../base/implementations/base.repository';
 import { ProviderDocument } from '../../schema/provider.schema';
 import { IProviderRepository } from '../interfaces/provider-repo.interface';
 import { InjectModel } from '@nestjs/mongoose';
-import {
-  PROVIDER_MODEL_NAME,
-} from '../../constants/model.constant';
+import { PROVIDER_MODEL_NAME } from '../../constants/model.constant';
 import { FilterQuery, Model, Types } from 'mongoose';
-import { IProvider, IReview, IReviewFilters } from '../../entities/interfaces/user.entity.interface';
-import { FilterWithPaginationDto } from 'src/modules/users/dtos/admin-user.dto';
+import { IProvider, } from '../../entities/interfaces/user.entity.interface';
 import { IStats } from 'src/core/entities/interfaces/admin.entity.interface';
 
 @Injectable()

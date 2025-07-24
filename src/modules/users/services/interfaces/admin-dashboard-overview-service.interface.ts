@@ -1,4 +1,5 @@
 import { IAdminDashboardOverview, IAdminDashboardRevenue, IAdminDashboardSubscription, IAdminDashboardUserStats } from "src/core/entities/interfaces/admin.entity.interface";
+import { ITopProviders } from "src/core/entities/interfaces/user.entity.interface";
 import { IResponse } from "src/core/misc/response.util";
 
 export interface IAdminDashboardOverviewService {
@@ -6,4 +7,5 @@ export interface IAdminDashboardOverviewService {
     getDashBoardRevenue(): Promise<IResponse<IAdminDashboardRevenue[]>>;
     getSubscriptionData(): Promise<IResponse<IAdminDashboardSubscription>>;
     getUserStatistics(): Promise<IResponse<IAdminDashboardUserStats>>;
+    getTopProviders(): Promise<IResponse<ITopProviders[]>>;
 }

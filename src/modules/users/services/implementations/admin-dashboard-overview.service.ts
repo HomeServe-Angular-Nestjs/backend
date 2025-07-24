@@ -9,6 +9,7 @@ import { CustomLogger } from "src/core/logger/custom-logger";
 import { ISubscriptionRepository } from "src/core/repositories/interfaces/subscription-repo.interface";
 import { ICustomerRepository } from "src/core/repositories/interfaces/customer-repo.interface";
 import { IBookingRepository } from "src/core/repositories/interfaces/bookings-repo.interface";
+import { ITopProviders } from "src/core/entities/interfaces/user.entity.interface";
 
 @Injectable()
 export class AdminDashboardOverviewService implements IAdminDashboardOverviewService {
@@ -117,6 +118,16 @@ export class AdminDashboardOverviewService implements IAdminDashboardOverviewSer
                 customer: customerStats,
                 provider: providerStats
             }
+        };
+    }
+
+    async getTopProviders(): Promise<IResponse<ITopProviders[]>> {
+        const topProviders = await this._bookingRepository.getTopProviders();
+
+        return {
+            success: true,
+            message: "Top providers fetched successfully",
+            data: topProviders
         };
     }
 }

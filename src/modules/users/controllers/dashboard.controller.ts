@@ -5,6 +5,7 @@ import { IAdminDashboardOverviewService } from "../services/interfaces/admin-das
 import { ADMIN_DASHBOARD_OVERVIEW_SERVICE_NAME } from "src/core/constants/service.constant";
 import { IAdminDashboardOverview, IAdminDashboardRevenue, IAdminDashboardSubscription, IAdminDashboardUserStats } from "src/core/entities/interfaces/admin.entity.interface";
 import { IResponse } from "src/core/misc/response.util";
+import { ITopProviders } from "src/core/entities/interfaces/user.entity.interface";
 
 @Controller('admin/dashboard')
 export class AdminDashboardController {
@@ -50,6 +51,16 @@ export class AdminDashboardController {
             return this._adminDashboardOverviewService.getUserStatistics();
         } catch (err) {
             this.logger.error('Error fetching user statistics', err, err.stack);
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Get('top_providers')
+    async getTopProviders(): Promise<IResponse<ITopProviders[]>> {
+        try {
+            return this._adminDashboardOverviewService.getTopProviders();
+        } catch (err) {
+            this.logger.error('Error fetching top providers', err, err.stack);
             throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
         }
     }
