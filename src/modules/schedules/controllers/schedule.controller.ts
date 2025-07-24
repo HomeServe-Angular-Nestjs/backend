@@ -7,10 +7,11 @@ import { ISchedulesService } from "../services/interfaces/schedules-service.inte
 import { IResponse } from "src/core/misc/response.util";
 import { IScheduleDay, IScheduleListWithPagination, ISchedules } from "src/core/entities/interfaces/schedules.entity.interface";
 import { ErrorMessage } from "src/core/enum/error.enum";
+import { CustomLogger } from "src/core/logger/custom-logger";
 
 @Controller('schedule')
 export class SchedulesController {
-    private readonly logger = new Logger(SchedulesController.name);
+    private readonly logger = new CustomLogger(SchedulesController.name);
 
     constructor(
         @Inject(SCHEDULES_SERVICE_NAME)

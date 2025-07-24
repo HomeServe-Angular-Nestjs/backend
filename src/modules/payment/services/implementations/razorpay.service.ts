@@ -9,10 +9,11 @@ import { RazorpayVerifyData, VerifyOrderData } from "../../dtos/payment.dto";
 import { ICustomerRepository } from "src/core/repositories/interfaces/customer-repo.interface";
 import { IProviderRepository } from "src/core/repositories/interfaces/provider-repo.interface";
 import { TransactionType } from "src/core/enum/transaction.enum";
+import { CustomLogger } from "src/core/logger/custom-logger";
 
 @Injectable()
 export class RazorPaymentService implements IRazorPaymentService {
-    private readonly logger = new Logger(RazorPaymentService.name);
+    private readonly logger = new CustomLogger(RazorPaymentService.name);
 
     constructor(
         @Inject(PAYMENT_UTILITY_NAME)

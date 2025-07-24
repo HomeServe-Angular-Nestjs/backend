@@ -9,10 +9,11 @@ import { FilterFields, UpdateBookingStatusDto } from "../../dtos/booking.dto";
 import { BookingStatus, CancelStatus, DateRange, PaymentStatus } from "src/core/enum/bookings.enum";
 import { ITransactionRepository } from "src/core/repositories/interfaces/transaction-repo.interface";
 import { IResponse } from "src/core/misc/response.util";
+import { CustomLogger } from "src/core/logger/custom-logger";
 
 @Injectable()
 export class ProviderBookingService implements IProviderBookingService {
-    private logger = new Logger(ProviderBookingService.name);
+    private logger = new CustomLogger(ProviderBookingService.name);
 
     constructor(
         @Inject(SERVICE_OFFERED_REPOSITORY_NAME)

@@ -14,13 +14,14 @@ import { IResponse } from 'src/core/misc/response.util';
 import { IScheduleDay, ISlot } from 'src/core/entities/interfaces/schedules.entity.interface';
 import { ITransactionRepository } from 'src/core/repositories/interfaces/transaction-repo.interface';
 import { ErrorMessage } from 'src/core/enum/error.enum';
+import { CustomLogger } from 'src/core/logger/custom-logger';
 
 
 
 
 @Injectable()
 export class BookingService implements IBookingService {
-    private logger = new Logger(BookingService.name);
+    private logger = new CustomLogger(BookingService.name);
 
     constructor(
         @Inject(SERVICE_OFFERED_REPOSITORY_NAME)

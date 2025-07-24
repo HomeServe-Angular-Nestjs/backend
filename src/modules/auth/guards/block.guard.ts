@@ -6,10 +6,11 @@ import { ICustomerRepository } from "src/core/repositories/interfaces/customer-r
 import { IProviderRepository } from "src/core/repositories/interfaces/provider-repo.interface";
 import { UserType } from "../dtos/login.dto";
 import { ICustomer, IProvider } from "src/core/entities/interfaces/user.entity.interface";
+import { CustomLogger } from "src/core/logger/custom-logger";
 
 @Injectable()
 export class BlockGuard implements CanActivate {
-    private readonly logger = new Logger(BlockGuard.name);
+    private readonly logger = new CustomLogger(BlockGuard.name);
     private readonly validUserTypes = ['admin', 'customer', 'provider'];
 
     constructor(

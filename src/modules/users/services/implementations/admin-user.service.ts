@@ -6,10 +6,11 @@ import { GetUsersWithFilterDto, RemoveUserDto, StatusUpdateDto } from "../../dto
 import { IAdminUserManagementService } from "../interfaces/admin-user-service.interface";
 import { IProviderRepository } from "src/core/repositories/interfaces/provider-repo.interface";
 import { ICustomer, IProvider } from "src/core/entities/interfaces/user.entity.interface";
+import { CustomLogger } from "src/core/logger/custom-logger";
 
 @Injectable()
 export class AdminUserManagementService implements IAdminUserManagementService {
-    private logger = new Logger(AdminUserManagementService.name);
+    private logger = new CustomLogger(AdminUserManagementService.name);
 
     constructor(
         @Inject(CUSTOMER_REPOSITORY_INTERFACE_NAME)

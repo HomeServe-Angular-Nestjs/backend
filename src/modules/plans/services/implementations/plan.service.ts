@@ -6,10 +6,11 @@ import { IPlanRepository } from "src/core/repositories/interfaces/plans-repo.int
 import { SavePlanDto, GetOnePlanDto, UpdatePlanStatusDto, UpdatePlanDto } from "../../dto/plans.dto";
 import { ErrorMessage } from "src/core/enum/error.enum";
 import { IPlan } from "src/core/entities/interfaces/plans.entity.interface";
+import { CustomLogger } from "src/core/logger/custom-logger";
 
 @Injectable()
 export class PlanService implements IPlanService {
-    private readonly logger = new Logger(PlanService.name);
+    private readonly logger = new CustomLogger(PlanService.name);
 
     constructor(
         @Inject(PLAN_REPOSITORY_INTERFACE_NAME)

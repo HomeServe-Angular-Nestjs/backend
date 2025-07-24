@@ -15,10 +15,11 @@ import { UserType } from 'src/modules/auth/dtos/login.dto';
 import { UPLOAD_UTILITY_NAME } from 'src/core/constants/utility.constant';
 import { IUploadsUtility } from 'src/core/utilities/interface/upload.utility.interface';
 import { v4 as uuidv4 } from 'uuid';
+import { CustomLogger } from "src/core/logger/custom-logger";
 
 @Injectable()
 export class ProviderServices implements IProviderServices {
-  private readonly logger = new Logger(ProviderServices.name);
+  private readonly logger = new CustomLogger(ProviderServices.name);
 
   constructor(
     private _cloudinaryService: CloudinaryService,

@@ -12,10 +12,11 @@ import { Profile, Strategy } from 'passport-google-oauth20';
 import { ILoginService } from '../services/interfaces/login-service.interface';
 import { LOGIN_SERVICE_INTERFACE_NAME } from '../../../core/constants/service.constant';
 import { UserType } from '../dtos/login.dto';
+import { CustomLogger } from "src/core/logger/custom-logger";
 
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy) {
-  private readonly logger = new Logger(GoogleStrategy.name);
+  private readonly logger = new CustomLogger(GoogleStrategy.name);
 
   constructor(
     private _config: ConfigService,

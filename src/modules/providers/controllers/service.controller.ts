@@ -38,10 +38,11 @@ import { IPayload } from '../../../core/misc/payload.interface';
 import { IService } from '../../../core/entities/interfaces/service.entity.interface';
 import { IResponse } from 'src/core/misc/response.util';
 import { ErrorMessage } from 'src/core/enum/error.enum';
+import { CustomLogger } from "src/core/logger/custom-logger";
 
 @Controller('provider')
 export class ServiceController {
-  private readonly logger = new Logger(ServiceController.name);
+  private readonly logger = new CustomLogger(ServiceController.name);
 
   constructor(
     @Inject(SERVICE_OFFERED_SERVICE_NAME)

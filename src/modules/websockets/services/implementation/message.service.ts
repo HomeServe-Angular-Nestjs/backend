@@ -7,10 +7,11 @@ import { ObjectId, Types } from "mongoose";
 import { IResponse } from "src/core/misc/response.util";
 import { USER_SOCKET_STORE_SERVICE_NAME } from "src/core/constants/service.constant";
 import { IUserSocketStoreService } from "../interface/user-socket-store-service.interface";
+import { CustomLogger } from "src/core/logger/custom-logger";
 
 @Injectable()
 export class MessageService implements IMessageService {
-    private readonly logger = new Logger(MessageService.name);
+    private readonly logger = new CustomLogger(MessageService.name);
 
     constructor(
         @Inject(MESSAGE_REPOSITORY_INTERFACE_NAME)

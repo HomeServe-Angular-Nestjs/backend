@@ -6,10 +6,11 @@ import { ErrorMessage } from "src/core/enum/error.enum";
 import { SavePlanDto, GetOnePlanDto, UpdatePlanStatusDto, UpdatePlanDto } from "../dto/plans.dto";
 import { IResponse } from "src/core/misc/response.util";
 import { IPlan } from "src/core/entities/interfaces/plans.entity.interface";
+import { CustomLogger } from "src/core/logger/custom-logger";
 
 @Controller('plans')
 export class PlanController {
-    private readonly logger = new Logger(PlanController.name);
+    private readonly logger = new CustomLogger(PlanController.name);
 
     constructor(
         @Inject(PLAN_SERVICE_NAME)

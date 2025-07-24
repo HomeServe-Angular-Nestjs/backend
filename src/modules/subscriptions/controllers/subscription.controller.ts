@@ -7,10 +7,11 @@ import { IPayload } from "src/core/misc/payload.interface";
 import { CreateSubscriptionDto } from "../dto/subscription.dto";
 import { IResponse } from "src/core/misc/response.util";
 import { ISubscription } from "src/core/entities/interfaces/subscription.entity.interface";
+import { CustomLogger } from "src/core/logger/custom-logger";
 
 @Controller('subscription')
 export class SubscriptionController {
-    private readonly logger = new Logger(SubscriptionController.name);
+    private readonly logger = new CustomLogger(SubscriptionController.name);
 
     constructor(
         @Inject(SUBSCRIPTION_SERVICE_NAME)

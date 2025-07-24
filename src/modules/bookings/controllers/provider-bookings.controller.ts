@@ -6,11 +6,12 @@ import { Request } from 'express';
 import { IProviderBookingService } from '../services/interfaces/provider-booking-service.interface';
 import { IResponseProviderBookingLists } from '../../../core/entities/interfaces/booking.entity.interface';
 import { BookingPaginationFilterDto, UpdateBookingStatusDto, BookingIdDto } from '../dtos/booking.dto';
+import { CustomLogger } from "src/core/logger/custom-logger";
 
 
 @Controller('provider/bookings')
 export class ProviderBookingsController {
-    private readonly logger = new Logger(ProviderBookingsController.name);
+    private readonly logger = new CustomLogger(ProviderBookingsController.name);
 
     constructor(
         @Inject(PROVIDER_BOOKING_SERVICE_NAME)

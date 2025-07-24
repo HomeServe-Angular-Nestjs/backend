@@ -9,10 +9,11 @@ import { IUploadsUtility } from '../../../../core/utilities/interface/upload.uti
 import { IServiceOfferedRepository } from '../../../../core/repositories/interfaces/serviceOffered-repo.interface';
 import { IService, IServicesWithPagination, ISubService, } from '../../../../core/entities/interfaces/service.entity.interface';
 import { IResponse } from 'src/core/misc/response.util';
+import { CustomLogger } from "src/core/logger/custom-logger";
 
 @Injectable()
 export class ServiceFeatureService implements IServiceFeatureService {
-  private readonly logger = new Logger(ServiceFeatureService.name);
+  private readonly logger = new CustomLogger(ServiceFeatureService.name);
 
   constructor(
     @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)

@@ -7,10 +7,11 @@ import { IRazorpayOrder, IVerifiedPayment } from "src/core/entities/interfaces/t
 import { IPayload } from "src/core/misc/payload.interface";
 import { Request } from "express";
 import { ErrorMessage } from "src/core/enum/error.enum";
+import { CustomLogger } from "src/core/logger/custom-logger";
 
 @Controller('payment')
 export class RazorpayController {
-    private readonly logger = new Logger(RazorpayController.name);
+    private readonly logger = new CustomLogger(RazorpayController.name);
 
     constructor(
         @Inject(RAZORPAYMENT_SERVICE_NAME)
@@ -40,8 +41,6 @@ export class RazorpayController {
             if (!user.sub || !user.type) {
                 throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
             }
-
-            this.logger.debug(dto); 
 
             const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = dto.verifyData;
 

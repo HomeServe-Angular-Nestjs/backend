@@ -7,10 +7,11 @@ import { PLAN_REPOSITORY_INTERFACE_NAME, SUBSCRIPTION_REPOSITORY_NAME } from "sr
 import { ISubscriptionRepository } from "src/core/repositories/interfaces/subscription-repo.interface";
 import { IPlanRepository } from "src/core/repositories/interfaces/plans-repo.interface";
 import { ErrorMessage } from "src/core/enum/error.enum";
+import { CustomLogger } from "src/core/logger/custom-logger";
 
 @Injectable()
 export class SubscriptionService implements ISubscriptionService {
-    private logger = new Logger(SubscriptionService.name);
+    private logger = new CustomLogger(SubscriptionService.name);
     constructor(
         @Inject(SUBSCRIPTION_REPOSITORY_NAME)
         private readonly _subscriptionRepository: ISubscriptionRepository,

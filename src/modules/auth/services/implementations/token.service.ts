@@ -11,10 +11,11 @@ import { ITokenService } from '../interfaces/token-service.interface';
 import Redis from 'ioredis';
 import { IPayload } from '../../../../core/misc/payload.interface';
 import { REDIS_CLIENT } from 'src/configs/redis/redis.module';
+import { CustomLogger } from "src/core/logger/custom-logger";
 
 @Injectable()
 export class TokenService implements ITokenService {
-  private readonly logger = new Logger(TokenService.name);
+  private readonly logger = new CustomLogger(TokenService.name);
 
   private readonly ACCESS_SECRET: string;
   private readonly REFRESH_SECRET: string;

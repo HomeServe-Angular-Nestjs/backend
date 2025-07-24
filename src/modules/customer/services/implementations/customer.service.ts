@@ -13,10 +13,11 @@ import { IUploadsUtility } from "src/core/utilities/interface/upload.utility.int
 import { IServiceOfferedRepository } from "src/core/repositories/interfaces/serviceOffered-repo.interface";
 import { Types } from "mongoose";
 import { ICustomerSearchServices } from "src/core/entities/interfaces/service.entity.interface";
+import { CustomLogger } from "src/core/logger/custom-logger";
 
 @Injectable()
 export class CustomerService implements ICustomerService {
-    private readonly logger = new Logger(CustomerService.name);
+    private readonly logger = new CustomLogger(CustomerService.name);
 
     constructor(
         @Inject(CUSTOMER_REPOSITORY_INTERFACE_NAME)
@@ -99,8 +100,6 @@ export class CustomerService implements ICustomerService {
             { $set: updateData },
             { new: true }
         );
-
-        this.logger.debug(updateData);
 
         if (!updatedCustomer) {
             throw new NotFoundException(ErrorMessage.CUSTOMER_NOT_FOUND_WITH_ID, customerId);

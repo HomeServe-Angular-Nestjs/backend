@@ -8,10 +8,11 @@ import { IBookingService } from '../services/interfaces/booking-service.interfac
 import { IBookingDetailCustomer, IBookingResponse, IBookingWithPagination } from '../../../core/entities/interfaces/booking.entity.interface';
 import { IResponse } from 'src/core/misc/response.util';
 import { ErrorMessage } from 'src/core/enum/error.enum';
+import { CustomLogger } from 'src/core/logger/custom-logger';
 
 @Controller('booking')
 export class BookingsController {
-    private readonly logger = new Logger(BookingsController.name);
+    private readonly logger = new CustomLogger(BookingsController.name);
 
     constructor(
         @Inject(CUSTOMER_SERVICE_NAME)

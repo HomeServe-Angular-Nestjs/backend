@@ -14,10 +14,11 @@ import { ADMIN_USER_MANAGEMENT_SERVICE_NAME } from '../../../core/constants/serv
 import { IAdminUserManagementService } from '../services/interfaces/admin-user-service.interface';
 import { GetUsersWithFilterDto, RemoveUserDto, StatusUpdateDto } from '../dtos/admin-user.dto';
 import { IUserData, IUserDataWithPagination } from 'src/core/entities/interfaces/admin.entity.interface';
+import { CustomLogger } from "src/core/logger/custom-logger";
 
 @Controller('admin/users')
 export class AdminUserController {
-  private readonly logger = new Logger(AdminUserController.name);
+  private readonly logger = new CustomLogger(AdminUserController.name);
 
   constructor(
     @Inject(ADMIN_USER_MANAGEMENT_SERVICE_NAME)

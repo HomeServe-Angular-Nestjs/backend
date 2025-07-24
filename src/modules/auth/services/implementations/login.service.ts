@@ -3,7 +3,6 @@ import {
   Inject,
   Injectable,
   InternalServerErrorException,
-  Logger,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -48,11 +47,11 @@ import {
 } from '../../dtos/login.dto';
 import { UserReposType } from '../../../../core/misc/repo.type';
 import { IAdminRepository } from '../../../../core/repositories/interfaces/admin-repo.interface';
-import { ErrorMessage } from 'src/core/enum/error.enum';
+import { CustomLogger } from "src/core/logger/custom-logger";
 
 @Injectable()
 export class LoginService implements ILoginService {
-  private readonly logger = new Logger(LoginService.name);
+  private readonly logger = new CustomLogger(LoginService.name);
 
   constructor(
     @Inject(CUSTOMER_REPOSITORY_INTERFACE_NAME)

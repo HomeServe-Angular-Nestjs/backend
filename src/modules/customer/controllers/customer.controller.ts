@@ -8,10 +8,11 @@ import { Request } from "express";
 import { IResponse } from "src/core/misc/response.util";
 import { ErrorMessage } from "src/core/enum/error.enum";
 import { FileInterceptor } from "@nestjs/platform-express";
+import { CustomLogger } from "src/core/logger/custom-logger";
 
 @Controller('')
 export class CustomerController {
-    private readonly logger = new Logger(CustomerController.name);
+    private readonly logger = new CustomLogger(CustomerController.name);
 
     constructor(
         @Inject(CUSTOMER_SERVICE_NAME)

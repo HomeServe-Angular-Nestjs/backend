@@ -9,10 +9,11 @@ import { IPayload } from "src/core/misc/payload.interface";
 import { Types } from "mongoose";
 import { GetChatDto } from "../dto/chat.dto";
 import { UserType } from "src/modules/auth/dtos/login.dto";
+import { CustomLogger } from "src/core/logger/custom-logger";
 
 @Controller('chat')
 export class ChatController {
-    private readonly logger = new Logger(ChatController.name)
+    private readonly logger = new CustomLogger(ChatController.name)
     constructor(
         @Inject(CHAT_SOCKET_SERVICE_NAME)
         private readonly _chatService: IChatSocketService

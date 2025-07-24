@@ -10,10 +10,11 @@ import { IProviderRepository } from "src/core/repositories/interfaces/provider-r
 import { IAdminRepository } from "src/core/repositories/interfaces/admin-repo.interface";
 import { UserType } from "src/modules/auth/dtos/login.dto";
 import { IMessagesRepository } from "src/core/repositories/interfaces/message-repo.interface";
+import { CustomLogger } from "src/core/logger/custom-logger";
 
 @Injectable()
 export class ChatSocketService implements IChatSocketService {
-    private readonly logger = new Logger(ChatSocketService.name);
+    private readonly logger = new CustomLogger(ChatSocketService.name);
 
     constructor(
         @Inject(CHAT_REPOSITORY_INTERFACE_NAME)

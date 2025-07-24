@@ -7,10 +7,11 @@ import { IProviderRepository } from "src/core/repositories/interfaces/provider-r
 import { IScheduleDay, IScheduleList, IScheduleListWithPagination, ISchedules } from "src/core/entities/interfaces/schedules.entity.interface";
 import { IResponse } from "src/core/misc/response.util";
 import { Types } from "mongoose";
+import { CustomLogger } from "src/core/logger/custom-logger";
 
 @Injectable()
 export class SchedulesService implements ISchedulesService {
-    private readonly logger = new Logger(SchedulesService.name);
+    private readonly logger = new CustomLogger(SchedulesService.name);
 
     constructor(
         @Inject(SCHEDULES_REPOSITORY_NAME)

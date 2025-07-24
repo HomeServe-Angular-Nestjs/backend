@@ -5,10 +5,11 @@ import { IAdminApprovalService } from "../services/interfaces/admin-approval-ser
 import { IApprovalOverviewData, IApprovalTableDetails } from "src/core/entities/interfaces/user.entity.interface";
 import { IResponse } from "src/core/misc/response.util";
 import { ErrorMessage } from "src/core/enum/error.enum";
+import { CustomLogger } from "src/core/logger/custom-logger";
 
 @Controller('admin/approvals')
 export class AdminApprovalsController {
-    private readonly logger = new Logger(AdminApprovalsController.name);
+    private readonly logger = new CustomLogger(AdminApprovalsController.name);
 
     constructor(
         @Inject(ADMIN_APPROVAL_SERVICE_NAME)

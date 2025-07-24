@@ -5,10 +5,11 @@ import { IAdminReviewService } from "../services/interfaces/admin-reviews-servic
 import { IResponse } from "src/core/misc/response.util";
 import { FilterWithPaginationDto, UpdateReviewStatus } from "../dtos/admin-user.dto";
 import { PaginatedReviewResponse } from "src/core/entities/interfaces/user.entity.interface";
+import { CustomLogger } from "src/core/logger/custom-logger";
 
 @Controller('admin/reviews')
 export class ReviewController {
-    private readonly logger = new Logger(ReviewController.name);
+    private readonly logger = new CustomLogger(ReviewController.name);
 
     constructor(
         @Inject(ADMIN_REVIEWS_SERVICE_NAME)
@@ -32,7 +33,7 @@ export class ReviewController {
         try {
             return await this._reviewService.updateReviewStatus(dto);
         } catch (err) {
-            this.logger.debug('Error caught while updating review status: ', err.message, err.stack);
+            this.logger.debug(`Error caught while updating review status: ${err.message}`, err.stack);
             throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
 
         }

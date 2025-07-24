@@ -5,10 +5,11 @@ import { ErrorMessage } from "src/core/enum/error.enum";
 import { IResponse } from "src/core/misc/response.util";
 import { IAdminBookingForTable, IBookingStats, IPaginatedBookingsResponse } from "src/core/entities/interfaces/booking.entity.interface";
 import { FilterWithPaginationDto, GetBookingsFilter } from "../dtos/admin-user.dto";
+import { CustomLogger } from "src/core/logger/custom-logger";
 
 @Controller('admin/bookings')
 export class AdminBookingController {
-    private readonly logger = new Logger(AdminBookingController.name);
+    private readonly logger = new CustomLogger(AdminBookingController.name);
 
     constructor(
         @Inject(ADMIN_BOOKINGS_SERVICE_NAME)

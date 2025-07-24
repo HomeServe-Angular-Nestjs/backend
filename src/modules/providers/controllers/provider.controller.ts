@@ -8,10 +8,11 @@ import { FilterDto, GetProvidersFromLocationSearch, RemoveCertificateDto, SlotDt
 import { IProvider } from '../../../core/entities/interfaces/user.entity.interface';
 import { ErrorMessage } from 'src/core/enum/error.enum';
 import { IResponse } from 'src/core/misc/response.util';
+import { CustomLogger } from "src/core/logger/custom-logger";
 
 @Controller('provider')
 export class ProviderController {
-    private readonly logger = new Logger(ProviderController.name);
+    private readonly logger = new CustomLogger(ProviderController.name);
 
     constructor(
         @Inject(PROVIDER_SERVICE_NAME)
@@ -69,7 +70,6 @@ export class ProviderController {
 
             }
 
-            this.logger.debug('dto', dto);
             return await this._providerServices.updateBio(user.sub, dto);
 
         } catch (err) {
@@ -143,8 +143,6 @@ export class ProviderController {
             if (!user.sub) {
                 throw new BadRequestException('Provider id missing');
             }
-
-            this.logger.debug(dto);
 
             return await this._providerServices.updateDefaultSlot(dto, user.sub)
         } catch (err) {

@@ -5,10 +5,11 @@ import { IProviderRepository } from "src/core/repositories/interfaces/provider-r
 import { PROVIDER_REPOSITORY_INTERFACE_NAME } from "src/core/constants/repository.constant";
 import { ErrorMessage } from "src/core/enum/error.enum";
 import { IApprovalOverviewData, IApprovalTableDetails, IProvider, VerificationStatusType } from "src/core/entities/interfaces/user.entity.interface";
+import { CustomLogger } from "src/core/logger/custom-logger";
 
 @Injectable()
 export class AdminApprovalService implements IAdminApprovalService {
-    private readonly logger = new Logger(AdminApprovalService.name);
+    private readonly logger = new CustomLogger(AdminApprovalService.name);
 
     constructor(
         @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)

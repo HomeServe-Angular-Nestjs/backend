@@ -2,10 +2,11 @@ import { Injectable, NestMiddleware, UnauthorizedException, NotFoundException, I
 import { Request, Response, NextFunction } from 'express';
 import { ITokenService } from '../services/interfaces/token-service.interface';
 import { TOKEN_SERVICE_NAME } from '../../../core/constants/service.constant';
+import { CustomLogger } from "src/core/logger/custom-logger";
 
 @Injectable()
 export class AuthMiddleware implements NestMiddleware {
-    private readonly logger = new Logger(AuthMiddleware.name);
+    private readonly logger = new CustomLogger(AuthMiddleware.name);
 
     constructor(
         @Inject(TOKEN_SERVICE_NAME)
@@ -36,7 +37,7 @@ export class AuthMiddleware implements NestMiddleware {
             await attachUserFromToken(accessToken);
             return next();
         } catch (accessError) {
-            this.logger.warn('Access token invalid or missing. Trying refresh flow...', accessError);
+            this.logger.warn(`Access token invalid or missing. Trying refresh flow... Error: ${accessError}`);
 
             let userId: string | undefined;
             let email: string | undefined;

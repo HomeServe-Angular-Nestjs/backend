@@ -1,13 +1,13 @@
-import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { CloudinaryService } from '../../../configs/cloudinary/cloudinary.service';
 import { IUploadsUtility } from '../interface/upload.utility.interface';
 import { UploadApiResponse } from 'cloudinary';
 import { HttpService } from '@nestjs/axios';
-import { lastValueFrom } from 'rxjs';
+import { CustomLogger } from "src/core/logger/custom-logger";
 
 @Injectable()
 export class UploadsUtility implements IUploadsUtility {
-  private readonly logger = new Logger(UploadsUtility.name);
+  private readonly logger = new CustomLogger(UploadsUtility.name);
 
   constructor(
     private readonly _httpService: HttpService,

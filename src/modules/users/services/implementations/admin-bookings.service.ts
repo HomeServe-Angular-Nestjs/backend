@@ -9,10 +9,11 @@ import { IAdminBookingForTable, IBookingStats, IPaginatedBookingsResponse } from
 import { IProviderRepository } from "src/core/repositories/interfaces/provider-repo.interface";
 import { GetBookingsFilter } from "../../dtos/admin-user.dto";
 import { Types } from "mongoose";
+import { CustomLogger } from "src/core/logger/custom-logger";
 
 @Injectable()
 export class AdminBookingService implements IAdminBookingService {
-    private readonly logger = new Logger(AdminBookingService.name);
+    private readonly logger = new CustomLogger(AdminBookingService.name);
 
     constructor(
         @Inject(BOOKING_REPOSITORY_NAME)
