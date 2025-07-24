@@ -25,3 +25,19 @@ export interface IUserDataWithPagination {
   data: IUserData[],
   pagination: IPagination
 }
+
+export interface IAdminDashboardOverview {
+  totalProviders: number;
+  totalCustomers: number;
+  totalUsers: number;
+  activeProviders: number;
+  pendingVerifications: number;
+  todaysBookings: number;
+  newUsersThisWeek: number;
+  weeklyTransactions: number;
+}
+
+export interface IAdminDashboardRevenue {
+  amount: number,
+  createdAt: string
+} 

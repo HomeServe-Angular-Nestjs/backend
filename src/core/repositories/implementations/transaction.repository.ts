@@ -5,6 +5,7 @@ import { ITransactionRepository } from "../interfaces/transaction-repo.interface
 import { Model, Types } from "mongoose";
 import { InjectModel } from "@nestjs/mongoose";
 import { TRANSACTION_MODEL_NAME } from "src/core/constants/model.constant";
+import { PaymentStatus } from "src/core/enum/bookings.enum";
 
 export class TransactionRepository extends BaseRepository<Transaction, TransactionDocument> implements ITransactionRepository {
     constructor(
@@ -12,6 +13,31 @@ export class TransactionRepository extends BaseRepository<Transaction, Transacti
         private readonly _transactionModel: Model<TransactionDocument>
     ) {
         super(_transactionModel);
+    }
+
+    async getTotalRevenue(date: Date): Promise<number> {
+        const result = await this._transactionModel.aggregate([
+            {
+                $match: {
+                    createdAt: { $gte: date },
+                    method: { $ne: PaymentStatus.REFUNDED }
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    total: { $sum: "$amount" }
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    total: { $divide: ['$total', 100] }
+                }
+            }
+        ]);
+
+        return result[0]?.total || 0;
     }
 
     protected toEntity(doc: TransactionDocument): Transaction {
