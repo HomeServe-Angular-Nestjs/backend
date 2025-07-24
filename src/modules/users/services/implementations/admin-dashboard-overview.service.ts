@@ -1,12 +1,12 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { IAdminDashboardOverviewService } from "../interfaces/admin-dashboard-overview-service.interface";
-import { BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, TRANSACTION_REPOSITORY_NAME } from "src/core/constants/repository.constant";
+import { BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SUBSCRIPTION_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME } from "src/core/constants/repository.constant";
 import { IProviderRepository } from "src/core/repositories/interfaces/provider-repo.interface";
-import { IAdminDashboardOverview, IAdminDashboardRevenue } from "src/core/entities/interfaces/admin.entity.interface";
+import { IAdminDashboardOverview, IAdminDashboardRevenue, IAdminDashboardSubscription } from "src/core/entities/interfaces/admin.entity.interface";
 import { IResponse } from "src/core/misc/response.util";
 import { ITransactionRepository } from "src/core/repositories/interfaces/transaction-repo.interface";
 import { CustomLogger } from "src/core/logger/custom-logger";
-import { create } from "domain";
+import { ISubscriptionRepository } from "src/core/repositories/interfaces/subscription-repo.interface";
 
 @Injectable()
 export class AdminDashboardOverviewService implements IAdminDashboardOverviewService {
@@ -21,6 +21,8 @@ export class AdminDashboardOverviewService implements IAdminDashboardOverviewSer
         private readonly _bookingRepository: IProviderRepository,
         @Inject(TRANSACTION_REPOSITORY_NAME)
         private readonly _transactionRepository: ITransactionRepository,
+        @Inject(SUBSCRIPTION_REPOSITORY_NAME)
+        private readonly _subscriptionRepository: ISubscriptionRepository,
     ) { }
 
     async getDashboardOverview(): Promise<IResponse<IAdminDashboardOverview>> {
@@ -90,5 +92,14 @@ export class AdminDashboardOverviewService implements IAdminDashboardOverviewSer
             message: "Dashboard revenue data fetched successfully",
             data: revenueData
         }
+    }
+
+    async getSubscriptionData(): Promise<IResponse<IAdminDashboardSubscription>> {
+        const subscriptionData = await this._subscriptionRepository.getSubscriptionChartData();
+        return {
+            success: true,
+            message: "Subscription data fetched successfully",
+            data: subscriptionData
+        };
     }
 }

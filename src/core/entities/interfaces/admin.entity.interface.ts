@@ -40,4 +40,11 @@ export interface IAdminDashboardOverview {
 export interface IAdminDashboardRevenue {
   amount: number,
   createdAt: string
-} 
+}
+
+export interface IAdminDashboardSubscription {
+  free: number;
+  totalPremium: number;
+  monthlyPremium: number;
+  yearlyPremium: number;
+}
