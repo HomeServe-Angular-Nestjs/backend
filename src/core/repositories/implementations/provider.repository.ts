@@ -10,6 +10,7 @@ import {
 import { FilterQuery, Model, Types } from 'mongoose';
 import { IProvider, IReview, IReviewFilters } from '../../entities/interfaces/user.entity.interface';
 import { FilterWithPaginationDto } from 'src/modules/users/dtos/admin-user.dto';
+import { IStats } from 'src/core/entities/interfaces/admin.entity.interface';
 
 @Injectable()
 export class ProviderRepository extends BaseRepository<Provider, ProviderDocument> implements IProviderRepository {
@@ -84,6 +85,47 @@ export class ProviderRepository extends BaseRepository<Provider, ProviderDocumen
       { workImages: 1 }
     );
     return result ? result.workImages : [];
+  }
+
+  async getProviderStatistics(): Promise<IStats> {
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999);
+
+    const result = await this._providerModel.aggregate([
+      {
+        $group: {
+          _id: null,
+          total: { $sum: 1 },
+          new: {
+            $sum: {
+              $cond: [{ $gte: ['$createdAt', sevenDaysAgo] }, 1, 0]
+            }
+          },
+          active: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $gte: ['$lastLoggedIn', startOfToday] },
+                    { $lte: ['$lastLoggedIn', endOfToday] }
+                  ]
+                },
+                1,
+                0
+              ]
+            }
+          }
+        }
+      }
+    ]);
+
+    return result.length > 0 ? result[0] : { new: 0, total: 0, active: 0 };
   }
 
   protected toEntity(doc: ProviderDocument): Provider {

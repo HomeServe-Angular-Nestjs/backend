@@ -48,3 +48,14 @@ export interface IAdminDashboardSubscription {
   monthlyPremium: number;
   yearlyPremium: number;
 }
+
+export interface IStats {
+  new: number;
+  total: number;
+  active: number;
+}
+
+export interface IAdminDashboardUserStats {
+  customer: IStats;
+  provider: IStats;
+}

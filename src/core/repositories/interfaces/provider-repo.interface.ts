@@ -2,6 +2,7 @@ import { IBaseRepository } from '../base/interfaces/base-repo.interface';
 import { ProviderDocument } from '../../schema/provider.schema';
 import { FilterQuery } from 'mongoose';
 import { IProvider, IReview } from 'src/core/entities/interfaces/user.entity.interface';
+import { IStats } from 'src/core/entities/interfaces/admin.entity.interface';
 
 export interface IProviderRepository extends IBaseRepository<IProvider, ProviderDocument> {
   findByGoogleId(id: string): Promise<IProvider | null>;
@@ -12,4 +13,5 @@ export interface IProviderRepository extends IBaseRepository<IProvider, Provider
   getProvidersBasedOnLocation(lng: number, lat: number): Promise<IProvider[]>;
   addWorkImage(providerId: string, publicId: string): Promise<IProvider | null>;
   getWorkImages(providerId: string): Promise<string[]>;
+  getProviderStatistics(): Promise<IStats>;
 }
