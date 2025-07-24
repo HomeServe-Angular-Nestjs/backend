@@ -1,5 +1,6 @@
 import { Transform } from "class-transformer";
 import { IsBoolean, IsEnum, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from "class-validator";
+import { BookingSearchBy, BookingStatus, PaymentStatus } from "src/core/enum/bookings.enum";
 import { RatingSearchBy, RatingsSortBy } from "src/core/enum/ratings.enum";
 
 export type FilterStatusType = true | false | 'all';
@@ -61,6 +62,32 @@ export class RemoveUserDto {
     role: RoleType;
 }
 
+export class GetBookingsFilter {
+    @Transform(({ value }) => {
+        const num = Number(value);
+        console.log(num)
+        if (isNaN(num)) return undefined;
+        return num;
+    })
+    page: number;
+
+    @IsOptional()
+    @IsString()
+    search: string;
+
+    @IsOptional()
+    @IsString()
+    @IsEnum(BookingSearchBy)
+    searchBy: string;
+
+    @IsOptional()
+    @IsString()
+    bookingStatus: BookingStatus;
+
+    @IsOptional()
+    @IsString()
+    paymentStatus: PaymentStatus;
+}
 
 export class FilterWithPaginationDto {
     @Transform(({ value }) => isNaN(value) || !value ? 1 : value)

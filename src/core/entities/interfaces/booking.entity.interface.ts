@@ -168,6 +168,11 @@ export interface IAdminBookingForTable {
     paymentStatus: PaymentStatus;
 }
 
+export interface IPaginatedBookingsResponse {
+    bookingData: IAdminBookingForTable[];
+    pagination: IPagination;
+}
+
 export interface IBookingStats {
     total: number;
     completed: number

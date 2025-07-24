@@ -31,3 +31,9 @@ export enum SortBy {
     NAME_ASCENDING = 'nameAsc',
     NAME_DESCENDING = 'nameDesc'
 }
+
+export enum BookingSearchBy {
+    ID = 'id',
+    CUSTOMER = 'customer',
+    PROVIDER = 'provider',
+}

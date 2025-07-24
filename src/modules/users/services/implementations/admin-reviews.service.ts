@@ -132,7 +132,7 @@ export class AdminReviewService implements IAdminReviewService {
                     total: filteredReviews.length,
                     page,
                     limit,
-                    totalPages: Math.ceil(filteredReviews.length / limit),
+                    // totalPages: Math.ceil(filteredReviews.length / limit),
                 },
             },
         };
@@ -163,4 +163,13 @@ export class AdminReviewService implements IAdminReviewService {
         }
     }
 
+    async reviewOverviews(): Promise<IResponse> {
+
+        
+
+        return {
+            success: true,
+            message: 'successfully fetched'
+        }
+    }
 }

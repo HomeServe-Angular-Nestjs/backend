@@ -5,4 +5,5 @@ import { FilterWithPaginationDto, UpdateReviewStatus } from "../../dtos/admin-us
 export interface IAdminReviewService {
     getReviewData(dto: FilterWithPaginationDto): Promise<IResponse<PaginatedReviewResponse>>;
     updateReviewStatus(dto: UpdateReviewStatus): Promise<IResponse>;
+    reviewOverviews(): Promise<IResponse>;
 }

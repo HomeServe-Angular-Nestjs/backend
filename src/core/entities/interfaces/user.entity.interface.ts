@@ -148,12 +148,7 @@ export interface IAdminReviewData {
 
 export interface PaginatedReviewResponse {
   reviews: IAdminReviewData[];
-  pagination: {
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  };
+  pagination: IPagination
 }
 
 export type SortByRatingType = 'latest' | 'oldest' | 'highest' | 'lowest';
