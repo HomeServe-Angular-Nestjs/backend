@@ -1,8 +1,10 @@
-import { IResponse } from 'src/core/misc/response.util';
-import { IProvider } from '../../../../core/entities/interfaces/user.entity.interface';
-import { FilterDto, GetProvidersFromLocationSearch, SlotDto, UpdateBioDto, UploadGalleryImageDto } from '../../dtos/provider.dto';
-import { UserType } from 'src/modules/auth/dtos/login.dto';
-import { UploadsType } from 'src/core/enum/uploads.enum';
+import { IProvider } from '@core/entities/interfaces/user.entity.interface';
+import { UploadsType } from '@core/enum/uploads.enum';
+import { IResponse } from '@core/misc/response.util';
+import { UserType } from '@modules/auth/dtos/login.dto';
+import {
+    FilterDto, GetProvidersFromLocationSearch, SlotDto, UpdateBioDto
+} from '@modules/providers/dtos/provider.dto';
 
 export interface IProviderServices {
   getProviders(filter?: FilterDto): Promise<IResponse<IProvider[]>>;

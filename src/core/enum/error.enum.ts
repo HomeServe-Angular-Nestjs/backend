@@ -1,4 +1,6 @@
 export enum ErrorMessage {
+    LOGIN_FAILED = 'Login failed, please check your credentials',
+
     // Not Found
     PROVIDER_NOT_FOUND = 'Provider not found',
     SERVICE_NOT_FOUND = 'Service not found',
@@ -36,6 +38,7 @@ export enum ErrorMessage {
     // Token Errors
     NO_TOKEN_FOUND = 'No token provided.',
     INVALID_REFRESH_TOKEN = 'Invalid or expired refresh token.',
+    TOKEN_VERIFICATION_FAILED = 'Token verification failed.',
 
     UPLOAD_FAILED = 'Failed to upload an image.',
 }

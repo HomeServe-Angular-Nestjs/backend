@@ -1,23 +1,21 @@
+import { JwtConfigModule } from '@configs/jwt/jwt.module';
+import { RedisModule } from '@configs/redis/redis.module';
+import { LoginController } from '@modules/auth/controllers/login.controller';
+import { SignUpController } from '@modules/auth/controllers/signup.controller';
+import { repositoryProvider } from '@modules/auth/providers/repositories.provider';
+import { serviceProvider } from '@modules/auth/providers/service.provider';
+import { utilityProvider } from '@modules/auth/providers/utility.provider';
+import { GoogleStrategy } from '@modules/auth/strategies/google.strategy';
 import { Module } from '@nestjs/common';
-
-import { SignUpController } from './controllers/signup.controller';
-import { LoginController } from './controllers/login.controller';
-
-import { repositoryProvider } from './providers/repositories.provider';
-import { serviceProvider } from './providers/service.provider';
-import { utilityProvider } from './providers/utility.provider';
-
-import { RedisModule } from '../../configs/redis/redis.module';
-
-import { GoogleStrategy } from './strategies/google.strategy';
 import { PassportModule } from '@nestjs/passport';
-import { JwtConfigModule } from '../../configs/jwt/jwt.module';
+import { SharedModule } from '@shared/shared.module';
 
 @Module({
   imports: [
     PassportModule.register({ session: true }),
     JwtConfigModule,
     RedisModule,
+    SharedModule
   ],
   controllers: [SignUpController, LoginController],
   providers: [
@@ -28,4 +26,4 @@ import { JwtConfigModule } from '../../configs/jwt/jwt.module';
   ],
   exports: [],
 })
-export class AuthModule {}
+export class AuthModule { }

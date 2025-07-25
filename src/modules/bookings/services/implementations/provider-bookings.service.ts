@@ -1,21 +1,43 @@
-import { Inject, Injectable, InternalServerErrorException, Logger, NotFoundException, Search } from "@nestjs/common";
-import { IProviderBookingService } from "../interfaces/provider-booking-service.interface";
-import { BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, SERVICE_OFFERED_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME } from "../../../../core/constants/repository.constant";
-import { IBookingRepository } from "../../../../core/repositories/interfaces/bookings-repo.interface";
-import { IServiceOfferedRepository } from "../../../../core/repositories/interfaces/serviceOffered-repo.interface";
-import { ICustomerRepository } from "../../../../core/repositories/interfaces/customer-repo.interface";
-import { IBookingDetailProvider, IBookingOverviewChanges, IBookingOverviewData, IProviderBookingLists, IResponseProviderBookingLists } from "../../../../core/entities/interfaces/booking.entity.interface";
-import { FilterFields, UpdateBookingStatusDto } from "../../dtos/booking.dto";
-import { BookingStatus, CancelStatus, DateRange, PaymentStatus } from "src/core/enum/bookings.enum";
-import { ITransactionRepository } from "src/core/repositories/interfaces/transaction-repo.interface";
-import { IResponse } from "src/core/misc/response.util";
-import { CustomLogger } from "src/core/logger/custom-logger";
+import {
+    Inject, Injectable, InternalServerErrorException, Logger, NotFoundException, Search
+} from '@nestjs/common';
+
+import {
+    BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, SERVICE_OFFERED_REPOSITORY_NAME,
+    TRANSACTION_REPOSITORY_NAME
+} from '../../../../core/constants/repository.constant';
+import {
+    IBookingDetailProvider, IBookingOverviewChanges, IBookingOverviewData, IProviderBookingLists,
+    IResponseProviderBookingLists
+} from '../../../../core/entities/interfaces/booking.entity.interface';
+import { BookingStatus, DateRange, PaymentStatus } from '../../../../core/enum/bookings.enum';
+import { ICustomLogger } from '../../../../core/logger/interface/custom-logger.interface';
+import {
+    ILoggerFactory, LOGGER_FACTORY
+} from '../../../../core/logger/interface/logger-factory.interface';
+import { IResponse } from '../../../../core/misc/response.util';
+import {
+    IBookingRepository
+} from '../../../../core/repositories/interfaces/bookings-repo.interface';
+import {
+    ICustomerRepository
+} from '../../../../core/repositories/interfaces/customer-repo.interface';
+import {
+    IServiceOfferedRepository
+} from '../../../../core/repositories/interfaces/serviceOffered-repo.interface';
+import {
+    ITransactionRepository
+} from '../../../../core/repositories/interfaces/transaction-repo.interface';
+import { FilterFields, UpdateBookingStatusDto } from '../../dtos/booking.dto';
+import { IProviderBookingService } from '../interfaces/provider-booking-service.interface';
 
 @Injectable()
 export class ProviderBookingService implements IProviderBookingService {
-    private logger = new CustomLogger(ProviderBookingService.name);
+    private readonly logger: ICustomLogger;
 
     constructor(
+        @Inject(LOGGER_FACTORY)
+        private readonly loggerFactory: ILoggerFactory,
         @Inject(SERVICE_OFFERED_REPOSITORY_NAME)
         private readonly _serviceOfferedRepository: IServiceOfferedRepository,
         @Inject(BOOKING_REPOSITORY_NAME)
@@ -24,7 +46,9 @@ export class ProviderBookingService implements IProviderBookingService {
         private readonly _customerRepository: ICustomerRepository,
         @Inject(TRANSACTION_REPOSITORY_NAME)
         private readonly _transactionRepository: ITransactionRepository,
-    ) { }
+    ) {
+        this.logger = this.loggerFactory.createLogger(ProviderBookingService.name);
+    }
 
 
     async fetchBookingsList(id: string, page: number = 1, filters: FilterFields): Promise<IResponseProviderBookingLists> {

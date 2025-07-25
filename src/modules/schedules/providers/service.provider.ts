@@ -1,6 +1,8 @@
-import { Provider } from "@nestjs/common";
-import { SCHEDULES_SERVICE_NAME } from "src/core/constants/service.constant";
-import { SchedulesService } from "../services/implemetations/provider-schedules.service";
+import { SCHEDULES_SERVICE_NAME } from '@core/constants/service.constant';
+import {
+    SchedulesService
+} from '@modules/schedules/services/implementations/provider-schedules.service';
+import { Provider } from '@nestjs/common';
 
 export const schedulesServiceProviders: Provider[] = [
     {

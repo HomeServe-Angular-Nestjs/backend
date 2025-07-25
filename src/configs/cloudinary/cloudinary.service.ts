@@ -1,7 +1,9 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { CLOUDINARY } from './cloudinary.provider';
-import { v2 as Cloudinary, ResourceApiResponse, UploadApiResponse } from 'cloudinary';
+import { ResourceApiResponse, UploadApiResponse, v2 as Cloudinary } from 'cloudinary';
 import { Readable } from 'node:stream';
+
+import { Inject, Injectable } from '@nestjs/common';
+
+import { CLOUDINARY } from './cloudinary.provider';
 
 @Injectable()
 export class CloudinaryService {

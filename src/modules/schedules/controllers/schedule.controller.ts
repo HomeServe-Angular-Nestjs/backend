@@ -1,22 +1,40 @@
-import { BadRequestException, Body, Controller, Get, Inject, InternalServerErrorException, Logger, Patch, Post, Query, Req } from "@nestjs/common";
-import { FetchShcedulesDto, MonthScheduleDto, RemoveScheduleDto, ScheduleDetailsDto, ScheduleListFilterDto, UpdateScheduleDateSlotStatusDto, UpdateScheduleDateStatusDto, UpdateScheduleStatusDto } from "../dtos/schedules.dto";
-import { IPayload } from "src/core/misc/payload.interface";
-import { Request } from "express";
-import { SCHEDULES_SERVICE_NAME } from "src/core/constants/service.constant";
-import { ISchedulesService } from "../services/interfaces/schedules-service.interface";
-import { IResponse } from "src/core/misc/response.util";
-import { IScheduleDay, IScheduleListWithPagination, ISchedules } from "src/core/entities/interfaces/schedules.entity.interface";
-import { ErrorMessage } from "src/core/enum/error.enum";
-import { CustomLogger } from "src/core/logger/custom-logger";
+import { Request } from 'express';
+
+import {
+    BadRequestException, Body, Controller, Get, Inject, InternalServerErrorException, Patch, Post,
+    Query, Req
+} from '@nestjs/common';
+
+import { SCHEDULES_SERVICE_NAME } from '../../../core/constants/service.constant';
+import {
+    IScheduleDay, IScheduleListWithPagination, ISchedules
+} from '../../../core/entities/interfaces/schedules.entity.interface';
+import { ErrorMessage } from '../../../core/enum/error.enum';
+import { ICustomLogger } from '../../../core/logger/interface/custom-logger.interface';
+import {
+    ILoggerFactory, LOGGER_FACTORY
+} from '../../../core/logger/interface/logger-factory.interface';
+import { IPayload } from '../../../core/misc/payload.interface';
+import { IResponse } from '../../../core/misc/response.util';
+import {
+    FetchShcedulesDto, MonthScheduleDto, RemoveScheduleDto, ScheduleDetailsDto,
+    ScheduleListFilterDto, UpdateScheduleDateSlotStatusDto, UpdateScheduleDateStatusDto,
+    UpdateScheduleStatusDto
+} from '../dtos/schedules.dto';
+import { ISchedulesService } from '../services/interfaces/schedules-service.interface';
 
 @Controller('schedule')
 export class SchedulesController {
-    private readonly logger = new CustomLogger(SchedulesController.name);
+    private readonly logger: ICustomLogger;
 
     constructor(
+        @Inject(LOGGER_FACTORY)
+        private readonly loggerFactory: ILoggerFactory,
         @Inject(SCHEDULES_SERVICE_NAME)
         private readonly _schedulesService: ISchedulesService
-    ) { }
+    ) {
+        this.logger = this.loggerFactory.createLogger(SchedulesController.name);
+    }
 
     @Post('')
     async createSchedule(@Req() req: Request, @Body() dto: MonthScheduleDto): Promise<IResponse> {

@@ -1,6 +1,6 @@
-import { SubsPaymentStatus } from "src/core/enum/subscription.enum";
-import { IEntity } from "../base/interfaces/base-entity.entity.interface";
-import { PlanRoleType } from "./plans.entity.interface";
+import { IEntity } from '@core/entities/base/interfaces/base-entity.entity.interface';
+import { PlanRoleType } from '@core/entities/interfaces/plans.entity.interface';
+import { SubsPaymentStatus } from '@core/enum/subscription.enum';
 
 export type RenewalType = 'auto' | 'manual';
 export type SubsDurationType = 'monthly' | 'yearly';

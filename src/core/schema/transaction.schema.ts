@@ -1,6 +1,8 @@
-import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { Document } from "mongoose";
-import { TransactionStatus, TransactionType } from "../enum/transaction.enum";
+import { Document } from 'mongoose';
+
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+
+import { TransactionStatus, TransactionType } from '../enum/transaction.enum';
 
 @Schema({ timestamps: true })
 export class TransactionDocument extends Document {

@@ -1,6 +1,10 @@
-import { IResponse } from "src/core/misc/response.util";
-import { IBookingDetailCustomer, IBookingResponse, IBookingWithPagination } from "../../../../core/entities/interfaces/booking.entity.interface";
-import { BookingDto, BookingIdDto, CancelBookingDto, IPriceBreakupDto, SelectedServiceDto, UpdateBookingDto } from "../../dtos/booking.dto";
+import {
+    IBookingDetailCustomer, IBookingResponse, IBookingWithPagination
+} from '@core/entities/interfaces/booking.entity.interface';
+import { IResponse } from '@core/misc/response.util';
+import {
+    BookingDto, CancelBookingDto, IPriceBreakupDto, SelectedServiceDto, UpdateBookingDto
+} from '@modules/bookings/dtos/booking.dto';
 
 export interface IBookingService {
     preparePriceBreakup(dto: SelectedServiceDto[]): Promise<IPriceBreakupDto>;

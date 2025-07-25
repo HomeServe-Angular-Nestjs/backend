@@ -1,5 +1,7 @@
-import { ICreateMessage, IMessage, MessageType } from "src/core/entities/interfaces/message.entity.interface";
-import { IResponse } from "src/core/misc/response.util";
+import {
+    ICreateMessage, IMessage, MessageType
+} from '@core/entities/interfaces/message.entity.interface';
+import { IResponse } from '@core/misc/response.util';
 
 export interface IMessageService {
     createMessage(messageData: ICreateMessage): Promise<IMessage>;

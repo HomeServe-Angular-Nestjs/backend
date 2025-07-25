@@ -1,53 +1,40 @@
+import { Request } from 'express';
+
 import {
-  BadGatewayException,
-  BadRequestException,
-  Body,
-  Controller,
-  Get,
-  Inject,
-  InternalServerErrorException,
-  Logger,
-  NotFoundException,
-  Patch,
-  Post,
-  Put,
-  Query,
-  Req,
-  UnauthorizedException,
-  UploadedFiles,
-  UseInterceptors,
+    BadRequestException, Body, Controller, Get, Inject, InternalServerErrorException,
+    NotFoundException, Patch, Post, Put, Query, Req, UnauthorizedException, UploadedFiles,
+    UseInterceptors
 } from '@nestjs/common';
 import { AnyFilesInterceptor } from '@nestjs/platform-express';
-import { Request } from 'express';
-import { IServiceFeatureService } from '../services/interfaces/service-service.interface';
-import { SERVICE_OFFERED_SERVICE_NAME } from '../../../core/constants/service.constant';
-import {
-  CreateServiceDto,
-  CreateSubServiceDto,
-  FilterServiceDto,
-  ProviderServiceFilterWithPaginationDto,
-  RemoveServiceDto,
-  RemoveSubServiceDto,
-  ToggleServiceStatusDto,
-  ToggleSubServiceStatusDto,
-  UpdateServiceDto,
-  UpdateSubServiceWrapperDto,
-} from '../dtos/service.dto';
 
-import { IPayload } from '../../../core/misc/payload.interface';
+import { SERVICE_OFFERED_SERVICE_NAME } from '../../../core/constants/service.constant';
 import { IService } from '../../../core/entities/interfaces/service.entity.interface';
-import { IResponse } from 'src/core/misc/response.util';
-import { ErrorMessage } from 'src/core/enum/error.enum';
-import { CustomLogger } from "src/core/logger/custom-logger";
+import { ErrorMessage } from '../../../core/enum/error.enum';
+import { ICustomLogger } from '../../../core/logger/interface/custom-logger.interface';
+import {
+    ILoggerFactory, LOGGER_FACTORY
+} from '../../../core/logger/interface/logger-factory.interface';
+import { IPayload } from '../../../core/misc/payload.interface';
+import { IResponse } from '../../../core/misc/response.util';
+import {
+    CreateServiceDto, CreateSubServiceDto, FilterServiceDto, ProviderServiceFilterWithPaginationDto,
+    RemoveServiceDto, RemoveSubServiceDto, ToggleServiceStatusDto, ToggleSubServiceStatusDto,
+    UpdateServiceDto
+} from '../dtos/service.dto';
+import { IServiceFeatureService } from '../services/interfaces/service-service.interface';
 
 @Controller('provider')
 export class ServiceController {
-  private readonly logger = new CustomLogger(ServiceController.name);
-
+  private readonly logger: ICustomLogger;
+  
   constructor(
+    @Inject(LOGGER_FACTORY)
+    private readonly loggerFactory: ILoggerFactory,
     @Inject(SERVICE_OFFERED_SERVICE_NAME)
     private readonly _serviceFeature: IServiceFeatureService,
-  ) { }
+  ) {
+    this.logger = this.loggerFactory.createLogger(ServiceController.name);
+  }
 
   /**
    * Handles the creation of a new service along with its associated sub - services and image uploads.

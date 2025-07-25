@@ -1,36 +1,25 @@
-import { Global, Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { MongooseModule } from '@nestjs/mongoose';
 import { Connection, ConnectionStates } from 'mongoose';
 
 import {
-  ADMIN_MODEL_NAME,
-  BOOKINGS_MODEL_NAME,
-  CHAT_MODEL_NAME,
-  CUSTOMER_MODEL_NAME,
-  MESSAGE_MODEL_NAME,
-  OTP_MODEL_NAME,
-  PLAN_MODEL_NAME,
-  PROVIDER_MODEL_NAME,
-  SCHEDULES_MODEL_NAME,
-  SERVICE_OFFERED_MODEL_NAME,
-  SUBSCRIPTION_MODEL_NAME,
-  TRANSACTION_MODEL_NAME,
-} from '../../core/constants/model.constant';
-
-import { CustomerSchema } from '../../core/schema/customer.schema';
-import { OtpSchema } from '../../core/schema/otp.schema';
-import { ProviderSchema } from '../../core/schema/provider.schema';
-import { AdminSchema } from '../../core/schema/admin.schema';
-import { ServiceSchema } from '../../core/schema/service.schema';
-import { BookingSchema } from '../../core/schema/bookings.schema';
-import { TransactionSchema } from 'src/core/schema/transaction.schema';
-import { SchedulesSchema } from 'src/core/schema/schedules.schema';
-import { ChatSchema } from 'src/core/schema/chat.schema';
-import { MessageSchema } from 'src/core/schema/message.schema';
-import { PlanSchema } from 'src/core/schema/plans.schema';
-import { SubscriptionSchema } from 'src/core/schema/subscription.schema';
-
+    ADMIN_MODEL_NAME, BOOKINGS_MODEL_NAME, CHAT_MODEL_NAME, CUSTOMER_MODEL_NAME, MESSAGE_MODEL_NAME,
+    OTP_MODEL_NAME, PLAN_MODEL_NAME, PROVIDER_MODEL_NAME, SCHEDULES_MODEL_NAME,
+    SERVICE_OFFERED_MODEL_NAME, SUBSCRIPTION_MODEL_NAME, TRANSACTION_MODEL_NAME
+} from '@core/constants/model.constant';
+import { AdminSchema } from '@core/schema/admin.schema';
+import { BookingSchema } from '@core/schema/bookings.schema';
+import { ChatSchema } from '@core/schema/chat.schema';
+import { CustomerSchema } from '@core/schema/customer.schema';
+import { MessageSchema } from '@core/schema/message.schema';
+import { OtpSchema } from '@core/schema/otp.schema';
+import { PlanSchema } from '@core/schema/plans.schema';
+import { ProviderSchema } from '@core/schema/provider.schema';
+import { SchedulesSchema } from '@core/schema/schedules.schema';
+import { ServiceSchema } from '@core/schema/service.schema';
+import { SubscriptionSchema } from '@core/schema/subscription.schema';
+import { TransactionSchema } from '@core/schema/transaction.schema';
+import { Global, Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { MongooseModule } from '@nestjs/mongoose';
 
 @Global()
 @Module({

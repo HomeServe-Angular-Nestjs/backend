@@ -1,22 +1,37 @@
-import { Inject, NotFoundException, UnauthorizedException, UseFilters } from "@nestjs/common";
-import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer } from "@nestjs/websockets";
-import { Server, Socket } from "socket.io";
-import { Types } from "mongoose";
-import { CorsOptions } from "@nestjs/common/interfaces/external/cors-options.interface";
-import { BaseSocketGateway } from "./base.gateway";
-import { FRONTEND_URL } from "src/core/environments/environments";
-import { AUTH_SOCKET_SERVICE_NAME, CHAT_SOCKET_SERVICE_NAME, MESSAGE_SERVICE_NAME, USER_SOCKET_STORE_SERVICE_NAME } from "src/core/constants/service.constant";
-import { IAuthSocketService } from "../services/interface/auth-socket-service.interface";
-import { ErrorMessage } from "src/core/enum/error.enum";
-import { IUserSocketStoreService } from "../services/interface/user-socket-store-service.interface";
-import { IChatSocketService } from "../services/interface/chat-socket-service.interface";
-import { IMessageService } from "../services/interface/message-service.interface";
-import { SendMessageDto } from "../dto/message.dto";
-import { CUSTOM_DTO_VALIDATOR_NAME } from "src/core/constants/utility.constant";
-import { ICustomDtoValidator } from "src/core/utilities/interface/custom-dto-validator.utility.interface";
-import { ICreateMessage, IMessage } from "src/core/entities/interfaces/message.entity.interface";
-import { IParticipant } from "src/core/entities/interfaces/chat.entity.interface";
-import { GlobalWsExceptionFilter } from "src/core/exception-filters/ws-exception.filters";
+import { Types } from 'mongoose';
+import { Server, Socket } from 'socket.io';
+
+import {
+    AUTH_SOCKET_SERVICE_NAME, CHAT_SOCKET_SERVICE_NAME, MESSAGE_SERVICE_NAME,
+    USER_SOCKET_STORE_SERVICE_NAME
+} from '@/core/constants/service.constant';
+import { IParticipant } from '@/core/entities/interfaces/chat.entity.interface';
+import { ICreateMessage, IMessage } from '@/core/entities/interfaces/message.entity.interface';
+import { ErrorMessage } from '@/core/enum/error.enum';
+import { FRONTEND_URL } from '@/core/environments/environments';
+import { GlobalWsExceptionFilter } from '@/core/exception-filters/ws-exception.filters';
+import {
+    ICustomDtoValidator
+} from '@/core/utilities/interface/custom-dto-validator.utility.interface';
+import { CUSTOM_DTO_VALIDATOR_NAME } from '@core/constants/utility.constant';
+import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
+import { SendMessageDto } from '@modules/websockets/dto/message.dto';
+import { BaseSocketGateway } from '@modules/websockets/namespaces/base.gateway';
+import {
+    IAuthSocketService
+} from '@modules/websockets/services/interface/auth-socket-service.interface';
+import {
+    IChatSocketService
+} from '@modules/websockets/services/interface/chat-socket-service.interface';
+import { IMessageService } from '@modules/websockets/services/interface/message-service.interface';
+import {
+    IUserSocketStoreService
+} from '@modules/websockets/services/interface/user-socket-store-service.interface';
+import { Inject, NotFoundException, UnauthorizedException, UseFilters } from '@nestjs/common';
+import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
+import {
+    ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer
+} from '@nestjs/websockets';
 
 const cors: CorsOptions = {
     origin: FRONTEND_URL,
@@ -30,6 +45,8 @@ export class ChatGateway extends BaseSocketGateway {
     private server: Server;
 
     constructor(
+        @Inject(LOGGER_FACTORY)
+        private readonly loggerFactory: ILoggerFactory,
         @Inject(AUTH_SOCKET_SERVICE_NAME)
         private readonly _authSocketService: IAuthSocketService,
         @Inject(USER_SOCKET_STORE_SERVICE_NAME)
@@ -40,7 +57,11 @@ export class ChatGateway extends BaseSocketGateway {
         private readonly _messageService: IMessageService,
         @Inject(CUSTOM_DTO_VALIDATOR_NAME)
         private readonly _customDtoValidatorUtility: ICustomDtoValidator
-    ) { super() }
+    ) {
+        super()
+        this.logger = this.loggerFactory.createLogger(ChatGateway.name);
+
+    }
 
     protected override async onClientConnect(client: Socket): Promise<void> {
         try {

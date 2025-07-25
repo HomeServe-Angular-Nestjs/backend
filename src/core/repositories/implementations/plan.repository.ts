@@ -1,12 +1,13 @@
-import { IPlan } from "src/core/entities/interfaces/plans.entity.interface";
-import { BaseRepository } from "../base/implementations/base.repository";
-import { PlanDocumentType } from "src/core/schema/plans.schema";
-import { InjectModel } from "@nestjs/mongoose";
-import { PLAN_MODEL_NAME } from "src/core/constants/model.constant";
-import { Model } from "mongoose";
-import { Plan } from "src/core/entities/implementation/plans.entity";
-import { IPlanRepository } from "../interfaces/plans-repo.interface";
-import { Injectable } from "@nestjs/common";
+import { Model } from 'mongoose';
+
+import { PLAN_MODEL_NAME } from '@core/constants/model.constant';
+import { Plan } from '@core/entities/implementation/plans.entity';
+import { IPlan } from '@core/entities/interfaces/plans.entity.interface';
+import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
+import { IPlanRepository } from '@core/repositories/interfaces/plans-repo.interface';
+import { PlanDocumentType } from '@core/schema/plans.schema';
+import { Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
 
 @Injectable()
 export class PlanRepository extends BaseRepository<IPlan, PlanDocumentType> implements IPlanRepository {

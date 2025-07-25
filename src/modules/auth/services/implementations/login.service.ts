@@ -1,59 +1,41 @@
 import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  InternalServerErrorException,
-  NotFoundException,
-  UnauthorizedException,
+    ADMIN_REPOSITORY_INTERFACE_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME,
+    PROVIDER_REPOSITORY_INTERFACE_NAME
+} from '@core/constants/repository.constant';
+import { TOKEN_SERVICE_NAME } from '@core/constants/service.constant';
+import {
+    ARGON_UTILITY_NAME, MAILER_UTILITY_INTERFACE_NAME, TOKEN_UTILITY_NAME
+} from '@core/constants/utility.constant';
+import { Customer } from '@core/entities/implementation/customer.entity';
+import { Provider } from '@core/entities/implementation/provider.entity';
+import { IUser } from '@core/entities/interfaces/user.entity.interface';
+import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
+import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
+import { IPayload } from '@core/misc/payload.interface';
+import { UserReposType } from '@core/misc/repo.type';
+import { IAdminRepository } from '@core/repositories/interfaces/admin-repo.interface';
+import { ICustomerRepository } from '@core/repositories/interfaces/customer-repo.interface';
+import { IProviderRepository } from '@core/repositories/interfaces/provider-repo.interface';
+import { IArgonUtility } from '@core/utilities/interface/argon.utility.interface';
+import { IMailerUtility } from '@core/utilities/interface/mailer.utility.interface';
+import { ITokenUtility } from '@core/utilities/interface/token.utility.interface';
+import {
+    AuthLoginDto, ChangePasswordDto, ForgotPasswordDto, GoogleLoginDto, UserType, VerifyTokenDto
+} from '@modules/auth/dtos/login.dto';
+import { ILoginService } from '@modules/auth/services/interfaces/login-service.interface';
+import { ITokenService } from '@modules/auth/services/interfaces/token-service.interface';
+import {
+    BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException,
+    UnauthorizedException
 } from '@nestjs/common';
-
-import { ICustomerRepository } from '../../../../core/repositories/interfaces/customer-repo.interface';
-import { IProviderRepository } from '../../../../core/repositories/interfaces/provider-repo.interface';
-
-import {
-  ADMIN_REPOSITORY_INTERFACE_NAME,
-  CUSTOMER_REPOSITORY_INTERFACE_NAME,
-  PROVIDER_REPOSITORY_INTERFACE_NAME,
-} from '../../../../core/constants/repository.constant';
-
-import { ILoginService } from '../interfaces/login-service.interface';
-import { ITokenService } from '../interfaces/token-service.interface';
-
-import { TOKEN_SERVICE_NAME } from '../../../../core/constants/service.constant';
-
-import { Customer } from '../../../../core/entities/implementation/customer.entity';
-import { Provider } from '../../../../core/entities/implementation/provider.entity';
-
-import { IUser } from '../../../../core/entities/interfaces/user.entity.interface';
-import { IPayload } from '../../../../core/misc/payload.interface';
-
-import { IArgonUtility } from '../../../../core/utilities/interface/argon.utility.interface';
-import { ITokenUtility } from '../../../../core/utilities/interface/token.utility.interface';
-import { IMailerUtility } from '../../../../core/utilities/interface/mailer.utility.interface';
-
-import {
-  ARGON_UTILITY_NAME,
-  MAILER_UTILITY_INTERFACE_NAME,
-  TOKEN_UTILITY_NAME,
-} from '../../../../core/constants/utility.constant';
-
-import {
-  AuthLoginDto,
-  ChangePasswordDto,
-  ForgotPasswordDto,
-  GoogleLoginDto,
-  UserType,
-  VerifyTokenDto,
-} from '../../dtos/login.dto';
-import { UserReposType } from '../../../../core/misc/repo.type';
-import { IAdminRepository } from '../../../../core/repositories/interfaces/admin-repo.interface';
-import { CustomLogger } from "src/core/logger/custom-logger";
 
 @Injectable()
 export class LoginService implements ILoginService {
-  private readonly logger = new CustomLogger(LoginService.name);
+  private readonly logger: ICustomLogger;
 
   constructor(
+    @Inject(LOGGER_FACTORY)
+    private readonly loggerFactory: ILoggerFactory,
     @Inject(CUSTOMER_REPOSITORY_INTERFACE_NAME)
     private _customerRepository: ICustomerRepository,
     @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
@@ -68,7 +50,9 @@ export class LoginService implements ILoginService {
     private _mailerService: IMailerUtility,
     @Inject(TOKEN_SERVICE_NAME)
     private _tokenService: ITokenService,
-  ) { }
+  ) {
+    this.logger = this.loggerFactory.createLogger(LoginService.name);
+  }
 
   async validateUserCredentials(dto: AuthLoginDto): Promise<IUser> {
     try {
@@ -117,7 +101,7 @@ export class LoginService implements ILoginService {
     if (!user.type) {
       throw new Error('User type missing in the user.');
     }
-    
+
     return this._tokenService.generateRefreshToken(user.id, user.email, user.type);
   }
 

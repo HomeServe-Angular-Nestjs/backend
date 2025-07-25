@@ -1,17 +1,10 @@
-import { Optional } from '@nestjs/common';
 import { Transform, Type } from 'class-transformer';
 import {
-  IsArray,
-  IsBoolean,
-  IsDefined,
-  IsIn,
-  IsNotEmpty,
-  IsNumber,
-  IsOptional,
-  IsString,
-  Min,
-  ValidateNested,
+    IsArray, IsBoolean, IsDefined, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, Min,
+    ValidateNested
 } from 'class-validator';
+
+import { Optional } from '@nestjs/common';
 
 export class CreateSubServiceDto {
   @IsString()

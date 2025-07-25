@@ -1,6 +1,8 @@
-import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { Document, Types } from "mongoose";
-import { IBlockedInfo, IParticipant } from "../entities/interfaces/chat.entity.interface";
+import { Document, Types } from 'mongoose';
+
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+
+import { IBlockedInfo, IParticipant } from '../entities/interfaces/chat.entity.interface';
 
 @Schema({ _id: false })
 class Participant {

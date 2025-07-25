@@ -1,5 +1,5 @@
-import { BaseEntity } from "../base/implementation/base.entity";
-import { IPlan, PlanDurationType, PlanRoleType } from "../interfaces/plans.entity.interface";
+import { BaseEntity } from '../base/implementation/base.entity';
+import { IPlan, PlanDurationType, PlanRoleType } from '../interfaces/plans.entity.interface';
 
 export class Plan extends BaseEntity implements IPlan {
     name: string;

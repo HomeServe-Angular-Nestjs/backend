@@ -1,10 +1,12 @@
-import { Module } from "@nestjs/common";
-import { schedulesServiceProviders } from "./providers/service.provider";
-import { schedulesRepositoryProviders } from "./providers/repository.provider";
-import { SchedulesController } from "./controllers/schedule.controller";
+import { Module } from '@nestjs/common';
+
+import { SharedModule } from '../../shared/shared.module';
+import { SchedulesController } from './controllers/schedule.controller';
+import { schedulesRepositoryProviders } from './providers/repository.provider';
+import { schedulesServiceProviders } from './providers/service.provider';
 
 @Module({
-    imports: [],
+    imports: [SharedModule],
     controllers: [SchedulesController],
     providers: [
         ...schedulesServiceProviders,

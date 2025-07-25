@@ -1,22 +1,34 @@
-import { BadRequestException, Body, Controller, Inject, InternalServerErrorException, Logger, NotFoundException, Post, Req, UnauthorizedException, UseInterceptors } from "@nestjs/common";
+import { Request } from 'express';
 
-import { CreateOrderDto, RazorpayVerifyDto } from "../dtos/payment.dto";
-import { RAZORPAYMENT_SERVICE_NAME } from "src/core/constants/service.constant";
-import { IRazorPaymentService } from "../services/interfaces/razorpay-service.interface";
-import { IRazorpayOrder, IVerifiedPayment } from "src/core/entities/interfaces/transaction.entity.interface";
-import { IPayload } from "src/core/misc/payload.interface";
-import { Request } from "express";
-import { ErrorMessage } from "src/core/enum/error.enum";
-import { CustomLogger } from "src/core/logger/custom-logger";
+import { RAZORPAYMENT_SERVICE_NAME } from '@core/constants/service.constant';
+import {
+    IRazorpayOrder, IVerifiedPayment
+} from '@core/entities/interfaces/transaction.entity.interface';
+import { ErrorMessage } from '@core/enum/error.enum';
+import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
+import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
+import { IPayload } from '@core/misc/payload.interface';
+import { CreateOrderDto, RazorpayVerifyDto } from '@modules/payment/dtos/payment.dto';
+import {
+    IRazorPaymentService
+} from '@modules/payment/services/interfaces/razorpay-service.interface';
+import {
+    BadRequestException, Body, Controller, Inject, InternalServerErrorException, Post, Req,
+    UnauthorizedException
+} from '@nestjs/common';
 
 @Controller('payment')
 export class RazorpayController {
-    private readonly logger = new CustomLogger(RazorpayController.name);
+    private readonly logger: ICustomLogger;
 
     constructor(
+        @Inject(LOGGER_FACTORY)
+        private readonly loggerFactory: ILoggerFactory,
         @Inject(RAZORPAYMENT_SERVICE_NAME)
         private readonly _paymentService: IRazorPaymentService
-    ) { }
+    ) {
+        this.logger = this.loggerFactory.createLogger(RazorpayController.name);
+    }
 
     @Post('create_order')
     async createOrder(@Body() { amount }: CreateOrderDto): Promise<IRazorpayOrder> {

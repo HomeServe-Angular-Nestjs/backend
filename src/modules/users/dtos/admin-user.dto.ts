@@ -1,7 +1,10 @@
-import { Transform } from "class-transformer";
-import { IsBoolean, IsEnum, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from "class-validator";
-import { BookingSearchBy, BookingStatus, PaymentStatus } from "src/core/enum/bookings.enum";
-import { RatingSearchBy, RatingsSortBy } from "src/core/enum/ratings.enum";
+import { Transform } from 'class-transformer';
+import {
+    IsBoolean, IsEnum, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, Min
+} from 'class-validator';
+
+import { BookingSearchBy, BookingStatus, PaymentStatus } from '@core/enum/bookings.enum';
+import { RatingSearchBy, RatingsSortBy } from '@core/enum/ratings.enum';
 
 export type FilterStatusType = true | false | 'all';
 export type RoleType = 'customer' | 'provider';

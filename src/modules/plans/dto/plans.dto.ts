@@ -1,6 +1,7 @@
-import { Transform } from "class-transformer";
-import { IsArray, IsBoolean, IsIn, IsNotEmpty, IsNumber, IsString, Min } from "class-validator";
-import { PlanDurationType, PlanRoleType } from "src/core/entities/interfaces/plans.entity.interface";
+import { Transform } from 'class-transformer';
+import { IsArray, IsBoolean, IsIn, IsNotEmpty, IsNumber, IsString, Min } from 'class-validator';
+
+import { PlanDurationType, PlanRoleType } from '@core/entities/interfaces/plans.entity.interface';
 
 export class SavePlanDto {
     @IsNotEmpty()

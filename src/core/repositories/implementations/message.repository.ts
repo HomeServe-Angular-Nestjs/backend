@@ -1,10 +1,11 @@
-import { Message } from "src/core/entities/implementation/message.entity";
-import { BaseRepository } from "../base/implementations/base.repository";
-import { MessageDocument } from "src/core/schema/message.schema";
-import { IMessagesRepository } from "../interfaces/message-repo.interface";
-import { InjectModel } from "@nestjs/mongoose";
-import { MESSAGE_MODEL_NAME } from "src/core/constants/model.constant";
-import { FilterQuery, Model, UpdateQuery, UpdateWriteOpResult } from "mongoose";
+import { FilterQuery, Model, UpdateQuery, UpdateWriteOpResult } from 'mongoose';
+
+import { MESSAGE_MODEL_NAME } from '@core/constants/model.constant';
+import { Message } from '@core/entities/implementation/message.entity';
+import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
+import { IMessagesRepository } from '@core/repositories/interfaces/message-repo.interface';
+import { MessageDocument } from '@core/schema/message.schema';
+import { InjectModel } from '@nestjs/mongoose';
 
 export class MessageRepository extends BaseRepository<Message, MessageDocument> implements IMessagesRepository {
     constructor(

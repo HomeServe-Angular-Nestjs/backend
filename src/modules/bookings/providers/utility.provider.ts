@@ -1,6 +1,5 @@
-import { Provider } from "@nestjs/common";
-import { PAYMENT_UTILITY_NAME } from "src/core/constants/utility.constant";
-import { RazorpayUtility } from "src/core/utilities/implementations/razorpay.utils";
+
+import { Provider } from '@nestjs/common';
 
 export const bookingsUtilityProviders: Provider[] = [
     // {

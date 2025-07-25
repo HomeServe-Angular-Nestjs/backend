@@ -1,5 +1,5 @@
-import { IAdmin } from '../interfaces/admin.entity.interface';
 import { BaseEntity } from '../base/implementation/base.entity';
+import { IAdmin } from '../interfaces/admin.entity.interface';
 
 export class Admin extends BaseEntity implements IAdmin {
   email: string;

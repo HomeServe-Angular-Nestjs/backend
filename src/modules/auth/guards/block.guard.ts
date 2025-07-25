@@ -1,24 +1,35 @@
-import { BadRequestException, CanActivate, ExecutionContext, ForbiddenException, Inject, Injectable, Logger, UnauthorizedException } from "@nestjs/common";
-import { Request } from "express";
-import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME } from "src/core/constants/repository.constant";
-import { IPayload } from "src/core/misc/payload.interface";
-import { ICustomerRepository } from "src/core/repositories/interfaces/customer-repo.interface";
-import { IProviderRepository } from "src/core/repositories/interfaces/provider-repo.interface";
-import { UserType } from "../dtos/login.dto";
-import { ICustomer, IProvider } from "src/core/entities/interfaces/user.entity.interface";
-import { CustomLogger } from "src/core/logger/custom-logger";
+import { Request } from 'express';
+
+import {
+    CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME
+} from '@core/constants/repository.constant';
+import { ICustomer, IProvider } from '@core/entities/interfaces/user.entity.interface';
+import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
+import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
+import { IPayload } from '@core/misc/payload.interface';
+import { ICustomerRepository } from '@core/repositories/interfaces/customer-repo.interface';
+import { IProviderRepository } from '@core/repositories/interfaces/provider-repo.interface';
+import { UserType } from '@modules/auth/dtos/login.dto';
+import {
+    BadRequestException, CanActivate, ExecutionContext, ForbiddenException, Inject, Injectable,
+    Logger, UnauthorizedException
+} from '@nestjs/common';
 
 @Injectable()
 export class BlockGuard implements CanActivate {
-    private readonly logger = new CustomLogger(BlockGuard.name);
+    private readonly logger: ICustomLogger;
     private readonly validUserTypes = ['admin', 'customer', 'provider'];
 
     constructor(
+        @Inject(LOGGER_FACTORY)
+        private readonly loggerFactory: ILoggerFactory,
         @Inject(CUSTOMER_REPOSITORY_INTERFACE_NAME)
         private readonly _customerRepository: ICustomerRepository,
         @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
         private readonly _providerRepository: IProviderRepository,
-    ) { }
+    ) {
+        this.logger = this.loggerFactory.createLogger(BlockGuard.name);
+    }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const request: Request = context.switchToHttp().getRequest();
@@ -34,11 +45,11 @@ export class BlockGuard implements CanActivate {
         const userType = (request.headers['x-user-type']) as UserType;
 
         if (!userType) {
-            throw new UnauthorizedException('Missing usertype header');
+            throw new UnauthorizedException('Missing user type header');
         }
 
         if (!this.validUserTypes.includes(userType.toLowerCase())) {
-            throw new BadRequestException(`Invalid usertype: ${userType}`);
+            throw new BadRequestException(`Invalid user type: ${userType}`);
         }
 
         if (userType === 'admin') {

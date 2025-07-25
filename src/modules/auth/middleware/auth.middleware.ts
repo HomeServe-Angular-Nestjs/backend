@@ -1,17 +1,25 @@
-import { Injectable, NestMiddleware, UnauthorizedException, NotFoundException, Inject, Logger } from '@nestjs/common';
-import { Request, Response, NextFunction } from 'express';
-import { ITokenService } from '../services/interfaces/token-service.interface';
-import { TOKEN_SERVICE_NAME } from '../../../core/constants/service.constant';
-import { CustomLogger } from "src/core/logger/custom-logger";
+import { NextFunction, Request, Response } from 'express';
+
+import { TOKEN_SERVICE_NAME } from '@core/constants/service.constant';
+import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
+import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
+import { ITokenService } from '@modules/auth/services/interfaces/token-service.interface';
+import {
+    Inject, Injectable, NestMiddleware, NotFoundException, UnauthorizedException
+} from '@nestjs/common';
 
 @Injectable()
 export class AuthMiddleware implements NestMiddleware {
-    private readonly logger = new CustomLogger(AuthMiddleware.name);
+    private readonly logger: ICustomLogger;
 
     constructor(
+        @Inject(LOGGER_FACTORY)
+        private readonly loggerFactory: ILoggerFactory,
         @Inject(TOKEN_SERVICE_NAME)
         private readonly tokenService: ITokenService,
-    ) { }
+    ) {
+        this.logger = this.loggerFactory.createLogger(AuthMiddleware.name);
+    }
 
     async use(req: Request, res: Response, next: NextFunction): Promise<void> {
         const isAuthRoute = ['login', 'signup'].some(route =>

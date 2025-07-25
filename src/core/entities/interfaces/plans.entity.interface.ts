@@ -1,4 +1,4 @@
-import { IEntity } from "../base/interfaces/base-entity.entity.interface";
+import { IEntity } from '@core/entities/base/interfaces/base-entity.entity.interface';
 
 export type PlanDurationType = 'monthly' | 'yearly' | 'lifetime';
 export type PlanRoleType = 'customer' | 'provider';

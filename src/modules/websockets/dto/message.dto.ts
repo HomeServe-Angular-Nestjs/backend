@@ -1,5 +1,6 @@
-import { IsDefined, IsIn, IsNotEmpty, IsOptional, IsString } from "class-validator";
-import { UserType } from "src/modules/auth/dtos/login.dto";
+import { IsDefined, IsIn, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+
+import { UserType } from '@/modules/auth/dtos/login.dto';
 
 export class GetMessagesDto {
     @IsNotEmpty()

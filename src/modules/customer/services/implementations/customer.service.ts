@@ -1,25 +1,51 @@
-import { Inject, Injectable, InternalServerErrorException, Logger, NotFoundException } from "@nestjs/common";
-import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SERVICE_OFFERED_REPOSITORY_NAME } from "../../../../core/constants/repository.constant";
-import { ICustomerRepository } from "../../../../core/repositories/interfaces/customer-repo.interface";
-import { ICustomerService } from "../interfaces/customer-service.interface";
-import { ICustomer, IFetchReviews, IReview, ISearchedProviders } from "../../../../core/entities/interfaces/user.entity.interface";
-import { ChangePasswordDto, SubmitReviewDto, UpdateProfileDto, UpdateSavedProvidersDto } from "../../dtos/customer.dto";
-import { ARGON_UTILITY_NAME, UPLOAD_UTILITY_NAME } from "../../../../core/constants/utility.constant";
-import { IResponse } from "src/core/misc/response.util";
-import { IProviderRepository } from "src/core/repositories/interfaces/provider-repo.interface";
-import { ErrorMessage } from "src/core/enum/error.enum";
-import { IArgonUtility } from "src/core/utilities/interface/argon.utility.interface";
-import { IUploadsUtility } from "src/core/utilities/interface/upload.utility.interface";
-import { IServiceOfferedRepository } from "src/core/repositories/interfaces/serviceOffered-repo.interface";
-import { Types } from "mongoose";
-import { ICustomerSearchServices } from "src/core/entities/interfaces/service.entity.interface";
-import { CustomLogger } from "src/core/logger/custom-logger";
+import { Types } from 'mongoose';
+
+import {
+    Inject, Injectable, InternalServerErrorException, Logger, NotFoundException
+} from '@nestjs/common';
+
+import {
+    CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME,
+    SERVICE_OFFERED_REPOSITORY_NAME
+} from '../../../../core/constants/repository.constant';
+import {
+    ARGON_UTILITY_NAME, UPLOAD_UTILITY_NAME
+} from '../../../../core/constants/utility.constant';
+import {
+    ICustomerSearchServices
+} from '../../../../core/entities/interfaces/service.entity.interface';
+import {
+    ICustomer, IFetchReviews, IReview, ISearchedProviders
+} from '../../../../core/entities/interfaces/user.entity.interface';
+import { ErrorMessage } from '../../../../core/enum/error.enum';
+import { ICustomLogger } from '../../../../core/logger/interface/custom-logger.interface';
+import {
+    ILoggerFactory, LOGGER_FACTORY
+} from '../../../../core/logger/interface/logger-factory.interface';
+import { IResponse } from '../../../../core/misc/response.util';
+import {
+    ICustomerRepository
+} from '../../../../core/repositories/interfaces/customer-repo.interface';
+import {
+    IProviderRepository
+} from '../../../../core/repositories/interfaces/provider-repo.interface';
+import {
+    IServiceOfferedRepository
+} from '../../../../core/repositories/interfaces/serviceOffered-repo.interface';
+import { IArgonUtility } from '../../../../core/utilities/interface/argon.utility.interface';
+import { IUploadsUtility } from '../../../../core/utilities/interface/upload.utility.interface';
+import {
+    ChangePasswordDto, SubmitReviewDto, UpdateProfileDto, UpdateSavedProvidersDto
+} from '../../dtos/customer.dto';
+import { ICustomerService } from '../interfaces/customer-service.interface';
 
 @Injectable()
 export class CustomerService implements ICustomerService {
-    private readonly logger = new CustomLogger(CustomerService.name);
+    private readonly logger: ICustomLogger;
 
     constructor(
+        @Inject(LOGGER_FACTORY)
+        private readonly loggerFactory: ILoggerFactory,
         @Inject(CUSTOMER_REPOSITORY_INTERFACE_NAME)
         private readonly _customerRepository: ICustomerRepository,
         @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
@@ -30,7 +56,9 @@ export class CustomerService implements ICustomerService {
         private readonly _uploadsUtility: IUploadsUtility,
         @Inject(SERVICE_OFFERED_REPOSITORY_NAME)
         private readonly _serviceOfferedRepository: IServiceOfferedRepository,
-    ) { }
+    ) {
+        this.logger = this.loggerFactory.createLogger(CustomerService.name);
+    }
 
     async fetchOneCustomer(id: string): Promise<ICustomer | null> {
         return await this._customerRepository.findOne({ _id: id });

@@ -1,4 +1,4 @@
-import { IRazorpayOrder } from "src/core/entities/interfaces/transaction.entity.interface";
+import { IRazorpayOrder } from '@core/entities/interfaces/transaction.entity.interface';
 
 export interface IPaymentGateway {
     createOrder(amount: number, currency?: string): Promise<IRazorpayOrder>;

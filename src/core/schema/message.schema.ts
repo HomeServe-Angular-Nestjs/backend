@@ -1,6 +1,8 @@
-import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { Document, Types } from "mongoose";
-import { MessageType } from "../entities/interfaces/message.entity.interface";
+import { Document, Types } from 'mongoose';
+
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+
+import { MessageType } from '../entities/interfaces/message.entity.interface';
 
 @Schema({ timestamps: true })
 export class MessageDocument extends Document {

@@ -1,8 +1,9 @@
 import { FilterQuery } from 'mongoose';
-import { ServiceOffered } from '../../entities/implementation/service.entity';
-import { ServiceDocument } from '../../schema/service.schema';
-import { BaseRepository } from '../base/implementations/base.repository';
-import { IGetServiceTitle } from 'src/core/entities/interfaces/service.entity.interface';
+
+import { ServiceOffered } from '@core/entities/implementation/service.entity';
+import { IGetServiceTitle } from '@core/entities/interfaces/service.entity.interface';
+import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
+import { ServiceDocument } from '@core/schema/service.schema';
 
 export interface IServiceOfferedRepository extends BaseRepository<ServiceOffered, ServiceDocument> {
   count(filter: FilterQuery<ServiceDocument>): Promise<number>;

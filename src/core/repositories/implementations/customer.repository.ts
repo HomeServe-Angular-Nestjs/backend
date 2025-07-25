@@ -1,12 +1,14 @@
+import { FilterQuery, Model, Types } from 'mongoose';
+
+import { CUSTOMER_MODEL_NAME } from '@core/constants/model.constant';
+import { Customer } from '@core/entities/implementation/customer.entity';
+import { IStats } from '@core/entities/interfaces/admin.entity.interface';
+import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
+import { ICustomerRepository } from '@core/repositories/interfaces/customer-repo.interface';
+import { CustomerDocument } from '@core/schema/customer.schema';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { CustomerDocument } from '../../schema/customer.schema';
-import { Customer } from '../../entities/implementation/customer.entity';
-import { BaseRepository } from '../base/implementations/base.repository';
-import { CUSTOMER_MODEL_NAME } from '../../constants/model.constant';
-import { ICustomerRepository } from '../interfaces/customer-repo.interface';
-import { FilterQuery, Model, Types } from 'mongoose';
-import { IStats } from 'src/core/entities/interfaces/admin.entity.interface';
+
 @Injectable()
 export class CustomerRepository extends BaseRepository<Customer, CustomerDocument> implements ICustomerRepository {
   constructor(

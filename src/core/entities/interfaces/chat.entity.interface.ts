@@ -1,6 +1,7 @@
-import { Types } from "mongoose";
-import { IEntity } from "../base/interfaces/base-entity.entity.interface";
-import { UserType } from "src/modules/auth/dtos/login.dto";
+import { Types } from 'mongoose';
+
+import { IEntity } from '@core/entities/base/interfaces/base-entity.entity.interface';
+import { UserType } from '@modules/auth/dtos/login.dto';
 
 export type ChatRole = 'sender' | 'receiver';
 

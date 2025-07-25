@@ -1,24 +1,25 @@
-import { AdminModule } from './modules/users/admin.module';
+import { redisStore } from 'cache-manager-redis-store';
+
+import { AppController } from '@app/.controller';
+import { appProviders } from '@app/.provider';
+import { AppService } from '@app/.service';
+import { JwtConfigModule } from '@configs/jwt/jwt.module';
+import { AuthModule } from '@modules/auth/auth.module';
+import { AuthMiddleware } from '@modules/auth/middleware/auth.middleware';
+import { BookingsModule } from '@modules/bookings/bookings.module';
+import { CustomerModule } from '@modules/customer/customer.module';
+import { PaymentModule } from '@modules/payment/payment.module';
+import { PlanModule } from '@modules/plans/plans.module';
+import { ProviderModule } from '@modules/providers/provider.module';
+import { SchedulesModule } from '@modules/schedules/schedule.module';
+import { SubscriptionModules } from '@modules/subscriptions/subscription.module';
+import { WebSocketModule } from '@modules/websockets/websocket.module';
+import { CacheModule } from '@nestjs/cache-manager';
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { CacheModule } from '@nestjs/cache-manager';
-import { redisStore } from 'cache-manager-redis-store';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { AuthModule } from './modules/auth/auth.module';
-import { ProviderModule } from './modules/providers/provider.module';
-import { BookingsModule } from './modules/bookings/bookings.module';
-import { CustomerModule } from './modules/customer/customer.module';
-import { PaymentModule } from './modules/payment/payment.module';
-import { AuthMiddleware } from './modules/auth/middleware/auth.middleware';
-import { JwtConfigModule } from './configs/jwt/jwt.module';
-import { SchedulesModule } from './modules/schedules/schedule.module';
-import { WebSocketModule } from './modules/websockets/websocket.module';
-import { appProviders } from './app.provider';
-import { PlanModule } from './modules/plans/plans.module';
-import { SubscriptionModules } from './modules/subscriptions/subscription.module';
-import { SeedsModule } from 'seed/seed.module';
 
+import { SeedsModule } from '../seed/seed.module';
+import { AdminModule } from './modules/users/admin.module';
 
 @Module({
   imports: [
@@ -43,7 +44,7 @@ import { SeedsModule } from 'seed/seed.module';
     PaymentModule,
     WebSocketModule,
     PlanModule,
-    SubscriptionModules
+    SubscriptionModules,
   ],
   controllers: [AppController],
   providers: [

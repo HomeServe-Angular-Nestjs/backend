@@ -1,6 +1,6 @@
-import { Provider } from "@nestjs/common";
-import { PlanService } from "../services/implementations/plan.service";
-import { PLAN_SERVICE_NAME } from "src/core/constants/service.constant";
+import { PLAN_SERVICE_NAME } from '@core/constants/service.constant';
+import { PlanService } from '@modules/plans/services/implementations/plan.service';
+import { Provider } from '@nestjs/common';
 
 export const planServiceProviders: Provider[] = [
     {

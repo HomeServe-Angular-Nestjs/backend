@@ -1,5 +1,6 @@
-import { Socket } from "socket.io";
-import { IPayload } from "src/core/misc/payload.interface";
+import { Socket } from 'socket.io';
+
+import { IPayload } from '@core/misc/payload.interface';
 
 export interface IAuthSocketService {
     extractTokenFromCookie(client: Socket): string;

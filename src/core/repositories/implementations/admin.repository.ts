@@ -1,11 +1,13 @@
-import { Injectable } from '@nestjs/common';
-import { IAdminRepository } from '../interfaces/admin-repo.interface';
-import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { AdminDocument } from '../../schema/admin.schema';
+
+import { Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+
 import { ADMIN_MODEL_NAME } from '../../constants/model.constant';
-import { BaseRepository } from '../base/implementations/base.repository';
 import { Admin } from '../../entities/implementation/admin.entity';
+import { AdminDocument } from '../../schema/admin.schema';
+import { BaseRepository } from '../base/implementations/base.repository';
+import { IAdminRepository } from '../interfaces/admin-repo.interface';
 
 @Injectable()
 export class AdminRepository extends BaseRepository<Admin, AdminDocument> implements IAdminRepository {

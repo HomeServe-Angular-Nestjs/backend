@@ -1,5 +1,7 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
+
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+
 import { SubServiceDocument, SubServiceSchema } from './subservice.schema';
 
 @Schema({ timestamps: true })

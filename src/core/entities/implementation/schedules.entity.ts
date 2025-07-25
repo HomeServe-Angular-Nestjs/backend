@@ -1,5 +1,5 @@
-import { BaseEntity } from "../base/implementation/base.entity";
-import { IScheduleDay, ISchedules, ISlot } from "../interfaces/schedules.entity.interface";
+import { BaseEntity } from '../base/implementation/base.entity';
+import { IScheduleDay, ISchedules, ISlot } from '../interfaces/schedules.entity.interface';
 
 export class Slot implements ISlot {
     id: string;

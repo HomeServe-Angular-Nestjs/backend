@@ -1,10 +1,11 @@
-import { Provider } from "@nestjs/common";
-import { getModelToken } from "@nestjs/mongoose";
-import { Model } from "mongoose";
-import { PLAN_MODEL_NAME } from "src/core/constants/model.constant";
-import { PLAN_REPOSITORY_INTERFACE_NAME } from "src/core/constants/repository.constant";
-import { PlanRepository } from "src/core/repositories/implementations/plan.repository";
-import { PlanDocumentType } from "src/core/schema/plans.schema";
+import { Model } from 'mongoose';
+
+import { PLAN_MODEL_NAME } from '@core/constants/model.constant';
+import { PLAN_REPOSITORY_INTERFACE_NAME } from '@core/constants/repository.constant';
+import { PlanRepository } from '@core/repositories/implementations/plan.repository';
+import { PlanDocumentType } from '@core/schema/plans.schema';
+import { Provider } from '@nestjs/common';
+import { getModelToken } from '@nestjs/mongoose';
 
 export const planRepositoryProvider: Provider[] = [
     {

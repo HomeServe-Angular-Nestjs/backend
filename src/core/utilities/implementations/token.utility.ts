@@ -1,8 +1,9 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { JsonWebTokenError, JwtService, TokenExpiredError } from '@nestjs/jwt';
-import { ITokenUtility } from '../interface/token.utility.interface';
-import { IPayload } from '../../misc/payload.interface';
 import { ConfigService } from '@nestjs/config';
+import { JsonWebTokenError, JwtService, TokenExpiredError } from '@nestjs/jwt';
+
+import { IPayload } from '../../misc/payload.interface';
+import { ITokenUtility } from '../interface/token.utility.interface';
 
 @Injectable()
 export class TokenUtility implements ITokenUtility {

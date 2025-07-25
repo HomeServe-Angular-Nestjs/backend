@@ -1,21 +1,34 @@
-import { Provider } from "@nestjs/common";
-import { BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SCHEDULES_REPOSITORY_NAME, SERVICE_OFFERED_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME } from "../../../core/constants/repository.constant";
-import { ServiceDocument } from "../../../core/schema/service.schema";
-import { Model } from "mongoose";
-import { ServiceOfferedRepository } from "../../../core/repositories/implementations/serviceOffered.repository";
-import { getModelToken } from "@nestjs/mongoose";
-import { BOOKINGS_MODEL_NAME, CUSTOMER_MODEL_NAME, PROVIDER_MODEL_NAME, SCHEDULES_MODEL_NAME, SERVICE_OFFERED_MODEL_NAME, TRANSACTION_MODEL_NAME } from "../../../core/constants/model.constant";
-import { BookingDocument } from "../../../core/schema/bookings.schema";
-import { BookingRepository } from "../../../core/repositories/implementations/bookings.repository";
-import { CustomerDocument } from "../../../core/schema/customer.schema";
-import { CustomerRepository } from "../../../core/repositories/implementations/customer.repository";
-import { ProviderDocument } from "../../../core/schema/provider.schema";
-import { ProviderRepository } from "../../../core/repositories/implementations/provider.repository";
-import { SchedulesDocument } from "src/core/schema/schedules.schema";
-import { SchedulesRepository } from "src/core/repositories/implementations/schedules.repository";
-import { TransactionDocument } from "src/core/schema/transaction.schema";
-import { TransactionRepository } from "src/core/repositories/implementations/transaction.repository";
+import { Model } from 'mongoose';
 
+import { Provider } from '@nestjs/common';
+import { getModelToken } from '@nestjs/mongoose';
+
+import {
+    BOOKINGS_MODEL_NAME, CUSTOMER_MODEL_NAME, PROVIDER_MODEL_NAME, SCHEDULES_MODEL_NAME,
+    SERVICE_OFFERED_MODEL_NAME, TRANSACTION_MODEL_NAME
+} from '../../../core/constants/model.constant';
+import {
+    BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME,
+    SCHEDULES_REPOSITORY_NAME, SERVICE_OFFERED_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME
+} from '../../../core/constants/repository.constant';
+import { BookingRepository } from '../../../core/repositories/implementations/bookings.repository';
+import { CustomerRepository } from '../../../core/repositories/implementations/customer.repository';
+import { ProviderRepository } from '../../../core/repositories/implementations/provider.repository';
+import {
+    SchedulesRepository
+} from '../../../core/repositories/implementations/schedules.repository';
+import {
+    ServiceOfferedRepository
+} from '../../../core/repositories/implementations/serviceOffered.repository';
+import {
+    TransactionRepository
+} from '../../../core/repositories/implementations/transaction.repository';
+import { BookingDocument } from '../../../core/schema/bookings.schema';
+import { CustomerDocument } from '../../../core/schema/customer.schema';
+import { ProviderDocument } from '../../../core/schema/provider.schema';
+import { SchedulesDocument } from '../../../core/schema/schedules.schema';
+import { ServiceDocument } from '../../../core/schema/service.schema';
+import { TransactionDocument } from '../../../core/schema/transaction.schema';
 
 export const repositoryProviders: Provider[] = [
     {

@@ -1,8 +1,9 @@
-import { Optional } from "@nestjs/common";
-import { Transform, Type } from "class-transformer";
-import { ArrayMaxSize, ArrayMinSize, IsArray, IsBoolean, IsDefined, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from "class-validator";
-import { UploadsType } from "src/core/enum/uploads.enum";
+import { Transform, Type } from 'class-transformer';
+import {
+    IsBoolean, IsDefined, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested
+} from 'class-validator';
 
+import { UploadsType } from '@core/enum/uploads.enum';
 
 export type FilterStatusType = true | false | 'all';
 
@@ -66,20 +67,20 @@ class LanguageDto {
 }
 
 export class UpdateBioDto {
-    @Optional()
+    @IsOptional()
     @IsString()
     providerBio?: string;
 
-    @Optional()
+    @IsOptional()
     @ValidateNested({ each: true })
     @Type(() => ExpertiseDto)
     expertises?: ExpertiseDto[];
 
-    @Optional()
+    @IsOptional()
     @IsString({ each: true })
     additionalSkills?: string[];
 
-    @Optional()
+    @IsOptional()
     @ValidateNested({ each: true })
     @Type(() => LanguageDto)
     languages?: LanguageDto[];

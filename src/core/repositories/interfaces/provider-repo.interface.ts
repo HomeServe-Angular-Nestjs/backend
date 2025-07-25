@@ -1,8 +1,9 @@
-import { IBaseRepository } from '../base/interfaces/base-repo.interface';
-import { ProviderDocument } from '../../schema/provider.schema';
 import { FilterQuery } from 'mongoose';
-import { IProvider, IReview } from 'src/core/entities/interfaces/user.entity.interface';
-import { IStats } from 'src/core/entities/interfaces/admin.entity.interface';
+
+import { IStats } from '@core/entities/interfaces/admin.entity.interface';
+import { IProvider, IReview } from '@core/entities/interfaces/user.entity.interface';
+import { IBaseRepository } from '@core/repositories/base/interfaces/base-repo.interface';
+import { ProviderDocument } from '@core/schema/provider.schema';
 
 export interface IProviderRepository extends IBaseRepository<IProvider, ProviderDocument> {
   findByGoogleId(id: string): Promise<IProvider | null>;

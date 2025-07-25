@@ -1,28 +1,49 @@
-import { ConflictException, Inject, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
-import { BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SCHEDULES_REPOSITORY_NAME, SERVICE_OFFERED_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME } from '../../../../core/constants/repository.constant';
-import { IBookingDetailCustomer, IBookingResponse, IBookingWithPagination } from '../../../../core/entities/interfaces/booking.entity.interface';
-import { BookingStatus, CancelStatus, PaymentStatus } from '../../../../core/enum/bookings.enum';
-import { IServiceOfferedRepository } from '../../../../core/repositories/interfaces/serviceOffered-repo.interface';
-import { ISchedulesRepository } from '../../../../core/repositories/interfaces/schedules-repo.interface';
-import { IProviderRepository } from '../../../../core/repositories/interfaces/provider-repo.interface';
-import { ICustomerRepository } from '../../../../core/repositories/interfaces/customer-repo.interface';
-import { IBookingRepository } from '../../../../core/repositories/interfaces/bookings-repo.interface';
-import { SelectedServiceDto, IPriceBreakupDto, BookingDto, CancelBookingDto, UpdateBookingDto } from '../../dtos/booking.dto';
-import { IBookingService } from '../interfaces/booking-service.interface';
 import { Types } from 'mongoose';
-import { IResponse } from 'src/core/misc/response.util';
-import { IScheduleDay, ISlot } from 'src/core/entities/interfaces/schedules.entity.interface';
-import { ITransactionRepository } from 'src/core/repositories/interfaces/transaction-repo.interface';
-import { ErrorMessage } from 'src/core/enum/error.enum';
-import { CustomLogger } from 'src/core/logger/custom-logger';
 
+import {
+    ConflictException, Inject, Injectable, InternalServerErrorException, NotFoundException
+} from '@nestjs/common';
 
-
+import {
+    BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME,
+    SCHEDULES_REPOSITORY_NAME, SERVICE_OFFERED_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME
+} from '../../../../core/constants/repository.constant';
+import {
+    IBookingDetailCustomer, IBookingResponse, IBookingWithPagination
+} from '../../../../core/entities/interfaces/booking.entity.interface';
+import {
+    IScheduleDay, ISlot
+} from '../../../../core/entities/interfaces/schedules.entity.interface';
+import { BookingStatus, CancelStatus, PaymentStatus } from '../../../../core/enum/bookings.enum';
+import { ErrorMessage } from '../../../../core/enum/error.enum';
+import { ICustomLogger } from '../../../../core/logger/interface/custom-logger.interface';
+import { IResponse } from '../../../../core/misc/response.util';
+import {
+    IBookingRepository
+} from '../../../../core/repositories/interfaces/bookings-repo.interface';
+import {
+    ICustomerRepository
+} from '../../../../core/repositories/interfaces/customer-repo.interface';
+import {
+    IProviderRepository
+} from '../../../../core/repositories/interfaces/provider-repo.interface';
+import {
+    ISchedulesRepository
+} from '../../../../core/repositories/interfaces/schedules-repo.interface';
+import {
+    IServiceOfferedRepository
+} from '../../../../core/repositories/interfaces/serviceOffered-repo.interface';
+import {
+    ITransactionRepository
+} from '../../../../core/repositories/interfaces/transaction-repo.interface';
+import {
+    BookingDto, CancelBookingDto, IPriceBreakupDto, SelectedServiceDto, UpdateBookingDto
+} from '../../dtos/booking.dto';
+import { IBookingService } from '../interfaces/booking-service.interface';
 
 @Injectable()
 export class BookingService implements IBookingService {
-    private logger = new CustomLogger(BookingService.name);
-
+    private readonly logger: ICustomLogger;
     constructor(
         @Inject(SERVICE_OFFERED_REPOSITORY_NAME)
         private readonly _serviceOfferedRepository: IServiceOfferedRepository,

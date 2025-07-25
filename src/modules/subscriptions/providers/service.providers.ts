@@ -1,6 +1,8 @@
-import { Provider } from "@nestjs/common";
-import { SUBSCRIPTION_SERVICE_NAME } from "src/core/constants/service.constant";
-import { SubscriptionService } from "../services/implementation/subscription.service";
+import { SUBSCRIPTION_SERVICE_NAME } from '@core/constants/service.constant';
+import {
+    SubscriptionService
+} from '@modules/subscriptions/services/implementation/subscription.service';
+import { Provider } from '@nestjs/common';
 
 export const subscriptionServiceProviders: Provider[] = [
     {

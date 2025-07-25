@@ -1,11 +1,12 @@
-import { Injectable } from "@nestjs/common";
-import { BaseRepository } from "../base/implementations/base.repository";
-import { ChatDocument } from "src/core/schema/chat.schema";
-import { Chat } from "src/core/entities/implementation/chat.entity";
-import { InjectModel } from "@nestjs/mongoose";
-import { Model } from "mongoose";
-import { CHAT_MODEL_NAME } from "src/core/constants/model.constant";
-import { IChatRepository } from "../interfaces/chat-repo.interface";
+import { Model } from 'mongoose';
+
+import { CHAT_MODEL_NAME } from '@core/constants/model.constant';
+import { Chat } from '@core/entities/implementation/chat.entity';
+import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
+import { IChatRepository } from '@core/repositories/interfaces/chat-repo.interface';
+import { ChatDocument } from '@core/schema/chat.schema';
+import { Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
 
 @Injectable()
 export class ChatRepository extends BaseRepository<Chat, ChatDocument> implements IChatRepository {

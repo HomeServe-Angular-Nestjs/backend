@@ -1,7 +1,10 @@
-import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { PlanRoleType, RenewalType, SubsDurationType, SubsPaymentStatus } from "../enum/subscription.enum";
-import { Document, SchemaTypes } from "mongoose";
+import { Document, SchemaTypes } from 'mongoose';
 
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+
+import {
+    PlanRoleType, RenewalType, SubsDurationType, SubsPaymentStatus
+} from '../enum/subscription.enum';
 
 export type SubscriptionDocumentType = SubscriptionDocument & Document;
 

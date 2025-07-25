@@ -1,5 +1,5 @@
-import { IChat, IChatData, IParticipant } from "src/core/entities/interfaces/chat.entity.interface";
-import { IResponse } from "src/core/misc/response.util";
+import { IChat, IChatData, IParticipant } from '@/core/entities/interfaces/chat.entity.interface';
+import { IResponse } from '@/core/misc/response.util';
 
 export interface IChatSocketService {
     findChat(sender: IParticipant, receiver: IParticipant): Promise<IChat | null>;

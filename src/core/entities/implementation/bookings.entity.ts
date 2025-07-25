@@ -1,6 +1,6 @@
-import { BookingStatus, CancelStatus, PaymentStatus } from "../../enum/bookings.enum";
-import { BaseEntity } from "../base/implementation/base.entity";
-import { IBooking } from "../interfaces/booking.entity.interface";
+import { BookingStatus, CancelStatus, PaymentStatus } from '../../enum/bookings.enum';
+import { BaseEntity } from '../base/implementation/base.entity';
+import { IBooking } from '../interfaces/booking.entity.interface';
 
 export class Booking extends BaseEntity implements IBooking {
     customerId: string;

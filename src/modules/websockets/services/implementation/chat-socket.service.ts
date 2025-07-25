@@ -1,16 +1,25 @@
-import { Inject, Injectable, Logger, Type } from "@nestjs/common";
-import { IChatSocketService } from "../interface/chat-socket-service.interface";
-import { ADMIN_REPOSITORY_INTERFACE_NAME, CHAT_REPOSITORY_INTERFACE_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, MESSAGE_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME } from "src/core/constants/repository.constant";
-import { IChatRepository } from "src/core/repositories/interfaces/chat-repo.interface";
-import { IChat, IChatData, IParticipant, IUserPreview } from "src/core/entities/interfaces/chat.entity.interface";
-import { Types } from "mongoose";
-import { IResponse } from "src/core/misc/response.util";
-import { ICustomerRepository } from "src/core/repositories/interfaces/customer-repo.interface";
-import { IProviderRepository } from "src/core/repositories/interfaces/provider-repo.interface";
-import { IAdminRepository } from "src/core/repositories/interfaces/admin-repo.interface";
-import { UserType } from "src/modules/auth/dtos/login.dto";
-import { IMessagesRepository } from "src/core/repositories/interfaces/message-repo.interface";
-import { CustomLogger } from "src/core/logger/custom-logger";
+import { Types } from 'mongoose';
+
+import {
+    ADMIN_REPOSITORY_INTERFACE_NAME, CHAT_REPOSITORY_INTERFACE_NAME,
+    CUSTOMER_REPOSITORY_INTERFACE_NAME, MESSAGE_REPOSITORY_INTERFACE_NAME,
+    PROVIDER_REPOSITORY_INTERFACE_NAME
+} from '@core/constants/repository.constant';
+import {
+    IChat, IChatData, IParticipant, IUserPreview
+} from '@core/entities/interfaces/chat.entity.interface';
+import { CustomLogger } from '@core/logger/implementation/custom-logger';
+import { IResponse } from '@core/misc/response.util';
+import { IAdminRepository } from '@core/repositories/interfaces/admin-repo.interface';
+import { IChatRepository } from '@core/repositories/interfaces/chat-repo.interface';
+import { ICustomerRepository } from '@core/repositories/interfaces/customer-repo.interface';
+import { IMessagesRepository } from '@core/repositories/interfaces/message-repo.interface';
+import { IProviderRepository } from '@core/repositories/interfaces/provider-repo.interface';
+import { UserType } from '@modules/auth/dtos/login.dto';
+import {
+    IChatSocketService
+} from '@modules/websockets/services/interface/chat-socket-service.interface';
+import { Inject, Injectable, Logger, Type } from '@nestjs/common';
 
 @Injectable()
 export class ChatSocketService implements IChatSocketService {

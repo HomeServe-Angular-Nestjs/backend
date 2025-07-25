@@ -1,30 +1,29 @@
+import { ADMIN_USER_MANAGEMENT_SERVICE_NAME } from '@core/constants/service.constant';
+import { IUserDataWithPagination } from '@core/entities/interfaces/admin.entity.interface';
+import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
+import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import {
-  BadRequestException,
-  Body,
-  Controller,
-  Get,
-  Inject,
-  InternalServerErrorException,
-  Logger,
-  Patch,
-  Query,
+    GetUsersWithFilterDto, RemoveUserDto, StatusUpdateDto
+} from '@modules/users/dtos/admin-user.dto';
+import {
+    IAdminUserManagementService
+} from '@modules/users/services/interfaces/admin-user-service.interface';
+import {
+    BadRequestException, Body, Controller, Get, Inject, InternalServerErrorException, Patch, Query
 } from '@nestjs/common';
-import { ADMIN_USER_MANAGEMENT_SERVICE_NAME } from '../../../core/constants/service.constant';
-
-import { IAdminUserManagementService } from '../services/interfaces/admin-user-service.interface';
-import { GetUsersWithFilterDto, RemoveUserDto, StatusUpdateDto } from '../dtos/admin-user.dto';
-import { IUserData, IUserDataWithPagination } from 'src/core/entities/interfaces/admin.entity.interface';
-import { CustomLogger } from "src/core/logger/custom-logger";
 
 @Controller('admin/users')
 export class AdminUserController {
-  private readonly logger = new CustomLogger(AdminUserController.name);
+  private readonly logger: ICustomLogger;
 
   constructor(
+    @Inject(LOGGER_FACTORY)
+    private readonly loggerFactory: ILoggerFactory,
     @Inject(ADMIN_USER_MANAGEMENT_SERVICE_NAME)
     private readonly _adminUserManagementService: IAdminUserManagementService
-
-  ) { }
+  ) {
+    this.logger = this.loggerFactory.createLogger(AdminUserController.name)
+  }
 
   @Get('')
   async getUsers(@Query() dto: GetUsersWithFilterDto): Promise<IUserDataWithPagination> {
@@ -34,7 +33,7 @@ export class AdminUserController {
       }
       const { page, ...filter } = dto;
 
-      return await this._adminUserManagementService.getusers(page, filter);
+      return await this._adminUserManagementService.getUsers(page, filter);
     } catch (err) {
       this.logger.error(`Error fetching the customers: ${err.message}`, err.stack);
       throw new InternalServerErrorException('Failed fetching the customers');

@@ -1,6 +1,6 @@
-import { Types } from "mongoose";
-import { IEntity } from "../base/interfaces/base-entity.entity.interface";
-import { UserType } from "src/modules/auth/dtos/login.dto";
+import { Types } from 'mongoose';
+
+import { IEntity } from '@core/entities/base/interfaces/base-entity.entity.interface';
 
 export type MessageType = 'text' | 'image' | 'file' | 'audio' | 'video';
 

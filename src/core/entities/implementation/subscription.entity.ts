@@ -1,7 +1,9 @@
-import { RenewalType, SubsDurationType, SubsPaymentStatus } from "src/core/enum/subscription.enum";
-import { BaseEntity } from "../base/implementation/base.entity";
-import { PlanRoleType } from "../interfaces/plans.entity.interface";
-import { ISubscription } from "../interfaces/subscription.entity.interface";
+import { BaseEntity } from '@core/entities/base/implementation/base.entity';
+import { PlanRoleType } from '@core/entities/interfaces/plans.entity.interface';
+import {
+    ISubscription, RenewalType, SubsDurationType
+} from '@core/entities/interfaces/subscription.entity.interface';
+import { SubsPaymentStatus } from '@core/enum/subscription.enum';
 
 export class Subscription extends BaseEntity implements ISubscription {
     userId: string;

@@ -1,11 +1,14 @@
-import { Controller, Get, Inject, InternalServerErrorException, Logger, Req } from "@nestjs/common";
-import { Request } from "express";
-import { ADMIN_APPROVAL_SERVICE_NAME } from "src/core/constants/service.constant";
-import { IAdminApprovalService } from "../services/interfaces/admin-approval-service.interface";
-import { IApprovalOverviewData, IApprovalTableDetails } from "src/core/entities/interfaces/user.entity.interface";
-import { IResponse } from "src/core/misc/response.util";
-import { ErrorMessage } from "src/core/enum/error.enum";
-import { CustomLogger } from "src/core/logger/custom-logger";
+import { ADMIN_APPROVAL_SERVICE_NAME } from '@core/constants/service.constant';
+import {
+    IApprovalOverviewData, IApprovalTableDetails
+} from '@core/entities/interfaces/user.entity.interface';
+import { ErrorMessage } from '@core/enum/error.enum';
+import { CustomLogger } from '@core/logger/implementation/custom-logger';
+import { IResponse } from '@core/misc/response.util';
+import {
+    IAdminApprovalService
+} from '@modules/users/services/interfaces/admin-approval-service.interface';
+import { Controller, Get, Inject, InternalServerErrorException, Logger, Req } from '@nestjs/common';
 
 @Controller('admin/approvals')
 export class AdminApprovalsController {

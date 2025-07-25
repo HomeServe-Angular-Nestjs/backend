@@ -1,5 +1,5 @@
-import { IOtp } from '../interfaces/otp.entity.interface';
 import { BaseEntity } from '../base/implementation/base.entity';
+import { IOtp } from '../interfaces/otp.entity.interface';
 
 export class OTP extends BaseEntity implements IOtp {
   email: string;

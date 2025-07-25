@@ -1,10 +1,12 @@
+import { Model, Types } from 'mongoose';
+
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
-import { OTP } from '../../entities/implementation/otp.entity';
-import { BaseRepository } from '../base/implementations/base.repository';
+
 import { OTP_MODEL_NAME } from '../../constants/model.constant';
+import { OTP } from '../../entities/implementation/otp.entity';
 import { OtpDocument } from '../../schema/otp.schema';
+import { BaseRepository } from '../base/implementations/base.repository';
 import { IOtpRepository } from '../interfaces/otp-repo.interface';
 
 @Injectable()

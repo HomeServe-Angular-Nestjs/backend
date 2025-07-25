@@ -1,4 +1,4 @@
-import { UploadApiResponse } from "cloudinary";
+import { UploadApiResponse } from 'cloudinary';
 
 export interface IUploadsUtility {
   uploadImage(file: Express.Multer.File, publicId?: string): Promise<string>;

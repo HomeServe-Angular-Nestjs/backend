@@ -1,7 +1,10 @@
-import { Inject, Injectable } from "@nestjs/common";
-import { IUserSocketStoreService } from "../interface/user-socket-store-service.interface";
-import { REDIS_CLIENT } from "src/configs/redis/redis.module";
-import Redis from "ioredis";
+import Redis from 'ioredis';
+
+import { REDIS_CLIENT } from '@configs/redis/redis.module';
+import {
+    IUserSocketStoreService
+} from '@modules/websockets/services/interface/user-socket-store-service.interface';
+import { Inject, Injectable } from '@nestjs/common';
 
 @Injectable()
 export class UserSocketStoreService implements IUserSocketStoreService {

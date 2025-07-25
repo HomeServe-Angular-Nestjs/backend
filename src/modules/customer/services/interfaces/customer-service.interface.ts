@@ -1,6 +1,8 @@
-import { IResponse } from "src/core/misc/response.util";
-import { ICustomer, IFetchReviews, IReview } from "../../../../core/entities/interfaces/user.entity.interface";
-import { ChangePasswordDto, SubmitReviewDto, UpdateProfileDto, UpdateSavedProvidersDto } from "../../dtos/customer.dto";
+import { IResponse } from '@/core/misc/response.util';
+import { ICustomer, IFetchReviews } from '@core/entities/interfaces/user.entity.interface';
+import {
+    ChangePasswordDto, SubmitReviewDto, UpdateProfileDto, UpdateSavedProvidersDto
+} from '@modules/customer/dtos/customer.dto';
 
 export interface ICustomerService {
     fetchOneCustomer(id: string): Promise<ICustomer | null>;

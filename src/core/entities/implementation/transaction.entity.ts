@@ -1,6 +1,6 @@
-import { TransactionStatus, TransactionType } from "src/core/enum/transaction.enum";
-import { BaseEntity } from "../base/implementation/base.entity";
-import { ITransaction } from "../interfaces/transaction.entity.interface";
+import { BaseEntity } from '@core/entities/base/implementation/base.entity';
+import { ITransaction } from '@core/entities/interfaces/transaction.entity.interface';
+import { TransactionStatus, TransactionType } from '@core/enum/transaction.enum';
 
 export class Transaction extends BaseEntity implements ITransaction {
     userId: string;

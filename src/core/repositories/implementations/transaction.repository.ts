@@ -1,11 +1,12 @@
-import { Transaction } from "src/core/entities/implementation/transaction.entity";
-import { BaseRepository } from "../base/implementations/base.repository";
-import { TransactionDocument } from "src/core/schema/transaction.schema";
-import { ITransactionRepository } from "../interfaces/transaction-repo.interface";
-import { Model, Types } from "mongoose";
-import { InjectModel } from "@nestjs/mongoose";
-import { TRANSACTION_MODEL_NAME } from "src/core/constants/model.constant";
-import { PaymentStatus } from "src/core/enum/bookings.enum";
+import { Model, Types } from 'mongoose';
+
+import { TRANSACTION_MODEL_NAME } from '@core/constants/model.constant';
+import { Transaction } from '@core/entities/implementation/transaction.entity';
+import { PaymentStatus } from '@core/enum/bookings.enum';
+import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
+import { ITransactionRepository } from '@core/repositories/interfaces/transaction-repo.interface';
+import { TransactionDocument } from '@core/schema/transaction.schema';
+import { InjectModel } from '@nestjs/mongoose';
 
 export class TransactionRepository extends BaseRepository<Transaction, TransactionDocument> implements ITransactionRepository {
     constructor(

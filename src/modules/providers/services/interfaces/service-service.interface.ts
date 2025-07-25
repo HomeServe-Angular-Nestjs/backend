@@ -1,6 +1,11 @@
-import { IResponse } from 'src/core/misc/response.util';
-import { IService, IServicesWithPagination } from '../../../../core/entities/interfaces/service.entity.interface';
-import { CreateServiceDto, FilterServiceDto, ProviderServiceFilterWithPaginationDto, RemoveSubServiceDto, ToggleServiceStatusDto, ToggleSubServiceStatusDto, UpdateServiceDto } from '../../dtos/service.dto';
+import {
+    IService, IServicesWithPagination
+} from '@core/entities/interfaces/service.entity.interface';
+import { IResponse } from '@core/misc/response.util';
+import {
+    CreateServiceDto, FilterServiceDto, ProviderServiceFilterWithPaginationDto, RemoveSubServiceDto,
+    ToggleServiceStatusDto, ToggleSubServiceStatusDto, UpdateServiceDto
+} from '@modules/providers/dtos/service.dto';
 
 export interface IServiceFeatureService {
   createService(providerID: string, dto: CreateServiceDto): Promise<IResponse<string[]>>;

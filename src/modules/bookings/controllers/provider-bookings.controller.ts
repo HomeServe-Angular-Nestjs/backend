@@ -1,19 +1,28 @@
-import { BadRequestException, Body, Controller, Get, Inject, InternalServerErrorException, Logger, Patch, Query, Req, UnauthorizedException, UseInterceptors } from '@nestjs/common';
-import { PROVIDER_BOOKING_SERVICE_NAME } from '../../../core/constants/service.constant';
-
-import { IPayload } from '../../../core/misc/payload.interface';
 import { Request } from 'express';
-import { IProviderBookingService } from '../services/interfaces/provider-booking-service.interface';
-import { IResponseProviderBookingLists } from '../../../core/entities/interfaces/booking.entity.interface';
-import { BookingPaginationFilterDto, UpdateBookingStatusDto, BookingIdDto } from '../dtos/booking.dto';
-import { CustomLogger } from "src/core/logger/custom-logger";
 
+import {
+    BadRequestException, Body, Controller, Get, Inject, InternalServerErrorException, Patch, Query,
+    Req, UnauthorizedException
+} from '@nestjs/common';
+
+import { PROVIDER_BOOKING_SERVICE_NAME } from '../../../core/constants/service.constant';
+import {
+    IResponseProviderBookingLists
+} from '../../../core/entities/interfaces/booking.entity.interface';
+import {
+    CUSTOM_LOGGER, ICustomLogger
+} from '../../../core/logger/interface/custom-logger.interface';
+import { IPayload } from '../../../core/misc/payload.interface';
+import {
+    BookingIdDto, BookingPaginationFilterDto, UpdateBookingStatusDto
+} from '../dtos/booking.dto';
+import { IProviderBookingService } from '../services/interfaces/provider-booking-service.interface';
 
 @Controller('provider/bookings')
 export class ProviderBookingsController {
-    private readonly logger = new CustomLogger(ProviderBookingsController.name);
-
     constructor(
+        @Inject(CUSTOM_LOGGER)
+        private readonly logger: ICustomLogger,
         @Inject(PROVIDER_BOOKING_SERVICE_NAME)
         private readonly _providerBookingService: IProviderBookingService
     ) { }

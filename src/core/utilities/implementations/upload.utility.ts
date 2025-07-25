@@ -1,18 +1,23 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
-import { CloudinaryService } from '../../../configs/cloudinary/cloudinary.service';
-import { IUploadsUtility } from '../interface/upload.utility.interface';
 import { UploadApiResponse } from 'cloudinary';
-import { HttpService } from '@nestjs/axios';
-import { CustomLogger } from "src/core/logger/custom-logger";
+
+import { Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
+
+import { CloudinaryService } from '../../../configs/cloudinary/cloudinary.service';
+import { ICustomLogger } from '../../logger/interface/custom-logger.interface';
+import { ILoggerFactory, LOGGER_FACTORY } from '../../logger/interface/logger-factory.interface';
+import { IUploadsUtility } from '../interface/upload.utility.interface';
 
 @Injectable()
 export class UploadsUtility implements IUploadsUtility {
-  private readonly logger = new CustomLogger(UploadsUtility.name);
+  private readonly logger: ICustomLogger;
 
   constructor(
-    private readonly _httpService: HttpService,
+    @Inject(LOGGER_FACTORY)
+    private readonly _loggerFactory: ILoggerFactory,
     private readonly _cloudinaryService: CloudinaryService
-  ) { }
+  ) {
+    this.logger = this._loggerFactory.createLogger(UploadsUtility.name);
+  }
 
   async uploadImage(file: Express.Multer.File): Promise<string> {
     try {

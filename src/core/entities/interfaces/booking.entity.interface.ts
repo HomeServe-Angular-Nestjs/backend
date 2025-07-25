@@ -1,5 +1,5 @@
-import { BookingStatus, CancelStatus, PaymentStatus } from "../../enum/bookings.enum";
-import { IEntity } from "../base/interfaces/base-entity.entity.interface";
+import { BookingStatus, CancelStatus, PaymentStatus } from '../../enum/bookings.enum';
+import { IEntity } from '../base/interfaces/base-entity.entity.interface';
 
 export interface IBookingResponse {
     bookingId: string;

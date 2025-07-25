@@ -1,6 +1,8 @@
-import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { Document, model } from "mongoose";
-import { PlanDurationType, PlanRoleType } from "../entities/interfaces/plans.entity.interface";
+import { Document, model } from 'mongoose';
+
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+
+import { PlanDurationType, PlanRoleType } from '../entities/interfaces/plans.entity.interface';
 
 export type PlanDocumentType = PlanDocument & Document;
 

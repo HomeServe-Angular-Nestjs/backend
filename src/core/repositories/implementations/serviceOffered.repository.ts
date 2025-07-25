@@ -1,12 +1,15 @@
-import { Injectable } from '@nestjs/common';
-import { BaseRepository } from '../base/implementations/base.repository';
-import { ServiceOffered, SubService } from '../../entities/implementation/service.entity';
-import { ServiceDocument } from '../../schema/service.schema';
-import { InjectModel } from '@nestjs/mongoose';
-import { SERVICE_OFFERED_MODEL_NAME } from '../../constants/model.constant';
 import { FilterQuery, Model, Types } from 'mongoose';
-import { IServiceOfferedRepository } from '../interfaces/serviceOffered-repo.interface';
-import { IGetServiceTitle } from 'src/core/entities/interfaces/service.entity.interface';
+
+import { SERVICE_OFFERED_MODEL_NAME } from '@core/constants/model.constant';
+import { ServiceOffered, SubService } from '@core/entities/implementation/service.entity';
+import { IGetServiceTitle } from '@core/entities/interfaces/service.entity.interface';
+import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
+import {
+    IServiceOfferedRepository
+} from '@core/repositories/interfaces/serviceOffered-repo.interface';
+import { ServiceDocument } from '@core/schema/service.schema';
+import { Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
 
 @Injectable()
 export class ServiceOfferedRepository extends BaseRepository<ServiceOffered, ServiceDocument> implements IServiceOfferedRepository {

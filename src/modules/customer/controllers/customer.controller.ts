@@ -1,23 +1,36 @@
-import { BadRequestException, Query, Body, Controller, Get, Inject, InternalServerErrorException, Logger, Patch, Req, UnauthorizedException, Post, Put, UseInterceptors, UploadedFile, Param } from "@nestjs/common";
-import { CUSTOMER_SERVICE_NAME } from "../../../core/constants/service.constant";
-import { ICustomerService } from "../services/interfaces/customer-service.interface";
-import { ICustomer, IFetchReviews, IReview } from "../../../core/entities/interfaces/user.entity.interface";
-import { ChangePasswordDto, SubmitReviewDto, UpdateProfileDto, UpdateSavedProvidersDto } from "../dtos/customer.dto";
-import { IPayload } from "../../../core/misc/payload.interface";
-import { Request } from "express";
-import { IResponse } from "src/core/misc/response.util";
-import { ErrorMessage } from "src/core/enum/error.enum";
-import { FileInterceptor } from "@nestjs/platform-express";
-import { CustomLogger } from "src/core/logger/custom-logger";
+import { Request } from 'express';
+
+import {
+    BadRequestException, Body, Controller, Get, Inject, InternalServerErrorException, Param, Patch,
+    Post, Put, Query, Req, UnauthorizedException, UploadedFile, UseInterceptors
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+
+import { CUSTOMER_SERVICE_NAME } from '../../../core/constants/service.constant';
+import { ICustomer, IFetchReviews } from '../../../core/entities/interfaces/user.entity.interface';
+import { ErrorMessage } from '../../../core/enum/error.enum';
+import { ICustomLogger } from '../../../core/logger/interface/custom-logger.interface';
+import {
+    ILoggerFactory, LOGGER_FACTORY
+} from '../../../core/logger/interface/logger-factory.interface';
+import { IPayload } from '../../../core/misc/payload.interface';
+import { IResponse } from '../../../core/misc/response.util';
+import {
+    ChangePasswordDto, SubmitReviewDto, UpdateProfileDto, UpdateSavedProvidersDto
+} from '../dtos/customer.dto';
+import { ICustomerService } from '../services/interfaces/customer-service.interface';
 
 @Controller('')
 export class CustomerController {
-    private readonly logger = new CustomLogger(CustomerController.name);
-
+    private readonly logger: ICustomLogger;
     constructor(
+        @Inject(LOGGER_FACTORY)
+        private readonly loggerFactory: ILoggerFactory,
         @Inject(CUSTOMER_SERVICE_NAME)
         private readonly _customerService: ICustomerService
-    ) { }
+    ) {
+        this.logger = this.loggerFactory.createLogger(CustomerController.name);
+    }
 
     @Get('customer')
     async fetchOneCustomer(@Req() req: Request): Promise<ICustomer | null> {
@@ -156,7 +169,7 @@ export class CustomerController {
             if (!providerId) {
                 throw new BadRequestException(ErrorMessage.MISSING_FIELDS, providerId);
             }
-            
+
             return await this._customerService.getProviderGalleryImages(providerId);
         } catch (err) {
             this.logger.error(`Error fetching provider's gallery images: ${err.message}`, err.stack);

@@ -1,7 +1,8 @@
-import { ISchedules } from "src/core/entities/interfaces/schedules.entity.interface";
-import { IBaseRepository } from "../base/interfaces/base-repo.interface";
-import { SchedulesDocument } from "src/core/schema/schedules.schema";
-import { FilterQuery, UpdateQuery } from "mongoose";
+import { FilterQuery, UpdateQuery } from 'mongoose';
+
+import { ISchedules } from '@core/entities/interfaces/schedules.entity.interface';
+import { IBaseRepository } from '@core/repositories/base/interfaces/base-repo.interface';
+import { SchedulesDocument } from '@core/schema/schedules.schema';
 
 export interface ISchedulesRepository extends IBaseRepository<ISchedules, SchedulesDocument> {
     isExists(filter: FilterQuery<SchedulesDocument>): Promise<boolean>;

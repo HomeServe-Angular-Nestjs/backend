@@ -1,6 +1,8 @@
-import { IResponse } from "src/core/misc/response.util";
-import { SavePlanDto, GetOnePlanDto, UpdatePlanStatusDto, UpdatePlanDto } from "../../dto/plans.dto";
-import { IPlan } from "src/core/entities/interfaces/plans.entity.interface";
+import { IPlan } from '@core/entities/interfaces/plans.entity.interface';
+import { IResponse } from '@core/misc/response.util';
+import {
+    GetOnePlanDto, SavePlanDto, UpdatePlanDto, UpdatePlanStatusDto
+} from '@modules/plans/dto/plans.dto';
 
 export interface IPlanService {
     fetchPlans(): Promise<IResponse<IPlan[]>>;

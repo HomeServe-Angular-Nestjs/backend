@@ -1,20 +1,30 @@
-import { Controller, Get, Inject, InternalServerErrorException } from "@nestjs/common";
-import { ErrorMessage } from "src/core/enum/error.enum";
-import { CustomLogger } from "src/core/logger/custom-logger";
-import { IAdminDashboardOverviewService } from "../services/interfaces/admin-dashboard-overview-service.interface";
-import { ADMIN_DASHBOARD_OVERVIEW_SERVICE_NAME } from "src/core/constants/service.constant";
-import { IAdminDashboardOverview, IAdminDashboardRevenue, IAdminDashboardSubscription, IAdminDashboardUserStats } from "src/core/entities/interfaces/admin.entity.interface";
-import { IResponse } from "src/core/misc/response.util";
-import { ITopProviders } from "src/core/entities/interfaces/user.entity.interface";
+import { ADMIN_DASHBOARD_OVERVIEW_SERVICE_NAME } from '@core/constants/service.constant';
+import {
+    IAdminDashboardOverview, IAdminDashboardRevenue, IAdminDashboardSubscription,
+    IAdminDashboardUserStats
+} from '@core/entities/interfaces/admin.entity.interface';
+import { ITopProviders } from '@core/entities/interfaces/user.entity.interface';
+import { ErrorMessage } from '@core/enum/error.enum';
+import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
+import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
+import { IResponse } from '@core/misc/response.util';
+import {
+    IAdminDashboardOverviewService
+} from '@modules/users/services/interfaces/admin-dashboard-overview-service.interface';
+import { Controller, Get, Inject, InternalServerErrorException } from '@nestjs/common';
 
 @Controller('admin/dashboard')
 export class AdminDashboardController {
-    private readonly logger = new CustomLogger(AdminDashboardController.name);
+    private readonly logger: ICustomLogger;
 
     constructor(
+        @Inject(LOGGER_FACTORY)
+        private readonly loggerFactory: ILoggerFactory,
         @Inject(ADMIN_DASHBOARD_OVERVIEW_SERVICE_NAME)
         private readonly _adminDashboardOverviewService: IAdminDashboardOverviewService
-    ) { }
+    ) {
+        this.logger = this.loggerFactory.createLogger(AdminDashboardController.name);
+    }
 
     @Get('overview')
     async getDashboardOverview(): Promise<IResponse<IAdminDashboardOverview>> {

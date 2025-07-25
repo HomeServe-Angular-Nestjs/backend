@@ -1,23 +1,39 @@
-import { BadRequestException, Body, Controller, Get, Inject, InternalServerErrorException, Logger, Patch, Post, Query, Req, UnauthorizedException, UseInterceptors } from '@nestjs/common';
-import { BookingDto, BookingPaginationFilterDto, SelectedServiceDto, BookingIdDto, CancelBookingDto, UpdateBookingDto } from '../dtos/booking.dto';
-
 import { Request } from 'express';
-import { IPayload } from '../../../core/misc/payload.interface';
+
+import {
+    BadRequestException, Body, Controller, Get, Inject, InternalServerErrorException, Patch, Post,
+    Query, Req, UnauthorizedException
+} from '@nestjs/common';
+
 import { CUSTOMER_SERVICE_NAME } from '../../../core/constants/service.constant';
+import {
+    IBookingDetailCustomer, IBookingResponse, IBookingWithPagination
+} from '../../../core/entities/interfaces/booking.entity.interface';
+import { ErrorMessage } from '../../../core/enum/error.enum';
+import { ICustomLogger } from '../../../core/logger/interface/custom-logger.interface';
+import {
+    ILoggerFactory, LOGGER_FACTORY
+} from '../../../core/logger/interface/logger-factory.interface';
+import { IPayload } from '../../../core/misc/payload.interface';
+import { IResponse } from '../../../core/misc/response.util';
+import {
+    BookingDto, BookingIdDto, BookingPaginationFilterDto, CancelBookingDto, SelectedServiceDto,
+    UpdateBookingDto
+} from '../dtos/booking.dto';
 import { IBookingService } from '../services/interfaces/booking-service.interface';
-import { IBookingDetailCustomer, IBookingResponse, IBookingWithPagination } from '../../../core/entities/interfaces/booking.entity.interface';
-import { IResponse } from 'src/core/misc/response.util';
-import { ErrorMessage } from 'src/core/enum/error.enum';
-import { CustomLogger } from 'src/core/logger/custom-logger';
 
 @Controller('booking')
 export class BookingsController {
-    private readonly logger = new CustomLogger(BookingsController.name);
+    private readonly logger: ICustomLogger;
 
     constructor(
+        @Inject(LOGGER_FACTORY)
+        private readonly loggerFactory: ILoggerFactory,
         @Inject(CUSTOMER_SERVICE_NAME)
         private readonly _bookingService: IBookingService,
-    ) { }
+    ) {
+        this.logger = this.loggerFactory.createLogger(BookingsController.name);
+    }
 
     @Post('price_breakup')
     async calcPriceBreakup(@Body() dto: SelectedServiceDto[]) {

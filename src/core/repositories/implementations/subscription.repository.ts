@@ -1,13 +1,14 @@
-import { Injectable } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
-import { Model } from "mongoose";
-import { SubscriptionDocumentType } from "src/core/schema/subscription.schema";
-import { SUBSCRIPTION_MODEL_NAME } from "src/core/constants/model.constant";
-import { ISubscription } from "src/core/entities/interfaces/subscription.entity.interface";
-import { Subscription } from "src/core/entities/implementation/subscription.entity";
-import { ISubscriptionRepository } from "../interfaces/subscription-repo.interface";
-import { BaseRepository } from "../base/implementations/base.repository";
-import { IAdminDashboardSubscription } from "src/core/entities/interfaces/admin.entity.interface";
+import { Model } from 'mongoose';
+
+import { SUBSCRIPTION_MODEL_NAME } from '@core/constants/model.constant';
+import { Subscription } from '@core/entities/implementation/subscription.entity';
+import { IAdminDashboardSubscription } from '@core/entities/interfaces/admin.entity.interface';
+import { ISubscription } from '@core/entities/interfaces/subscription.entity.interface';
+import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
+import { ISubscriptionRepository } from '@core/repositories/interfaces/subscription-repo.interface';
+import { SubscriptionDocumentType } from '@core/schema/subscription.schema';
+import { Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
 
 @Injectable()
 export class SubscriptionRepository extends BaseRepository<ISubscription, SubscriptionDocumentType> implements ISubscriptionRepository {

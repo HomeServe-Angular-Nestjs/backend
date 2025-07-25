@@ -1,6 +1,11 @@
-import { IResponse } from "src/core/misc/response.util";
-import { MonthScheduleDto, ScheduleDetailsDto, ScheduleListFilterDto, UpdateScheduleDateSlotStatusDto, UpdateScheduleDateStatusDto, UpdateScheduleStatusDto } from "../../dtos/schedules.dto";
-import { IScheduleDay, IScheduleListWithPagination, ISchedules } from "src/core/entities/interfaces/schedules.entity.interface";
+import {
+    IScheduleDay, IScheduleListWithPagination, ISchedules
+} from '@core/entities/interfaces/schedules.entity.interface';
+import { IResponse } from '@core/misc/response.util';
+import {
+    MonthScheduleDto, ScheduleDetailsDto, ScheduleListFilterDto, UpdateScheduleDateSlotStatusDto,
+    UpdateScheduleDateStatusDto, UpdateScheduleStatusDto
+} from '@modules/schedules/dtos/schedules.dto';
 
 export interface ISchedulesService {
     createSchedules(providerId: string, dto: MonthScheduleDto): Promise<IResponse>;

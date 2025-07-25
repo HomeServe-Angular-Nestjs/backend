@@ -1,10 +1,15 @@
-import { Provider } from "@nestjs/common";
-import { AUTH_SOCKET_SERVICE_NAME, CHAT_SOCKET_SERVICE_NAME, MESSAGE_SERVICE_NAME, TOKEN_SERVICE_NAME, USER_SOCKET_STORE_SERVICE_NAME } from "src/core/constants/service.constant";
-import { TokenService } from "src/modules/auth/services/implementations/token.service";
-import { AuthSocketService } from "../services/implementation/auth-socket.service";
-import { ChatSocketService } from "../services/implementation/chat-socket.service";
-import { UserSocketStoreService } from "../services/implementation/user-socket-store.service";
-import { MessageService } from "../services/implementation/message.service";
+import {
+    AUTH_SOCKET_SERVICE_NAME, CHAT_SOCKET_SERVICE_NAME, MESSAGE_SERVICE_NAME, TOKEN_SERVICE_NAME,
+    USER_SOCKET_STORE_SERVICE_NAME
+} from '@/core/constants/service.constant';
+import { TokenService } from '@/modules/auth/services/implementations/token.service';
+import { AuthSocketService } from '@modules/websockets/services/implementation/auth-socket.service';
+import { ChatSocketService } from '@modules/websockets/services/implementation/chat-socket.service';
+import { MessageService } from '@modules/websockets/services/implementation/message.service';
+import {
+    UserSocketStoreService
+} from '@modules/websockets/services/implementation/user-socket-store.service';
+import { Provider } from '@nestjs/common';
 
 export const socketServiceProviders: Provider[] = [
     {

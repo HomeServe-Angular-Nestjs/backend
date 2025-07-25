@@ -1,15 +1,20 @@
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
 import session from 'express-session';
-import { BlockGuard } from './modules/auth/guards/block.guard';
-import { ICustomerRepository } from './core/repositories/interfaces/customer-repo.interface';
-import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME } from './core/constants/repository.constant';
-import { IProviderRepository } from './core/repositories/interfaces/provider-repo.interface';
-import { FRONTEND_URL } from './core/environments/environments';
-import { SeedsModule } from '../seed/seed.module';
+
+import { ValidationPipe } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
+
 import { SeedCommand } from '../seed/commands/seed.command';
+import { SeedsModule } from '../seed/seed.module';
+import { AppModule } from './app.module';
+import {
+    CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME
+} from './core/constants/repository.constant';
+import { FRONTEND_URL } from './core/environments/environments';
+import { ILoggerFactory, LOGGER_FACTORY } from './core/logger/interface/logger-factory.interface';
+import { ICustomerRepository } from './core/repositories/interfaces/customer-repo.interface';
+import { IProviderRepository } from './core/repositories/interfaces/provider-repo.interface';
+import { BlockGuard } from './modules/auth/guards/block.guard';
 
 async function bootstrap() {
   if (process.argv.includes('seed:admin')) {
@@ -54,7 +59,8 @@ async function bootstrap() {
 
   const customerRepository = app.get<ICustomerRepository>(CUSTOMER_REPOSITORY_INTERFACE_NAME);
   const providerRepository = app.get<IProviderRepository>(PROVIDER_REPOSITORY_INTERFACE_NAME);
-  app.useGlobalGuards(new BlockGuard(customerRepository, providerRepository));
+  const loggerFactory = app.get<ILoggerFactory>(LOGGER_FACTORY);
+  app.useGlobalGuards(new BlockGuard(loggerFactory, customerRepository, providerRepository));
 
   app.useGlobalPipes(new ValidationPipe({
     whitelist: false,

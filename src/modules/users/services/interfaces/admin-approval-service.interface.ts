@@ -1,5 +1,7 @@
-import { IApprovalOverviewData, IApprovalTableDetails } from "src/core/entities/interfaces/user.entity.interface";
-import { IResponse } from "src/core/misc/response.util";
+import {
+    IApprovalOverviewData, IApprovalTableDetails
+} from '@/core/entities/interfaces/user.entity.interface';
+import { IResponse } from '@/core/misc/response.util';
 
 export interface IAdminApprovalService {
     fetchApprovalOverviewDetails(): Promise<IResponse<IApprovalOverviewData>>;

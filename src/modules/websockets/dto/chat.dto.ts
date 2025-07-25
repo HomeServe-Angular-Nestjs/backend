@@ -1,4 +1,4 @@
-import { IsDefined, IsIn, IsString } from "class-validator";
+import { IsDefined, IsIn, IsString } from 'class-validator';
 
 export class GetChatDto {
     @IsDefined()

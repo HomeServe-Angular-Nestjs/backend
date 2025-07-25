@@ -1,6 +1,7 @@
-import { Types } from "mongoose";
-import { IMessage, MessageType } from "../interfaces/message.entity.interface";
-import { BaseEntity } from "../base/implementation/base.entity";
+import { Types } from 'mongoose';
+
+import { BaseEntity } from '../base/implementation/base.entity';
+import { IMessage, MessageType } from '../interfaces/message.entity.interface';
 
 export class Message extends BaseEntity implements IMessage {
     chatId: Types.ObjectId;

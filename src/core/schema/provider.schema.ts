@@ -1,9 +1,13 @@
-import { Schema, Prop, SchemaFactory } from '@nestjs/mongoose';
-import { BaseUserDocument } from './base/user-base.schema';
 import { Types } from 'mongoose';
+
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+
 import { SERVICE_OFFERED_MODEL_NAME } from '../constants/model.constant';
+import {
+    IDoc, IExpertise, ILanguage, VerificationStatusType
+} from '../entities/interfaces/user.entity.interface';
+import { BaseUserDocument } from './base/user-base.schema';
 import { ServiceDocument } from './service.schema';
-import { IDoc, IExpertise, ILanguage, VerificationStatusType } from '../entities/interfaces/user.entity.interface';
 
 @Schema()
 export class Review {

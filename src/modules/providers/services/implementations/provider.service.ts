@@ -1,28 +1,50 @@
-import { Inject, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
 import { Types } from 'mongoose';
-import { IProviderServices } from '../interfaces/provider-service.interface';
-import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SERVICE_OFFERED_REPOSITORY_NAME } from '../../../../core/constants/repository.constant';
-import { IProviderRepository } from '../../../../core/repositories/interfaces/provider-repo.interface';
-import { IFetchReviews, IProvider } from '../../../../core/entities/interfaces/user.entity.interface';
-import { CloudinaryService } from '../../../../configs/cloudinary/cloudinary.service';
-import { FilterDto, GetProvidersFromLocationSearch, SlotDto, UpdateBioDto } from '../../dtos/provider.dto';
-import { IResponse } from 'src/core/misc/response.util';
-import { ErrorMessage } from 'src/core/enum/error.enum';
-import { ICustomerRepository } from 'src/core/repositories/interfaces/customer-repo.interface';
-import { IServiceOfferedRepository } from 'src/core/repositories/interfaces/serviceOffered-repo.interface';
-import { UploadsType } from 'src/core/enum/uploads.enum';
-import { UserType } from 'src/modules/auth/dtos/login.dto';
-import { UPLOAD_UTILITY_NAME } from 'src/core/constants/utility.constant';
-import { IUploadsUtility } from 'src/core/utilities/interface/upload.utility.interface';
 import { v4 as uuidv4 } from 'uuid';
-import { CustomLogger } from "src/core/logger/custom-logger";
+
+import {
+    Inject, Injectable, InternalServerErrorException, Logger, NotFoundException
+} from '@nestjs/common';
+
+import { CloudinaryService } from '../../../../configs/cloudinary/cloudinary.service';
+import {
+    CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME,
+    SERVICE_OFFERED_REPOSITORY_NAME
+} from '../../../../core/constants/repository.constant';
+import { UPLOAD_UTILITY_NAME } from '../../../../core/constants/utility.constant';
+import {
+    IFetchReviews, IProvider
+} from '../../../../core/entities/interfaces/user.entity.interface';
+import { ErrorMessage } from '../../../../core/enum/error.enum';
+import { UploadsType } from '../../../../core/enum/uploads.enum';
+import { ICustomLogger } from '../../../../core/logger/interface/custom-logger.interface';
+import {
+    ILoggerFactory, LOGGER_FACTORY
+} from '../../../../core/logger/interface/logger-factory.interface';
+import { IResponse } from '../../../../core/misc/response.util';
+import {
+    ICustomerRepository
+} from '../../../../core/repositories/interfaces/customer-repo.interface';
+import {
+    IProviderRepository
+} from '../../../../core/repositories/interfaces/provider-repo.interface';
+import {
+    IServiceOfferedRepository
+} from '../../../../core/repositories/interfaces/serviceOffered-repo.interface';
+import { IUploadsUtility } from '../../../../core/utilities/interface/upload.utility.interface';
+import { UserType } from '../../../auth/dtos/login.dto';
+import {
+    FilterDto, GetProvidersFromLocationSearch, SlotDto, UpdateBioDto
+} from '../../dtos/provider.dto';
+import { IProviderServices } from '../interfaces/provider-service.interface';
 
 @Injectable()
 export class ProviderServices implements IProviderServices {
-  private readonly logger = new CustomLogger(ProviderServices.name);
+  private readonly logger: ICustomLogger;
 
   constructor(
     private _cloudinaryService: CloudinaryService,
+    @Inject(LOGGER_FACTORY)
+    private readonly loggerFactory: ILoggerFactory,
     @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
     private _providerRepository: IProviderRepository,
     @Inject(CUSTOMER_REPOSITORY_INTERFACE_NAME)
@@ -31,7 +53,9 @@ export class ProviderServices implements IProviderServices {
     private _serviceOfferedRepository: IServiceOfferedRepository,
     @Inject(UPLOAD_UTILITY_NAME)
     private readonly _uploadsUtility: IUploadsUtility,
-  ) { }
+  ) {
+    this.logger = this.loggerFactory.createLogger(ProviderServices.name);
+  }
 
   async getProviders(filter?: FilterDto): Promise<IResponse<IProvider[]>> {
     const query: { [key: string]: any } = { isDeleted: false };

@@ -1,14 +1,21 @@
-import { Controller, Get, Patch, Inject, InternalServerErrorException, UseInterceptors, Req, UploadedFile, Query, Body, Delete, Logger, BadRequestException, UnauthorizedException, Put, Param, } from '@nestjs/common';
-import { PROVIDER_SERVICE_NAME } from '../../../core/constants/service.constant';
-import { IProviderServices } from '../services/interfaces/provider-service.interface';
-import { FileInterceptor } from '@nestjs/platform-express';
 import { Request } from 'express';
-import { IPayload } from '../../../core/misc/payload.interface';
-import { FilterDto, GetProvidersFromLocationSearch, RemoveCertificateDto, SlotDto, UpdateBioDto, UploadCertificateDto, UploadGalleryImageDto } from '../dtos/provider.dto';
-import { IProvider } from '../../../core/entities/interfaces/user.entity.interface';
-import { ErrorMessage } from 'src/core/enum/error.enum';
-import { IResponse } from 'src/core/misc/response.util';
-import { CustomLogger } from "src/core/logger/custom-logger";
+
+import { PROVIDER_SERVICE_NAME } from '@core/constants/service.constant';
+import { IProvider } from '@core/entities/interfaces/user.entity.interface';
+import { ErrorMessage } from '@core/enum/error.enum';
+import { CustomLogger } from '@core/logger/implementation/custom-logger';
+import { IPayload } from '@core/misc/payload.interface';
+import {
+    BadRequestException, Body, Controller, Delete, Get, Inject, InternalServerErrorException, Patch,
+    Put, Query, Req, UnauthorizedException, UploadedFile, UseInterceptors
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+
+import {
+    FilterDto, GetProvidersFromLocationSearch, RemoveCertificateDto, SlotDto, UpdateBioDto,
+    UploadCertificateDto, UploadGalleryImageDto
+} from '../dtos/provider.dto';
+import { IProviderServices } from '../services/interfaces/provider-service.interface';
 
 @Controller('provider')
 export class ProviderController {

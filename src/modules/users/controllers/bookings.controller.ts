@@ -1,11 +1,15 @@
-import { Controller, Get, Inject, InternalServerErrorException, Logger, Query } from "@nestjs/common";
-import { ADMIN_BOOKINGS_SERVICE_NAME } from "src/core/constants/service.constant";
-import { IAdminBookingService } from "../services/interfaces/admin-bookings-service.interface";
-import { ErrorMessage } from "src/core/enum/error.enum";
-import { IResponse } from "src/core/misc/response.util";
-import { IAdminBookingForTable, IBookingStats, IPaginatedBookingsResponse } from "src/core/entities/interfaces/booking.entity.interface";
-import { FilterWithPaginationDto, GetBookingsFilter } from "../dtos/admin-user.dto";
-import { CustomLogger } from "src/core/logger/custom-logger";
+import { ADMIN_BOOKINGS_SERVICE_NAME } from '@core/constants/service.constant';
+import {
+    IBookingStats, IPaginatedBookingsResponse
+} from '@core/entities/interfaces/booking.entity.interface';
+import { ErrorMessage } from '@core/enum/error.enum';
+import { CustomLogger } from '@core/logger/implementation/custom-logger';
+import { IResponse } from '@core/misc/response.util';
+import { GetBookingsFilter } from '@modules/users/dtos/admin-user.dto';
+import {
+    IAdminBookingService
+} from '@modules/users/services/interfaces/admin-bookings-service.interface';
+import { Controller, Get, Inject, InternalServerErrorException, Query } from '@nestjs/common';
 
 @Controller('admin/bookings')
 export class AdminBookingController {

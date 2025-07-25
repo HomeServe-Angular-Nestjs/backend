@@ -1,6 +1,8 @@
-import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { Document } from "mongoose";
-import { IScheduleDay } from "../entities/interfaces/schedules.entity.interface";
+import { Document } from 'mongoose';
+
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+
+import { IScheduleDay } from '../entities/interfaces/schedules.entity.interface';
 
 @Schema({ timestamps: true })
 export class SchedulesDocument extends Document {

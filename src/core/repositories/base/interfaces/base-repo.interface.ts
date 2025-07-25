@@ -1,6 +1,6 @@
 import { ClientSession, Document, FilterQuery, QueryOptions, Types, UpdateQuery } from 'mongoose';
-import { IEntity } from '../../../entities/base/interfaces/base-entity.entity.interface';
 
+import { IEntity } from '../../../entities/base/interfaces/base-entity.entity.interface';
 
 export interface IBaseRepository<T extends IEntity, TDocument extends Document,> {
 

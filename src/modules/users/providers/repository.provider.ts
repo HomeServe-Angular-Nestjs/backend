@@ -1,18 +1,27 @@
-import { Provider } from "@nestjs/common";
-import { getModelToken } from "@nestjs/mongoose";
-import { Model } from "mongoose";
-import { BOOKINGS_MODEL_NAME, CUSTOMER_MODEL_NAME, PROVIDER_MODEL_NAME, SUBSCRIPTION_MODEL_NAME, TRANSACTION_MODEL_NAME } from "src/core/constants/model.constant";
-import { BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SUBSCRIPTION_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME } from "src/core/constants/repository.constant";
-import { BookingRepository } from "src/core/repositories/implementations/bookings.repository";
-import { CustomerRepository } from "src/core/repositories/implementations/customer.repository";
-import { ProviderRepository } from "src/core/repositories/implementations/provider.repository";
-import { SubscriptionRepository } from "src/core/repositories/implementations/subscription.repository";
-import { TransactionRepository } from "src/core/repositories/implementations/transaction.repository";
-import { BookingDocument } from "src/core/schema/bookings.schema";
-import { CustomerDocument } from "src/core/schema/customer.schema";
-import { ProviderDocument } from "src/core/schema/provider.schema";
-import { SubscriptionDocument } from "src/core/schema/subscription.schema";
-import { TransactionDocument } from "src/core/schema/transaction.schema";
+import { Model } from 'mongoose';
+
+import {
+    BOOKINGS_MODEL_NAME, CUSTOMER_MODEL_NAME, PROVIDER_MODEL_NAME, SUBSCRIPTION_MODEL_NAME,
+    TRANSACTION_MODEL_NAME
+} from '@/core/constants/model.constant';
+import {
+    BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME,
+    SUBSCRIPTION_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME
+} from '@/core/constants/repository.constant';
+import { BookingRepository } from '@/core/repositories/implementations/bookings.repository';
+import { CustomerRepository } from '@/core/repositories/implementations/customer.repository';
+import { ProviderRepository } from '@/core/repositories/implementations/provider.repository';
+import {
+    SubscriptionRepository
+} from '@/core/repositories/implementations/subscription.repository';
+import { TransactionRepository } from '@/core/repositories/implementations/transaction.repository';
+import { BookingDocument } from '@/core/schema/bookings.schema';
+import { CustomerDocument } from '@/core/schema/customer.schema';
+import { ProviderDocument } from '@/core/schema/provider.schema';
+import { SubscriptionDocument } from '@/core/schema/subscription.schema';
+import { TransactionDocument } from '@/core/schema/transaction.schema';
+import { Provider } from '@nestjs/common';
+import { getModelToken } from '@nestjs/mongoose';
 
 export const adminRepositoryProviders: Provider[] = [
     {

@@ -1,26 +1,17 @@
-import { ConflictException, Inject, Injectable } from '@nestjs/common';
-
-import { ISignupService } from '../interfaces/signup-service.interface';
-import { IOtpService } from '../interfaces/otp-service.interface';
-
-import { OTP_SERVICE_INTERFACE_NAME } from '../../../../core/constants/service.constant';
-
-import { ICustomerRepository } from '../../../../core/repositories/interfaces/customer-repo.interface';
-import { IProviderRepository } from '../../../../core/repositories/interfaces/provider-repo.interface';
-
 import {
-  CUSTOMER_REPOSITORY_INTERFACE_NAME,
-  PROVIDER_REPOSITORY_INTERFACE_NAME,
-} from '../../../../core/constants/repository.constant';
-
-import { IArgonUtility } from '../../../../core/utilities/interface/argon.utility.interface';
-
-import { ARGON_UTILITY_NAME } from '../../../../core/constants/utility.constant';
-
-import { Customer } from '../../../../core/entities/implementation/customer.entity';
-import { Provider } from '../../../../core/entities/implementation/provider.entity';
-
-import { CompleteSignupDto, InitiateSignupDto } from '../../dtos/signup.dto';
+    CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME
+} from '@core/constants/repository.constant';
+import { OTP_SERVICE_INTERFACE_NAME } from '@core/constants/service.constant';
+import { ARGON_UTILITY_NAME } from '@core/constants/utility.constant';
+import { Customer } from '@core/entities/implementation/customer.entity';
+import { Provider } from '@core/entities/implementation/provider.entity';
+import { ICustomerRepository } from '@core/repositories/interfaces/customer-repo.interface';
+import { IProviderRepository } from '@core/repositories/interfaces/provider-repo.interface';
+import { IArgonUtility } from '@core/utilities/interface/argon.utility.interface';
+import { CompleteSignupDto, InitiateSignupDto } from '@modules/auth/dtos/signup.dto';
+import { IOtpService } from '@modules/auth/services/interfaces/otp-service.interface';
+import { ISignupService } from '@modules/auth/services/interfaces/signup-service.interface';
+import { ConflictException, Inject, Injectable } from '@nestjs/common';
 
 @Injectable()
 export class SignupService implements ISignupService {

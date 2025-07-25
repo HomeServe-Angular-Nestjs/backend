@@ -1,6 +1,10 @@
-import { ClientSession, Document, FilterQuery, Model, QueryOptions, Types, UpdateQuery, UpdateWriteOpResult } from 'mongoose';
-import { IBaseRepository } from '../interfaces/base-repo.interface';
+import {
+    ClientSession, Document, FilterQuery, Model, QueryOptions, Types, UpdateQuery,
+    UpdateWriteOpResult
+} from 'mongoose';
+
 import { IEntity } from '../../../entities/base/interfaces/base-entity.entity.interface';
+import { IBaseRepository } from '../interfaces/base-repo.interface';
 
 export abstract class BaseRepository<T extends IEntity, TDocument extends Document> implements IBaseRepository<T, TDocument> {
 

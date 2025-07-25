@@ -1,22 +1,35 @@
-import { Body, Controller, Get, Inject, InternalServerErrorException, Logger, Post, Req, UnauthorizedException } from "@nestjs/common";
-import { Request } from "express";
-import { SUBSCRIPTION_SERVICE_NAME } from "src/core/constants/service.constant";
-import { ErrorMessage } from "src/core/enum/error.enum";
-import { ISubscriptionService } from "../services/interface/subscription-service.interface";
-import { IPayload } from "src/core/misc/payload.interface";
-import { CreateSubscriptionDto } from "../dto/subscription.dto";
-import { IResponse } from "src/core/misc/response.util";
-import { ISubscription } from "src/core/entities/interfaces/subscription.entity.interface";
-import { CustomLogger } from "src/core/logger/custom-logger";
+import { Request } from 'express';
+
+import { SUBSCRIPTION_SERVICE_NAME } from '@core/constants/service.constant';
+import { ISubscription } from '@core/entities/interfaces/subscription.entity.interface';
+import { ErrorMessage } from '@core/enum/error.enum';
+import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
+import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
+import { IPayload } from '@core/misc/payload.interface';
+import { IResponse } from '@core/misc/response.util';
+import {
+    ISubscriptionService
+} from '@modules/subscriptions/services/interface/subscription-service.interface';
+import {
+    Body, Controller, Get, Inject, InternalServerErrorException, Logger, Post, Req,
+    UnauthorizedException
+} from '@nestjs/common';
+
+import { CreateSubscriptionDto } from '../dto/subscription.dto';
 
 @Controller('subscription')
 export class SubscriptionController {
-    private readonly logger = new CustomLogger(SubscriptionController.name);
+    private readonly logger: ICustomLogger;
 
     constructor(
+        @Inject(LOGGER_FACTORY)
+        private readonly _loggerFactory: ILoggerFactory,
         @Inject(SUBSCRIPTION_SERVICE_NAME)
         private readonly _subscriptionService: ISubscriptionService
-    ) { }
+
+    ) {
+        this.logger = this._loggerFactory.createLogger(SubscriptionController.name);
+    }
 
     @Post('')
     async createSubscription(@Req() req: Request, @Body() dto: CreateSubscriptionDto): Promise<IResponse<ISubscription>> {
@@ -25,6 +38,9 @@ export class SubscriptionController {
             if (!user.sub) {
                 throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
             }
+
+            console.log('Console Fetching subscription for user ID:', user.sub);
+            this.logger.log(`Logger Fetching subscription for user ID: ${user.sub}`);
 
             return await this._subscriptionService.createSubscription(user.sub, dto);
         } catch (err) {
@@ -40,7 +56,7 @@ export class SubscriptionController {
             if (!user.sub) {
                 throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
             }
-            
+
             return await this._subscriptionService.fetchSubscription(user.sub);
         } catch (err) {
             this.logger.error('Error caught while fetching the subscription: ', err.message, err.stack);

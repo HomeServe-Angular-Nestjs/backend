@@ -1,13 +1,14 @@
-import { Injectable } from '@nestjs/common';
-import { Provider } from '../../entities/implementation/provider.entity';
-import { BaseRepository } from '../base/implementations/base.repository';
-import { ProviderDocument } from '../../schema/provider.schema';
-import { IProviderRepository } from '../interfaces/provider-repo.interface';
-import { InjectModel } from '@nestjs/mongoose';
-import { PROVIDER_MODEL_NAME } from '../../constants/model.constant';
 import { FilterQuery, Model, Types } from 'mongoose';
-import { IProvider, } from '../../entities/interfaces/user.entity.interface';
-import { IStats } from 'src/core/entities/interfaces/admin.entity.interface';
+
+import { PROVIDER_MODEL_NAME } from '@core/constants/model.constant';
+import { Provider } from '@core/entities/implementation/provider.entity';
+import { IStats } from '@core/entities/interfaces/admin.entity.interface';
+import { IProvider } from '@core/entities/interfaces/user.entity.interface';
+import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
+import { IProviderRepository } from '@core/repositories/interfaces/provider-repo.interface';
+import { ProviderDocument } from '@core/schema/provider.schema';
+import { Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
 
 @Injectable()
 export class ProviderRepository extends BaseRepository<Provider, ProviderDocument> implements IProviderRepository {

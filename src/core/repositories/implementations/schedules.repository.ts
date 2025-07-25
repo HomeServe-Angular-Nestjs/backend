@@ -1,10 +1,11 @@
-import { ScheduleDay, Schedules, Slot } from "src/core/entities/implementation/schedules.entity";
-import { BaseRepository } from "../base/implementations/base.repository";
-import { SchedulesDocument } from "src/core/schema/schedules.schema";
-import { FilterQuery, Model, Types, UpdateQuery } from "mongoose";
-import { InjectModel } from "@nestjs/mongoose";
-import { SCHEDULES_MODEL_NAME } from "src/core/constants/model.constant";
-import { ISchedulesRepository } from "../interfaces/schedules-repo.interface";
+import { FilterQuery, Model, Types, UpdateQuery } from 'mongoose';
+
+import { SCHEDULES_MODEL_NAME } from '@core/constants/model.constant';
+import { ScheduleDay, Schedules, Slot } from '@core/entities/implementation/schedules.entity';
+import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
+import { ISchedulesRepository } from '@core/repositories/interfaces/schedules-repo.interface';
+import { SchedulesDocument } from '@core/schema/schedules.schema';
+import { InjectModel } from '@nestjs/mongoose';
 
 export class SchedulesRepository extends BaseRepository<Schedules, SchedulesDocument> implements ISchedulesRepository {
     constructor(

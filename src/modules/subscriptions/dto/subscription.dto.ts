@@ -1,5 +1,6 @@
-import { IsIn, IsNotEmpty, IsString } from "class-validator";
-import { PlanRoleType, SubsDurationType, SubsPaymentStatus } from "src/core/enum/subscription.enum";
+import { IsIn, IsNotEmpty, IsString } from 'class-validator';
+
+import { PlanRoleType, SubsDurationType, SubsPaymentStatus } from '@core/enum/subscription.enum';
 
 export class CreateSubscriptionDto {
     @IsNotEmpty()

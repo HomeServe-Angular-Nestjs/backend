@@ -1,21 +1,19 @@
+import Redis from 'ioredis';
+
+import { REDIS_CLIENT } from '@configs/redis/redis.module';
+import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
+import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
+import { IPayload } from '@core/misc/payload.interface';
+import { ITokenService } from '@modules/auth/services/interfaces/token-service.interface';
 import {
-  Inject,
-  Injectable,
-  InternalServerErrorException,
-  Logger,
-  UnauthorizedException,
+    Inject, Injectable, InternalServerErrorException, UnauthorizedException
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { ITokenService } from '../interfaces/token-service.interface';
-import Redis from 'ioredis';
-import { IPayload } from '../../../../core/misc/payload.interface';
-import { REDIS_CLIENT } from 'src/configs/redis/redis.module';
-import { CustomLogger } from "src/core/logger/custom-logger";
 
 @Injectable()
 export class TokenService implements ITokenService {
-  private readonly logger = new CustomLogger(TokenService.name);
+  private readonly logger: ICustomLogger;
 
   private readonly ACCESS_SECRET: string;
   private readonly REFRESH_SECRET: string;
@@ -23,11 +21,15 @@ export class TokenService implements ITokenService {
   private readonly REFRESH_EXPIRES_IN: string;
 
   constructor(
+    @Inject(LOGGER_FACTORY)
+    private readonly loggerFactory: ILoggerFactory,
     private readonly _jwtService: JwtService,
     private readonly _configService: ConfigService,
     @Inject(REDIS_CLIENT)
     private readonly _redis: Redis,
   ) {
+    this.logger = this.loggerFactory.createLogger(TokenService.name);
+    
     this.ACCESS_SECRET = this._configService.get<string>('JWT_ACCESS_SECRET') || 'your-access-secret';
     this.REFRESH_SECRET = this._configService.get<string>('JWT_REFRESH_SECRET') || 'your-refresh-secret';
     this.ACCESS_EXPIRES_IN = this._configService.get<string>('JWT_ACCESS_EXPIRES_IN') || '10m';

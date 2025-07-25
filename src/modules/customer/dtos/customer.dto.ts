@@ -1,5 +1,8 @@
-import { Type } from "class-transformer";
-import { ArrayMinSize, IsArray, IsDefined, IsEmail, IsNotEmpty, IsNumber, IsString, Matches, Max, Min, ValidateNested } from "class-validator";
+import { Type } from 'class-transformer';
+import {
+    ArrayMinSize, IsArray, IsDefined, IsEmail, IsNotEmpty, IsNumber, IsString, Matches, Max, Min,
+    ValidateNested
+} from 'class-validator';
 
 export class UpdateSavedProvidersDto {
     @IsNotEmpty()

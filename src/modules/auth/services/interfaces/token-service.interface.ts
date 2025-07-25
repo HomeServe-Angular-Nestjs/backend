@@ -1,4 +1,4 @@
-import { IPayload } from "../../../../core/misc/payload.interface";
+import { IPayload } from '../../../../core/misc/payload.interface';
 
 export interface ITokenService {
   validateAccessToken(token: string): Promise<IPayload>;

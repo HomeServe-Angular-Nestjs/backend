@@ -1,6 +1,5 @@
-import { TransactionStatus, TransactionType } from "src/core/enum/transaction.enum";
-import { IEntity } from "../base/interfaces/base-entity.entity.interface";
-
+import { IEntity } from '@core/entities/base/interfaces/base-entity.entity.interface';
+import { TransactionStatus, TransactionType } from '@core/enum/transaction.enum';
 
 export interface ITransaction extends IEntity {
     userId: string;

@@ -1,21 +1,32 @@
-import { IPaymentGateway } from "src/core/utilities/interface/razorpay.utility.interface";
-import { IRazorPaymentService } from "../interfaces/razorpay-service.interface";
-import { BadRequestException, Inject, Injectable, InternalServerErrorException, Logger, NotFoundException } from "@nestjs/common";
-import { PAYMENT_UTILITY_NAME } from "src/core/constants/utility.constant";
-import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, TRANSACTION_REPOSITORY_NAME } from "src/core/constants/repository.constant";
-import { ITransactionRepository } from "src/core/repositories/interfaces/transaction-repo.interface";
-import { IRazorpayOrder, IVerifiedPayment } from "src/core/entities/interfaces/transaction.entity.interface";
-import { RazorpayVerifyData, VerifyOrderData } from "../../dtos/payment.dto";
-import { ICustomerRepository } from "src/core/repositories/interfaces/customer-repo.interface";
-import { IProviderRepository } from "src/core/repositories/interfaces/provider-repo.interface";
-import { TransactionType } from "src/core/enum/transaction.enum";
-import { CustomLogger } from "src/core/logger/custom-logger";
+import {
+    CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME,
+    TRANSACTION_REPOSITORY_NAME
+} from '@core/constants/repository.constant';
+import { PAYMENT_UTILITY_NAME } from '@core/constants/utility.constant';
+import {
+    IRazorpayOrder, IVerifiedPayment
+} from '@core/entities/interfaces/transaction.entity.interface';
+import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
+import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
+import { ICustomerRepository } from '@core/repositories/interfaces/customer-repo.interface';
+import { IProviderRepository } from '@core/repositories/interfaces/provider-repo.interface';
+import { ITransactionRepository } from '@core/repositories/interfaces/transaction-repo.interface';
+import { IPaymentGateway } from '@core/utilities/interface/razorpay.utility.interface';
+import { RazorpayVerifyData, VerifyOrderData } from '@modules/payment/dtos/payment.dto';
+import {
+    IRazorPaymentService
+} from '@modules/payment/services/interfaces/razorpay-service.interface';
+import {
+    BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException
+} from '@nestjs/common';
 
 @Injectable()
 export class RazorPaymentService implements IRazorPaymentService {
-    private readonly logger = new CustomLogger(RazorPaymentService.name);
+    private readonly logger: ICustomLogger;
 
     constructor(
+        @Inject(LOGGER_FACTORY)
+        private readonly _loggerFactory: ILoggerFactory,
         @Inject(PAYMENT_UTILITY_NAME)
         private readonly _paymentService: IPaymentGateway,
         @Inject(TRANSACTION_REPOSITORY_NAME)

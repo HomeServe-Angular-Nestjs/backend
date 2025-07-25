@@ -1,5 +1,5 @@
-import { IBlockedInfo, IChat, IParticipant } from "../interfaces/chat.entity.interface";
-import { BaseEntity } from "../base/implementation/base.entity";
+import { BaseEntity } from '../base/implementation/base.entity';
+import { IBlockedInfo, IChat, IParticipant } from '../interfaces/chat.entity.interface';
 
 export class Chat extends BaseEntity implements IChat {
     participants: [IParticipant, IParticipant];

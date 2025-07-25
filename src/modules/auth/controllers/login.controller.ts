@@ -1,53 +1,40 @@
-import {
-  BadRequestException,
-  Body,
-  Controller,
-  Get,
-  HttpCode,
-  Inject,
-  InternalServerErrorException,
-  Logger,
-  NotFoundException,
-  Post,
-  Put,
-  Query,
-  Req,
-  Res,
-  UnauthorizedException,
-  UseGuards,
-} from '@nestjs/common';
-import {
-  AuthLoginDto,
-  ChangePasswordDto,
-  ForgotPasswordDto,
-  LogoutDto,
-  VerifyTokenDto,
-} from '../dtos/login.dto';
-import { LOGIN_SERVICE_INTERFACE_NAME, TOKEN_SERVICE_NAME } from '../../../core/constants/service.constant';
-import { ILoginService } from '../services/interfaces/login-service.interface';
 import { Request, Response } from 'express';
-import { GoogleAuthGuard } from '../guards/google-auth.guard';
-import { IUser } from '../../../core/entities/interfaces/user.entity.interface';
-import { prepareResponse } from '../../../core/misc/response.util';
-import { ITokenService } from '../services/interfaces/token-service.interface';
-import { BACKEND_URL, FRONTEND_URL } from '../../../core/environments/environments';
+
+import { LOGIN_SERVICE_INTERFACE_NAME, TOKEN_SERVICE_NAME } from '@core/constants/service.constant';
+import { IUser } from '@core/entities/interfaces/user.entity.interface';
+import { ErrorMessage } from '@core/enum/error.enum';
+import { BACKEND_URL, FRONTEND_URL } from '@core/environments/environments';
+import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
+import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
+import { prepareResponse } from '@core/misc/response.util';
+import {
+    AuthLoginDto, ChangePasswordDto, ForgotPasswordDto, VerifyTokenDto
+} from '@modules/auth/dtos/login.dto';
+import { GoogleAuthGuard } from '@modules/auth/guards/google-auth.guard';
+import { ILoginService } from '@modules/auth/services/interfaces/login-service.interface';
+import { ITokenService } from '@modules/auth/services/interfaces/token-service.interface';
+import {
+    Body, Controller, Get, HttpCode, Inject, InternalServerErrorException, Logger,
+    NotFoundException, Post, Put, Query, Req, Res, UnauthorizedException, UseGuards
+} from '@nestjs/common';
 
 @Controller('login')
 export class LoginController {
-  private readonly logger = new Logger(LoginController.name);
+  private readonly logger: ICustomLogger;
 
   constructor(
+    @Inject(LOGGER_FACTORY)
+    private readonly _loggerFactory: ILoggerFactory,
     @Inject(LOGIN_SERVICE_INTERFACE_NAME)
-    private _loginService: ILoginService,
+    private readonly _loginService: ILoginService,
     @Inject(TOKEN_SERVICE_NAME)
-    private _tokenService: ITokenService,
-  ) { }
+    private readonly _tokenService: ITokenService,
+  ) {
+    this.logger = this._loggerFactory.createLogger(LoginController.name);
+  }
 
   @Post('auth')
-  async validateCredentials(
-    @Body() dto: AuthLoginDto,
-    @Res({ passthrough: true }) response: Response,
-  ) {
+  async validateCredentials(@Body() dto: AuthLoginDto, @Res({ passthrough: true }) response: Response,) {
     try {
       const user = await this._loginService.validateUserCredentials(dto);
       if (dto.type) {
@@ -72,23 +59,8 @@ export class LoginController {
 
       return { email: user.email, id: user.id, type: user.type };
     } catch (error: unknown) {
-      if (error instanceof Error) {
-        this.logger.error('Login Error:', error.message);
-
-      } else {
-        this.logger.error('Unknown login error:', error);
-      }
-
-      if (
-        error instanceof NotFoundException ||
-        error instanceof UnauthorizedException
-      ) {
-        throw error;
-      }
-
-      throw new InternalServerErrorException(
-        'An unexpected error occurred. Please try again.',
-      );
+      this.logger.error(`Login Error: ${error}`);
+      throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
     }
   }
 
@@ -104,8 +76,8 @@ export class LoginController {
     try {
       return await this._loginService.verifyToken(dto);
     } catch (err) {
-      this.logger.error('Google Login Error:', err);
-      throw new UnauthorizedException('Token Verification Failed');
+      this.logger.error(`Google Login Error: ${err}`);
+      throw new UnauthorizedException(ErrorMessage.TOKEN_VERIFICATION_FAILED);
     }
   }
 
@@ -115,11 +87,7 @@ export class LoginController {
   }
 
   @Get('google/init')
-  initializeGoogleAuth(
-    @Query('type') type: string,
-    @Req() req: Request,
-    @Res() res: Response,
-  ) {
+  initializeGoogleAuth(@Query('type') type: string, @Req() req: Request, @Res() res: Response,) {
     try {
       if (!type) {
         return res
@@ -185,14 +153,7 @@ export class LoginController {
       return res.redirect(frontendUrl);
     } catch (error) {
       this.logger.error('Google Login Error:', error.message);
-
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
-
-      throw new InternalServerErrorException(
-        'An unexpected error occurred. Please try again.',
-      );
+      throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -217,7 +178,7 @@ export class LoginController {
       return res.status(200).json(prepareResponse(true, 'Successful logout'));
     } catch (err) {
       this.logger.error('[ERROR] Logout: ', err);
-      throw new InternalServerErrorException('Something went wrong while logging out.');
+      throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
     }
   }
 }

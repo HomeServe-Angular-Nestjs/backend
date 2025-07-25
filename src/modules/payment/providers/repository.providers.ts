@@ -1,14 +1,20 @@
-import { Provider } from "@nestjs/common";
-import { getModelToken } from "@nestjs/mongoose";
-import { Model } from "mongoose";
-import { CUSTOMER_MODEL_NAME, PROVIDER_MODEL_NAME, TRANSACTION_MODEL_NAME } from "src/core/constants/model.constant";
-import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, TRANSACTION_REPOSITORY_NAME } from "src/core/constants/repository.constant";
-import { CustomerRepository } from "src/core/repositories/implementations/customer.repository";
-import { ProviderRepository } from "src/core/repositories/implementations/provider.repository";
-import { TransactionRepository } from "src/core/repositories/implementations/transaction.repository";
-import { CustomerDocument } from "src/core/schema/customer.schema";
-import { ProviderDocument } from "src/core/schema/provider.schema";
-import { TransactionDocument } from "src/core/schema/transaction.schema";
+import { Model } from 'mongoose';
+
+import {
+    CUSTOMER_MODEL_NAME, PROVIDER_MODEL_NAME, TRANSACTION_MODEL_NAME
+} from '@core/constants/model.constant';
+import {
+    CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME,
+    TRANSACTION_REPOSITORY_NAME
+} from '@core/constants/repository.constant';
+import { CustomerRepository } from '@core/repositories/implementations/customer.repository';
+import { ProviderRepository } from '@core/repositories/implementations/provider.repository';
+import { TransactionRepository } from '@core/repositories/implementations/transaction.repository';
+import { CustomerDocument } from '@core/schema/customer.schema';
+import { ProviderDocument } from '@core/schema/provider.schema';
+import { TransactionDocument } from '@core/schema/transaction.schema';
+import { Provider } from '@nestjs/common';
+import { getModelToken } from '@nestjs/mongoose';
 
 export const paymentRepositoryProviders: Provider[] = [
     {

@@ -1,13 +1,15 @@
-import { Injectable } from "@nestjs/common";
-import { BaseRepository } from "../base/implementations/base.repository";
-import { IBooking, IBookingStats } from "../../entities/interfaces/booking.entity.interface";
-import { BookingDocument } from "../../schema/bookings.schema";
-import { InjectModel } from "@nestjs/mongoose";
-import { BOOKINGS_MODEL_NAME, PROVIDER_MODEL_NAME } from "../../constants/model.constant";
-import { FilterQuery, Model, Types } from "mongoose";
-import { Booking } from "../../entities/implementation/bookings.entity";
-import { IBookingRepository } from "../interfaces/bookings-repo.interface";
-import { ITopProviders } from "src/core/entities/interfaces/user.entity.interface";
+import { FilterQuery, Model, Types } from 'mongoose';
+
+import { Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+
+import { BOOKINGS_MODEL_NAME } from '../../constants/model.constant';
+import { Booking } from '../../entities/implementation/bookings.entity';
+import { IBooking, IBookingStats } from '../../entities/interfaces/booking.entity.interface';
+import { ITopProviders } from '../../entities/interfaces/user.entity.interface';
+import { BookingDocument } from '../../schema/bookings.schema';
+import { BaseRepository } from '../base/implementations/base.repository';
+import { IBookingRepository } from '../interfaces/bookings-repo.interface';
 
 @Injectable()
 export class BookingRepository extends BaseRepository<Booking, BookingDocument> implements IBookingRepository {

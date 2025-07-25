@@ -1,6 +1,6 @@
-import { IAdmin } from './admin.entity.interface';
+import { SlotType } from '../../../modules/bookings/dtos/booking.dto';
 import { IBaseUserEntity } from '../base/interfaces/base-user.entity.interface';
-import { SlotType } from './schedule.entity.interface';
+import { IAdmin } from './admin.entity.interface';
 import { IPagination } from './booking.entity.interface';
 
 export type Availability = {

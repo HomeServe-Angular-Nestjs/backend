@@ -1,12 +1,8 @@
 import { IUser } from '../../../../core/entities/interfaces/user.entity.interface';
-import {
-  AuthLoginDto,
-  ChangePasswordDto,
-  ForgotPasswordDto,
-  GoogleLoginDto,
-  VerifyTokenDto,
-} from '../../dtos/login.dto';
 import { IPayload } from '../../../../core/misc/payload.interface';
+import {
+    AuthLoginDto, ChangePasswordDto, ForgotPasswordDto, GoogleLoginDto, VerifyTokenDto
+} from '../../dtos/login.dto';
 
 export interface ILoginService {
   validateUserCredentials(dto: AuthLoginDto): Promise<IUser>;

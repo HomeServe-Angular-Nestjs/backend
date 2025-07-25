@@ -1,8 +1,9 @@
-import { IBaseRepository } from '../base/interfaces/base-repo.interface';
-import { CustomerDocument } from '../../schema/customer.schema';
 import { FilterQuery } from 'mongoose';
-import { ICustomer } from 'src/core/entities/interfaces/user.entity.interface';
-import { IAdminDashboardUserStats, IStats } from 'src/core/entities/interfaces/admin.entity.interface';
+
+import { IStats } from '@core/entities/interfaces/admin.entity.interface';
+import { ICustomer } from '@core/entities/interfaces/user.entity.interface';
+import { IBaseRepository } from '@core/repositories/base/interfaces/base-repo.interface';
+import { CustomerDocument } from '@core/schema/customer.schema';
 
 export interface ICustomerRepository
   extends IBaseRepository<ICustomer, CustomerDocument> {

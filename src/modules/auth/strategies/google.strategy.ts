@@ -1,25 +1,23 @@
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  Logger,
-  UnauthorizedException,
-} from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { PassportStrategy } from '@nestjs/passport';
 import { Request } from 'express';
 import { Profile, Strategy } from 'passport-google-oauth20';
-import { ILoginService } from '../services/interfaces/login-service.interface';
-import { LOGIN_SERVICE_INTERFACE_NAME } from '../../../core/constants/service.constant';
-import { UserType } from '../dtos/login.dto';
-import { CustomLogger } from "src/core/logger/custom-logger";
+
+import { LOGIN_SERVICE_INTERFACE_NAME } from '@core/constants/service.constant';
+import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
+import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
+import { UserType } from '@modules/auth/dtos/login.dto';
+import { ILoginService } from '@modules/auth/services/interfaces/login-service.interface';
+import { BadRequestException, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { PassportStrategy } from '@nestjs/passport';
 
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy) {
-  private readonly logger = new CustomLogger(GoogleStrategy.name);
+  private readonly logger: ICustomLogger
 
   constructor(
     private _config: ConfigService,
+    @Inject(LOGGER_FACTORY)
+    private readonly loggerFactory: ILoggerFactory,
     @Inject(LOGIN_SERVICE_INTERFACE_NAME)
     private _loginService: ILoginService,
   ) {
@@ -30,6 +28,8 @@ export class GoogleStrategy extends PassportStrategy(Strategy) {
       scope: ['profile', 'email'],
       passReqToCallback: true,
     });
+
+    this.logger = this.loggerFactory.createLogger(GoogleStrategy.name); 
   }
 
   async validate(req: Request, accessToken: string, refreshToken: string, profile: Profile,) {

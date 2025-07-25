@@ -1,8 +1,10 @@
-import { Injectable } from '@nestjs/common';
 import { createTransport, SendMailOptions, Transporter } from 'nodemailer';
+
+import { Injectable } from '@nestjs/common';
+
 import { IMailerUtility } from '../interface/mailer.utility.interface';
 
-@Injectable({})
+@Injectable()
 export class MailerUtility implements IMailerUtility {
   private mailTransporter: Transporter;
 

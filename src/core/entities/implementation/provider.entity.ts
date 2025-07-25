@@ -1,6 +1,8 @@
-import { Availability, IDoc, IExpertise, ILanguage, IProvider, VerificationStatusType, IReview } from '../interfaces/user.entity.interface';
+import { SlotType } from '../../../modules/bookings/dtos/booking.dto';
 import { BaseUserEntity } from '../base/implementation/base-user.entity';
-import { SlotType } from '../interfaces/schedule.entity.interface';
+import {
+    Availability, IDoc, IExpertise, ILanguage, IProvider, IReview, VerificationStatusType
+} from '../interfaces/user.entity.interface';
 
 export class Provider extends BaseUserEntity implements IProvider {
   bio: string;

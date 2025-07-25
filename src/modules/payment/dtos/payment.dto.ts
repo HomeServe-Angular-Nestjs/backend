@@ -1,6 +1,10 @@
-import { Transform, Type } from "class-transformer";
-import { IsNotEmpty, IsString, IsIn, IsNumber, IsOptional, ValidateNested, IsEmail, IsPhoneNumber, IsPositive, IsArray, Min } from 'class-validator';
-import { TransactionStatus, TransactionType } from "src/core/enum/transaction.enum";
+import { Transform, Type } from 'class-transformer';
+import {
+    IsArray, IsEmail, IsIn, IsNotEmpty, IsNumber, IsOptional, IsPhoneNumber, IsPositive, IsString,
+    Min, ValidateNested
+} from 'class-validator';
+
+import { TransactionStatus, TransactionType } from '@core/enum/transaction.enum';
 
 export class CreateOrderDto {
     @IsNotEmpty()

@@ -1,10 +1,4 @@
-import {
-  IsEmail,
-  IsNotEmpty,
-  IsString,
-  Length,
-  MinLength,
-} from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, Length, MinLength } from 'class-validator';
 
 type UserType = 'customer' | 'provider';
 

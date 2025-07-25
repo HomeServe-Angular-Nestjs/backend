@@ -1,5 +1,8 @@
 import { Transform, Type } from 'class-transformer';
-import { IsString, Matches, IsOptional, ValidateNested, ArrayMinSize, IsDefined, IsBoolean, IsIn, IsNumber } from 'class-validator';
+import {
+    ArrayMinSize, IsBoolean, IsDefined, IsIn, IsNumber, IsOptional, IsString, Matches,
+    ValidateNested
+} from 'class-validator';
 
 export class PageDto {
     @IsDefined()

@@ -1,28 +1,50 @@
-import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException, Logger, } from '@nestjs/common';
 import { Types } from 'mongoose';
-import { IServiceFeatureService } from '../interfaces/service-service.interface';
-import { CreateServiceDto, CreateSubServiceDto, FilterServiceDto, ProviderServiceFilterWithPaginationDto, RemoveSubServiceDto, ToggleServiceStatusDto, ToggleSubServiceStatusDto, UpdateServiceDto, } from '../../dtos/service.dto';
-import { IProviderRepository } from '../../../../core/repositories/interfaces/provider-repo.interface';
-import { PROVIDER_REPOSITORY_INTERFACE_NAME, SERVICE_OFFERED_REPOSITORY_NAME, } from '../../../../core/constants/repository.constant';
+
+import {
+    BadRequestException, Inject, Injectable, InternalServerErrorException, Logger, NotFoundException
+} from '@nestjs/common';
+
+import {
+    PROVIDER_REPOSITORY_INTERFACE_NAME, SERVICE_OFFERED_REPOSITORY_NAME
+} from '../../../../core/constants/repository.constant';
 import { UPLOAD_UTILITY_NAME } from '../../../../core/constants/utility.constant';
+import {
+    IService, IServicesWithPagination, ISubService
+} from '../../../../core/entities/interfaces/service.entity.interface';
+import { ICustomLogger } from '../../../../core/logger/interface/custom-logger.interface';
+import {
+    ILoggerFactory, LOGGER_FACTORY
+} from '../../../../core/logger/interface/logger-factory.interface';
+import { IResponse } from '../../../../core/misc/response.util';
+import {
+    IProviderRepository
+} from '../../../../core/repositories/interfaces/provider-repo.interface';
+import {
+    IServiceOfferedRepository
+} from '../../../../core/repositories/interfaces/serviceOffered-repo.interface';
 import { IUploadsUtility } from '../../../../core/utilities/interface/upload.utility.interface';
-import { IServiceOfferedRepository } from '../../../../core/repositories/interfaces/serviceOffered-repo.interface';
-import { IService, IServicesWithPagination, ISubService, } from '../../../../core/entities/interfaces/service.entity.interface';
-import { IResponse } from 'src/core/misc/response.util';
-import { CustomLogger } from "src/core/logger/custom-logger";
+import {
+    CreateServiceDto, CreateSubServiceDto, FilterServiceDto, ProviderServiceFilterWithPaginationDto,
+    RemoveSubServiceDto, ToggleServiceStatusDto, ToggleSubServiceStatusDto, UpdateServiceDto
+} from '../../dtos/service.dto';
+import { IServiceFeatureService } from '../interfaces/service-service.interface';
 
 @Injectable()
 export class ServiceFeatureService implements IServiceFeatureService {
-  private readonly logger = new CustomLogger(ServiceFeatureService.name);
+  private readonly logger: ICustomLogger;
 
   constructor(
+    @Inject(LOGGER_FACTORY)
+    private readonly loggerFactory: ILoggerFactory,
     @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
     private _providerRepository: IProviderRepository,
     @Inject(SERVICE_OFFERED_REPOSITORY_NAME)
     private _serviceOfferedRepository: IServiceOfferedRepository,
     @Inject(UPLOAD_UTILITY_NAME)
     private _uploadsUtility: IUploadsUtility,
-  ) { }
+  ) {
+    this.logger = this.loggerFactory.createLogger(ServiceFeatureService.name);
+  }
 
 
   async createService(providerId: string, dto: CreateServiceDto,): Promise<IResponse<string[]>> {

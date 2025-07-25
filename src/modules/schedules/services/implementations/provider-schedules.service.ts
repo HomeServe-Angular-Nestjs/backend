@@ -1,24 +1,41 @@
-import { Inject, Injectable, InternalServerErrorException, Logger, NotFoundException } from "@nestjs/common";
-import { ISchedulesService } from "../interfaces/schedules-service.interface";
-import { MonthScheduleDto, ScheduleDetailsDto, ScheduleListFilterDto, UpdateScheduleDateSlotStatusDto, UpdateScheduleDateStatusDto, UpdateScheduleStatusDto } from "../../dtos/schedules.dto";
-import { PROVIDER_REPOSITORY_INTERFACE_NAME, SCHEDULES_REPOSITORY_NAME } from "src/core/constants/repository.constant";
-import { ISchedulesRepository } from "src/core/repositories/interfaces/schedules-repo.interface";
-import { IProviderRepository } from "src/core/repositories/interfaces/provider-repo.interface";
-import { IScheduleDay, IScheduleList, IScheduleListWithPagination, ISchedules } from "src/core/entities/interfaces/schedules.entity.interface";
-import { IResponse } from "src/core/misc/response.util";
-import { Types } from "mongoose";
-import { CustomLogger } from "src/core/logger/custom-logger";
+import { Types } from 'mongoose';
+
+import {
+    PROVIDER_REPOSITORY_INTERFACE_NAME, SCHEDULES_REPOSITORY_NAME
+} from '@core/constants/repository.constant';
+import {
+    IScheduleDay, IScheduleList, IScheduleListWithPagination, ISchedules
+} from '@core/entities/interfaces/schedules.entity.interface';
+import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
+import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
+import { IResponse } from '@core/misc/response.util';
+import { IProviderRepository } from '@core/repositories/interfaces/provider-repo.interface';
+import { ISchedulesRepository } from '@core/repositories/interfaces/schedules-repo.interface';
+import {
+    MonthScheduleDto, ScheduleDetailsDto, ScheduleListFilterDto, UpdateScheduleDateSlotStatusDto,
+    UpdateScheduleDateStatusDto, UpdateScheduleStatusDto
+} from '@modules/schedules/dtos/schedules.dto';
+import {
+    ISchedulesService
+} from '@modules/schedules/services/interfaces/schedules-service.interface';
+import {
+    Inject, Injectable, InternalServerErrorException, NotFoundException
+} from '@nestjs/common';
 
 @Injectable()
 export class SchedulesService implements ISchedulesService {
-    private readonly logger = new CustomLogger(SchedulesService.name);
+    private readonly logger: ICustomLogger;
 
     constructor(
+        @Inject(LOGGER_FACTORY)
+        private readonly loggerFactory: ILoggerFactory,
         @Inject(SCHEDULES_REPOSITORY_NAME)
         private readonly _schedulesRepository: ISchedulesRepository,
         @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
         private readonly _providerRepository: IProviderRepository
-    ) { }
+    ) {
+        this.logger = this.loggerFactory.createLogger(SchedulesService.name);
+    }
 
     async createSchedules(providerId: string, dto: MonthScheduleDto): Promise<IResponse> {
         const providerExists = await this._providerRepository.isExists({ _id: providerId });
@@ -26,7 +43,7 @@ export class SchedulesService implements ISchedulesService {
             throw new NotFoundException(`Provider with ID ${providerId} not found.`);
         }
 
-        const existngSchedule = await this._schedulesRepository.findOne({
+        const existingSchedule = await this._schedulesRepository.findOne({
             providerId,
             month: dto.month
         });
@@ -42,7 +59,7 @@ export class SchedulesService implements ISchedulesService {
             isActive: true,
         }));
 
-        if (!existngSchedule) {
+        if (!existingSchedule) {
             try {
                 await this._schedulesRepository.create({
                     providerId,
@@ -62,7 +79,7 @@ export class SchedulesService implements ISchedulesService {
             };
         }
 
-        const existingDates = new Set(existngSchedule.days.map(d => d.date));
+        const existingDates = new Set(existingSchedule.days.map(d => d.date));
 
         const duplicateDates = sanitizedDays.reduce<string[]>((acc, day) => {
             if (existingDates.has(day.date)) {

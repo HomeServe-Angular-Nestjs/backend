@@ -1,12 +1,15 @@
-import { Provider } from "@nestjs/common";
-import { getModelToken } from "@nestjs/mongoose";
-import { Model } from "mongoose";
-import { PROVIDER_MODEL_NAME, SCHEDULES_MODEL_NAME } from "src/core/constants/model.constant";
-import { PROVIDER_REPOSITORY_INTERFACE_NAME, SCHEDULES_REPOSITORY_NAME } from "src/core/constants/repository.constant";
-import { ProviderRepository } from "src/core/repositories/implementations/provider.repository";
-import { SchedulesRepository } from "src/core/repositories/implementations/schedules.repository";
-import { ProviderDocument } from "src/core/schema/provider.schema";
-import { SchedulesDocument } from "src/core/schema/schedules.schema";
+import { Model } from 'mongoose';
+
+import { PROVIDER_MODEL_NAME, SCHEDULES_MODEL_NAME } from '@core/constants/model.constant';
+import {
+    PROVIDER_REPOSITORY_INTERFACE_NAME, SCHEDULES_REPOSITORY_NAME
+} from '@core/constants/repository.constant';
+import { ProviderRepository } from '@core/repositories/implementations/provider.repository';
+import { SchedulesRepository } from '@core/repositories/implementations/schedules.repository';
+import { ProviderDocument } from '@core/schema/provider.schema';
+import { SchedulesDocument } from '@core/schema/schedules.schema';
+import { Provider } from '@nestjs/common';
+import { getModelToken } from '@nestjs/mongoose';
 
 export const schedulesRepositoryProviders: Provider[] = [
     {

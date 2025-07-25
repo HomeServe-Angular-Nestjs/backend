@@ -1,5 +1,7 @@
-import { Injectable } from '@nestjs/common';
 import { argon2id, hash, needsRehash, Options, verify } from 'argon2';
+
+import { Injectable } from '@nestjs/common';
+
 import { IArgonUtility } from '../interface/argon.utility.interface';
 
 @Injectable()

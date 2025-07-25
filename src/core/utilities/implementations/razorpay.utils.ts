@@ -1,9 +1,10 @@
-import { Injectable } from "@nestjs/common";
-import Razorpay from 'razorpay';
-import { IPaymentGateway } from "../interface/razorpay.utility.interface";
-import { ConfigService } from "@nestjs/config";
 import * as crypto from 'crypto';
-import { IRazorpayOrder } from "src/core/entities/interfaces/transaction.entity.interface";
+import Razorpay from 'razorpay';
+
+import { IRazorpayOrder } from '@core/entities/interfaces/transaction.entity.interface';
+import { IPaymentGateway } from '@core/utilities/interface/razorpay.utility.interface';
+import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class RazorpayUtility implements IPaymentGateway {

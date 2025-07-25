@@ -1,24 +1,34 @@
-import { Inject, Injectable, Logger } from "@nestjs/common";
-import { MESSAGE_REPOSITORY_INTERFACE_NAME } from "src/core/constants/repository.constant";
-import { IMessagesRepository } from "src/core/repositories/interfaces/message-repo.interface";
-import { IMessageService } from "../interface/message-service.interface";
-import { MessageType, IMessage, ICreateMessage } from "src/core/entities/interfaces/message.entity.interface";
-import { ObjectId, Types } from "mongoose";
-import { IResponse } from "src/core/misc/response.util";
-import { USER_SOCKET_STORE_SERVICE_NAME } from "src/core/constants/service.constant";
-import { IUserSocketStoreService } from "../interface/user-socket-store-service.interface";
-import { CustomLogger } from "src/core/logger/custom-logger";
+import { ObjectId, Types } from 'mongoose';
+
+import { MESSAGE_REPOSITORY_INTERFACE_NAME } from '@core/constants/repository.constant';
+import { USER_SOCKET_STORE_SERVICE_NAME } from '@core/constants/service.constant';
+import {
+    ICreateMessage, IMessage, MessageType
+} from '@core/entities/interfaces/message.entity.interface';
+import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
+import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
+import { IResponse } from '@core/misc/response.util';
+import { IMessagesRepository } from '@core/repositories/interfaces/message-repo.interface';
+import { IMessageService } from '@modules/websockets/services/interface/message-service.interface';
+import {
+    IUserSocketStoreService
+} from '@modules/websockets/services/interface/user-socket-store-service.interface';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 
 @Injectable()
 export class MessageService implements IMessageService {
-    private readonly logger = new CustomLogger(MessageService.name);
+    private readonly logger: ICustomLogger;
 
     constructor(
+        @Inject(LOGGER_FACTORY)
+        private readonly loggerFactory: ILoggerFactory,
         @Inject(MESSAGE_REPOSITORY_INTERFACE_NAME)
         private readonly _messageRepository: IMessagesRepository,
         @Inject(USER_SOCKET_STORE_SERVICE_NAME)
         private readonly _userSocketService: IUserSocketStoreService
-    ) { }
+    ) {
+        this.logger = this.loggerFactory.createLogger(MessageService.name);
+    }
 
     async createMessage(messageData: ICreateMessage): Promise<IMessage> {
         return await this._messageRepository.create({

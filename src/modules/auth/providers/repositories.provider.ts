@@ -1,26 +1,22 @@
-import { Provider } from '@nestjs/common';
-import {
-  ADMIN_REPOSITORY_INTERFACE_NAME,
-  CUSTOMER_REPOSITORY_INTERFACE_NAME,
-  OTP_REPOSITORY_INTERFACE_NAME,
-  PROVIDER_REPOSITORY_INTERFACE_NAME,
-} from '../../../core/constants/repository.constant';
-import { CustomerRepository } from '../../../core/repositories/implementations/customer.repository';
-import { getModelToken } from '@nestjs/mongoose';
-import {
-  ADMIN_MODEL_NAME,
-  CUSTOMER_MODEL_NAME,
-  OTP_MODEL_NAME,
-  PROVIDER_MODEL_NAME,
-} from '../../../core/constants/model.constant';
 import { Model } from 'mongoose';
-import { OtpRepository } from '../../../core/repositories/implementations/otp.repository';
-import { ProviderRepository } from '../../../core/repositories/implementations/provider.repository';
-import { AdminRepository } from '../../../core/repositories/implementations/admin.repository';
-import { OtpDocument } from '../../../core/schema/otp.schema';
-import { ProviderDocument } from '../../../core/schema/provider.schema';
-import { AdminDocument } from '../../../core/schema/admin.schema';
-import { CustomerDocument } from '../../../core/schema/customer.schema';
+
+import {
+    ADMIN_MODEL_NAME, CUSTOMER_MODEL_NAME, OTP_MODEL_NAME, PROVIDER_MODEL_NAME
+} from '@core/constants/model.constant';
+import {
+    ADMIN_REPOSITORY_INTERFACE_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME,
+    OTP_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME
+} from '@core/constants/repository.constant';
+import { AdminRepository } from '@core/repositories/implementations/admin.repository';
+import { CustomerRepository } from '@core/repositories/implementations/customer.repository';
+import { OtpRepository } from '@core/repositories/implementations/otp.repository';
+import { ProviderRepository } from '@core/repositories/implementations/provider.repository';
+import { AdminDocument } from '@core/schema/admin.schema';
+import { CustomerDocument } from '@core/schema/customer.schema';
+import { OtpDocument } from '@core/schema/otp.schema';
+import { ProviderDocument } from '@core/schema/provider.schema';
+import { Provider } from '@nestjs/common';
+import { getModelToken } from '@nestjs/mongoose';
 
 export const repositoryProvider: Provider[] = [
   {

@@ -1,14 +1,22 @@
-import { BadRequestException, Injectable, Logger } from "@nestjs/common";
-import { ClassConstructor, plainToInstance } from "class-transformer";
-import { validate } from "class-validator";
-import { ICustomDtoValidator } from "../interface/custom-dto-validator.utility.interface";
-import { CustomLogger } from "src/core/logger/custom-logger";
+import { ClassConstructor, plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
+
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+
+import { ICustomLogger } from '../../logger/interface/custom-logger.interface';
+import { ILoggerFactory, LOGGER_FACTORY } from '../../logger/interface/logger-factory.interface';
+import { ICustomDtoValidator } from '../interface/custom-dto-validator.utility.interface';
 
 @Injectable()
 export class CustomDtoValidatorUtility implements ICustomDtoValidator {
-    private readonly logger = new CustomLogger(CustomDtoValidatorUtility.name);
+    private readonly logger: ICustomLogger
 
-    constructor() { }
+    constructor(
+        @Inject(LOGGER_FACTORY)
+        private readonly _loggerFactory: ILoggerFactory,
+    ) {
+        this.logger = this._loggerFactory.createLogger(CustomDtoValidatorUtility.name);
+    }
 
     async validateDto<T extends object>(dtoClass: ClassConstructor<T>, payload: any): Promise<T> {
         const instance = plainToInstance(dtoClass, payload);

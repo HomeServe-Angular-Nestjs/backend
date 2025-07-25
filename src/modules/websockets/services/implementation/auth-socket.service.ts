@@ -1,11 +1,14 @@
-import { Inject, Injectable, UnauthorizedException } from "@nestjs/common";
-import { TOKEN_SERVICE_NAME } from "src/core/constants/service.constant";
-import { ITokenService } from "src/modules/auth/services/interfaces/token-service.interface";
-import { IAuthSocketService } from "../interface/auth-socket-service.interface";
-import { Socket } from "socket.io";
 import * as cookie from 'cookie';
-import { ErrorMessage } from "src/core/enum/error.enum";
-import { IPayload } from "src/core/misc/payload.interface";
+import { Socket } from 'socket.io';
+
+import { TOKEN_SERVICE_NAME } from '@/core/constants/service.constant';
+import { ErrorMessage } from '@/core/enum/error.enum';
+import { IPayload } from '@/core/misc/payload.interface';
+import { ITokenService } from '@/modules/auth/services/interfaces/token-service.interface';
+import {
+    IAuthSocketService
+} from '@modules/websockets/services/interface/auth-socket-service.interface';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 
 @Injectable()
 export class AuthSocketService implements IAuthSocketService {

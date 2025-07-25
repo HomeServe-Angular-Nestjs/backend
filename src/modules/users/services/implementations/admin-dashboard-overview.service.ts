@@ -1,21 +1,34 @@
-import { Inject, Injectable } from "@nestjs/common";
-import { IAdminDashboardOverviewService } from "../interfaces/admin-dashboard-overview-service.interface";
-import { BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SUBSCRIPTION_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME } from "src/core/constants/repository.constant";
-import { IProviderRepository } from "src/core/repositories/interfaces/provider-repo.interface";
-import { IAdminDashboardOverview, IAdminDashboardRevenue, IAdminDashboardSubscription, IAdminDashboardUserStats } from "src/core/entities/interfaces/admin.entity.interface";
-import { IResponse } from "src/core/misc/response.util";
-import { ITransactionRepository } from "src/core/repositories/interfaces/transaction-repo.interface";
-import { CustomLogger } from "src/core/logger/custom-logger";
-import { ISubscriptionRepository } from "src/core/repositories/interfaces/subscription-repo.interface";
-import { ICustomerRepository } from "src/core/repositories/interfaces/customer-repo.interface";
-import { IBookingRepository } from "src/core/repositories/interfaces/bookings-repo.interface";
-import { ITopProviders } from "src/core/entities/interfaces/user.entity.interface";
+import {
+    BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME,
+    SUBSCRIPTION_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME
+} from '@/core/constants/repository.constant';
+import {
+    IAdminDashboardOverview, IAdminDashboardRevenue, IAdminDashboardSubscription,
+    IAdminDashboardUserStats
+} from '@/core/entities/interfaces/admin.entity.interface';
+import { ITopProviders } from '@/core/entities/interfaces/user.entity.interface';
+import { IResponse } from '@/core/misc/response.util';
+import { IBookingRepository } from '@/core/repositories/interfaces/bookings-repo.interface';
+import { ICustomerRepository } from '@/core/repositories/interfaces/customer-repo.interface';
+import { IProviderRepository } from '@/core/repositories/interfaces/provider-repo.interface';
+import {
+    ISubscriptionRepository
+} from '@/core/repositories/interfaces/subscription-repo.interface';
+import { ITransactionRepository } from '@/core/repositories/interfaces/transaction-repo.interface';
+import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
+import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
+import {
+    IAdminDashboardOverviewService
+} from '@modules/users/services/interfaces/admin-dashboard-overview-service.interface';
+import { Inject, Injectable } from '@nestjs/common';
 
 @Injectable()
 export class AdminDashboardOverviewService implements IAdminDashboardOverviewService {
-    private readonly logger = new CustomLogger(AdminDashboardOverviewService.name);
+    private readonly logger: ICustomLogger;
 
     constructor(
+        @Inject(LOGGER_FACTORY)
+        private readonly loggerFactory: ILoggerFactory,
         @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
         private readonly _providerRepository: IProviderRepository,
         @Inject(CUSTOMER_REPOSITORY_INTERFACE_NAME)
@@ -26,7 +39,9 @@ export class AdminDashboardOverviewService implements IAdminDashboardOverviewSer
         private readonly _transactionRepository: ITransactionRepository,
         @Inject(SUBSCRIPTION_REPOSITORY_NAME)
         private readonly _subscriptionRepository: ISubscriptionRepository,
-    ) { }
+    ) {
+        this.logger = this.loggerFactory.createLogger(AdminDashboardOverviewService.name)
+    }
 
     async getDashboardOverview(): Promise<IResponse<IAdminDashboardOverview>> {
         const now = new Date();

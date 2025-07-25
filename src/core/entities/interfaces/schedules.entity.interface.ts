@@ -1,6 +1,5 @@
-import { IEntity } from "../base/interfaces/base-entity.entity.interface";
-import { IPagination } from "./booking.entity.interface";
-
+import { IEntity } from '../base/interfaces/base-entity.entity.interface';
+import { IPagination } from './booking.entity.interface';
 
 export interface ISlot {
     id?: string;

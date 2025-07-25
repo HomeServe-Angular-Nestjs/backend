@@ -1,28 +1,40 @@
-import { Inject, Injectable, InternalServerErrorException, Logger, NotFoundException } from "@nestjs/common";
-import { IAdminBookingService } from "../interfaces/admin-bookings-service.interface";
-import { IResponse } from "src/core/misc/response.util";
-import { BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME } from "src/core/constants/repository.constant";
-import { IBookingRepository } from "src/core/repositories/interfaces/bookings-repo.interface";
-import { ICustomerRepository } from "src/core/repositories/interfaces/customer-repo.interface";
-import { ErrorMessage } from "src/core/enum/error.enum";
-import { IAdminBookingForTable, IBookingStats, IPaginatedBookingsResponse } from "src/core/entities/interfaces/booking.entity.interface";
-import { IProviderRepository } from "src/core/repositories/interfaces/provider-repo.interface";
-import { GetBookingsFilter } from "../../dtos/admin-user.dto";
-import { Types } from "mongoose";
-import { CustomLogger } from "src/core/logger/custom-logger";
+import {
+    BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME
+} from '@/core/constants/repository.constant';
+import {
+    IAdminBookingForTable, IBookingStats, IPaginatedBookingsResponse
+} from '@/core/entities/interfaces/booking.entity.interface';
+import { ErrorMessage } from '@/core/enum/error.enum';
+import { IResponse } from '@/core/misc/response.util';
+import { IBookingRepository } from '@/core/repositories/interfaces/bookings-repo.interface';
+import { ICustomerRepository } from '@/core/repositories/interfaces/customer-repo.interface';
+import { IProviderRepository } from '@/core/repositories/interfaces/provider-repo.interface';
+import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
+import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
+import { GetBookingsFilter } from '@modules/users/dtos/admin-user.dto';
+import {
+    IAdminBookingService
+} from '@modules/users/services/interfaces/admin-bookings-service.interface';
+import {
+    Inject, Injectable, InternalServerErrorException, NotFoundException
+} from '@nestjs/common';
 
 @Injectable()
 export class AdminBookingService implements IAdminBookingService {
-    private readonly logger = new CustomLogger(AdminBookingService.name);
+    private readonly logger: ICustomLogger;
 
     constructor(
+        @Inject(LOGGER_FACTORY)
+        private readonly loggerFactory: ILoggerFactory,
         @Inject(BOOKING_REPOSITORY_NAME)
         private readonly _bookingRepository: IBookingRepository,
         @Inject(CUSTOMER_REPOSITORY_INTERFACE_NAME)
         private readonly _customerRepository: ICustomerRepository,
         @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
         private readonly _providerRepository: IProviderRepository,
-    ) { }
+    ) {
+        this.logger = this.loggerFactory.createLogger(AdminBookingService.name)
+    }
 
     async fetchBookings(dto: GetBookingsFilter): Promise<IResponse<IPaginatedBookingsResponse>> {
         const page = dto.page || 1;

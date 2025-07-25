@@ -1,23 +1,34 @@
-import { Controller, Get, Inject, Injectable, InternalServerErrorException, Logger, Query, Req, UnauthorizedException } from "@nestjs/common";
-import { CHAT_SOCKET_SERVICE_NAME } from "src/core/constants/service.constant";
-import { IChatSocketService } from "../services/interface/chat-socket-service.interface";
-import { IResponse } from "src/core/misc/response.util";
-import { IChat, IChatData, IParticipant } from "src/core/entities/interfaces/chat.entity.interface";
-import { ErrorMessage } from "src/core/enum/error.enum";
-import { Request } from "express";
-import { IPayload } from "src/core/misc/payload.interface";
-import { Types } from "mongoose";
-import { GetChatDto } from "../dto/chat.dto";
-import { UserType } from "src/modules/auth/dtos/login.dto";
-import { CustomLogger } from "src/core/logger/custom-logger";
+import { Request } from 'express';
+import { Types } from 'mongoose';
+
+import { CHAT_SOCKET_SERVICE_NAME } from '@/core/constants/service.constant';
+import { IChatData, IParticipant } from '@/core/entities/interfaces/chat.entity.interface';
+import { ErrorMessage } from '@/core/enum/error.enum';
+import { IPayload } from '@/core/misc/payload.interface';
+import { IResponse } from '@/core/misc/response.util';
+import { UserType } from '@/modules/auth/dtos/login.dto';
+import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
+import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
+import { GetChatDto } from '@modules/websockets/dto/chat.dto';
+import {
+    IChatSocketService
+} from '@modules/websockets/services/interface/chat-socket-service.interface';
+import {
+    Controller, Get, Inject, InternalServerErrorException, Query, Req, UnauthorizedException
+} from '@nestjs/common';
 
 @Controller('chat')
 export class ChatController {
-    private readonly logger = new CustomLogger(ChatController.name)
+    private logger: ICustomLogger;
+
     constructor(
+        @Inject(LOGGER_FACTORY)
+        private readonly loggerFactory: ILoggerFactory,
         @Inject(CHAT_SOCKET_SERVICE_NAME)
         private readonly _chatService: IChatSocketService
-    ) { }
+    ) {
+        this.logger = this.loggerFactory.createLogger(ChatController.name);
+    }
 
     @Get('all')
     async getAllChats(@Req() req: Request): Promise<IResponse<IChatData[]>> {
