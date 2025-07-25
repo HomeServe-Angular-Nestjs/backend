@@ -23,7 +23,11 @@ import { AdminModule } from './modules/users/admin.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: `.env.${process.env.NODE_ENV || 'development'}`
+    }),
+
     JwtConfigModule,
 
     // Cache with Redis
