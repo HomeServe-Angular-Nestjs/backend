@@ -3,13 +3,13 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
 import session from 'express-session';
-import { SeedsModule } from './seed/seed.module';
-import { SeedCommand } from './seed/commands/seed.command';
 import { BlockGuard } from './modules/auth/guards/block.guard';
 import { ICustomerRepository } from './core/repositories/interfaces/customer-repo.interface';
 import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME } from './core/constants/repository.constant';
 import { IProviderRepository } from './core/repositories/interfaces/provider-repo.interface';
 import { FRONTEND_URL } from './core/environments/environments';
+import { SeedsModule } from '../seed/seed.module';
+import { SeedCommand } from '../seed/commands/seed.command';
 
 async function bootstrap() {
   if (process.argv.includes('seed:admin')) {

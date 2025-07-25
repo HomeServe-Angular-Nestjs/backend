@@ -6,7 +6,6 @@ import { redisStore } from 'cache-manager-redis-store';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
-import { SeedsModule } from './seed/seed.module';
 import { ProviderModule } from './modules/providers/provider.module';
 import { BookingsModule } from './modules/bookings/bookings.module';
 import { CustomerModule } from './modules/customer/customer.module';
@@ -18,6 +17,7 @@ import { WebSocketModule } from './modules/websockets/websocket.module';
 import { appProviders } from './app.provider';
 import { PlanModule } from './modules/plans/plans.module';
 import { SubscriptionModules } from './modules/subscriptions/subscription.module';
+import { SeedsModule } from 'seed/seed.module';
 
 
 @Module({

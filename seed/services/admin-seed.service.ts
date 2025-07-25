@@ -1,15 +1,11 @@
-import {
-  Inject,
-  Injectable,
-  InternalServerErrorException,
-} from '@nestjs/common';
+import { Inject, Injectable, InternalServerErrorException, } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ADMIN_REPOSITORY_INTERFACE_NAME } from '../../core/constants/repository.constant';
-import { IAdminRepository } from '../../core/repositories/interfaces/admin-repo.interface';
-import { ARGON_UTILITY_NAME } from '../../core/constants/utility.constant';
-import { IArgonUtility } from '../../core/utilities/interface/argon.utility.interface';
-import { Admin } from '../../core/entities/implementation/admin.entity';
 import { ISeedAdminService } from '../interface/seed-service.interface';
+import { ADMIN_REPOSITORY_INTERFACE_NAME } from '../../src/core/constants/repository.constant';
+import { IAdminRepository } from '../../src/core/repositories/interfaces/admin-repo.interface';
+import { ARGON_UTILITY_NAME } from '../../src/core/constants/utility.constant';
+import { IArgonUtility } from '../../src/core/utilities/interface/argon.utility.interface';
+import { Admin } from '../../src/core/entities/implementation/admin.entity';
 
 @Injectable()
 export class SeedAdminService implements ISeedAdminService {
@@ -19,7 +15,7 @@ export class SeedAdminService implements ISeedAdminService {
     @Inject(ARGON_UTILITY_NAME)
     private argon: IArgonUtility,
     private config: ConfigService,
-  ) {}
+  ) { }
 
   async seedAdmin(): Promise<Admin> {
     try {
