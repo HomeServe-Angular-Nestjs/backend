@@ -1,5 +1,5 @@
 import {
-  ClientSession, Document, FilterQuery, Model, QueryOptions, Types, UpdateQuery,
+    ClientSession, Document, FilterQuery, Model, QueryOptions, Types, UpdateQuery
 } from 'mongoose';
 
 import { IBaseRepository } from '../interfaces/base-repo.interface';

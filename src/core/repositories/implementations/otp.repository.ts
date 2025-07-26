@@ -23,13 +23,4 @@ export class OtpRepository extends BaseRepository<OtpDocument> implements IOtpRe
   async findValidOtp(email: string, code: string): Promise<OtpDocument | null> {
     return this.otpModel.findOne({ email, code });
   }
-
-  // protected toEntity(doc: OtpDocument): OTP {
-  //   return new OTP({
-  //     id: (doc._id as Types.ObjectId).toString(),
-  //     email: doc.email,
-  //     code: doc.code,
-  //     expiresAt: doc.expiresAt,
-  //   });
-  // }
 }

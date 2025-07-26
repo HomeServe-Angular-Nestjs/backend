@@ -15,16 +15,4 @@ export class ChatRepository extends BaseRepository<ChatDocument> implements ICha
     ) {
         super(_chatModel)
     }
-
-    // protected override toEntity(doc: ChatDocument): Chat {
-        //     return new Chat({
-        //         id: doc.id,
-        //         participants: doc.participants,
-        //         blockedInfo: doc.blockedInfo,
-        //         createdAt: doc.createdAt,
-        //         lastSeenAt: doc.lastSeenAt,
-        //         updatedAt: doc.updatedAt,
-        //         lastMessage: doc.lastMessage
-        //     });
-    // }
 }

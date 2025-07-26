@@ -21,15 +21,4 @@ export class AdminRepository extends BaseRepository<AdminDocument> implements IA
   async findByEmail(email: string): Promise<AdminDocument | null> {
     return await this.adminModel.findOne({ email }).exec();
   }
-
-  // protected toEntity(doc: AdminDocument): Admin {
-  //   return new Admin({
-  //     id: (doc._id as Types.ObjectId).toString(),
-  //     email: doc.email,
-  //     password: doc.password,
-  //     isActive: doc.isActive,
-  //     createdAt: doc.createdAt,
-  //     updatedAt: doc.updatedAt
-  //   });
-  // }
 }

@@ -21,20 +21,4 @@ export class MessageRepository extends BaseRepository<MessageDocument> implement
     async updateMany(filter: FilterQuery<MessageDocument>, update: UpdateQuery<MessageDocument>): Promise<UpdateWriteOpResult> {
         return this.model.updateMany(filter, update).exec();
     }
-
-    // protected override toEntity(doc: MessageDocument): Message {
-    //     return new Message({
-    //         id: doc.id,
-    //         chatId: doc.chatId,
-    //         senderId: doc.senderId,
-    //         receiverId: doc.receiverId,
-    //         content: doc.content,
-    //         attachments: doc.attachments,
-    //         isRead: doc.isRead,
-    //         messageType: doc.messageType,
-    //         isDeleted: doc.isDeleted,
-    //         createdAt: doc.createdAt,
-    //         updatedAt: doc.updatedAt
-    //     });
-    // }
 }

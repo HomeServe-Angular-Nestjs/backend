@@ -33,30 +33,4 @@ export class SchedulesRepository extends BaseRepository<SchedulesDocument> imple
             modifiedCount: result.modifiedCount
         };
     }
-
-    // protected toEntity(doc: SchedulesDocument | Record<string, any>): Schedules {
-    //     return new Schedules({
-    //         id: (doc._id as Types.ObjectId).toString(),
-    //         providerId: doc.providerId,
-    //         month: doc.month,
-    //         days: doc.days.map(day =>
-    //             new ScheduleDay({
-    //                 id: (day._id as Types.ObjectId).toString(),
-    //                 date: day.date,
-    //                 slots: day.slots.map(slot =>
-    //                     new Slot({
-    //                         id: (slot._id as Types.ObjectId).toString(),
-    //                         from: slot.from,
-    //                         to: slot.to,
-    //                         takenBy: slot.takenBy,
-    //                         isActive: doc.isActive,
-    //                     })),
-    //                 isActive: day.isActive,
-    //             })),
-    //         isActive: doc.isActive,
-    //         isDeleted: doc.isDeleted,
-    //         createdAt: doc.createdAt,
-    //         updatedAt: doc.updatedAt
-    //     });
-    // }
 }

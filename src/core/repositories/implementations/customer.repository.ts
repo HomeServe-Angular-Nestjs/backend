@@ -8,7 +8,6 @@ import { CustomerDocument } from '@core/schema/customer.schema';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 
-
 @Injectable()
 export class CustomerRepository extends BaseRepository<CustomerDocument> implements ICustomerRepository {
   constructor(
@@ -71,24 +70,4 @@ export class CustomerRepository extends BaseRepository<CustomerDocument> impleme
     return result.length > 0 ? result[0] : { new: 0, total: 0, active: 0 };
   }
 }
-// protected toEntity(doc: CustomerDocument): Customer {
-//   return new Customer({
-//     id: (doc._id as Types.ObjectId).toString(),
-//     email: doc.email,
-//     username: doc.username,
-//     avatar: doc.avatar,
-//     password: doc?.password,
-//     googleId: doc?.googleId,
-//     isActive: doc.isActive,
-//     createdAt: doc.createdAt,
-//     updatedAt: doc.updatedAt,
-//     fullname: doc?.fullname,
-//     isDeleted: doc.isDeleted,
-//     savedProviders: doc.savedProviders,
-//     phone: doc.phone,
-//     location: doc.location,
-//     isReviewed: doc.isReviewed,
-//     address: doc.address
-//   });
-// }
-// }
+
