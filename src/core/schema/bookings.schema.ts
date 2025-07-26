@@ -19,23 +19,23 @@ export class BookingDocument extends Document {
     expectedArrivalTime: Date;
 
     @Prop({ type: Date, default: null })
-    actualArrivalTime: Date;
+    actualArrivalTime: Date | null;
 
     @Prop({ type: String, enum: BookingStatus, default: BookingStatus.PENDING })
     bookingStatus: BookingStatus;
 
     @Prop({ type: String, default: null })
-    cancellationReason: string;
+    cancellationReason: string | null;
 
     @Prop({
         type: String,
         enum: Object.values(CancelStatus),
         default: null
     })
-    cancelStatus: CancelStatus;
+    cancelStatus: CancelStatus | null;
 
     @Prop({ type: Date, default: null })
-    cancelledAt: Date;
+    cancelledAt: Date | null;
 
     @Prop({
         type: {
@@ -78,7 +78,7 @@ export class BookingDocument extends Document {
     }[];
 
     @Prop({ type: String, default: null })
-    transactionId: string;
+    transactionId: string | null;
 
     @Prop({ type: String, enum: PaymentStatus, default: PaymentStatus.UNPAID })
     paymentStatus: PaymentStatus;

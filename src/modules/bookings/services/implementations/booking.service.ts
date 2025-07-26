@@ -7,39 +7,37 @@ import {
 import {
     BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME,
     SCHEDULES_REPOSITORY_NAME, SERVICE_OFFERED_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME
-} from '../../../../core/constants/repository.constant';
+} from '@core/constants/repository.constant';
 import {
     IBookingDetailCustomer, IBookingResponse, IBookingWithPagination
-} from '../../../../core/entities/interfaces/booking.entity.interface';
+} from '@core/entities/interfaces/booking.entity.interface';
 import {
     IScheduleDay, ISlot
-} from '../../../../core/entities/interfaces/schedules.entity.interface';
-import { BookingStatus, CancelStatus, PaymentStatus } from '../../../../core/enum/bookings.enum';
-import { ErrorMessage } from '../../../../core/enum/error.enum';
-import { ICustomLogger } from '../../../../core/logger/interface/custom-logger.interface';
-import { IResponse } from '../../../../core/misc/response.util';
+} from '@core/entities/interfaces/schedules.entity.interface';
+import { BookingStatus, CancelStatus, PaymentStatus } from '@core/enum/bookings.enum';
+import { ErrorMessage } from '@core/enum/error.enum';
+import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
+import { IResponse } from '@core/misc/response.util';
 import {
     IBookingRepository
-} from '../../../../core/repositories/interfaces/bookings-repo.interface';
+} from '@core/repositories/interfaces/bookings-repo.interface';
 import {
     ICustomerRepository
-} from '../../../../core/repositories/interfaces/customer-repo.interface';
+} from '@core/repositories/interfaces/customer-repo.interface';
 import {
     IProviderRepository
-} from '../../../../core/repositories/interfaces/provider-repo.interface';
+} from '@core/repositories/interfaces/provider-repo.interface';
 import {
     ISchedulesRepository
-} from '../../../../core/repositories/interfaces/schedules-repo.interface';
+} from '@core/repositories/interfaces/schedules-repo.interface';
 import {
     IServiceOfferedRepository
-} from '../../../../core/repositories/interfaces/serviceOffered-repo.interface';
+} from '@core/repositories/interfaces/serviceOffered-repo.interface';
 import {
     ITransactionRepository
-} from '../../../../core/repositories/interfaces/transaction-repo.interface';
-import {
-    BookingDto, CancelBookingDto, IPriceBreakupDto, SelectedServiceDto, UpdateBookingDto
-} from '../../dtos/booking.dto';
-import { IBookingService } from '../interfaces/booking-service.interface';
+} from '@core/repositories/interfaces/transaction-repo.interface';
+import { BookingDto, CancelBookingDto, IPriceBreakupDto, SelectedServiceDto, UpdateBookingDto } from '@modules/bookings/dtos/booking.dto';
+import { IBookingService } from '@modules/bookings/services/interfaces/booking-service.interface';
 
 @Injectable()
 export class BookingService implements IBookingService {
