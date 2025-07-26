@@ -13,6 +13,12 @@ import { ArgonUtility } from '../src/core/utilities/implementations/argon.utilit
 import { ARGON_UTILITY_NAME } from '../src/core/constants/utility.constant';
 import { AdminRepository } from '../src/core/repositories/implementations/admin.repository';
 import { ADMIN_REPOSITORY_INTERFACE_NAME } from '../src/core/constants/repository.constant';
+import { ADMIN_MAPPER } from '@core/constants/mappers.constant';
+import { AdminMapper } from '@core/dto-mapper/implementation/admin.mapper';
+import { LoggerFactory } from '@core/logger/implementation/logger.factory';
+import { LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
+import { CUSTOM_LOGGER } from '@core/logger/interface/custom-logger.interface';
+import { CustomLogger } from '@core/logger/implementation/custom-logger';
 
 @Module({
   imports: [
@@ -25,23 +31,36 @@ import { ADMIN_REPOSITORY_INTERFACE_NAME } from '../src/core/constants/repositor
   ],
   providers: [
     SeedAdminService,
+    ArgonUtility,
+    AdminRepository,
+    SeedCommand,
+
     {
       provide: ADMIN_SEED_SERVICE_NAME,
       useClass: SeedAdminService,
     },
-    ArgonUtility,
     {
       provide: ARGON_UTILITY_NAME,
       useClass: ArgonUtility,
     },
-    AdminRepository,
+    {
+      provide: ADMIN_MAPPER,
+      useClass: AdminMapper
+    },
+    {
+      provide: CUSTOM_LOGGER,
+      useClass: CustomLogger
+    },
+    {
+      provide: LOGGER_FACTORY,
+      useClass: LoggerFactory
+    },
     {
       provide: ADMIN_REPOSITORY_INTERFACE_NAME,
       useFactory: (adminModel: Model<AdminDocument>) =>
         new AdminRepository(adminModel),
       inject: [getModelToken(ADMIN_MODEL_NAME)],
     },
-    SeedCommand,
   ],
 })
-export class SeedsModule {}
+export class SeedsModule { }
