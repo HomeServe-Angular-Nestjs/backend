@@ -71,14 +71,14 @@ export class PlanController {
         }
     }
 
-    @Patch('')
-    async deletePlan(@Body() dto: GetOnePlanDto): Promise<IResponse> {
-        try {
-            return await this._planService.deletePlan(dto.planId);
-        } catch (err) {
-            this.logger.error('Error caught while deleting plan: ', err.message, err.stack);
-            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
-        }
-    }
+    // @Patch('')
+    // async deletePlan(@Body() dto: GetOnePlanDto): Promise<IResponse> {
+    //     try {
+    //         return await this._planService.deletePlan(dto.planId);
+    //     } catch (err) {
+    //         this.logger.error('Error caught while deleting plan: ', err.message, err.stack);
+    //         throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+    //     }
+    // }
 
 }
