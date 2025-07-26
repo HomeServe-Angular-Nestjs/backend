@@ -1,25 +1,26 @@
 import { PROVIDER_REPOSITORY_INTERFACE_NAME } from '@/core/constants/repository.constant';
-import {
-    IApprovalOverviewData, IApprovalTableDetails, IProvider, VerificationStatusType
-} from '@/core/entities/interfaces/user.entity.interface';
-import { CustomLogger } from '@/core/logger/implementation/custom-logger';
+import { IApprovalOverviewData, IApprovalTableDetails, IProvider, VerificationStatusType } from '@/core/entities/interfaces/user.entity.interface';
 import { IResponse } from '@/core/misc/response.util';
 import { IProviderRepository } from '@/core/repositories/interfaces/provider-repo.interface';
 import { Inject, Injectable } from '@nestjs/common';
 
 import { IAdminApprovalService } from '../interfaces/admin-approval-service.interface';
+import { PROVIDER_MAPPER } from '@core/constants/mappers.constant';
+import { IProviderMapper } from '@core/dto-mapper/interface/provider.mapper';
 
 @Injectable()
 export class AdminApprovalService implements IAdminApprovalService {
-    private readonly logger = new CustomLogger(AdminApprovalService.name);
-    D
+
     constructor(
         @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
-        private readonly _providerRepository: IProviderRepository
+        private readonly _providerRepository: IProviderRepository,
+        @Inject(PROVIDER_MAPPER)
+        private readonly _providerMapper: IProviderMapper
     ) { }
 
     async fetchApprovalOverviewDetails(): Promise<IResponse<IApprovalOverviewData>> {
-        const providers = await this._providerRepository.find({ isDeleted: false });
+        const providerDocuments = await this._providerRepository.find({ isDeleted: false });
+        const providers = (providerDocuments ?? []).map(provider => this._providerMapper.toEntity(provider))
         const total = providers.length;
 
         if (!providers || !total) {

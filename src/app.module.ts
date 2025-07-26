@@ -20,6 +20,7 @@ import { ConfigModule } from '@nestjs/config';
 
 import { SeedsModule } from '../seed/seed.module';
 import { AdminModule } from './modules/users/admin.module';
+import { SharedModule } from '@shared/shared.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { AdminModule } from './modules/users/admin.module';
     WebSocketModule,
     PlanModule,
     SubscriptionModules,
+    // SharedModule
   ],
   controllers: [AppController],
   providers: [

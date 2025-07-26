@@ -1,33 +1,22 @@
 import { Types } from 'mongoose';
 
-import {
-    BadRequestException, Inject, Injectable, InternalServerErrorException, Logger, NotFoundException
-} from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 
-import {
-    PROVIDER_REPOSITORY_INTERFACE_NAME, SERVICE_OFFERED_REPOSITORY_NAME
-} from '../../../../core/constants/repository.constant';
-import { UPLOAD_UTILITY_NAME } from '../../../../core/constants/utility.constant';
-import {
-    IService, IServicesWithPagination, ISubService
-} from '../../../../core/entities/interfaces/service.entity.interface';
-import { ICustomLogger } from '../../../../core/logger/interface/custom-logger.interface';
-import {
-    ILoggerFactory, LOGGER_FACTORY
-} from '../../../../core/logger/interface/logger-factory.interface';
-import { IResponse } from '../../../../core/misc/response.util';
-import {
-    IProviderRepository
-} from '../../../../core/repositories/interfaces/provider-repo.interface';
-import {
-    IServiceOfferedRepository
-} from '../../../../core/repositories/interfaces/serviceOffered-repo.interface';
-import { IUploadsUtility } from '../../../../core/utilities/interface/upload.utility.interface';
-import {
-    CreateServiceDto, CreateSubServiceDto, FilterServiceDto, ProviderServiceFilterWithPaginationDto,
-    RemoveSubServiceDto, ToggleServiceStatusDto, ToggleSubServiceStatusDto, UpdateServiceDto
-} from '../../dtos/service.dto';
-import { IServiceFeatureService } from '../interfaces/service-service.interface';
+import { PROVIDER_REPOSITORY_INTERFACE_NAME, SERVICE_OFFERED_REPOSITORY_NAME } from '@core/constants/repository.constant';
+import { UPLOAD_UTILITY_NAME } from '@core/constants/utility.constant';
+import { IService, IServicesWithPagination, ISubService } from '@core/entities/interfaces/service.entity.interface';
+import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
+import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
+import { IResponse } from '@core/misc/response.util';
+import { IProviderRepository } from '@core/repositories/interfaces/provider-repo.interface';
+import { IServiceOfferedRepository } from '@core/repositories/interfaces/serviceOffered-repo.interface';
+import { IUploadsUtility } from '@core/utilities/interface/upload.utility.interface';
+import { CreateServiceDto, CreateSubServiceDto, FilterServiceDto, ProviderServiceFilterWithPaginationDto, RemoveSubServiceDto, ToggleServiceStatusDto, ToggleSubServiceStatusDto, UpdateServiceDto } from '@modules/providers/dtos/service.dto';
+import { IServiceFeatureService } from '@modules/providers/services/interfaces/service-service.interface';
+import { PROVIDER_MAPPER, SERVICE_OFFERED_MAPPER } from '@core/constants/mappers.constant';
+import { IServiceOfferedMapper } from '@core/dto-mapper/interface/serviceOffered.mapper.interface';
+import { SubServiceDocument } from '@core/schema/subservice.schema';
+import { IProviderMapper } from '@core/dto-mapper/interface/provider.mapper';
 
 @Injectable()
 export class ServiceFeatureService implements IServiceFeatureService {
@@ -37,11 +26,15 @@ export class ServiceFeatureService implements IServiceFeatureService {
     @Inject(LOGGER_FACTORY)
     private readonly loggerFactory: ILoggerFactory,
     @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
-    private _providerRepository: IProviderRepository,
+    private readonly _providerRepository: IProviderRepository,
     @Inject(SERVICE_OFFERED_REPOSITORY_NAME)
-    private _serviceOfferedRepository: IServiceOfferedRepository,
+    private readonly _serviceOfferedRepository: IServiceOfferedRepository,
     @Inject(UPLOAD_UTILITY_NAME)
-    private _uploadsUtility: IUploadsUtility,
+    private readonly _uploadsUtility: IUploadsUtility,
+    @Inject(SERVICE_OFFERED_MAPPER)
+    private readonly _serviceOfferedMapper: IServiceOfferedMapper,
+    @Inject(PROVIDER_MAPPER)
+    private readonly _providerMapper: IProviderMapper
   ) {
     this.logger = this.loggerFactory.createLogger(ServiceFeatureService.name);
   }
@@ -72,7 +65,7 @@ export class ServiceFeatureService implements IServiceFeatureService {
         title: dto.title,
         desc: dto.desc,
         image: serviceImageUrl,
-        subService: subServicesWithImages,
+        subService: subServicesWithImages as SubServiceDocument[],
       });
 
       const updatedProvider = await this._providerRepository.findOneAndUpdate(
@@ -90,7 +83,7 @@ export class ServiceFeatureService implements IServiceFeatureService {
       return {
         success: true,
         message: 'Service created successfully.',
-        data: updatedProvider.servicesOffered
+        data: (updatedProvider.servicesOffered).map(String)
       };
 
     } catch (err) {
@@ -100,10 +93,12 @@ export class ServiceFeatureService implements IServiceFeatureService {
 
   async fetchServices(providerId: string, page: number = 1, filter: Omit<ProviderServiceFilterWithPaginationDto, 'page'>): Promise<IServicesWithPagination> {
     try {
-      const provider = await this._providerRepository.findById(providerId);
-      if (!provider) {
+      const ProviderDocument = await this._providerRepository.findById(providerId);
+      if (!ProviderDocument) {
         throw new Error('Provider not found');
       }
+
+      const provider = this._providerMapper.toEntity(ProviderDocument);
 
       const query: Record<string, any> = {
         _id: { $in: provider.servicesOffered.map(id => new Types.ObjectId(id)) },
@@ -144,7 +139,7 @@ export class ServiceFeatureService implements IServiceFeatureService {
       ]);
 
       return {
-        services: offeredServices,
+        services: (offeredServices || []).map(service => this._serviceOfferedMapper.toEntity(service)),
         pagination: { limit, page, total }
       };
 
@@ -165,10 +160,9 @@ export class ServiceFeatureService implements IServiceFeatureService {
     }
 
     const result = {
-      ...service,
+      ...this._serviceOfferedMapper.toEntity(service),
       SubService: service.subService.filter(sub => !sub.isDeleted)
     };
-
 
     return result
   }
@@ -209,7 +203,7 @@ export class ServiceFeatureService implements IServiceFeatureService {
     return {
       success: true,
       message: 'Service updated successfully.',
-      data: updatedService
+      data: this._serviceOfferedMapper.toEntity(updatedService)
     };
   }
 
@@ -220,12 +214,12 @@ export class ServiceFeatureService implements IServiceFeatureService {
     }
 
     const services = (await Promise.all(
-      provider.servicesOffered.map((serviceId: string) =>
-        serviceId ? this._serviceOfferedRepository.findById(serviceId) : Promise.resolve(null)
+      provider.servicesOffered.map((serviceId) =>
+        this._serviceOfferedRepository.findById(serviceId.toString())
       )
     )).filter(service => service !== null);
 
-    let filteredServices = services;
+    let filteredServices = (services ?? []).map(service => this._serviceOfferedMapper.toEntity(service));
 
     // Search in title or description
     if (filter.search) {

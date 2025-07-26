@@ -4,15 +4,15 @@ import { SUBSCRIPTION_MODEL_NAME } from '@core/constants/model.constant';
 import { IAdminDashboardSubscription } from '@core/entities/interfaces/admin.entity.interface';
 import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
 import { ISubscriptionRepository } from '@core/repositories/interfaces/subscription-repo.interface';
-import { SubscriptionDocumentType } from '@core/schema/subscription.schema';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
+import { SubscriptionDocument } from '@core/schema/subscription.schema';
 
 @Injectable()
-export class SubscriptionRepository extends BaseRepository<SubscriptionDocumentType> implements ISubscriptionRepository {
+export class SubscriptionRepository extends BaseRepository<SubscriptionDocument> implements ISubscriptionRepository {
     constructor(
         @InjectModel(SUBSCRIPTION_MODEL_NAME)
-        private readonly _subscriptionModel: Model<SubscriptionDocumentType>
+        private readonly _subscriptionModel: Model<SubscriptionDocument>
     ) {
         super(_subscriptionModel);
     }

@@ -7,6 +7,9 @@ import {
 import { ICustomer, IProvider } from '@/core/entities/interfaces/user.entity.interface';
 import { ICustomerRepository } from '@/core/repositories/interfaces/customer-repo.interface';
 import { IProviderRepository } from '@/core/repositories/interfaces/provider-repo.interface';
+import { CUSTOMER_MAPPER, PROVIDER_MAPPER } from '@core/constants/mappers.constant';
+import { ICustomerMapper } from '@core/dto-mapper/interface/customer.mapper';
+import { IProviderMapper } from '@core/dto-mapper/interface/provider.mapper';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import {
@@ -27,17 +30,15 @@ export class AdminUserManagementService implements IAdminUserManagementService {
         @Inject(CUSTOMER_REPOSITORY_INTERFACE_NAME)
         private readonly _customerRepository: ICustomerRepository,
         @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
-        private readonly _providerRepository: IProviderRepository
+        private readonly _providerRepository: IProviderRepository,
+        @Inject(CUSTOMER_MAPPER)
+        private readonly _customerMapper: ICustomerMapper,
+        @Inject(PROVIDER_MAPPER)
+        private readonly _providerMapper: IProviderMapper,
     ) {
         this.logger = this.loggerFactory.createLogger(AdminUserManagementService.name);
     }
 
-
-    /**
-      * Retrieves all customers/providers from the database.
-      *
-      * @returns {Promise<IUserData[]>} List of all customer/provider documents.
-      */
     async getUsers(page: number = 1, dto: Omit<GetUsersWithFilterDto, 'page'>): Promise<IUserDataWithPagination> {
         const limit = 10;
         const skip = (page - 1) * limit;
@@ -53,12 +54,22 @@ export class AdminUserManagementService implements IAdminUserManagementService {
         }
 
         const repo = dto.role === 'customer' ? this._customerRepository : this._providerRepository;
-        const [users, total] = await Promise.all([
+        const [userDocuments, total] = await Promise.all([
             repo.find(query, { skip, limit }),
             repo.count(query)
         ]);
 
-        const data: IUserData[] = users.map((user: ICustomer | IProvider) => ({
+        let users: ICustomer[] | IProvider[] = [];
+        switch (dto.role) {
+            case 'customer':
+                users = (userDocuments ?? []).map((user) => this._customerMapper.toEntity(user));
+                break;
+            case 'provider':
+                users = (userDocuments ?? []).map((user) => this._providerMapper.toEntity(user));
+                break;
+        }
+
+        const data: IUserData[] = (users ?? []).map((user: ICustomer | IProvider) => ({
             id: user.id,
             username: user.username,
             email: user.email,

@@ -1,30 +1,26 @@
-import {
-    PLAN_REPOSITORY_INTERFACE_NAME, SUBSCRIPTION_REPOSITORY_NAME
-} from '@/core/constants/repository.constant';
+import { ConflictException, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+
+import { PLAN_REPOSITORY_INTERFACE_NAME, SUBSCRIPTION_REPOSITORY_NAME } from '@/core/constants/repository.constant';
 import { ISubscription } from '@/core/entities/interfaces/subscription.entity.interface';
 import { ErrorMessage } from '@/core/enum/error.enum';
-import { CustomLogger } from '@/core/logger/implementation/custom-logger';
 import { IResponse } from '@/core/misc/response.util';
 import { IPlanRepository } from '@/core/repositories/interfaces/plans-repo.interface';
-import {
-    ISubscriptionRepository
-} from '@/core/repositories/interfaces/subscription-repo.interface';
+import { ISubscriptionRepository } from '@/core/repositories/interfaces/subscription-repo.interface';
 import { CreateSubscriptionDto } from '@modules/subscriptions/dto/subscription.dto';
-import {
-    ISubscriptionService
-} from '@modules/subscriptions/services/interface/subscription-service.interface';
-import {
-    ConflictException, Inject, Injectable, InternalServerErrorException, NotFoundException
-} from '@nestjs/common';
+import { ISubscriptionService } from '@modules/subscriptions/services/interface/subscription-service.interface';
+import { SUBSCRIPTION_MAPPER } from '@core/constants/mappers.constant';
+import { ISubscriptionMapper } from '@core/dto-mapper/interface/subscription.mapper.interface';
 
 @Injectable()
 export class SubscriptionService implements ISubscriptionService {
-    private logger = new CustomLogger(SubscriptionService.name);
+
     constructor(
         @Inject(SUBSCRIPTION_REPOSITORY_NAME)
         private readonly _subscriptionRepository: ISubscriptionRepository,
         @Inject(PLAN_REPOSITORY_INTERFACE_NAME)
-        private readonly _planRepository: IPlanRepository
+        private readonly _planRepository: IPlanRepository,
+        @Inject(SUBSCRIPTION_MAPPER)
+        private readonly _subscriptionMapper: ISubscriptionMapper
     ) { }
 
     async createSubscription(userId: string, dto: CreateSubscriptionDto): Promise<IResponse<ISubscription>> {
@@ -43,11 +39,11 @@ export class SubscriptionService implements ISubscriptionService {
             planId: dto.planId,
             transactionId: dto.transactionId,
             name: plan.name,
-            role: plan.role,
+            role: dto.role,
             duration: dto.duration,
             features: dto.features,
-            startTime: dto.startTime,
-            endDate: dto.endDate,
+            startTime: new Date(dto.startTime),
+            endDate: dto.endDate ? new Date(dto.endDate) : null,
             isActive: true,
             isDeleted: false,
             paymentStatus: dto.paymentStatus,
@@ -60,17 +56,25 @@ export class SubscriptionService implements ISubscriptionService {
         return {
             success: true,
             message: 'Subscription created successfully.',
-            data: newSubscription
+            data: this._subscriptionMapper.toEntity(newSubscription)
         }
     }
 
     async fetchSubscription(userId: string): Promise<IResponse<ISubscription | null>> {
         const subscription = await this._subscriptionRepository.findOne({ userId });
 
+        if (!subscription) {
+            return {
+                success: false,
+                message: 'Subscription fetched successfully',
+                data: null
+            }
+        }
+
         return {
             success: true,
             message: 'Subscription fetched successfully',
-            data: subscription
+            data: this._subscriptionMapper.toEntity(subscription)
         }
     }
 }

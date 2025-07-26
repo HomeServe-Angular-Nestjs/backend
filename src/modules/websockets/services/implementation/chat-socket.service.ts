@@ -19,7 +19,9 @@ import { UserType } from '@modules/auth/dtos/login.dto';
 import {
     IChatSocketService
 } from '@modules/websockets/services/interface/chat-socket-service.interface';
-import { Inject, Injectable, Logger, Type } from '@nestjs/common';
+import { BadGatewayException, Inject, Injectable } from '@nestjs/common';
+import { CHAT_MAPPER } from '@core/constants/mappers.constant';
+import { IChatMapper } from '@core/dto-mapper/interface/chat.mapper.interface';
 
 @Injectable()
 export class ChatSocketService implements IChatSocketService {
@@ -35,17 +37,19 @@ export class ChatSocketService implements IChatSocketService {
         @Inject(ADMIN_REPOSITORY_INTERFACE_NAME)
         private readonly _adminRepository: IAdminRepository,
         @Inject(MESSAGE_REPOSITORY_INTERFACE_NAME)
-        private readonly _messageRepository: IMessagesRepository
+        private readonly _messageRepository: IMessagesRepository,
+        @Inject(CHAT_MAPPER)
+        private readonly _chatMapper: IChatMapper
     ) { }
 
-    private async _findUserByType(type: UserType, id: Types.ObjectId) {
+    private async _findUserByType(type: Omit<UserType, 'admin'>, id: Types.ObjectId) {
         switch (type) {
             case 'customer':
                 return await this._customerRepository.findById(id);
             case 'provider':
                 return await this._providerRepository.findById(id);
-            case 'admin':
-                return await this._adminRepository.findById(id);
+            default:
+                throw new BadGatewayException('Invalid user type');
         }
     }
 
@@ -61,14 +65,18 @@ export class ChatSocketService implements IChatSocketService {
 
     async findChat(sender: IParticipant, receiver: IParticipant): Promise<IChat | null> {
         const query = this._buildChatQuery(sender, receiver);
-        return this._chatRepository.findOne(query);
+        const chatDocument = await this._chatRepository.findOne(query);
+        if (!chatDocument) return null;
+        return this._chatMapper.toEntity(chatDocument);
     }
 
     async createChat(sender: IParticipant, receiver: IParticipant): Promise<IChat> {
-        return await this._chatRepository.create({
+        const newChatDocument = await this._chatRepository.create({
             participants: [sender, receiver],
             lastSeenAt: new Date()
         });
+
+        return this._chatMapper.toEntity(newChatDocument);
     }
 
     async getAllChat(sender: IParticipant): Promise<IResponse<IChatData[]>> {
@@ -151,7 +159,7 @@ export class ChatSocketService implements IChatSocketService {
         return {
             success: true,
             message: 'Chat successfully fetched.',
-            data: updatedChat
+            data: this._chatMapper.toEntity(updatedChat)
         }
     }
 }

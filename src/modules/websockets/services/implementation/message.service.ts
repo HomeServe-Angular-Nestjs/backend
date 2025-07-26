@@ -1,19 +1,17 @@
-import { ObjectId, Types } from 'mongoose';
+import { Types } from 'mongoose';
 
 import { MESSAGE_REPOSITORY_INTERFACE_NAME } from '@core/constants/repository.constant';
-import { USER_SOCKET_STORE_SERVICE_NAME } from '@core/constants/service.constant';
 import {
-    ICreateMessage, IMessage, MessageType
+    ICreateMessage, IMessage,
 } from '@core/entities/interfaces/message.entity.interface';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { IResponse } from '@core/misc/response.util';
 import { IMessagesRepository } from '@core/repositories/interfaces/message-repo.interface';
 import { IMessageService } from '@modules/websockets/services/interface/message-service.interface';
-import {
-    IUserSocketStoreService
-} from '@modules/websockets/services/interface/user-socket-store-service.interface';
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { MESSAGE_MAPPER } from '@core/constants/mappers.constant';
+import { IMessageMapper } from '@core/dto-mapper/interface/message.mapper';
 
 @Injectable()
 export class MessageService implements IMessageService {
@@ -24,18 +22,19 @@ export class MessageService implements IMessageService {
         private readonly loggerFactory: ILoggerFactory,
         @Inject(MESSAGE_REPOSITORY_INTERFACE_NAME)
         private readonly _messageRepository: IMessagesRepository,
-        @Inject(USER_SOCKET_STORE_SERVICE_NAME)
-        private readonly _userSocketService: IUserSocketStoreService
+        @Inject(MESSAGE_MAPPER)
+        private readonly _messageMapper: IMessageMapper,
     ) {
         this.logger = this.loggerFactory.createLogger(MessageService.name);
     }
 
     async createMessage(messageData: ICreateMessage): Promise<IMessage> {
-        return await this._messageRepository.create({
+        const messageDocument = await this._messageRepository.create({
             ...messageData,
             isRead: false,
             isDeleted: false
         });
+        return this._messageMapper.toEntity(messageDocument);
     }
 
     async getAllMessage(chatId: string, beforeMessageId?: string): Promise<IResponse<IMessage[]>> {
@@ -53,13 +52,15 @@ export class MessageService implements IMessageService {
         }
 
         // Fetch the messages with filter applied
-        const messages = await this._messageRepository.find(
+        const messageDocuments = await this._messageRepository.find(
             filter,
             {
                 sort: { createdAt: -1 },
                 limit: 10
             }
         );
+
+        const messages = (messageDocuments ?? []).map(message => this._messageMapper.toEntity(message));
 
         // Identify unread messages
         const unreadMessageIds = messages

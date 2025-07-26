@@ -13,6 +13,8 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 
 import { FilterWithPaginationDto, UpdateReviewStatus } from '../../dtos/admin-user.dto';
 import { IAdminReviewService } from '../interfaces/admin-reviews-service.interface';
+import { PROVIDER_MAPPER } from '@core/constants/mappers.constant';
+import { IProviderMapper } from '@core/dto-mapper/interface/provider.mapper';
 
 @Injectable()
 export class AdminReviewService implements IAdminReviewService {
@@ -20,7 +22,9 @@ export class AdminReviewService implements IAdminReviewService {
         @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
         private readonly _providerRepository: IProviderRepository,
         @Inject(CUSTOMER_REPOSITORY_INTERFACE_NAME)
-        private readonly _customerRepository: ICustomerRepository
+        private readonly _customerRepository: ICustomerRepository,
+        @Inject(PROVIDER_MAPPER)
+        private readonly _providerMapper: IProviderMapper,
     ) { }
 
 
@@ -30,7 +34,8 @@ export class AdminReviewService implements IAdminReviewService {
         const skip = (page - 1) * limit;
 
         // Get providers who have reviews
-        const providersWithReviews = await this._providerRepository.find({ 'reviews.0': { $exists: true } });
+        const providersWithReviewDocuments = await this._providerRepository.find({ 'reviews.0': { $exists: true } });
+        const providersWithReviews = (providersWithReviewDocuments ?? []).map(provider => this._providerMapper.toEntity(provider))
 
         // Flatten all reviews with their associated provider
         const allReviews: { review: IReview, provider: IProvider }[] = [];

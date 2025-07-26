@@ -6,8 +6,6 @@ import {
     PlanRoleType, RenewalType, SubsDurationType, SubsPaymentStatus
 } from '../enum/subscription.enum';
 
-export type SubscriptionDocumentType = SubscriptionDocument & Document;
-
 @Schema({ timestamps: true })
 export class SubscriptionDocument extends Document {
     @Prop({ type: String, required: true })

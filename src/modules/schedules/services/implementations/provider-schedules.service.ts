@@ -1,26 +1,18 @@
 import { Types } from 'mongoose';
 
-import {
-    PROVIDER_REPOSITORY_INTERFACE_NAME, SCHEDULES_REPOSITORY_NAME
-} from '@core/constants/repository.constant';
-import {
-    IScheduleDay, IScheduleList, IScheduleListWithPagination, ISchedules
-} from '@core/entities/interfaces/schedules.entity.interface';
+import { Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+
+import { PROVIDER_REPOSITORY_INTERFACE_NAME, SCHEDULES_REPOSITORY_NAME } from '@core/constants/repository.constant';
+import { IScheduleDay, IScheduleList, IScheduleListWithPagination, ISchedules } from '@core/entities/interfaces/schedules.entity.interface';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { IResponse } from '@core/misc/response.util';
 import { IProviderRepository } from '@core/repositories/interfaces/provider-repo.interface';
 import { ISchedulesRepository } from '@core/repositories/interfaces/schedules-repo.interface';
-import {
-    MonthScheduleDto, ScheduleDetailsDto, ScheduleListFilterDto, UpdateScheduleDateSlotStatusDto,
-    UpdateScheduleDateStatusDto, UpdateScheduleStatusDto
-} from '@modules/schedules/dtos/schedules.dto';
-import {
-    ISchedulesService
-} from '@modules/schedules/services/interfaces/schedules-service.interface';
-import {
-    Inject, Injectable, InternalServerErrorException, NotFoundException
-} from '@nestjs/common';
+import { MonthScheduleDto, ScheduleDetailsDto, ScheduleListFilterDto, UpdateScheduleDateSlotStatusDto, UpdateScheduleDateStatusDto, UpdateScheduleStatusDto } from '@modules/schedules/dtos/schedules.dto';
+import { ISchedulesService } from '@modules/schedules/services/interfaces/schedules-service.interface';
+import { SCHEDULES_MAPPER } from '@core/constants/mappers.constant';
+import { ISchedulesMapper } from '@core/dto-mapper/interface/schedules.mapper,interface';
 
 @Injectable()
 export class SchedulesService implements ISchedulesService {
@@ -32,7 +24,9 @@ export class SchedulesService implements ISchedulesService {
         @Inject(SCHEDULES_REPOSITORY_NAME)
         private readonly _schedulesRepository: ISchedulesRepository,
         @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
-        private readonly _providerRepository: IProviderRepository
+        private readonly _providerRepository: IProviderRepository,
+        @Inject(SCHEDULES_MAPPER)
+        private readonly _schedulesMapper: ISchedulesMapper,
     ) {
         this.logger = this.loggerFactory.createLogger(SchedulesService.name);
     }
@@ -129,7 +123,7 @@ export class SchedulesService implements ISchedulesService {
         return {
             success: true,
             message: 'schedules fetched',
-            data: schedules
+            data: (schedules ?? []).map(schedule => this._schedulesMapper.toEntity(schedule))
         }
     }
 

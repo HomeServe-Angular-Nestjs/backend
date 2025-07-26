@@ -98,7 +98,7 @@ export class AdminDashboardOverviewService implements IAdminDashboardOverviewSer
     }
 
     async getDashBoardRevenue(): Promise<IResponse<IAdminDashboardRevenue[]>> {
-        const transactions = await this._transactionRepository.find();
+        const transactions = await this._transactionRepository.find({});
         const revenueData = transactions.map(tx => ({
             amount: tx.amount,
             createdAt: tx.createdAt?.toString() || ''
