@@ -3,7 +3,6 @@ import { Request } from 'express';
 import {
     CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME
 } from '@core/constants/repository.constant';
-import { ICustomer, IProvider } from '@core/entities/interfaces/user.entity.interface';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { IPayload } from '@core/misc/payload.interface';
@@ -14,10 +13,12 @@ import {
     BadRequestException, CanActivate, ExecutionContext, ForbiddenException, Inject, Injectable,
     Logger, UnauthorizedException
 } from '@nestjs/common';
+import { CustomerDocument } from '@core/schema/customer.schema';
+import { ProviderDocument } from '@core/schema/provider.schema';
 
 @Injectable()
 export class BlockGuard implements CanActivate {
-    private readonly logger: ICustomLogger;
+    private logger: ICustomLogger;
     private readonly validUserTypes = ['admin', 'customer', 'provider'];
 
     constructor(
@@ -57,7 +58,8 @@ export class BlockGuard implements CanActivate {
         }
 
         const repo = userType === 'customer' ? this._customerRepository : this._providerRepository;
-        const user: ICustomer | IProvider | null = await repo.findById(userPayload.sub);
+        const user: CustomerDocument | ProviderDocument | null = await repo.findById(userPayload.sub);
+
         if (!user) {
             throw new UnauthorizedException(`User with ID ${userPayload.sub} not found in the database.`);
         }
