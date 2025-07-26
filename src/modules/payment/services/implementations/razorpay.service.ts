@@ -1,11 +1,10 @@
-import {
-    CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME,
-    TRANSACTION_REPOSITORY_NAME
-} from '@core/constants/repository.constant';
+import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+
+import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, TRANSACTION_REPOSITORY_NAME } from '@core/constants/repository.constant';
+import { TRANSACTION_MAPPER } from '@core/constants/mappers.constant';
 import { PAYMENT_UTILITY_NAME } from '@core/constants/utility.constant';
-import {
-    IRazorpayOrder, IVerifiedPayment
-} from '@core/entities/interfaces/transaction.entity.interface';
+import { ITransactionMapper } from '@core/dto-mapper/interface/transaction.mapper.interface';
+import { IRazorpayOrder, IVerifiedPayment } from '@core/entities/interfaces/transaction.entity.interface';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { ICustomerRepository } from '@core/repositories/interfaces/customer-repo.interface';
@@ -13,12 +12,7 @@ import { IProviderRepository } from '@core/repositories/interfaces/provider-repo
 import { ITransactionRepository } from '@core/repositories/interfaces/transaction-repo.interface';
 import { IPaymentGateway } from '@core/utilities/interface/razorpay.utility.interface';
 import { RazorpayVerifyData, VerifyOrderData } from '@modules/payment/dtos/payment.dto';
-import {
-    IRazorPaymentService
-} from '@modules/payment/services/interfaces/razorpay-service.interface';
-import {
-    BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException
-} from '@nestjs/common';
+import { IRazorPaymentService } from '@modules/payment/services/interfaces/razorpay-service.interface';
 
 @Injectable()
 export class RazorPaymentService implements IRazorPaymentService {
@@ -34,7 +28,9 @@ export class RazorPaymentService implements IRazorPaymentService {
         @Inject(CUSTOMER_REPOSITORY_INTERFACE_NAME)
         private readonly _customerRepository: ICustomerRepository,
         @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
-        private readonly _providerRepository: IProviderRepository
+        private readonly _providerRepository: IProviderRepository,
+        @Inject(TRANSACTION_MAPPER)
+        private readonly _transactionMapper: ITransactionMapper,
     ) { }
 
     async createOrder(amount: number, currency: string = 'INR'): Promise<IRazorpayOrder> {
@@ -74,7 +70,7 @@ export class RazorPaymentService implements IRazorPaymentService {
                 transactionType: orderData.transactionType,
             });
 
-            return { verified, transaction };
+            return { verified, transaction: this._transactionMapper.toEntity(transaction) };
 
         } catch (error) {
             this.logger.error(`Transaction creation failed: ${error.message}`, error.stack);

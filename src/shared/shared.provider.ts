@@ -1,7 +1,8 @@
-import { ADMIN_MAPPER, CUSTOMER_MAPPER, PROVIDER_MAPPER } from '@core/constants/mappers.constant';
+import { ADMIN_MAPPER, CUSTOMER_MAPPER, PROVIDER_MAPPER, TRANSACTION_MAPPER } from '@core/constants/mappers.constant';
 import { AdminMapper } from '@core/dto-mapper/implementation/admin.mapper';
 import { CustomerMapper } from '@core/dto-mapper/implementation/customer.mapper';
 import { ProviderMapper } from '@core/dto-mapper/implementation/provider.mapper';
+import { TransactionMapper } from '@core/dto-mapper/implementation/transaction.mapper';
 import { CustomLogger } from '@core/logger/implementation/custom-logger';
 import { LoggerFactory } from '@core/logger/implementation/logger.factory';
 import { CUSTOM_LOGGER } from '@core/logger/interface/custom-logger.interface';
@@ -29,4 +30,8 @@ export const sharedProviders: Provider[] = [
         provide: PROVIDER_MAPPER,
         useClass: ProviderMapper
     },
+    {
+        provide: TRANSACTION_MAPPER,
+        useClass: TransactionMapper
+    }
 ]
