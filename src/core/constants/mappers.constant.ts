@@ -1,0 +1,12 @@
+export const ADMIN_MAPPER = Symbol('ADMIN_MAPPER');
+export const BOOKING_MAPPER = Symbol('BOOKING_MAPPER');
+export const CHAT_MAPPER = Symbol('CHAT_MAPPER');
+export const CUSTOMER_MAPPER = Symbol('CUSTOMER_MAPPER');
+export const MESSAGE_MAPPER = Symbol('MESSAGE_MAPPER');
+export const OTP_MAPPER = Symbol('OTP_MAPPER');
+export const PLAN_MAPPER = Symbol('PLAN_MAPPER');
+export const PROVIDER_MAPPER = Symbol('PROVIDER_MAPPER');
+export const SCHEDULES_MAPPER = Symbol('SCHEDULES_MAPPER');
+export const SERVICE_OFFERED_MAPPER = Symbol('SERVICE_OFFERED_MAPPER');
+export const SUBSCRIPTION_MAPPER = Symbol('SUBSCRIPTION_MAPPER');
+export const TRANSACTION_MAPPER = Symbol('TRANSACTION_MAPPER');
