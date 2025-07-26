@@ -7,8 +7,8 @@ import {
 export interface IPlanService {
     fetchPlans(): Promise<IResponse<IPlan[]>>;
     fetchOnePlan(dto: GetOnePlanDto): Promise<IResponse<IPlan>>
-    createPlan(plan: SavePlanDto): Promise<IResponse>;
+    createPlan(plan: SavePlanDto): Promise<IResponse<IPlan>>;
     updatePlan(id: string, data: Omit<UpdatePlanDto, 'id'>): Promise<IResponse<IPlan>>;
     updateStatus(dto: UpdatePlanStatusDto): Promise<IResponse>;
-    deletePlan(planId: string): Promise<IResponse>;
+    // deletePlan(planId: string): Promise<IResponse>;
 }
