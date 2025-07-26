@@ -1,13 +1,12 @@
-import { FilterQuery, Model, Types, UpdateQuery } from 'mongoose';
+import { FilterQuery, Model, UpdateQuery } from 'mongoose';
 
 import { SCHEDULES_MODEL_NAME } from '@core/constants/model.constant';
-import { ScheduleDay, Schedules, Slot } from '@core/entities/implementation/schedules.entity';
 import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
 import { ISchedulesRepository } from '@core/repositories/interfaces/schedules-repo.interface';
 import { SchedulesDocument } from '@core/schema/schedules.schema';
 import { InjectModel } from '@nestjs/mongoose';
 
-export class SchedulesRepository extends BaseRepository<Schedules, SchedulesDocument> implements ISchedulesRepository {
+export class SchedulesRepository extends BaseRepository<SchedulesDocument> implements ISchedulesRepository {
     constructor(
         @InjectModel(SCHEDULES_MODEL_NAME)
         private readonly _schedulesModel: Model<SchedulesDocument>,
@@ -26,10 +25,7 @@ export class SchedulesRepository extends BaseRepository<Schedules, SchedulesDocu
     }
 
 
-    async updateOne(
-        filter: FilterQuery<SchedulesDocument>,
-        update: UpdateQuery<SchedulesDocument>,
-    ): Promise<{ matchedCount: number; modifiedCount: number }> {
+    async updateOne(filter: FilterQuery<SchedulesDocument>, update: UpdateQuery<SchedulesDocument>,): Promise<{ matchedCount: number; modifiedCount: number }> {
         const result = await this._schedulesModel.updateOne(filter, update);
 
         return {
@@ -38,29 +34,29 @@ export class SchedulesRepository extends BaseRepository<Schedules, SchedulesDocu
         };
     }
 
-    protected toEntity(doc: SchedulesDocument | Record<string, any>): Schedules {
-        return new Schedules({
-            id: (doc._id as Types.ObjectId).toString(),
-            providerId: doc.providerId,
-            month: doc.month,
-            days: doc.days.map(day =>
-                new ScheduleDay({
-                    id: (day._id as Types.ObjectId).toString(),
-                    date: day.date,
-                    slots: day.slots.map(slot =>
-                        new Slot({
-                            id: (slot._id as Types.ObjectId).toString(),
-                            from: slot.from,
-                            to: slot.to,
-                            takenBy: slot.takenBy,
-                            isActive: doc.isActive,
-                        })),
-                    isActive: day.isActive,
-                })),
-            isActive: doc.isActive,
-            isDeleted: doc.isDeleted,
-            createdAt: doc.createdAt,
-            updatedAt: doc.updatedAt
-        });
-    }
+    // protected toEntity(doc: SchedulesDocument | Record<string, any>): Schedules {
+    //     return new Schedules({
+    //         id: (doc._id as Types.ObjectId).toString(),
+    //         providerId: doc.providerId,
+    //         month: doc.month,
+    //         days: doc.days.map(day =>
+    //             new ScheduleDay({
+    //                 id: (day._id as Types.ObjectId).toString(),
+    //                 date: day.date,
+    //                 slots: day.slots.map(slot =>
+    //                     new Slot({
+    //                         id: (slot._id as Types.ObjectId).toString(),
+    //                         from: slot.from,
+    //                         to: slot.to,
+    //                         takenBy: slot.takenBy,
+    //                         isActive: doc.isActive,
+    //                     })),
+    //                 isActive: day.isActive,
+    //             })),
+    //         isActive: doc.isActive,
+    //         isDeleted: doc.isDeleted,
+    //         createdAt: doc.createdAt,
+    //         updatedAt: doc.updatedAt
+    //     });
+    // }
 }

@@ -1,18 +1,15 @@
-import { FilterQuery, Model, Types } from 'mongoose';
+import { FilterQuery, Model, } from 'mongoose';
 
 import { SERVICE_OFFERED_MODEL_NAME } from '@core/constants/model.constant';
-import { ServiceOffered, SubService } from '@core/entities/implementation/service.entity';
 import { IGetServiceTitle } from '@core/entities/interfaces/service.entity.interface';
 import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
-import {
-    IServiceOfferedRepository
-} from '@core/repositories/interfaces/serviceOffered-repo.interface';
+import { IServiceOfferedRepository } from '@core/repositories/interfaces/serviceOffered-repo.interface';
 import { ServiceDocument } from '@core/schema/service.schema';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 
 @Injectable()
-export class ServiceOfferedRepository extends BaseRepository<ServiceOffered, ServiceDocument> implements IServiceOfferedRepository {
+export class ServiceOfferedRepository extends BaseRepository<ServiceDocument> implements IServiceOfferedRepository {
   constructor(
     @InjectModel(SERVICE_OFFERED_MODEL_NAME)
     private readonly _serviceModel: Model<ServiceDocument>,
@@ -32,29 +29,29 @@ export class ServiceOfferedRepository extends BaseRepository<ServiceOffered, Ser
     }));
   }
 
-  protected toEntity(doc: ServiceDocument): ServiceOffered {
-    return new ServiceOffered({
-      id: (doc._id as Types.ObjectId).toString(),
-      title: doc.title,
-      desc: doc.desc,
-      image: doc.image,
-      subService: doc.subService.map(service => new SubService({
-        id: (service._id as Types.ObjectId).toString(),
-        title: service.title,
-        desc: service.desc,
-        price: service.price,
-        estimatedTime: service.estimatedTime,
-        image: service.image,
-        isActive: service.isActive,
-        isDeleted: service.isDeleted,
-        createdAt: service.createdAt,
-        updatedAt: service.updatedAt,
-      })),
-      isActive: doc.isActive,
-      isVerified: doc.isVerified,
-      isDeleted: doc.isDeleted,
-      createdAt: doc.createdAt,
-      updatedAt: doc.updatedAt,
-    });
-  }
+  // protected toEntity(doc: ServiceDocument): ServiceOffered {
+  //   return new ServiceOffered({
+  //     id: (doc._id as Types.ObjectId).toString(),
+  //     title: doc.title,
+  //     desc: doc.desc,
+  //     image: doc.image,
+  //     subService: doc.subService.map(service => new SubService({
+  //       id: (service._id as Types.ObjectId).toString(),
+  //       title: service.title,
+  //       desc: service.desc,
+  //       price: service.price,
+  //       estimatedTime: service.estimatedTime,
+  //       image: service.image,
+  //       isActive: service.isActive,
+  //       isDeleted: service.isDeleted,
+  //       createdAt: service.createdAt,
+  //       updatedAt: service.updatedAt,
+  //     })),
+  //     isActive: doc.isActive,
+  //     isVerified: doc.isVerified,
+  //     isDeleted: doc.isDeleted,
+  //     createdAt: doc.createdAt,
+  //     updatedAt: doc.updatedAt,
+  //   });
+  // }
 }

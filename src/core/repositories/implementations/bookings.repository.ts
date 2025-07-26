@@ -12,7 +12,7 @@ import { BaseRepository } from '../base/implementations/base.repository';
 import { IBookingRepository } from '../interfaces/bookings-repo.interface';
 
 @Injectable()
-export class BookingRepository extends BaseRepository<Booking, BookingDocument> implements IBookingRepository {
+export class BookingRepository extends BaseRepository<BookingDocument> implements IBookingRepository {
     constructor(
         @InjectModel(BOOKINGS_MODEL_NAME)
         private readonly _bookingModel: Model<BookingDocument>
@@ -119,25 +119,25 @@ export class BookingRepository extends BaseRepository<Booking, BookingDocument> 
         return result.length > 0 ? result : [];
     }
 
-    protected toEntity(doc: BookingDocument | Record<string, any>): IBooking {
-        return new Booking({
-            id: (doc._id as Types.ObjectId).toString(),
-            customerId: doc.customerId,
-            providerId: doc.providerId,
-            totalAmount: doc.totalAmount,
-            services: doc.services,
-            bookingStatus: doc.bookingStatus,
-            paymentStatus: doc.paymentStatus,
-            location: doc.location,
-            actualArrivalTime: doc.actualArrivalTime,
-            expectedArrivalTime: doc.expectedArrivalTime,
-            cancellationReason: doc.cancellationReason,
-            cancelStatus: doc.cancelStatus,
-            cancelledAt: doc.cancelledAt,
-            transactionId: doc.transactionId,
-            createdAt: doc.createdAt,
-            updatedAt: doc.updatedAt,
-        });
-    }
+    // protected toEntity(doc: BookingDocument | Record<string, any>): IBooking {
+    //     return new Booking({
+    //         id: (doc._id as Types.ObjectId).toString(),
+    //         customerId: doc.customerId,
+    //         providerId: doc.providerId,
+    //         totalAmount: doc.totalAmount,
+    //         services: doc.services,
+    //         bookingStatus: doc.bookingStatus,
+    //         paymentStatus: doc.paymentStatus,
+    //         location: doc.location,
+    //         actualArrivalTime: doc.actualArrivalTime,
+    //         expectedArrivalTime: doc.expectedArrivalTime,
+    //         cancellationReason: doc.cancellationReason,
+    //         cancelStatus: doc.cancelStatus,
+    //         cancelledAt: doc.cancelledAt,
+    //         transactionId: doc.transactionId,
+    //         createdAt: doc.createdAt,
+    //         updatedAt: doc.updatedAt,
+    //     });
+    // }
 
 }

@@ -1,9 +1,7 @@
 import { FilterQuery, Model, Types } from 'mongoose';
 
 import { PROVIDER_MODEL_NAME } from '@core/constants/model.constant';
-import { Provider } from '@core/entities/implementation/provider.entity';
 import { IStats } from '@core/entities/interfaces/admin.entity.interface';
-import { IProvider } from '@core/entities/interfaces/user.entity.interface';
 import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
 import { IProviderRepository } from '@core/repositories/interfaces/provider-repo.interface';
 import { ProviderDocument } from '@core/schema/provider.schema';
@@ -11,7 +9,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 
 @Injectable()
-export class ProviderRepository extends BaseRepository<Provider, ProviderDocument> implements IProviderRepository {
+export class ProviderRepository extends BaseRepository<ProviderDocument> implements IProviderRepository {
   constructor(
     @InjectModel(PROVIDER_MODEL_NAME)
     private _providerModel: Model<ProviderDocument>,
@@ -19,14 +17,12 @@ export class ProviderRepository extends BaseRepository<Provider, ProviderDocumen
     super(_providerModel);
   }
 
-  async findByGoogleId(id: string): Promise<Provider | null> {
-    const provider = await this._providerModel.findOne({ googleId: id });
-    return provider ? this.toEntity(provider) : null;
+  async findByGoogleId(id: string): Promise<ProviderDocument | null> {
+    return await this._providerModel.findOne({ googleId: id });
   }
 
-  async findByEmail(email: string): Promise<IProvider | null> {
-    const result = await this._providerModel.findOne({ email }).exec();
-    return result ? this.toEntity(result) : null;
+  async findByEmail(email: string): Promise<ProviderDocument | null> {
+    return await this._providerModel.findOne({ email }).exec();
   }
 
   async count(filter?: FilterQuery<ProviderDocument>): Promise<number> {
@@ -43,7 +39,7 @@ export class ProviderRepository extends BaseRepository<Provider, ProviderDocumen
     return result ? { currentRatingAvg: result.avgRating, currentRatingCount: result.ratingCount } : null
   }
 
-  async getProvidersBasedOnLocation(lng: number, lat: number): Promise<IProvider[]> {
+  async getProvidersBasedOnLocation(lng: number, lat: number): Promise<ProviderDocument[]> {
     const result = await this._providerModel.find({
       location: {
         $near: {
@@ -57,10 +53,10 @@ export class ProviderRepository extends BaseRepository<Provider, ProviderDocumen
       },
     }).exec();
 
-    return (result ?? []).map(r => this.toEntity(r));
+    return result ? result : [];
   }
 
-  async addWorkImage(providerId: string, publicId: string): Promise<IProvider | null> {
+  async addWorkImage(providerId: string, publicId: string): Promise<ProviderDocument | null> {
     const result = await this._providerModel.findOneAndUpdate(
       { _id: providerId },
       {
@@ -74,7 +70,7 @@ export class ProviderRepository extends BaseRepository<Provider, ProviderDocumen
       { new: true }
     );
 
-    return result ? this.toEntity(result) : null;
+    return result ? result : null;
   }
 
   async getWorkImages(providerId: string): Promise<string[]> {
@@ -126,53 +122,53 @@ export class ProviderRepository extends BaseRepository<Provider, ProviderDocumen
     return result.length > 0 ? result[0] : { new: 0, total: 0, active: 0 };
   }
 
-  protected toEntity(doc: ProviderDocument): Provider {
-    return new Provider({
-      id: (doc._id as Types.ObjectId).toString(),
-      email: doc.email,
-      username: doc.username,
-      password: doc.password,
-      googleId: doc.googleId,
-      additionalSkills: doc.additionalSkills ?? [],
-      avatar: doc.avatar || '',
-      awards: doc.awards ?? [],
-      bio: doc.bio || '',
-      expertise: doc.expertise ?? [],
-      fullname: doc.fullname || '',
-      languages: doc.languages ?? [],
-      isActive: doc.isActive,
-      createdAt: doc.createdAt,
-      updatedAt: doc.updatedAt,
-      isDeleted: doc.isDeleted,
-      verificationStatus: doc.verificationStatus,
-      isCertified: doc.isCertified,
-      servicesOffered: doc.servicesOffered.map((id: Types.ObjectId) =>
-        id.toString(),
-      ),
-      availability: doc.availability,
-      experience: doc.experience,
-      serviceRadius: doc.serviceRadius,
-      profession: doc.profession,
-      defaultSlots: doc.defaultSlots,
-      schedules: doc.schedules.map(id => id.toString()),
-      location: doc.location,
-      address: doc.address,
-      bookingLimit: doc.bookingLimit,
-      bufferTime: doc.bufferTime,
-      enableSR: doc.enableSR,
-      docs: (doc.docs ?? []).map(d => ({
-        id: (doc._id as Types.ObjectId).toString(),
-        fileUrl: d.fileUrl,
-        isDeleted: d.isDeleted,
-        label: d.label,
-        uploadedAt: d.uploadedAt,
-        verificationStatus: d.verificationStatus,
-        verifiedAt: d.verifiedAt
-      })),
-      ratingCount: doc.ratingCount,
-      avgRating: doc.avgRating,
-      reviews: doc.reviews,
-      workImages: doc.workImages,
-    });
-  }
+  // protected toEntity(doc: ProviderDocument): Provider {
+  //   return new Provider({
+  //     id: (doc._id as Types.ObjectId).toString(),
+  //     email: doc.email,
+  //     username: doc.username,
+  //     password: doc.password,
+  //     googleId: doc.googleId,
+  //     additionalSkills: doc.additionalSkills ?? [],
+  //     avatar: doc.avatar || '',
+  //     awards: doc.awards ?? [],
+  //     bio: doc.bio || '',
+  //     expertise: doc.expertise ?? [],
+  //     fullname: doc.fullname || '',
+  //     languages: doc.languages ?? [],
+  //     isActive: doc.isActive,
+  //     createdAt: doc.createdAt,
+  //     updatedAt: doc.updatedAt,
+  //     isDeleted: doc.isDeleted,
+  //     verificationStatus: doc.verificationStatus,
+  //     isCertified: doc.isCertified,
+  //     servicesOffered: doc.servicesOffered.map((id: Types.ObjectId) =>
+  //       id.toString(),
+  //     ),
+  //     availability: doc.availability,
+  //     experience: doc.experience,
+  //     serviceRadius: doc.serviceRadius,
+  //     profession: doc.profession,
+  //     defaultSlots: doc.defaultSlots,
+  //     schedules: doc.schedules.map(id => id.toString()),
+  //     location: doc.location,
+  //     address: doc.address,
+  //     bookingLimit: doc.bookingLimit,
+  //     bufferTime: doc.bufferTime,
+  //     enableSR: doc.enableSR,
+  //     docs: (doc.docs ?? []).map(d => ({
+  //       id: (doc._id as Types.ObjectId).toString(),
+  //       fileUrl: d.fileUrl,
+  //       isDeleted: d.isDeleted,
+  //       label: d.label,
+  //       uploadedAt: d.uploadedAt,
+  //       verificationStatus: d.verificationStatus,
+  //       verifiedAt: d.verifiedAt
+  //     })),
+  //     ratingCount: doc.ratingCount,
+  //     avgRating: doc.avgRating,
+  //     reviews: doc.reviews,
+  //     workImages: doc.workImages,
+  //   });
+  // }
 }

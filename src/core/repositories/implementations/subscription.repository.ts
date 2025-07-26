@@ -1,9 +1,7 @@
 import { Model } from 'mongoose';
 
 import { SUBSCRIPTION_MODEL_NAME } from '@core/constants/model.constant';
-import { Subscription } from '@core/entities/implementation/subscription.entity';
 import { IAdminDashboardSubscription } from '@core/entities/interfaces/admin.entity.interface';
-import { ISubscription } from '@core/entities/interfaces/subscription.entity.interface';
 import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
 import { ISubscriptionRepository } from '@core/repositories/interfaces/subscription-repo.interface';
 import { SubscriptionDocumentType } from '@core/schema/subscription.schema';
@@ -11,7 +9,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 
 @Injectable()
-export class SubscriptionRepository extends BaseRepository<ISubscription, SubscriptionDocumentType> implements ISubscriptionRepository {
+export class SubscriptionRepository extends BaseRepository<SubscriptionDocumentType> implements ISubscriptionRepository {
     constructor(
         @InjectModel(SUBSCRIPTION_MODEL_NAME)
         private readonly _subscriptionModel: Model<SubscriptionDocumentType>
@@ -92,26 +90,26 @@ export class SubscriptionRepository extends BaseRepository<ISubscription, Subscr
         };
     }
 
-    protected override toEntity(doc: SubscriptionDocumentType): ISubscription {
-        return new Subscription({
-            id: doc.id,
-            userId: doc.userId,
-            name: doc.name,
-            transactionId: doc.transactionId,
-            role: doc.role,
-            planId: doc.planId,
-            duration: doc.duration,
-            features: doc.features,
-            startTime: doc.startTime.toString(),
-            endDate: doc.endDate?.toString(),
-            renewalType: doc.renewalType,
-            isActive: doc.isActive,
-            isDeleted: doc.isDeleted,
-            paymentStatus: doc.paymentStatus,
-            cancelledAt: doc.cancelledAt?.toString(),
-            metadata: doc.metadata,
-            createdAt: doc.createdAt,
-            updatedAt: doc.updatedAt
-        });
-    }
+    // protected override toEntity(doc: SubscriptionDocumentType): ISubscription {
+    //     return new Subscription({
+    //         id: doc.id,
+    //         userId: doc.userId,
+    //         name: doc.name,
+    //         transactionId: doc.transactionId,
+    //         role: doc.role,
+    //         planId: doc.planId,
+    //         duration: doc.duration,
+    //         features: doc.features,
+    //         startTime: doc.startTime.toString(),
+    //         endDate: doc.endDate?.toString(),
+    //         renewalType: doc.renewalType,
+    //         isActive: doc.isActive,
+    //         isDeleted: doc.isDeleted,
+    //         paymentStatus: doc.paymentStatus,
+    //         cancelledAt: doc.cancelledAt?.toString(),
+    //         metadata: doc.metadata,
+    //         createdAt: doc.createdAt,
+    //         updatedAt: doc.updatedAt
+    //     });
+    // }
 }
