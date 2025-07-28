@@ -30,7 +30,7 @@ export class AuthMiddleware implements NestMiddleware {
             return next();
         }
 
-        const accessToken = req.cookies?.['access_token'];
+        const accessToken = req.cookies?.['access_token'] || req.headers['authorization']?.split(' ')[1];
 
         const attachUserFromToken = async (token: string) => {
             const payload = await this.tokenService.validateAccessToken(token);

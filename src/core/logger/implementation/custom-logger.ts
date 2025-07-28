@@ -16,8 +16,8 @@ export class CustomLogger extends Logger implements ICustomLogger {
         super.warn(message);
     }
 
-    override error(message: string, trace?: string, stack?: string | object) {
-        super.error(message, stack);
+    override error(message: string, trace?: string, stack?: any) {
+        super.error(message, trace, stack);
     }
 
     override debug(message: string | object) {

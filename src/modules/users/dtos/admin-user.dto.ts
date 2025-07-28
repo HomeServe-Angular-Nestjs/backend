@@ -38,6 +38,7 @@ export class GetUsersWithFilterDto {
 }
 
 export class StatusUpdateDto {
+
     @IsNotEmpty()
     @IsBoolean()
     status: boolean;

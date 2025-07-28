@@ -2,7 +2,7 @@ import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
 
 export type UserType = 'customer' | 'provider' | 'admin';
 
-export class  AuthLoginDto {
+export class AuthLoginDto {
   @IsEmail()
   @IsNotEmpty()
   email: string;
