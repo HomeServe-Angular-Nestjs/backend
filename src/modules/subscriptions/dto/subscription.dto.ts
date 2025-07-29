@@ -1,6 +1,7 @@
-import { IsIn, IsNotEmpty, IsString } from 'class-validator';
+import { IsIn, IsNotEmpty, IsNumber, IsString } from 'class-validator';
 
 import { PlanRoleType, SubsDurationType, SubsPaymentStatus } from '@core/enum/subscription.enum';
+import { Transform } from 'class-transformer';
 
 export class CreateSubscriptionDto {
     @IsNotEmpty()
@@ -40,4 +41,12 @@ export class CreateSubscriptionDto {
 
     @IsNotEmpty()
     endDate: string | null;
+
+    @Transform(({ value }) => {
+        const num = Number(value);
+        return isNaN(num) ? undefined : num;
+    })
+    @IsNotEmpty()
+    @IsNumber()
+    price: number;
 }

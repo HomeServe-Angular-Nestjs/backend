@@ -14,6 +14,7 @@ export class Subscription extends BaseEntity implements ISubscription {
     duration: SubsDurationType;
     role: PlanRoleType;
     features: string[];
+    price: number;
 
     startTime: string;
     endDate: string | null;

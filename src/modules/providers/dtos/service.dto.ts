@@ -1,10 +1,9 @@
 import { Transform, Type } from 'class-transformer';
 import {
-    IsArray, IsBoolean, IsDefined, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, Min,
-    ValidateNested
+  IsBoolean, IsDefined, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, Min,
+  ValidateNested
 } from 'class-validator';
 
-import { Optional } from '@nestjs/common';
 
 export class CreateSubServiceDto {
   @IsString()
@@ -19,7 +18,7 @@ export class CreateSubServiceDto {
   @IsString()
   estimatedTime: string;
 
-  @Optional()
+  @IsOptional()
   image?: Express.Multer.File;
 }
 
@@ -30,7 +29,7 @@ export class CreateServiceDto {
   @IsString()
   desc: string;
 
-  @Optional()
+  @IsOptional()
   image?: Express.Multer.File;
 
   @ValidateNested({ each: true })
@@ -51,7 +50,7 @@ export class UpdateSubServiceDto {
   @IsString()
   estimatedTime: string;
 
-  @Optional()
+  @IsOptional()
   image: Express.Multer.File | string;
 }
 
@@ -65,7 +64,7 @@ export class UpdateServiceDto {
   @IsString()
   desc: string;
 
-  @Optional()
+  @IsOptional()
   image: Express.Multer.File | string;
 
   @ValidateNested({ each: true })

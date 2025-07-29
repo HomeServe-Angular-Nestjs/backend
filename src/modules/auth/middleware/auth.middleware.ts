@@ -5,8 +5,9 @@ import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { ITokenService } from '@modules/auth/services/interfaces/token-service.interface';
 import {
-    Inject, Injectable, NestMiddleware, NotFoundException, UnauthorizedException
+    Inject, Injectable, NestMiddleware, UnauthorizedException
 } from '@nestjs/common';
+import { ErrorMessage } from '@core/enum/error.enum';
 
 @Injectable()
 export class AuthMiddleware implements NestMiddleware {
@@ -30,7 +31,8 @@ export class AuthMiddleware implements NestMiddleware {
             return next();
         }
 
-        const accessToken = req.cookies?.['access_token'] || req.headers['authorization']?.split(' ')[1];
+        const accessToken = req.cookies?.['access_token'];
+        const refreshToken = req.cookies?.['refresh_token'];
 
         const attachUserFromToken = async (token: string) => {
             const payload = await this.tokenService.validateAccessToken(token);
@@ -38,8 +40,8 @@ export class AuthMiddleware implements NestMiddleware {
         };
 
         try {
-            if (!accessToken) {
-                throw new NotFoundException('Access token not found in request');
+            if (!accessToken || !refreshToken) {
+                throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
             }
 
             await attachUserFromToken(accessToken);
@@ -62,15 +64,24 @@ export class AuthMiddleware implements NestMiddleware {
                 }
 
                 if (!userId || !userType) {
-                    throw new UnauthorizedException('Cannot identify user for refresh token');
+                    this.logger.error('Cannot identify user for refresh token');
+                    throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
                 }
 
-                const payload = await this.tokenService.validateRefreshToken(userId);
-                if (!payload) throw new UnauthorizedException('Invalid refresh token');
+                const payload = await this.tokenService.validateRefreshToken(userId, refreshToken);
+                if (!payload) throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
 
                 const newAccessToken = this.tokenService.generateAccessToken(userId, payload.email, userType);
+                const newRefreshToken = this.tokenService.generateRefreshToken(userId, payload.email, userType);
 
                 res.cookie('access_token', newAccessToken, {
+                    httpOnly: true,
+                    secure: false,
+                    sameSite: 'strict',
+                    path: '/',
+                });
+
+                res.cookie('refresh_token', newRefreshToken, {
                     httpOnly: true,
                     secure: false,
                     sameSite: 'strict',
@@ -81,8 +92,23 @@ export class AuthMiddleware implements NestMiddleware {
                 this.logger.debug('New access token issued');
                 return next();
             } catch (refreshError) {
+                if (refreshError instanceof UnauthorizedException) {
+                    res.clearCookie('access_token', {
+                        httpOnly: true,
+                        secure: false,
+                        sameSite: 'strict',
+                        path: '/',
+                    });
+
+                    res.clearCookie('refresh_token', {
+                        httpOnly: true,
+                        secure: false,
+                        sameSite: 'strict',
+                        path: '/',
+                    });
+                }
                 this.logger.error('Refresh token flow failed:', refreshError);
-                throw new UnauthorizedException('Invalid or expired token');
+                throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
             }
         }
     }

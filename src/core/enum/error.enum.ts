@@ -5,6 +5,8 @@ export enum ErrorMessage {
     PROVIDER_NOT_FOUND = 'Provider not found',
     SERVICE_NOT_FOUND = 'Service not found',
     USER_NOT_FOUND = 'User not found',
+    SUBSCRIPTION_NOT_FOUND = 'Subscription not found',
+    PLAN_NOT_FOUND = 'Plan not found',
     DOCUMENT_NOT_FOUND = 'Document not found',
 
     // With ID placeholders

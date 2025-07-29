@@ -11,11 +11,11 @@ import {
     ISubscriptionService
 } from '@modules/subscriptions/services/interface/subscription-service.interface';
 import {
-    Body, Controller, Get, Inject, InternalServerErrorException, Logger, Post, Req,
+    Body, Controller, Get, Inject, InternalServerErrorException, Param, Post, Req,
     UnauthorizedException
 } from '@nestjs/common';
 
-import { CreateSubscriptionDto } from '../dto/subscription.dto';
+import { CreateSubscriptionDto, } from '../dto/subscription.dto';
 
 @Controller('subscription')
 export class SubscriptionController {
@@ -39,9 +39,6 @@ export class SubscriptionController {
                 throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
             }
 
-            console.log('Console Fetching subscription for user ID:', user.sub);
-            this.logger.log(`Logger Fetching subscription for user ID: ${user.sub}`);
-
             return await this._subscriptionService.createSubscription(user.sub, dto);
         } catch (err) {
             this.logger.error('Error caught while creating subscription: ', err.message, err.stack);
@@ -60,6 +57,36 @@ export class SubscriptionController {
             return await this._subscriptionService.fetchSubscription(user.sub);
         } catch (err) {
             this.logger.error('Error caught while fetching the subscription: ', err.message, err.stack);
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Get('upgrade_amount/:subscriptionId')
+    async getUpgradeAmount(@Req() req: Request, @Param('subscriptionId') subscriptionId: string): Promise<IResponse<number>> {
+        try {
+            const user = req.user as IPayload;
+            if (!user.sub || !user.type) {
+                throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
+            }
+
+            return await this._subscriptionService.getUpgradeAmount(user.type, subscriptionId);
+        } catch (err) {
+            this.logger.error('Error caught while upgrading the subscription: ', err.message, err.stack);
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Post('upgrade')
+    async upgradeSubscription(@Req() req: Request, @Body() dto: CreateSubscriptionDto): Promise<IResponse<ISubscription>> {
+        try {
+            const user = req.user as IPayload;
+            if (!user.sub) {
+                throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
+            }
+
+            return await this._subscriptionService.upgradeSubscription(user.sub, dto);
+        } catch (err) {
+            this.logger.error('Error caught while creating subscription: ', err.message, err.stack);
             throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
         }
     }

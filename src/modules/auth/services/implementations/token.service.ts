@@ -6,10 +6,13 @@ import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-fa
 import { IPayload } from '@core/misc/payload.interface';
 import { ITokenService } from '@modules/auth/services/interfaces/token-service.interface';
 import {
-    Inject, Injectable, InternalServerErrorException, UnauthorizedException
+  Inject, Injectable, InternalServerErrorException, UnauthorizedException
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
+import { JsonWebTokenError, JwtService, TokenExpiredError } from '@nestjs/jwt';
+import { v4 as uuidv4 } from 'uuid'
+import { VerifyTokenDto } from '@modules/auth/dtos/login.dto';
+import { ErrorMessage } from '@core/enum/error.enum';
 
 @Injectable()
 export class TokenService implements ITokenService {
@@ -29,11 +32,19 @@ export class TokenService implements ITokenService {
     private readonly _redis: Redis,
   ) {
     this.logger = this.loggerFactory.createLogger(TokenService.name);
-    
+
     this.ACCESS_SECRET = this._configService.get<string>('JWT_ACCESS_SECRET') || 'your-access-secret';
     this.REFRESH_SECRET = this._configService.get<string>('JWT_REFRESH_SECRET') || 'your-refresh-secret';
     this.ACCESS_EXPIRES_IN = this._configService.get<string>('JWT_ACCESS_EXPIRES_IN') || '10m';
     this.REFRESH_EXPIRES_IN = this._configService.get<string>('JWT_REFRESH_EXPIRES_IN') || '7d';
+  }
+
+  private getRefreshTokenKey(userId: string): string {
+    return `user:${userId}:refresh`;
+  }
+
+  private getBlacklistTokenKey(token: string): string {
+    return `blacklist:${token}`;
   }
 
   generateAccessToken(userId: string, email: string, type: string): string {
@@ -53,7 +64,7 @@ export class TokenService implements ITokenService {
   }
 
   async generateRefreshToken(userId: string, email: string, type: string): Promise<string> {
-    const refreshPayload = { sub: userId, email, type };
+    const refreshPayload = { sub: userId, email, type, jti: uuidv4() };
     try {
       const refreshToken = this._jwtService.sign(refreshPayload, {
         secret: this.REFRESH_SECRET,
@@ -61,14 +72,22 @@ export class TokenService implements ITokenService {
       });
 
       const redisKey = this.getRefreshTokenKey(userId);
-      const ttl = this._configService.get<string>('REDIS_TTL') || 60 * 60; // 1 hour
+      await this._redis.sadd(redisKey, refreshToken);
 
-      await this._redis.set(redisKey, refreshToken, 'EX', ttl);
-
-      const verifyStorage = await this._redis.get(redisKey);
+      const verifyStorage = await this._redis.sismember(redisKey, refreshToken);
       if (!verifyStorage) {
         throw new Error('Failed to store refresh token in Redis');
       }
+
+      const ttlEnv = this._configService.get('REDIS_TTL');
+      const ttl = parseInt(ttlEnv, 10);
+
+      if (isNaN(ttl)) {
+        this.logger.warn(`Invalid REDIS_TTL value "${ttlEnv}", defaulting to 3600 seconds`);
+      }
+      const finalTtl = isNaN(ttl) ? 60 * 60 : ttl;
+
+      await this._redis.expire(redisKey, finalTtl);
 
       return refreshToken;
     } catch (err) {
@@ -83,16 +102,16 @@ export class TokenService implements ITokenService {
     });
   }
 
-  async validateRefreshToken(userId: string): Promise<IPayload | null> {
+  async validateRefreshToken(userId: string, refreshToken: string): Promise<IPayload | null> {
     try {
-      const redisKey = this.getRefreshTokenKey(userId);
-      const storedToken = await this._redis.get(redisKey);
+      const blacklistKey = this.getBlacklistTokenKey(refreshToken);
 
-      if (!storedToken) {
-        throw new UnauthorizedException('No refresh token found in Redis');
+      const hasBlacklisted = await this._redis.get(blacklistKey);
+      if (hasBlacklisted) {
+        throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
       }
 
-      const payload = await this._jwtService.verifyAsync<IPayload>(storedToken, {
+      const payload = await this._jwtService.verifyAsync<IPayload>(refreshToken, {
         secret: this.REFRESH_SECRET,
       });
 
@@ -103,17 +122,42 @@ export class TokenService implements ITokenService {
     }
   }
 
-  async invalidateTokens(userId: string): Promise<void> {
-    const redisKey = this.getRefreshTokenKey(userId);
-    await this._redis.del(redisKey);
+  async invalidateTokens(userId: string, token: string): Promise<void> {
+    const blacklistKey = this.getBlacklistTokenKey(token);
+    const refreshKey = this.getRefreshTokenKey(userId);
+    console.log(token);
+    await this._redis.srem(refreshKey, token);
+
+    const decoded: any = this._jwtService.decode(token);
+    const expiryInSec = decoded?.exp ? decoded.exp - Math.floor(Date.now() / 1000) : 60 * 60 * 24 * 7;
+
+    await this._redis.setex(blacklistKey, expiryInSec, 'blacklisted');
+  }
+
+  async verifyToken(token: string): Promise<IPayload> {
+    if (!token) {
+      throw new UnauthorizedException('No token provided');
+    }
+
+    try {
+      return await this._jwtService.verifyAsync<IPayload>(token, {
+        secret: this._configService.get('JWT_VERIFICATION_SECRET'),
+      });
+    } catch (err) {
+      if (err instanceof TokenExpiredError) {
+        throw new UnauthorizedException('Token expired');
+      }
+
+      if (err instanceof JsonWebTokenError) {
+        throw new UnauthorizedException('Invalid token');
+      }
+
+      throw new UnauthorizedException('Token verification failed');
+    }
   }
 
   decode(token: string): IPayload | null {
     return this._jwtService.decode(token);
-  }
-
-  private getRefreshTokenKey(userId: string): string {
-    return `user:${userId}:refresh`;
   }
 }
 

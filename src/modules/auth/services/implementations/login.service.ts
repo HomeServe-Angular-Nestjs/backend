@@ -111,22 +111,6 @@ export class LoginService implements ILoginService {
     }
   }
 
-  generateAccessToken(user: IUser): string {
-    if (!user.type) {
-      throw new Error('User type missing in the user.');
-    }
-
-    return this._tokenService.generateAccessToken(user.id, user.email, user.type);
-  }
-
-  async generateRefreshToken(user: IUser): Promise<string> {
-    if (!user.type) {
-      throw new Error('User type missing in the user.');
-    }
-
-    return this._tokenService.generateRefreshToken(user.id, user.email, user.type);
-  }
-
   async findOrCreateUser(user: GoogleLoginDto): Promise<IUser> {
     try {
       if (user.type === 'admin') {
@@ -223,10 +207,6 @@ export class LoginService implements ILoginService {
     await this._mailerService.sendEmail(dto.email, token, 'link');
   }
 
-  async verifyToken(dto: VerifyTokenDto): Promise<IPayload> {
-    return await this._token.verifyToken(dto.token);
-  }
-
   async changePassword(dto: ChangePasswordDto): Promise<void> {
     try {
       const repository = this._findRepo(dto.type);
@@ -243,12 +223,7 @@ export class LoginService implements ILoginService {
       throw new InternalServerErrorException('Failed to update password');
     }
   }
-
-  async invalidateRefreshToken(id: string): Promise<void> {
-    await this._tokenService.invalidateTokens(id);
-  }
-
-
+  
 }
 
 

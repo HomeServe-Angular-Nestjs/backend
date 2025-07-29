@@ -14,6 +14,7 @@ export interface ISubscription extends IEntity {
     duration: SubsDurationType;
     role: PlanRoleType;
     features: string[];
+    price: number;
 
     startTime: string;
     endDate: string | null;

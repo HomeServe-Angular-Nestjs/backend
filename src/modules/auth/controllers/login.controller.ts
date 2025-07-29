@@ -8,14 +8,14 @@ import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { prepareResponse } from '@core/misc/response.util';
 import {
-    AuthLoginDto, ChangePasswordDto, ForgotPasswordDto, VerifyTokenDto
+  AuthLoginDto, ChangePasswordDto, ForgotPasswordDto, VerifyTokenDto
 } from '@modules/auth/dtos/login.dto';
 import { GoogleAuthGuard } from '@modules/auth/guards/google-auth.guard';
 import { ILoginService } from '@modules/auth/services/interfaces/login-service.interface';
 import { ITokenService } from '@modules/auth/services/interfaces/token-service.interface';
 import {
-    Body, Controller, Get, HttpCode, Inject, InternalServerErrorException, Logger,
-    NotFoundException, Post, Put, Query, Req, Res, UnauthorizedException, UseGuards
+  Body, Controller, Get, HttpCode, Inject, InternalServerErrorException, Logger,
+  NotFoundException, Post, Put, Query, Req, Res, UnauthorizedException, UseGuards
 } from '@nestjs/common';
 
 @Controller('login')
@@ -37,20 +37,28 @@ export class LoginController {
   async validateCredentials(@Body() dto: AuthLoginDto, @Res({ passthrough: true }) response: Response,) {
     try {
       const user = await this._loginService.validateUserCredentials(dto);
-      if (dto.type) {
-        user['type'] = dto.type;
+      if (!user) {
+        throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
       }
-      const accessToken = this._loginService.generateAccessToken(user);
+
+      const accessToken = this._tokenService.generateAccessToken(user.id, user.email, dto.type);
       if (!accessToken) {
         throw new NotFoundException('Access token is missing');
       }
 
-      const refreshToken = await this._loginService.generateRefreshToken(user);
+      const refreshToken = await this._tokenService.generateRefreshToken(user.id, user.email, dto.type);
       if (!refreshToken) {
         throw new NotFoundException('Refresh token is missing');
       }
 
       response.cookie('access_token', accessToken, {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'strict',
+        path: '/',
+      });
+
+      response.cookie('refresh_token', refreshToken, {
         httpOnly: true,
         secure: false,
         sameSite: 'strict',
@@ -74,7 +82,7 @@ export class LoginController {
   @HttpCode(200)
   async verifyToken(@Body() dto: VerifyTokenDto) {
     try {
-      return await this._loginService.verifyToken(dto);
+      return await this._tokenService.verifyToken(dto.token);
     } catch (err) {
       this.logger.error(`Google Login Error: ${err}`);
       throw new UnauthorizedException(ErrorMessage.TOKEN_VERIFICATION_FAILED);
@@ -128,17 +136,24 @@ export class LoginController {
         throw new NotFoundException('User is missing in the request');
       }
 
-      const accessToken = this._loginService.generateAccessToken(user);
+      const accessToken = this._tokenService.generateAccessToken(user.id, user.email, user.type);
       if (!accessToken) {
         throw new NotFoundException('Access token is missing');
       }
 
-      const refreshToken = await this._loginService.generateRefreshToken(user);
+      const refreshToken = await this._tokenService.generateRefreshToken(user.id, user.email, user.type);
       if (!refreshToken) {
         throw new NotFoundException('Refresh token is missing');
       }
 
       res.cookie('access_token', accessToken, {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'strict',
+        path: '/',
+      });
+
+      res.cookie('refresh_token', refreshToken, {
         httpOnly: true,
         secure: false,
         sameSite: 'strict',
@@ -160,15 +175,24 @@ export class LoginController {
   @Post('logout')
   async logout(@Req() req: Request, @Res() res: Response) {
     try {
-      const token = req.cookies['access_token'];
-      if (token) {
-        const decoded = this._tokenService.decode(token);
-        if (decoded && typeof decoded === 'object' && decoded.sub) {
-          await this._loginService.invalidateRefreshToken(decoded.sub);
+      const accessToken = req.cookies['access_token'];
+      const refreshToken = req.cookies['refresh_token'];
+
+      if (accessToken) {
+        const decoded = this._tokenService.decode(accessToken);
+        if (decoded && typeof decoded === 'object' && decoded.sub && refreshToken) {
+          await this._tokenService.invalidateTokens(decoded.sub, refreshToken);
         }
       }
 
       res.clearCookie('access_token', {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'strict',
+        path: '/',
+      });
+
+      res.clearCookie('refresh_token', {
         httpOnly: true,
         secure: false,
         sameSite: 'strict',

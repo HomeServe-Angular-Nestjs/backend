@@ -120,6 +120,7 @@ export class ProviderController {
 
             }
             const updateData = JSON.parse(dto);
+            this.logger.debug(updateData);
 
             return await this._providerServices.bulkUpdateProvider(user.sub, updateData, file);
         } catch (err) {

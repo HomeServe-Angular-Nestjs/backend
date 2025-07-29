@@ -14,6 +14,7 @@ export class SubscriptionMapper implements ISubscriptionMapper {
             transactionId: doc.transactionId,
             role: doc.role,
             planId: doc.planId,
+            price: doc.price,
             duration: doc.duration,
             features: doc.features,
             startTime: doc.startTime.toString(),

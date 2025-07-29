@@ -130,7 +130,7 @@ export class ServiceFeatureService implements IServiceFeatureService {
         sort = sortMap[filter.sort] ? sortMap[filter.sort] : { createdAt: -1 }
       }
 
-      const limit = 8;
+      const limit = 6;
       const skip = (page - 1) * limit;
 
       const [offeredServices, total] = await Promise.all([
