@@ -1,7 +1,7 @@
-import { FilterQuery, Model, Types } from 'mongoose';
+import { FilterQuery, Model, PipelineStage, Types } from 'mongoose';
 
 import { PROVIDER_MODEL_NAME } from '@core/constants/model.constant';
-import { IStats } from '@core/entities/interfaces/admin.entity.interface';
+import { IReportDownloadUserData, IReportProviderData, IStats } from '@core/entities/interfaces/admin.entity.interface';
 import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
 import { IProviderRepository } from '@core/repositories/interfaces/provider-repo.interface';
 import { ProviderDocument } from '@core/schema/provider.schema';
@@ -120,5 +120,66 @@ export class ProviderRepository extends BaseRepository<ProviderDocument> impleme
     ]);
 
     return result.length > 0 ? result[0] : { new: 0, total: 0, active: 0 };
+  }
+
+  async generateProviderReport(data: Partial<IReportDownloadUserData>): Promise<IReportProviderData[]> {
+    const pipeline: PipelineStage[] = [];
+
+    const match: FilterQuery<ProviderDocument> = { isDeleted: false };
+
+    if (data.fromDate && data.toDate) {
+      match.createdAt = {
+        $gte: new Date(data.fromDate),
+        $lte: new Date(data.toDate)
+      };
+    }
+
+    if (data.status) {
+      match.isActive = data.status;
+    }
+
+    // Generating $match stage.
+    if (Object.keys(match).length > 0) {
+      pipeline.push({ $match: match });
+    }
+
+    // Generating $addFields stage.
+    pipeline.push(
+      {
+        $addFields: {
+          totalReviews: {
+            $size: { $ifNull: ["$reviews", []] }
+          },
+          totalServiceListed: {
+            $size: { $ifNull: ["$servicesOffered", []] }
+          }
+        }
+      }
+    );
+
+    // Generating $sort stage.
+    pipeline.push({ $sort: { createdAt: -1 } });
+
+    // Generating $project stage.
+    pipeline.push(
+      {
+        $project: {
+          id: '$_id',
+          email: '$email',
+          username: '$username',
+          fullname: '$fullname',
+          phone: '$phone',
+          date: '$createdAt',
+          profession: 1,
+          experience: 1,
+          isCertified: 1,
+          avgRating: 1,
+          totalServiceListed: 1,
+          totalReviews: 1
+        }
+      }
+    );
+
+    return this._providerModel.aggregate(pipeline).exec();
   }
 }

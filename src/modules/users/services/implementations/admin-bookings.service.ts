@@ -9,9 +9,13 @@ import { IResponse } from '@/core/misc/response.util';
 import { IBookingRepository } from '@/core/repositories/interfaces/bookings-repo.interface';
 import { ICustomerRepository } from '@/core/repositories/interfaces/customer-repo.interface';
 import { IProviderRepository } from '@/core/repositories/interfaces/provider-repo.interface';
+import { PDF_SERVICE } from '@core/constants/service.constant';
+import { IBookingMatrixData, IBookingReportData, IReportDownloadBookingData, ReportCategoryType } from '@core/entities/interfaces/admin.entity.interface';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
-import { GetBookingsFilter } from '@modules/users/dtos/admin-user.dto';
+import { createBookingReportTableTemplate, IBookingTableTemplate } from '@core/services/pdf/mappers/booking-report.mapper';
+import { IPdfService } from '@core/services/pdf/pdf.interface';
+import { BookingReportDownloadDto, GetBookingsFilter } from '@modules/users/dtos/admin-user.dto';
 import {
     IAdminBookingService
 } from '@modules/users/services/interfaces/admin-bookings-service.interface';
@@ -32,8 +36,52 @@ export class AdminBookingService implements IAdminBookingService {
         private readonly _customerRepository: ICustomerRepository,
         @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
         private readonly _providerRepository: IProviderRepository,
+        @Inject(PDF_SERVICE)
+        private readonly _pdfService: IPdfService,
     ) {
         this.logger = this.loggerFactory.createLogger(AdminBookingService.name)
+    }
+
+    private _computeBookingMatrix(data: IBookingReportData[]): IBookingMatrixData {
+        const initial = {
+            totalSpend: 0,
+            totalRefunded: 0,
+            pending: 0,
+            confirmed: 0,
+            cancelled: 0,
+        };
+
+        const aggregated = data.reduce((acc, doc) => {
+            const amount = parseFloat(doc.totalAmount as string);
+            acc.totalSpend += isNaN(amount) ? 0 : amount;
+
+            switch (doc.bookingStatus) {
+                case 'pending': acc.pending++; break;
+                case 'confirmed': acc.confirmed++; break;
+                case 'cancelled': acc.cancelled++; break;
+            }
+
+            if (doc.paymentStatus === 'refunded') {
+                acc.totalRefunded += isNaN(amount) ? 0 : amount;
+            }
+
+            return acc;
+        }, initial);
+
+        const totalBookings = data.length;
+        const averageSpend = totalBookings > 0
+            ? (aggregated.totalSpend / totalBookings).toFixed(2)
+            : '0.00';
+
+        return {
+            totalBookings,
+            totalSpend: aggregated.totalSpend.toFixed(2),
+            totalRefunded: aggregated.totalRefunded.toFixed(2),
+            averageSpend,
+            pending: aggregated.pending,
+            confirmed: aggregated.confirmed,
+            cancelled: aggregated.cancelled,
+        };
     }
 
     async fetchBookings(dto: GetBookingsFilter): Promise<IResponse<IPaginatedBookingsResponse>> {
@@ -145,5 +193,31 @@ export class AdminBookingService implements IAdminBookingService {
             message: 'Booking stats fetched.',
             data: bookingStats
         }
+    }
+
+    async downloadBookingReport(reportFilterData: BookingReportDownloadDto): Promise<Buffer> {
+        const { category, ...reportDownloadData }: { category: ReportCategoryType } = reportFilterData;
+        const bookingReportData = await this._bookingRepository.generateBookingReport(reportDownloadData);
+
+        const table1ColumnData = ['Booking ID', 'Customer Email', 'Provider Email', 'Phone', 'Total Amount (₹)', 'Date', 'Booking Status', 'Payment Status', 'Transaction ID'];
+        const table2ColumnData = ['Total Bookings', 'Total Spend', 'Total Refund', 'Average Spend (paid)', 'Pending', 'Confirmed', 'Cancelled'];
+
+        const bookingMatrixData = this._computeBookingMatrix(bookingReportData);
+
+        const tableData: IBookingTableTemplate[] = [
+            {
+                rows: bookingMatrixData,
+                columns: table2ColumnData,
+                type: 'single'
+            },
+            {
+                rows: bookingReportData,
+                columns: table1ColumnData,
+                type: 'normal'
+            },
+        ];
+
+        const tables = createBookingReportTableTemplate(tableData);
+        return this._pdfService.generatePdf(tables);
     }
 }

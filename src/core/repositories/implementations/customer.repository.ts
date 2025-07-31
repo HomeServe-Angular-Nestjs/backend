@@ -1,7 +1,7 @@
-import { FilterQuery, Model } from 'mongoose';
+import { FilterQuery, Model, PipelineStage } from 'mongoose';
 
 import { CUSTOMER_MODEL_NAME } from '@core/constants/model.constant';
-import { IStats } from '@core/entities/interfaces/admin.entity.interface';
+import { IReportUserData, IReportDownloadUserData, IStats } from '@core/entities/interfaces/admin.entity.interface';
 import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
 import { ICustomerRepository } from '@core/repositories/interfaces/customer-repo.interface';
 import { CustomerDocument } from '@core/schema/customer.schema';
@@ -68,6 +68,50 @@ export class CustomerRepository extends BaseRepository<CustomerDocument> impleme
     ]);
 
     return result.length > 0 ? result[0] : { new: 0, total: 0, active: 0 };
+  }
+
+  generateCustomersReport(data: Partial<IReportDownloadUserData>): Promise<IReportUserData[]> {
+    const pipeline: PipelineStage[] = [];
+
+    const match: FilterQuery<CustomerDocument> = { isDeleted: false };
+
+    if (data.fromDate && data.toDate) {
+      match.createdAt = {
+        $gte: new Date(data.fromDate),
+        $lte: new Date(data.toDate)
+      };
+    }
+
+    if (data.status) {
+      match.isActive = data.status.toLowerCase() === 'isActive';
+    }
+
+    // Generating $match stage.
+    if (Object.keys(match).length > 0) {
+      pipeline.push({ $match: match });
+    }
+
+
+    // Generating $sort stage.
+    pipeline.push({ $sort: { createdAt: -1 } });
+
+
+    // Generating $project stage.
+    pipeline.push(
+      {
+        $project: {
+          id: '$_id',
+          email: '$email',
+          username: '$username',
+          fullname: '$fullname',
+          phone: '$phone',
+          status: '$isActive',
+          date: '$createdAt'
+        }
+      }
+    );
+
+    return this._customerModel.aggregate(pipeline).exec();
   }
 }
 

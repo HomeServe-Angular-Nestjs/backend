@@ -5,6 +5,7 @@ import {
 
 import { BookingSearchBy, BookingStatus, PaymentStatus } from '@core/enum/bookings.enum';
 import { RatingSearchBy, RatingsSortBy } from '@core/enum/ratings.enum';
+import { ReportCategoryType } from '@core/entities/interfaces/admin.entity.interface';
 
 export type FilterStatusType = true | false | 'all';
 export type RoleType = 'customer' | 'provider';
@@ -69,10 +70,10 @@ export class RemoveUserDto {
 export class GetBookingsFilter {
     @Transform(({ value }) => {
         const num = Number(value);
-        console.log(num)
-        if (isNaN(num)) return undefined;
+        if (isNaN(num)) return 1;
         return num;
     })
+    @IsOptional()
     page: number;
 
     @IsOptional()
@@ -94,8 +95,14 @@ export class GetBookingsFilter {
 }
 
 export class FilterWithPaginationDto {
-    @Transform(({ value }) => isNaN(value) || !value ? 1 : value)
-    page: number;
+    @Transform(({ value }) => {
+        const num = Number(value);
+        if (isNaN(num)) return 1;
+        return num;
+    })
+    @IsNumber()
+    @IsOptional()
+    page?: number;
 
     @IsOptional()
     @Transform(({ value }) => {
@@ -131,4 +138,45 @@ export class UpdateReviewStatus {
     @IsNotEmpty()
     @IsBoolean()
     status: boolean;
+}
+
+class ReportDownloadDto {
+    @IsNotEmpty()
+    @IsString()
+    category: ReportCategoryType;
+
+    @IsOptional()
+    fromDate: string;
+
+    @IsOptional()
+    toDate: string;
+}
+
+export class BookingReportDownloadDto extends ReportDownloadDto {
+    @IsOptional()
+    userId: string;
+
+    @IsOptional()
+    status: string;
+}
+
+export class UserReportDownloadDto extends ReportDownloadDto {
+    @IsOptional()
+    @IsString()
+    role: 'customer' | 'provider';
+
+
+    @IsOptional()
+    @IsIn(['active', 'blocked'])
+    status: 'active' | 'blocked';
+}
+
+export class TransactionReportDownloadDto extends ReportDownloadDto {
+    @IsOptional()
+    @IsString()
+    method: string;
+
+    @IsOptional()
+    @IsString()
+    transactionType: string;
 }

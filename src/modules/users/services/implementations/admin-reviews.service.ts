@@ -29,7 +29,7 @@ export class AdminReviewService implements IAdminReviewService {
 
 
     async getReviewData(dto: FilterWithPaginationDto): Promise<IResponse<PaginatedReviewResponse>> {
-        const page = dto.page || 1;
+        const page = 1;
         const limit = 10;
         const skip = (page - 1) * limit;
 

@@ -12,10 +12,29 @@ import { AdminUserController } from './controllers/user.controller';
 import { adminRepositoryProviders } from './providers/repository.provider';
 import { userServiceProvider } from './providers/service.provider';
 import { adminUtilityProviders } from './providers/utility.provider';
+import { PdfModule } from '@core/services/pdf/pdf.module';
+import { AdminTransactionController } from '@modules/users/controllers/transaction.controller';
 
 @Module({
-  imports: [CloudinaryModule.registerAsync(), JwtConfigModule, HttpModule, SharedModule],
-  controllers: [AdminUserController, AdminApprovalsController, AdminBookingController, ReviewController, AdminDashboardController],
-  providers: [...userServiceProvider, ...adminRepositoryProviders, ...adminUtilityProviders],
+  imports: [
+    CloudinaryModule.registerAsync(),
+    JwtConfigModule,
+    HttpModule,
+    SharedModule,
+    PdfModule
+  ],
+  controllers: [
+    AdminUserController,
+    AdminApprovalsController,
+    AdminBookingController,
+    ReviewController,
+    AdminDashboardController,
+    AdminTransactionController
+  ],
+  providers: [
+    ...userServiceProvider,
+    ...adminRepositoryProviders,
+    ...adminUtilityProviders
+  ],
 })
 export class AdminModule { }

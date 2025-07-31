@@ -3,8 +3,8 @@ import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
 export type UserType = 'customer' | 'provider' | 'admin';
 
 export class AuthLoginDto {
-  @IsEmail()
   @IsNotEmpty()
+  @IsEmail()
   email: string;
 
   @MinLength(8)

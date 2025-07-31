@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Booking Report</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            color: #000;
+        }
+
+        h1 {
+            font-size: 22px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 20px;
+            text-decoration: underline;
+        }
+
+        p {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        span {
+            font-weight: normal;
+            font-size: 13px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            margin: 0 auto;
+        }
+
+        thead {
+            background-color: #eaeaea;
+        }
+
+        th,
+        td {
+            border: 1px solid #333;
+            text-align: left;
+            vertical-align: top;
+            word-wrap: break-word;
+            padding: 8px 4px;
+            text-align: center;
+        }
+
+        th {
+            font-size: 13px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>{{heading}}</h1>
+    <p>Date: <span>{{date}}</span></p>
+
+    {{tables}}
+</body>
+
+</html>

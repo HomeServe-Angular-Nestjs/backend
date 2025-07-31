@@ -4,6 +4,7 @@ export const ADMIN_APPROVAL_SERVICE_NAME = 'IAdminApprovalService';
 export const ADMIN_BOOKINGS_SERVICE_NAME = 'IAdminBookingService';
 export const ADMIN_REVIEWS_SERVICE_NAME = 'IAdminReviewService';
 export const ADMIN_DASHBOARD_OVERVIEW_SERVICE_NAME = 'IAdminDashboardOverviewService';
+export const ADMIN_TRANSACTION_SERVICE_NAME = 'IAdminTransactionService';
 
 export const OTP_SERVICE_INTERFACE_NAME = 'IOtpService';
 export const SIGNUP_SERVICE_INTERFACE_NAME = 'ISignupService';
@@ -27,3 +28,5 @@ export const CHAT_SOCKET_SERVICE_NAME = 'IChatSocketService';
 export const USER_SOCKET_STORE_SERVICE_NAME = 'IUserSocketStoreService';
 
 export const MESSAGE_SERVICE_NAME = 'IMessageService';
+
+export const PDF_SERVICE = 'IPdfService';
