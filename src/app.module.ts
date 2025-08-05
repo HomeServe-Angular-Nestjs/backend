@@ -11,7 +11,6 @@ import { CustomerModule } from '@modules/customer/customer.module';
 import { PaymentModule } from '@modules/payment/payment.module';
 import { PlanModule } from '@modules/plans/plans.module';
 import { ProviderModule } from '@modules/providers/provider.module';
-import { SchedulesModule } from '@modules/schedules/schedule.module';
 import { SubscriptionModules } from '@modules/subscriptions/subscription.module';
 import { WebSocketModule } from '@modules/websockets/websocket.module';
 import { CacheModule } from '@nestjs/cache-manager';
@@ -20,7 +19,7 @@ import { ConfigModule } from '@nestjs/config';
 
 import { SeedsModule } from '../seed/seed.module';
 import { AdminModule } from './modules/users/admin.module';
-import { SharedModule } from '@shared/shared.module';
+import { SlotModule } from '@modules/slots/slots.module';
 
 @Module({
   imports: [
@@ -45,12 +44,11 @@ import { SharedModule } from '@shared/shared.module';
     ProviderModule,
     BookingsModule,
     CustomerModule,
-    SchedulesModule,
     PaymentModule,
     WebSocketModule,
     PlanModule,
     SubscriptionModules,
-    // SharedModule
+    SlotModule
   ],
   controllers: [AppController],
   providers: [
@@ -60,6 +58,6 @@ import { SharedModule } from '@shared/shared.module';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(AuthMiddleware).forRoutes('*');
+      consumer.apply(AuthMiddleware).forRoutes('*');
   }
 }

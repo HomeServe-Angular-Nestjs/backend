@@ -21,7 +21,8 @@ export const RAZORPAYMENT_SERVICE_NAME = 'IRazorPaymentService';
 export const SCHEDULES_SERVICE_NAME = 'ISchedulesService';
 export const PLAN_SERVICE_NAME = 'IPlanService';
 export const SUBSCRIPTION_SERVICE_NAME = 'ISubscriptionService';
-export const UPLOADS_SERViCE_NAME = 'IUploadsService';
+export const UPLOADS_SERVICE_NAME = 'IUploadsService';
+export const SLOT_RULE_SERVICE = 'ISlotRuleService';
 
 export const AUTH_SOCKET_SERVICE_NAME = 'IAuthSocketService';
 export const CHAT_SOCKET_SERVICE_NAME = 'IChatSocketService';

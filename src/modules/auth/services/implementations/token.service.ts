@@ -125,7 +125,6 @@ export class TokenService implements ITokenService {
   async invalidateTokens(userId: string, token: string): Promise<void> {
     const blacklistKey = this.getBlacklistTokenKey(token);
     const refreshKey = this.getRefreshTokenKey(userId);
-    console.log(token);
     await this._redis.srem(refreshKey, token);
 
     const decoded: any = this._jwtService.decode(token);

@@ -48,7 +48,6 @@ export class BaseUserDocument extends Document {
 
   @Prop({
     type: LocationSchema,
-    required: true,
   })
   location: {
     type: 'Point';

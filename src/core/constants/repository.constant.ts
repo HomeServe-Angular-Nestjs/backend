@@ -10,3 +10,4 @@ export const CHAT_REPOSITORY_INTERFACE_NAME = 'IChatRepository';
 export const MESSAGE_REPOSITORY_INTERFACE_NAME = 'IMessageRepository';
 export const PLAN_REPOSITORY_INTERFACE_NAME = 'IPlanRepository';
 export const SUBSCRIPTION_REPOSITORY_NAME = 'ISubscriptionRepository';
+export const SLOT_RULE_REPOSITORY_NAME = 'ISlotRuleRepository';

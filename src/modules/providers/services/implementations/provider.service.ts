@@ -345,7 +345,7 @@ export class ProviderServices implements IProviderServices {
       throw new NotFoundException(ErrorMessage.PROVIDER_NOT_FOUND_WITH_ID, providerId);
     }
 
-    const signedUrl = this._uploadsUtility.getSignedImageUrl(result.public_id, 5);
+    const signedUrl = this._uploadsUtility.getSignedImageUrl(result.public_id, 300);
 
     return {
       success: true,

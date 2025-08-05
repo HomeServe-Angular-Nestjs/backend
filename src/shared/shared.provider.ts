@@ -1,4 +1,4 @@
-import { ADMIN_MAPPER, CHAT_MAPPER, CUSTOMER_MAPPER, MESSAGE_MAPPER, PLAN_MAPPER, PROVIDER_MAPPER, SCHEDULES_MAPPER, SERVICE_OFFERED_MAPPER, SUBSCRIPTION_MAPPER, TRANSACTION_MAPPER } from '@core/constants/mappers.constant';
+import { ADMIN_MAPPER, CHAT_MAPPER, CUSTOMER_MAPPER, MESSAGE_MAPPER, PLAN_MAPPER, PROVIDER_MAPPER, SCHEDULES_MAPPER, SERVICE_OFFERED_MAPPER, SLOT_RULE_MAPPER, SUBSCRIPTION_MAPPER, TRANSACTION_MAPPER } from '@core/constants/mappers.constant';
 import { AdminMapper } from '@core/dto-mapper/implementation/admin.mapper';
 import { ChatMapper } from '@core/dto-mapper/implementation/chat.mapper';
 import { CustomerMapper } from '@core/dto-mapper/implementation/customer.mapper';
@@ -7,6 +7,7 @@ import { PlanMapper } from '@core/dto-mapper/implementation/plan.mapper';
 import { ProviderMapper } from '@core/dto-mapper/implementation/provider.mapper';
 import { SchedulesMapper } from '@core/dto-mapper/implementation/schedules.mapper';
 import { ServiceOfferedMapper } from '@core/dto-mapper/implementation/serviceOffered.mapper';
+import { SlotRuleMapper } from '@core/dto-mapper/implementation/slot-rule.mapper';
 import { SubscriptionMapper } from '@core/dto-mapper/implementation/subscription.mapper';
 import { TransactionMapper } from '@core/dto-mapper/implementation/transaction.mapper';
 import { CustomLogger } from '@core/logger/implementation/custom-logger';
@@ -63,5 +64,9 @@ export const sharedProviders: Provider[] = [
     {
         provide: SERVICE_OFFERED_MAPPER,
         useClass: ServiceOfferedMapper
+    },
+    {
+        provide: SLOT_RULE_MAPPER,
+        useClass: SlotRuleMapper
     }
-]
+];

@@ -1,9 +1,9 @@
 import { Connection, ConnectionStates } from 'mongoose';
 
 import {
-    ADMIN_MODEL_NAME, BOOKINGS_MODEL_NAME, CHAT_MODEL_NAME, CUSTOMER_MODEL_NAME, MESSAGE_MODEL_NAME,
-    OTP_MODEL_NAME, PLAN_MODEL_NAME, PROVIDER_MODEL_NAME, SCHEDULES_MODEL_NAME,
-    SERVICE_OFFERED_MODEL_NAME, SUBSCRIPTION_MODEL_NAME, TRANSACTION_MODEL_NAME
+  ADMIN_MODEL_NAME, BOOKINGS_MODEL_NAME, CHAT_MODEL_NAME, CUSTOMER_MODEL_NAME, MESSAGE_MODEL_NAME,
+  OTP_MODEL_NAME, PLAN_MODEL_NAME, PROVIDER_MODEL_NAME, SCHEDULES_MODEL_NAME,
+  SERVICE_OFFERED_MODEL_NAME, SLOT_RULE_MODEL_NAME, SUBSCRIPTION_MODEL_NAME, TRANSACTION_MODEL_NAME
 } from '@core/constants/model.constant';
 import { AdminSchema } from '@core/schema/admin.schema';
 import { BookingSchema } from '@core/schema/bookings.schema';
@@ -20,6 +20,7 @@ import { TransactionSchema } from '@core/schema/transaction.schema';
 import { Global, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
+import { SlotRuleSchema } from '@core/schema/slot-rule.schema';
 
 @Global()
 @Module({
@@ -65,6 +66,7 @@ import { MongooseModule } from '@nestjs/mongoose';
       { name: MESSAGE_MODEL_NAME, schema: MessageSchema },
       { name: PLAN_MODEL_NAME, schema: PlanSchema },
       { name: SUBSCRIPTION_MODEL_NAME, schema: SubscriptionSchema },
+      { name: SLOT_RULE_MODEL_NAME, schema: SlotRuleSchema }
     ]),
   ],
   exports: [MongooseModule],

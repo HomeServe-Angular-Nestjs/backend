@@ -10,3 +10,4 @@ export const CHAT_MODEL_NAME = 'Chat';
 export const MESSAGE_MODEL_NAME = 'Message';
 export const PLAN_MODEL_NAME = 'Plan';
 export const SUBSCRIPTION_MODEL_NAME = 'Subscription';
+export const SLOT_RULE_MODEL_NAME = 'SlotRule'

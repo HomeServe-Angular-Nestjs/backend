@@ -50,7 +50,6 @@ export class AuthMiddleware implements NestMiddleware {
             this.logger.warn(`Access token invalid or missing. Trying refresh flow... Error: ${accessError}`);
 
             let userId: string | undefined;
-            let email: string | undefined;
             let userType: string | undefined;
 
             try {
@@ -58,7 +57,6 @@ export class AuthMiddleware implements NestMiddleware {
                     const decoded = this.tokenService.decode(accessToken);
                     if (decoded && typeof decoded === 'object') {
                         userId = decoded.sub;
-                        email = decoded.email;
                         userType = decoded.type
                     }
                 }
@@ -107,6 +105,7 @@ export class AuthMiddleware implements NestMiddleware {
                         path: '/',
                     });
                 }
+
                 this.logger.error('Refresh token flow failed:', refreshError);
                 throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
             }

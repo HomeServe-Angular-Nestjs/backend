@@ -13,7 +13,6 @@ import { IProviderMapper } from '@core/dto-mapper/interface/provider.mapper';
 import { IUser } from '@core/entities/interfaces/user.entity.interface';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
-import { IPayload } from '@core/misc/payload.interface';
 import { UserReposType } from '@core/misc/repo.type';
 import { IAdminRepository } from '@core/repositories/interfaces/admin-repo.interface';
 import { ICustomerRepository } from '@core/repositories/interfaces/customer-repo.interface';

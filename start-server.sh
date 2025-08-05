@@ -1,6 +1,6 @@
 #!/bin/bash
 
-MODE=${1: -dev}
+MODE=${1:-dev}
 
 if [ "$MODE" == "dev" ]; then
     echo "👨‍💻 Starting in development mode..."
