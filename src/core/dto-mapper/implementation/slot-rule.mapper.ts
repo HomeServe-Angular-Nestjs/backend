@@ -3,11 +3,13 @@ import { SlotRule } from "@core/entities/implementation/slot-rule.entity";
 import { ISlotRule } from "@core/entities/interfaces/slot-rule.entity.interface";
 import { SlotRuleDocument } from "@core/schema/slot-rule.schema";
 import { Injectable } from "@nestjs/common";
+import { Types } from "mongoose";
 
 @Injectable()
 export class SlotRuleMapper implements ISlotRuleMapper {
     toEntity(doc: SlotRuleDocument): ISlotRule {
         return new SlotRule({
+            id: (doc._id as Types.ObjectId).toString(),
             name: doc.name,
             description: doc.description,
             startDate: new Date(doc.startDate),

@@ -1,12 +1,13 @@
 import { SLOT_RULE_MAPPER } from "@core/constants/mappers.constant";
 import { SLOT_RULE_REPOSITORY_NAME } from "@core/constants/repository.constant";
 import { ISlotRuleMapper } from "@core/dto-mapper/interface/slot-rule.mapper.interface";
-import { ISlotRule } from "@core/entities/interfaces/slot-rule.entity.interface";
+import { ISlotRule, ISlotRulePaginatedResponse } from "@core/entities/interfaces/slot-rule.entity.interface";
+import { ErrorMessage } from "@core/enum/error.enum";
 import { IResponse } from "@core/misc/response.util";
 import { ISlotRuleRepository } from "@core/repositories/interfaces/slot-rule-repo.interface";
 import { CreateRuleDto } from "@modules/slots/dtos/slot.rule.dto";
 import { ISlotRuleService } from "@modules/slots/services/interfaces/slot-rule-service.interface";
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
 import { Types } from "mongoose";
 
 @Injectable()
@@ -50,15 +51,55 @@ export class SlotRuleService implements ISlotRuleService {
         }
     }
 
-    async fetchRules(providerId: string): Promise<IResponse<ISlotRule[]>> {
-        const ruleDocuments = await this._slotRuleRepository.findRules(providerId);
-        console.log(ruleDocuments);
+    async fetchRules(providerId: string, page: number = 1): Promise<IResponse<ISlotRulePaginatedResponse>> {
+        const limit = 8;
+        const skip = (page - 1) * limit;
+        const total = await this._slotRuleRepository.count();
+
+        const ruleDocuments = await this._slotRuleRepository.findRules(providerId, skip, limit);
         const rules = (ruleDocuments ?? []).map(rule => this._slotRuleMapper.toEntity(rule));
 
         return {
             success: true,
             message: 'Slot rules fetched successfully.',
-            data: rules
+            data: {
+                rules,
+                pagination: {
+                    limit,
+                    page,
+                    total,
+                }
+            }
+        }
+    }
+
+    async updateStatus(providerId: string, ruleId: string, status: boolean): Promise<IResponse<ISlotRule>> {
+        const updatedRule = await this._slotRuleRepository.updateRuleStatus(providerId, ruleId, !status);
+
+        if (!updatedRule) {
+            throw new NotFoundException(ErrorMessage.DOCUMENT_NOT_FOUND);
+        }
+
+        return {
+            success: true,
+            message: 'Rule updated successfully.',
+            data: this._slotRuleMapper.toEntity(updatedRule)
+        }
+    }
+
+    async removeRule(providerId: string, ruleId: string): Promise<IResponse> {
+        const result = await this._slotRuleRepository.deleteOne({
+            _id: ruleId,
+            providerId: new Types.ObjectId(providerId)
+        });
+
+        if (result.deletedCount == 0) {
+            throw new InternalServerErrorException('Failed to remove rule.');
+        }
+
+        return {
+            success: true,
+            message: 'Successfully removed.'
         }
     }
 }

@@ -1,5 +1,6 @@
 import { WeekType } from "@core/entities/interfaces/slot-rule.entity.interface";
 import { WeekEnum } from "@core/enum/slot-rule.enum";
+import { Transform } from "class-transformer";
 import { IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
 
 export class CreateRuleDto {
@@ -51,4 +52,20 @@ export class CreateRuleDto {
 
     @IsString({ each: true })
     excludeDates: string[];
+}
+
+export class PageDto {
+    @Transform(({ value }) => Number(value))
+    @IsNumber()
+    page: number;
+}
+
+export class ChangeStatusDto {
+    @IsNotEmpty()
+    @IsBoolean()
+    status: boolean;
+
+    @IsNotEmpty()
+    @IsString()
+    ruleId: string;
 }

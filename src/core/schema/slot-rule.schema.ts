@@ -4,7 +4,6 @@ import { Document, Types } from "mongoose";
 
 @Schema({ timestamps: true })
 export class SlotRuleDocument extends Document {
-
     @Prop({
         type: Types.ObjectId,
         required: true
