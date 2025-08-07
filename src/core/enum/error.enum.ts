@@ -20,6 +20,12 @@ export enum ErrorMessage {
     FILE_UPLOAD_FAILED = 'File upload failed',
     INVALID_CREDENTIALS = 'Invalid email or password',
 
+
+    // Type Error
+    MUST_BE_STRING = 'must be a string',
+    SHOULD_NOT_BE_EMPTY = 'should not be empty',
+
+
     // Forbidden
     FORBIDDEN_ACTION = 'You are not allowed to perform this action',
 

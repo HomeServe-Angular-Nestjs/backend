@@ -7,3 +7,10 @@ export enum WeekEnum {
     SAT = 'Sat',
     SUN = 'Sun',
 }
+
+export enum RuleSortEnum {
+    LATEST = 'latest',
+    OLDEST = 'oldest',
+    HIGH_PRIORITY = 'high_priority',
+    LOW_PRIORITY = 'low_priority',
+}

@@ -1,7 +1,7 @@
 import { WeekType } from "@core/entities/interfaces/slot-rule.entity.interface";
-import { WeekEnum } from "@core/enum/slot-rule.enum";
 import { Transform } from "class-transformer";
 import { IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
+import { PartialType } from '@nestjs/mapped-types'
 
 export class CreateRuleDto {
     @IsNotEmpty()
@@ -54,18 +54,44 @@ export class CreateRuleDto {
     excludeDates: string[];
 }
 
+export class RuleIdDto {
+    @IsNotEmpty()
+    @IsString()
+    ruleId: string;
+}
+
 export class PageDto {
     @Transform(({ value }) => Number(value))
     @IsNumber()
     page: number;
 }
 
-export class ChangeStatusDto {
+export class RuleFilterDto extends PageDto {
+    @IsOptional()
+    @IsString()
+    search?: string;
+
+    @IsOptional()
+    @IsString()
+    startDate?: string;
+
+    @IsOptional()
+    @IsString()
+    endDate?: string;
+
+    @IsOptional()
+    @IsString()
+    ruleStatus?: String;
+
+    @IsOptional()
+    @IsString()
+    sort?: string;
+}
+
+export class ChangeStatusDto extends RuleIdDto {
     @IsNotEmpty()
     @IsBoolean()
     status: boolean;
-
-    @IsNotEmpty()
-    @IsString()
-    ruleId: string;
 }
+
+export class EditRuleDto extends PartialType(CreateRuleDto) { }

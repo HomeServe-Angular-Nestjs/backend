@@ -2,9 +2,10 @@ import { SLOT_RULE_SERVICE } from "@core/constants/service.constant";
 import { ErrorMessage } from "@core/enum/error.enum";
 import { IPayload } from "@core/misc/payload.interface";
 import { IResponse } from "@core/misc/response.util";
-import { ChangeStatusDto, CreateRuleDto, PageDto } from "@modules/slots/dtos/slot.rule.dto";
+import { isValidIdPipe } from "@core/pipes/is-valid-id.pipe";
+import { ChangeStatusDto, CreateRuleDto, EditRuleDto, RuleFilterDto } from "@modules/slots/dtos/slot.rule.dto";
 import { ISlotRuleService } from "@modules/slots/services/interfaces/slot-rule-service.interface";
-import { BadRequestException, Body, Controller, Delete, Get, Inject, Param, Patch, Post, Query, Req, } from "@nestjs/common";
+import { BadRequestException, Body, Controller, Delete, Get, Inject, Param, Patch, Post, Put, Query, Req, } from "@nestjs/common";
 import { Request } from "express";
 
 @Controller('rule')
@@ -14,16 +15,22 @@ export class SlotRuleController {
         private readonly _slotRuleService: ISlotRuleService
     ) { }
 
-    @Post()
+    @Post('')
     async createSlotRule(@Req() req: Request, @Body() dto: CreateRuleDto) {
         const user = req.user as IPayload;
         return await this._slotRuleService.createRule(user.sub, dto);
     }
 
-    @Get()
-    async fetchRules(@Req() req: Request, @Query() { page }: PageDto) {
+    @Put(':ruleId')
+    async editSlotRule(@Req() req: Request, @Param('ruleId', new isValidIdPipe()) ruleId: string, @Body() dto: EditRuleDto) {
         const user = req.user as IPayload;
-        return await this._slotRuleService.fetchRules(user.sub, page);
+        return await this._slotRuleService.editRule(user.sub, ruleId, dto);
+    }
+
+    @Get('')
+    async fetchRules(@Req() req: Request, @Query() dto: RuleFilterDto) {
+        const user = req.user as IPayload;
+        return await this._slotRuleService.fetchRules(user.sub, dto);
     }
 
     @Patch('status')

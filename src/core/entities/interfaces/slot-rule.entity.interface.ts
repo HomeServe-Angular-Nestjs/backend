@@ -1,10 +1,10 @@
+import { IEntity } from "@core/entities/base/interfaces/base-entity.entity.interface";
 import { IPagination } from "@core/entities/interfaces/booking.entity.interface";
-import { WeekEnum } from "@core/enum/slot-rule.enum";
+import { RuleSortEnum, WeekEnum } from "@core/enum/slot-rule.enum";
 
 export type WeekType = `${WeekEnum}`;
 
-export interface ISlotRule {
-    id: string;
+export interface ISlotRule extends IEntity {
     name: string;
     description: string;
     startDate: Date;
@@ -23,4 +23,12 @@ export interface ISlotRule {
 export interface ISlotRulePaginatedResponse {
     rules: ISlotRule[];
     pagination: IPagination;
+}
+
+export interface IRuleFilter {
+    search?: string;
+    startDate?: string;
+    endDate?: string;
+    ruleStatus?: String;
+    sort?: RuleSortEnum;
 }

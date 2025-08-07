@@ -1,26 +1,31 @@
 import { SLOT_RULE_MAPPER } from "@core/constants/mappers.constant";
 import { SLOT_RULE_REPOSITORY_NAME } from "@core/constants/repository.constant";
 import { ISlotRuleMapper } from "@core/dto-mapper/interface/slot-rule.mapper.interface";
-import { ISlotRule, ISlotRulePaginatedResponse } from "@core/entities/interfaces/slot-rule.entity.interface";
+import { IRuleFilter, ISlotRule, ISlotRulePaginatedResponse } from "@core/entities/interfaces/slot-rule.entity.interface";
 import { ErrorMessage } from "@core/enum/error.enum";
+import { ICustomLogger } from "@core/logger/interface/custom-logger.interface";
+import { ILoggerFactory, LOGGER_FACTORY } from "@core/logger/interface/logger-factory.interface";
 import { IResponse } from "@core/misc/response.util";
 import { ISlotRuleRepository } from "@core/repositories/interfaces/slot-rule-repo.interface";
-import { CreateRuleDto } from "@modules/slots/dtos/slot.rule.dto";
+import { CreateRuleDto, EditRuleDto, RuleFilterDto, RuleIdDto } from "@modules/slots/dtos/slot.rule.dto";
 import { ISlotRuleService } from "@modules/slots/services/interfaces/slot-rule-service.interface";
-import { Inject, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
+import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { Types } from "mongoose";
 
 @Injectable()
 export class SlotRuleService implements ISlotRuleService {
+    private readonly logger: ICustomLogger;
 
     constructor(
+        @Inject(LOGGER_FACTORY)
+        private readonly _loggerFactory: ILoggerFactory,
         @Inject(SLOT_RULE_REPOSITORY_NAME)
         private readonly _slotRuleRepository: ISlotRuleRepository,
         @Inject(SLOT_RULE_MAPPER)
         private readonly _slotRuleMapper: ISlotRuleMapper,
     ) { }
 
-    async createRule(providerId: string, dto: CreateRuleDto): Promise<IResponse> {
+    async createRule(providerId: string, dto: CreateRuleDto): Promise<IResponse<ISlotRule>> {
 
         const newSlotRule = await this._slotRuleRepository.create({
             providerId: new Types.ObjectId(providerId),
@@ -51,12 +56,18 @@ export class SlotRuleService implements ISlotRuleService {
         }
     }
 
-    async fetchRules(providerId: string, page: number = 1): Promise<IResponse<ISlotRulePaginatedResponse>> {
+    async fetchRules(providerId: string, filter: RuleFilterDto): Promise<IResponse<ISlotRulePaginatedResponse>> {
+        const page = filter?.page || 0;
         const limit = 8;
         const skip = (page - 1) * limit;
         const total = await this._slotRuleRepository.count();
 
-        const ruleDocuments = await this._slotRuleRepository.findRules(providerId, skip, limit);
+        const ruleDocuments = await this._slotRuleRepository.findRules(
+            providerId,
+            filter as IRuleFilter,
+            skip,
+            limit
+        );
         const rules = (ruleDocuments ?? []).map(rule => this._slotRuleMapper.toEntity(rule));
 
         return {
@@ -73,10 +84,30 @@ export class SlotRuleService implements ISlotRuleService {
         }
     }
 
+    async editRule(providerId: string, ruleId: string, updateData: EditRuleDto): Promise<IResponse<ISlotRule>> {
+        const updatedRule = await this._slotRuleRepository.findRuleAndUpdate(
+            providerId,
+            ruleId.toString(),
+            updateData as Partial<ISlotRule>
+        );
+
+        if (!updatedRule) {
+            this.logger.error(`Rule document of id ${ruleId} was not found.`);
+            throw new NotFoundException(ErrorMessage.DOCUMENT_NOT_FOUND);
+        }
+
+        return {
+            success: true,
+            message: 'Rule successfully updated.',
+            data: this._slotRuleMapper.toEntity(updatedRule)
+        }
+    }
+
     async updateStatus(providerId: string, ruleId: string, status: boolean): Promise<IResponse<ISlotRule>> {
         const updatedRule = await this._slotRuleRepository.updateRuleStatus(providerId, ruleId, !status);
 
         if (!updatedRule) {
+            this.logger.error(`Rule document of id ${ruleId} was not found.`);
             throw new NotFoundException(ErrorMessage.DOCUMENT_NOT_FOUND);
         }
 
@@ -94,7 +125,8 @@ export class SlotRuleService implements ISlotRuleService {
         });
 
         if (result.deletedCount == 0) {
-            throw new InternalServerErrorException('Failed to remove rule.');
+            this.logger.error(`Rule document of id ${ruleId} was not found.`);
+            throw new NotFoundException(ErrorMessage.DOCUMENT_NOT_FOUND);
         }
 
         return {
