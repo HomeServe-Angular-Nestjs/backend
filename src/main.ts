@@ -7,14 +7,12 @@ import { NestFactory } from '@nestjs/core';
 import { SeedCommand } from '../seed/commands/seed.command';
 import { SeedsModule } from '../seed/seed.module';
 import { AppModule } from './app.module';
-import {
-    CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME
-} from './core/constants/repository.constant';
-import { FRONTEND_URL } from './core/environments/environments';
-import { ILoggerFactory, LOGGER_FACTORY } from './core/logger/interface/logger-factory.interface';
-import { ICustomerRepository } from './core/repositories/interfaces/customer-repo.interface';
-import { IProviderRepository } from './core/repositories/interfaces/provider-repo.interface';
-import { BlockGuard } from './modules/auth/guards/block.guard';
+import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME } from '@core/constants/repository.constant';
+import { FRONTEND_URL } from '@core/environments/environments';
+import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
+import { ICustomerRepository } from '@core/repositories/interfaces/customer-repo.interface';
+import { IProviderRepository } from '@core/repositories/interfaces/provider-repo.interface';
+import { BlockGuard } from '@modules/auth/guards/block.guard';
 
 async function bootstrap() {
   if (process.argv.includes('seed:admin')) {

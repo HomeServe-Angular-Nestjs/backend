@@ -95,3 +95,9 @@ export class ChangeStatusDto extends RuleIdDto {
 }
 
 export class EditRuleDto extends PartialType(CreateRuleDto) { }
+
+export class DateDto {
+    @IsNotEmpty()
+    @IsString()
+    date: string;
+}

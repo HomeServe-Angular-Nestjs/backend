@@ -1,8 +1,9 @@
 import { SLOT_RULE_MAPPER } from "@core/constants/mappers.constant";
 import { SLOT_RULE_REPOSITORY_NAME } from "@core/constants/repository.constant";
 import { ISlotRuleMapper } from "@core/dto-mapper/interface/slot-rule.mapper.interface";
-import { IRuleFilter, ISlotRule, ISlotRulePaginatedResponse } from "@core/entities/interfaces/slot-rule.entity.interface";
+import { IAvailableSlot, IRuleFilter, ISlotGroup, ISlotResponse, ISlotRule, ISlotRulePaginatedResponse, WeekType } from "@core/entities/interfaces/slot-rule.entity.interface";
 import { ErrorMessage } from "@core/enum/error.enum";
+import { RuleSortEnum, WeekEnum } from "@core/enum/slot-rule.enum";
 import { ICustomLogger } from "@core/logger/interface/custom-logger.interface";
 import { ILoggerFactory, LOGGER_FACTORY } from "@core/logger/interface/logger-factory.interface";
 import { IResponse } from "@core/misc/response.util";
@@ -23,7 +24,100 @@ export class SlotRuleService implements ISlotRuleService {
         private readonly _slotRuleRepository: ISlotRuleRepository,
         @Inject(SLOT_RULE_MAPPER)
         private readonly _slotRuleMapper: ISlotRuleMapper,
-    ) { }
+    ) {
+        this.logger = this._loggerFactory.createLogger(SlotRuleService.name);
+    }
+
+    private _isValidSelectedDate(normalizedDate: Date, selectedDay: WeekType, rule: ISlotRule): boolean {
+        const ruleStart = new Date(rule.startDate);
+        const ruleEnd = new Date(rule.endDate);
+
+        // Checking if selected date is within the rule's active date range
+        if (normalizedDate < new Date(ruleStart.toDateString()) || normalizedDate > new Date(ruleEnd.toDateString())) {
+            return false;
+        }
+
+        // Checking if selectedDay is in rule.daysOfWeek
+        if (!rule.daysOfWeek.includes(selectedDay)) {
+            return false;
+        }
+
+        // Check if selected date is in excludeDates
+        const isExcluded = rule.excludeDates.some((excluded: Date) =>
+            new Date(excluded).toDateString() === normalizedDate.toDateString()
+        );
+
+        if (isExcluded) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private _generateSlots(rule: ISlotRule) {
+        const addMinutes = (date: Date, duration: number) =>
+            new Date(date.getTime() + duration * 60000);
+
+        const formatTime = (date: Date) =>
+            date.toTimeString().slice(0, 5);
+
+        const startTime = this._parseTime(rule.startTime);
+        const endTime = this._parseTime(rule.endTime);
+
+        const slots: IAvailableSlot[] = [];
+
+        let currentStart = new Date(startTime);
+
+        while (true) {
+            const currentEnd = addMinutes(currentStart, rule.slotDuration);
+            if (currentEnd > endTime) break;
+            slots.push({
+                from: formatTime(currentStart),
+                to: formatTime(currentEnd)
+            });
+
+            currentStart = addMinutes(currentEnd, rule.breakDuration);
+        }
+
+        return slots;
+    }
+
+    private _getFinalAvailableSlots(slotGroups: ISlotGroup[]): ISlotResponse[] {
+        if (!slotGroups.length) return [];
+
+        const finalSlots: ISlotResponse[] = [];
+
+        const sortedGroups = [...slotGroups].sort((a, b) => b.priority - a.priority);
+
+        for (const group of sortedGroups) {
+            for (const slot of group.slots) {
+                const fromTime = this._parseTime(slot.from);
+                const toTime = this._parseTime(slot.to);
+
+                const isOverlapping = finalSlots.some(existing => {
+                    const existingFrom = this._parseTime(existing.from);
+                    const existingTo = this._parseTime(existing.to);
+                    return fromTime < existingTo && existingFrom < toTime;
+                });
+
+                if (!isOverlapping) {
+                    finalSlots.push({
+                        ...slot,
+                        ruleId: group.ruleId
+                    });
+                }
+            }
+        }
+
+        return finalSlots;
+    }
+
+    private _parseTime(timeStr: string): Date {
+        const [hours, minutes] = timeStr.split(":").map(Number);
+        const date = new Date();
+        date.setHours(hours, minutes, 0);
+        return date;
+    };
 
     async createRule(providerId: string, dto: CreateRuleDto): Promise<IResponse<ISlotRule>> {
 
@@ -132,6 +226,41 @@ export class SlotRuleService implements ISlotRuleService {
         return {
             success: true,
             message: 'Successfully removed.'
+        }
+    }
+
+    async getAvailableSlots(providerId: string, date: string): Promise<IResponse> {
+        const ruleDocument = await this._slotRuleRepository.findRules(
+            providerId,
+            {
+                startDate: date,
+                sort: RuleSortEnum.HIGH_PRIORITY,
+                ruleStatus: 'true'
+            }
+        );
+
+        const rules = ruleDocument.map(rule => this._slotRuleMapper.toEntity(rule));
+
+        const days = Object.values(WeekEnum);
+        const selectedDate = new Date(date);
+        const selectedDay = days[selectedDate.getDay()];
+        const normalizedDate = new Date(selectedDate.toDateString());
+
+        const slots: ISlotGroup[] = rules.map(rule => {
+            const isValid = this._isValidSelectedDate(normalizedDate, selectedDay, rule);
+            if (!isValid) return null;
+
+            return {
+                ruleId: rule.id,
+                priority: rule.priority,
+                slots: this._generateSlots(rule)
+            }
+        }).filter((slot): slot is ISlotGroup => slot !== null);
+
+        return {
+            success: true,
+            message: 'Fetched available slots',
+            data: this._getFinalAvailableSlots(slots)
         }
     }
 }

@@ -32,3 +32,19 @@ export interface IRuleFilter {
     ruleStatus?: String;
     sort?: RuleSortEnum;
 }
+
+
+export interface IAvailableSlot {
+    from: string;
+    to: string;
+}
+
+export interface ISlotResponse extends IAvailableSlot {
+    ruleId: string;
+}
+
+export interface ISlotGroup {
+    ruleId: string;
+    priority: number;
+    slots: IAvailableSlot[]
+} 
