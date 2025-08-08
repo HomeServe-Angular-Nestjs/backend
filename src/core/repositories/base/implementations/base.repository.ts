@@ -1,5 +1,5 @@
 import {
-    ClientSession, Document, FilterQuery, Model, QueryOptions, Types, UpdateQuery
+  ClientSession, Document, FilterQuery, Model, QueryOptions, Types, UpdateQuery
 } from 'mongoose';
 
 import { IBaseRepository } from '../interfaces/base-repo.interface';
@@ -38,5 +38,9 @@ export abstract class BaseRepository<TDocument extends Document> implements IBas
   async deleteOne(query: FilterQuery<TDocument>): Promise<{ deletedCount?: number }> {
     const result = await this.model.deleteOne(query).exec();
     return { deletedCount: result.deletedCount };
+  }
+
+  protected _toObjectId(id: string): Types.ObjectId {
+    return new Types.ObjectId(id);
   }
 }

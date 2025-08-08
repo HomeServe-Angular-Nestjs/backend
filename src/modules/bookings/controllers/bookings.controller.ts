@@ -50,8 +50,9 @@ export class BookingsController {
     }
 
     @Post('confirm')
-    async handleBooking(@Req() req: Request, @Body() dto: BookingDto): Promise<IResponse> {
+    async handleBooking(@Req() req: Request, @Body() dto: any) {
         try {
+            console.log(dto)
             const user = req.user as IPayload;
             if (!user.sub) {
                 throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
@@ -61,7 +62,7 @@ export class BookingsController {
                 throw new BadRequestException('Invalid serviceIds format');
             }
 
-            return this._bookingService.createBooking(user.sub, dto);
+            // return this._bookingService.createBooking(user.sub, dto);
         } catch (err) {
             this.logger.error(`Error creating bookings: ${err}`);
             throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);

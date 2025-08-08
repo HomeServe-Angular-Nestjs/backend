@@ -42,22 +42,18 @@ export class SelectedServiceType {
     selectedIds: string[];
 }
 
-export class SlotDataType {
+ class SlotDataType {
     @IsString()
-    @IsDefined({ message: "'scheduleId' is required" })
-    scheduleId: string;
+    @IsNotEmpty()
+    ruleId: string;
 
+    @IsNotEmpty()
     @IsString()
-    @IsDefined({ message: "'slotId' is required" })
-    slotId: string;
+    to: string;
 
+    @IsNotEmpty()
     @IsString()
-    @IsDefined({ message: "'dayId' is required" })
-    dayId: string;
-
-    @IsString()
-    @IsDefined({ message: "'month' is required" })
-    month: string;
+    from: string;
 }
 
 export class SelectedServiceDto {

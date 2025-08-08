@@ -110,101 +110,103 @@ export class BookingService implements IBookingService {
 
     // Creates a booking for a customer by selecting an available slot from a given schedule.
     async createBooking(customerId: string, data: BookingDto): Promise<IResponse> {
-        const { dayId, month, scheduleId, slotId } = data.slotData;
-        const scheduleObjectId = new Types.ObjectId(scheduleId);
-        const dayObjectId = new Types.ObjectId(dayId);
-        const slotObjectId = new Types.ObjectId(slotId);
-        const customerObjectId = new Types.ObjectId(customerId);
 
-        const schedule = await this._scheduleRepository.findById(scheduleObjectId);
-        if (!schedule) {
-            throw new NotFoundException(`Schedule ID ${scheduleId} not found`)
-        }
+        // const isSlotExist 
+        // const { dayId, month, scheduleId, slotId } = data.slotData;
+        // const scheduleObjectId = new Types.ObjectId(scheduleId);
+        // const dayObjectId = new Types.ObjectId(dayId);
+        // const slotObjectId = new Types.ObjectId(slotId);
+        // const customerObjectId = new Types.ObjectId(customerId);
 
-        let updatedSlot: ISlot | undefined;
-        let updatedDay: IScheduleDay | undefined;
+        // const schedule = await this._scheduleRepository.findById(scheduleObjectId);
+        // if (!schedule) {
+        //     throw new NotFoundException(`Schedule ID ${scheduleId} not found`)
+        // }
 
-        try {
-            const result = await this._scheduleRepository.findOneAndUpdate(
-                {
-                    _id: scheduleObjectId,
-                    month,
-                    'days._id': dayObjectId,
-                    'days.slots._id': slotObjectId
-                },
-                {
-                    $set: {
-                        'days.$[day].slots.$[slot].takenBy': customerObjectId
-                    }
-                },
-                {
-                    arrayFilters: [
-                        { 'day._id': dayObjectId },
-                        { 'slot._id': slotObjectId }
-                    ],
-                    new: true
-                }
-            );
+        // let updatedSlot: ISlot | undefined;
+        // let updatedDay: IScheduleDay | undefined;
 
-            if (!result) {
-                throw new ConflictException('Slot has already been taken');
-            }
+        // try {
+        //     const result = await this._scheduleRepository.findOneAndUpdate(
+        //         {
+        //             _id: scheduleObjectId,
+        //             month,
+        //             'days._id': dayObjectId,
+        //             'days.slots._id': slotObjectId
+        //         },
+        //         {
+        //             $set: {
+        //                 'days.$[day].slots.$[slot].takenBy': customerObjectId
+        //             }
+        //         },
+        //         {
+        //             arrayFilters: [
+        //                 { 'day._id': dayObjectId },
+        //                 { 'slot._id': slotObjectId }
+        //             ],
+        //             new: true
+        //         }
+        //     );
 
-            updatedDay = result.days.find(day => day.id === dayId);
-            updatedSlot = updatedDay?.slots.find(slot => slot.id === slotId);
+        //     if (!result) {
+        //         throw new ConflictException('Slot has already been taken');
+        //     }
 
-            if (!updatedSlot) {
-                throw new NotFoundException(`Slot ID ${data.slotData.slotId} not found`);
-            }
-        } catch (err) {
-            this.logger.error('Failed to update slot in schedule', err);
-            throw new InternalServerErrorException(err.message);
-        }
+        //     updatedDay = result.days.find(day => day.id === dayId);
+        //     updatedSlot = updatedDay?.slots.find(slot => slot.id === slotId);
 
-        if (!updatedDay || !updatedSlot) {
-            throw new NotFoundException('slot data missing.');
-        }
+        //     if (!updatedSlot) {
+        //         throw new NotFoundException(`Slot ID ${data.slotData.slotId} not found`);
+        //     }
+        // } catch (err) {
+        //     this.logger.error('Failed to update slot in schedule', err);
+        //     throw new InternalServerErrorException(err.message);
+        // }
 
-        const expectedArrivalTime = this._combineDateAndTime(updatedDay.date, updatedSlot.from);
+        // if (!updatedDay || !updatedSlot) {
+        //     throw new NotFoundException('slot data missing.');
+        // }
 
-        try {
-            await this._bookingRepository.create({
-                customerId,
-                providerId: data.providerId,
-                totalAmount: data.total,
-                scheduleData: {
-                    scheduleId,
-                    month,
-                    dayId,
-                    slotId,
-                },
-                actualArrivalTime: null,
-                expectedArrivalTime,
-                location: {
-                    address: data.location.address,
-                    coordinates: data.location.coordinates
-                },
-                services: data.serviceIds.map(s => ({
-                    serviceId: s.id,
-                    subserviceIds: s.selectedIds
-                })),
-                bookingStatus: BookingStatus.PENDING,
-                cancellationReason: null,
-                cancelStatus: null,
-                cancelledAt: null,
-                transactionId: data.transactionId,
-                paymentStatus: data.transactionId ? PaymentStatus.PAID : PaymentStatus.UNPAID,
-            });
+        // const expectedArrivalTime = this._combineDateAndTime(updatedDay.date, updatedSlot.from);
 
-            await this._customerRepository.findOneAndUpdate(
-                { _id: customerId },
-                { $set: { isReviewed: false } },
-            );
+        // try {
+        //     await this._bookingRepository.create({
+        //         customerId,
+        //         providerId: data.providerId,
+        //         totalAmount: data.total,
+        //         scheduleData: {
+        //             scheduleId,
+        //             month,
+        //             dayId,
+        //             slotId,
+        //         },
+        //         actualArrivalTime: null,
+        //         expectedArrivalTime,
+        //         location: {
+        //             address: data.location.address,
+        //             coordinates: data.location.coordinates
+        //         },
+        //         services: data.serviceIds.map(s => ({
+        //             serviceId: s.id,
+        //             subserviceIds: s.selectedIds
+        //         })),
+        //         bookingStatus: BookingStatus.PENDING,
+        //         cancellationReason: null,
+        //         cancelStatus: null,
+        //         cancelledAt: null,
+        //         transactionId: data.transactionId,
+        //         paymentStatus: data.transactionId ? PaymentStatus.PAID : PaymentStatus.UNPAID,
+        //     });
 
-        } catch (err) {
-            this.logger.error('Failed to create booking', err);
-            throw new InternalServerErrorException('Failed to create booking');
-        }
+        //     await this._customerRepository.findOneAndUpdate(
+        //         { _id: customerId },
+        //         { $set: { isReviewed: false } },
+        //     );
+
+        // } catch (err) {
+        //     this.logger.error('Failed to create booking', err);
+        //     throw new InternalServerErrorException('Failed to create booking');
+        // }
 
         return {
             success: true,

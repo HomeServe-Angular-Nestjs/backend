@@ -22,10 +22,6 @@ export class SlotRuleRepository extends BaseRepository<SlotRuleDocument> impleme
         super(_slotRuleModel)
     }
 
-    private _toObjectId(id: string): Types.ObjectId {
-        return new Types.ObjectId(id);
-    }
-
     private __buildFilterQuery(providerId: string, filter: IRuleFilter): FilterQuery<SlotRuleDocument> {
         const query: FilterQuery<SlotRuleDocument> = { providerId: this._toObjectId(providerId) };
         if (filter.search) {
