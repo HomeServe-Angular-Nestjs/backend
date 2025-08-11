@@ -133,11 +133,11 @@ export class AdminBookingService implements IAdminBookingService {
                 ]);
 
                 if (!customer) {
-                    throw new NotFoundException(ErrorMessage.CUSTOMER_NOT_FOUND_WITH_ID, booking.customerId);
+                    throw new NotFoundException(`${ErrorMessage.CUSTOMER_NOT_FOUND_WITH_ID, booking.customerId}`);
                 }
 
                 if (!provider) {
-                    throw new NotFoundException(ErrorMessage.PROVIDER_NOT_FOUND, booking.providerId);
+                    throw new NotFoundException(`${ErrorMessage.PROVIDER_NOT_FOUND, booking.providerId}`);
                 }
 
                 return {

@@ -36,6 +36,8 @@ import { IBookedSlotRepository } from '@core/repositories/interfaces/booked-slot
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { Types } from 'mongoose';
 import { SlotStatusEnum } from '@core/enum/slot.enum';
+import { BOOKING_MAPPER } from '@core/constants/mappers.constant';
+import { IBookingMapper } from '@core/dto-mapper/interface/bookings.mapper.interface';
 
 @Injectable()
 export class BookingService implements IBookingService {
@@ -55,7 +57,9 @@ export class BookingService implements IBookingService {
         @Inject(TRANSACTION_REPOSITORY_NAME)
         private readonly _transactionRepository: ITransactionRepository,
         @Inject(BOOKED_SLOT_REPOSITORY_NAME)
-        private readonly _bookedSlotRepository: IBookedSlotRepository
+        private readonly _bookedSlotRepository: IBookedSlotRepository,
+        @Inject(BOOKING_MAPPER)
+        private readonly _bookingMapper: IBookingMapper,
 
     ) {
         this.logger = this._loggerFactor.createLogger(BookingService.name);
@@ -146,10 +150,10 @@ export class BookingService implements IBookingService {
         const expectedArrivalTime = this._combineDateAndTime(data.slotData.date, data.slotData.from);
 
         const newBooking = await this._bookingRepository.create({
-            customerId,
-            providerId: data.providerId,
+            slotId: new Types.ObjectId(bookedSlot.id as string),
+            customerId: new Types.ObjectId(customerId),
+            providerId: new Types.ObjectId(data.providerId),
             totalAmount: data.total,
-            slotId: bookedSlot.id,
             actualArrivalTime: null,
             expectedArrivalTime,
             location: {
@@ -164,7 +168,7 @@ export class BookingService implements IBookingService {
             cancellationReason: null,
             cancelStatus: null,
             cancelledAt: null,
-            transactionId: data.transactionId,
+            transactionId: data.transactionId ? new Types.ObjectId(data.transactionId) : null,
             paymentStatus: data.transactionId ? PaymentStatus.PAID : PaymentStatus.UNPAID,
         });
 
@@ -194,8 +198,7 @@ export class BookingService implements IBookingService {
         const limit = 4;
         const skip = (page - 1) * limit;
 
-        // Get total count first for pagination metadata
-        const total = await this._bookingRepository.count({ customerId: id });
+        const total = await this._bookingRepository.countDocumentsByCustomer(id);
 
         if (!total) {
             const customer = await this._customerRepository.findById(id);
@@ -209,19 +212,13 @@ export class BookingService implements IBookingService {
             }
         }
 
-        // Get only the bookings for the requested page
-        const paginatedBookings = await this._bookingRepository.find(
-            { customerId: id },
-            {
-                sort: { createdAt: -1 },
-                skip,
-                limit,
-            });
+        const paginatedBookings = await this._bookingRepository.findBookingsByCustomerIdWithPagination(id, skip, limit);
+        const bookings = paginatedBookings.map(booking => this._bookingMapper.toEntity(booking));
 
         // Map and enrich booking data
         const bookingData: IBookingResponse[] = await Promise.all(
-            paginatedBookings.map(async (booking) => {
-                const provider = await this._providerRepository.findById(booking.providerId);
+            bookings.map(async (booking) => {
+                const provider = await this._providerRepository.findById(booking.providerId.toString());
                 if (!provider) {
                     throw new InternalServerErrorException(`Provider with ID ${booking.providerId} not found.`);
                 }
@@ -254,12 +251,11 @@ export class BookingService implements IBookingService {
                     paymentStatus: booking.paymentStatus,
                     totalAmount: booking.totalAmount,
                     createdAt: booking.createdAt as Date,
-                    transactionId: booking.transactionId ?? null
+                    transactionId: booking.transactionId ? booking.transactionId.toString() : null
                 };
             })
         );
 
-        // Return structured paginated response
         return {
             bookingData,
             paginationData: {
@@ -276,7 +272,7 @@ export class BookingService implements IBookingService {
             throw new InternalServerErrorException(`Booking with ID ${bookingId} not found.`);
         }
 
-        const provider = await this._providerRepository.findById(booking.providerId);
+        const provider = await this._providerRepository.findById(booking.providerId.toString());
         if (!provider) {
             throw new InternalServerErrorException(`Provider with ID ${booking.providerId} not found.`);
         }
@@ -422,7 +418,7 @@ export class BookingService implements IBookingService {
             },
             services,
             totalAmount: updatedBooking.totalAmount,
-            transactionId: updatedBooking.transactionId
+            transactionId: updatedBooking.transactionId ? updatedBooking.transactionId.toString() : null
         }
 
         return {

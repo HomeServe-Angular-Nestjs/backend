@@ -3,15 +3,13 @@ import { FilterQuery, Model, PipelineStage, Types } from 'mongoose';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 
-import { BOOKINGS_MODEL_NAME } from '../../constants/model.constant';
-import { Booking } from '../../entities/implementation/bookings.entity';
-import { IBooking, IBookingStats } from '../../entities/interfaces/booking.entity.interface';
-import { ITopProviders } from '../../entities/interfaces/user.entity.interface';
-import { BookingDocument } from '../../schema/bookings.schema';
-import { BaseRepository } from '../base/implementations/base.repository';
-import { IBookingRepository } from '../interfaces/bookings-repo.interface';
+import { BOOKINGS_MODEL_NAME } from '@core/constants/model.constant';
+import { IBookingStats } from '@core/entities/interfaces/booking.entity.interface';
+import { ITopProviders } from '@core/entities/interfaces/user.entity.interface';
+import { BookingDocument } from '@core/schema/bookings.schema';
+import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
+import { IBookingRepository } from '@core/repositories/interfaces/bookings-repo.interface';
 import { IBookingReportData, IReportCustomerMatrix, IReportDownloadBookingData, IReportProviderMatrix } from '@core/entities/interfaces/admin.entity.interface';
-import { BookingStatus, CancelStatus } from '@core/enum/bookings.enum';
 
 @Injectable()
 export class BookingRepository extends BaseRepository<BookingDocument> implements IBookingRepository {
@@ -22,8 +20,28 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
         super(_bookingModel);
     }
 
+    async findBookingsByCustomerIdWithPagination(customerId: string | Types.ObjectId, skip: number, limit: number): Promise<BookingDocument[]> {
+        return await this._bookingModel
+            .find({ customerId: this._toObjectId(customerId) })
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit)
+            .lean();
+    }
+
+    async findBookingsByProviderId(providerId: string | Types.ObjectId): Promise<BookingDocument[]> {
+        return await this._bookingModel
+            .find({ providerId: this._toObjectId(providerId) })
+            .sort({ createdAt: -1 })
+            .lean();
+    }
+
     async count(filter?: FilterQuery<BookingDocument>): Promise<number> {
         return await this._bookingModel.countDocuments(filter);
+    }
+
+    async countDocumentsByCustomer(customerId: string | Types.ObjectId): Promise<number> {
+        return await this._bookingModel.countDocuments({ customerId: this._toObjectId(customerId) });
     }
 
     async bookingStatus(): Promise<IBookingStats | null> {
@@ -290,4 +308,8 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
             totalRefunds: 0
         };
     }
+
+    // async findBookingsBySlotId(slotId: string): Promise<BookingDocument[]> {
+    //     return
+    // }
 }

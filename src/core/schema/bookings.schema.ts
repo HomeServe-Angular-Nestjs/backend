@@ -1,4 +1,4 @@
-import { Document, Types } from 'mongoose';
+import mongoose, { Document, Types } from 'mongoose';
 
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 
@@ -7,11 +7,11 @@ import { ISlotResponse } from '@core/entities/interfaces/slot-rule.entity.interf
 
 @Schema({ timestamps: true })
 export class BookingDocument extends Document {
-    @Prop({ type: String, required: true })
-    customerId: string;
+    @Prop({ type: Types.ObjectId, required: true })
+    customerId: Types.ObjectId;
 
-    @Prop({ type: String, required: true })
-    providerId: string;
+    @Prop({ type: Types.ObjectId, required: true })
+    providerId: Types.ObjectId;
 
     @Prop({ type: Number, required: true })
     totalAmount: number;
@@ -19,7 +19,7 @@ export class BookingDocument extends Document {
     @Prop({ type: Date })
     expectedArrivalTime: Date;
 
-    @Prop({ type: Date, default: null })
+    @Prop({ type: Date, default: null }) G
     actualArrivalTime: Date | null;
 
     @Prop({ type: String, enum: BookingStatus, default: BookingStatus.PENDING })
@@ -54,7 +54,7 @@ export class BookingDocument extends Document {
         required: true,
         index: true
     })
-    slotId: Types.ObjectId;
+    slotId: Types.ObjectId | string;
 
     @Prop({
         type: [
@@ -70,8 +70,8 @@ export class BookingDocument extends Document {
         subserviceIds: string[];
     }[];
 
-    @Prop({ type: String, default: null })
-    transactionId: string | null;
+    @Prop({ type: Types.ObjectId, default: null })
+    transactionId: Types.ObjectId | null;
 
     @Prop({ type: String, enum: PaymentStatus, default: PaymentStatus.UNPAID })
     paymentStatus: PaymentStatus;

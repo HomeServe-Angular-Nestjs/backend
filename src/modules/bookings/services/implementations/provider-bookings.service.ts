@@ -1,13 +1,14 @@
 import {
-    Inject, Injectable, InternalServerErrorException, Logger, NotFoundException, Search
+    Inject, Injectable, InternalServerErrorException, NotFoundException,
 } from '@nestjs/common';
 
 import {
+    BOOKED_SLOT_REPOSITORY_NAME,
     BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, SERVICE_OFFERED_REPOSITORY_NAME,
     TRANSACTION_REPOSITORY_NAME
 } from '../../../../core/constants/repository.constant';
 import {
-    IBookingDetailProvider, IBookingOverviewChanges, IBookingOverviewData, IProviderBookingLists,
+    IBookingDetailProvider, IBookingOverviewChanges, IBookingOverviewData,
     IResponseProviderBookingLists
 } from '../../../../core/entities/interfaces/booking.entity.interface';
 import { BookingStatus, DateRange, PaymentStatus } from '../../../../core/enum/bookings.enum';
@@ -30,6 +31,9 @@ import {
 } from '../../../../core/repositories/interfaces/transaction-repo.interface';
 import { FilterFields, UpdateBookingStatusDto } from '../../dtos/booking.dto';
 import { IProviderBookingService } from '../interfaces/provider-booking-service.interface';
+import { IBookedSlotRepository } from '@core/repositories/interfaces/booked-slot-repo.interface';
+import { BOOKING_MAPPER } from '@core/constants/mappers.constant';
+import { IBookingMapper } from '@core/dto-mapper/interface/bookings.mapper.interface';
 
 @Injectable()
 export class ProviderBookingService implements IProviderBookingService {
@@ -46,6 +50,10 @@ export class ProviderBookingService implements IProviderBookingService {
         private readonly _customerRepository: ICustomerRepository,
         @Inject(TRANSACTION_REPOSITORY_NAME)
         private readonly _transactionRepository: ITransactionRepository,
+        @Inject(BOOKED_SLOT_REPOSITORY_NAME)
+        private readonly _bookedSlotRepository: IBookedSlotRepository,
+        @Inject(BOOKING_MAPPER)
+        private readonly _bookingMapper: IBookingMapper,
     ) {
         this.logger = this.loggerFactory.createLogger(ProviderBookingService.name);
     }
@@ -55,16 +63,18 @@ export class ProviderBookingService implements IProviderBookingService {
         const limit = 5;
         const skip = (page - 1) * limit;
 
-        const rawBookings = await this._bookingRepository.find({ providerId: id });
-        if (!rawBookings.length) {
+        const bookingDocuments = await this._bookingRepository.findBookingsByProviderId(id);
+        if (!bookingDocuments.length) {
             return {
                 bookingData: [],
                 paginationData: { total: 0, page, limit }
             };
         }
 
+        const bookings = bookingDocuments.map(booking => this._bookingMapper.toEntity(booking));
+
         const enrichBookings = await Promise.all(
-            rawBookings.map(async (booking) => {
+            bookings.map(async (booking) => {
                 const customer = await this._customerRepository.findById(booking.customerId);
                 if (!customer) throw new InternalServerErrorException(`Customer not found: ${booking.customerId}`);
 
@@ -374,6 +384,17 @@ export class ProviderBookingService implements IProviderBookingService {
         } catch (err) {
             this.logger.error('Error updating booking status:', err);
             throw new InternalServerErrorException('Failed to update booking status.');
+        }
+    }
+
+    async fetchBookedSlots(providerId: string): Promise<IResponse> {
+        const [bookedSlotDocument] = await Promise.all([
+            this._bookedSlotRepository.findBookedSlotsByProviderId(providerId),
+            this._bookingRepository
+        ]);
+        return {
+            success: true,
+            message: ''
         }
     }
 

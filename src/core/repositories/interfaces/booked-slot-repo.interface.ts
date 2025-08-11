@@ -5,4 +5,5 @@ export interface IBookedSlotRepository extends IBaseRepository<BookedSlotDocumen
     findBookedSlots(ruleId: string): Promise<BookedSlotDocument[]>;
     isAlreadyBooked(ruleId: string, from: string, to: string): Promise<boolean>;
     updateSlotStatus(ruleId: string, from: string, to: string): Promise<boolean>;
+    findBookedSlotsByProviderId(providerId: string): Promise<BookedSlotDocument[]>;
 }

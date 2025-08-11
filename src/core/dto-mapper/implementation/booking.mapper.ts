@@ -10,9 +10,9 @@ import { Injectable } from '@nestjs/common';
 export class BookingMapper implements IBookingMapper {
     toEntity(doc: BookingDocument): IBooking {
         return new Booking({
-            id: doc.id,
-            customerId: doc.customerId,
-            providerId: doc.providerId,
+            id: (doc._id as Types.ObjectId).toString(),
+            customerId: doc.customerId.toString(),
+            providerId: doc.providerId.toString(),
             totalAmount: doc.totalAmount,
             slotId: doc.slotId.toString(),
             services: doc.services,
@@ -24,7 +24,7 @@ export class BookingMapper implements IBookingMapper {
             cancellationReason: doc.cancellationReason,
             cancelStatus: doc.cancelStatus,
             cancelledAt: doc.cancelledAt,
-            transactionId: doc.transactionId,
+            transactionId: doc.transactionId?.toString(),
             createdAt: doc.createdAt,
             updatedAt: doc.updatedAt,
         });

@@ -9,4 +9,5 @@ export interface IProviderBookingService {
     fetchOverviewData(id: string): Promise<IBookingOverviewData>;
     fetchBookingDetails(bookingId: string): Promise<IBookingDetailProvider>;
     updateBookingStatus(dto: UpdateBookingStatusDto): Promise<IResponse<IBookingDetailProvider>>;
+    fetchBookedSlots(providerId: string): Promise<IResponse>
 }

@@ -1,22 +1,14 @@
 import { Request } from 'express';
 
-import {
-    BadRequestException, Body, Controller, Get, Inject, InternalServerErrorException, Patch, Query,
-    Req, UnauthorizedException
-} from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Inject, InternalServerErrorException, Patch, Query, Req, UnauthorizedException } from '@nestjs/common';
 
 import { PROVIDER_BOOKING_SERVICE_NAME } from '../../../core/constants/service.constant';
-import {
-    IResponseProviderBookingLists
-} from '../../../core/entities/interfaces/booking.entity.interface';
-import {
-    CUSTOM_LOGGER, ICustomLogger
-} from '../../../core/logger/interface/custom-logger.interface';
+import { IResponseProviderBookingLists } from '../../../core/entities/interfaces/booking.entity.interface';
+import { CUSTOM_LOGGER, ICustomLogger } from '../../../core/logger/interface/custom-logger.interface';
 import { IPayload } from '../../../core/misc/payload.interface';
-import {
-    BookingIdDto, BookingPaginationFilterDto, UpdateBookingStatusDto
-} from '../dtos/booking.dto';
+import { BookingIdDto, BookingPaginationFilterDto, UpdateBookingStatusDto } from '../dtos/booking.dto';
 import { IProviderBookingService } from '../services/interfaces/provider-booking-service.interface';
+import { IResponse } from '@core/misc/response.util';
 
 @Controller('provider/bookings')
 export class ProviderBookingsController {
@@ -76,15 +68,16 @@ export class ProviderBookingsController {
 
     @Patch('b_status')
     async updateBookingStatus(@Body() dto: UpdateBookingStatusDto) {
-        try {
-            if (!dto.bookingId || !dto.newStatus) {
-                throw new BadRequestException('Booking Id or new status not found');
-            }
-
-            return this._providerBookingService.updateBookingStatus(dto);
-        } catch (err) {
-            this.logger.error(`Error updating the booking status: ${err}`);
-            throw new InternalServerErrorException('Something happened while updating the booking status');
+        if (!dto.bookingId || !dto.newStatus) {
+            throw new BadRequestException('Booking Id or new status not found');
         }
+
+        return this._providerBookingService.updateBookingStatus(dto);
+    }
+
+    @Get('booked_slots')
+    async fetchBookedSlots(@Req() req: Request): Promise<IResponse> {
+        const user = req.user as IPayload;
+        return this._providerBookingService.fetchBookedSlots(user.sub);
     }
 }

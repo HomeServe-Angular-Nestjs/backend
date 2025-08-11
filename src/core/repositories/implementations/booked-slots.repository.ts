@@ -39,4 +39,8 @@ export class BookedSlotsRepository extends BaseRepository<BookedSlotDocument> im
             { new: true }
         ));
     }
+
+    async findBookedSlotsByProviderId(providerId: string): Promise<BookedSlotDocument[]> {
+        return await this._bookedSlotModel.find({ providerId: this._toObjectId(providerId) }).lean();
+    }
 }

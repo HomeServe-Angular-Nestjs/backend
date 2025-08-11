@@ -40,7 +40,8 @@ export abstract class BaseRepository<TDocument extends Document> implements IBas
     return { deletedCount: result.deletedCount };
   }
 
-  protected _toObjectId(id: string): Types.ObjectId {
+  protected _toObjectId(id: string | Types.ObjectId): Types.ObjectId {
+    if (id instanceof Types.ObjectId) return id;
     return new Types.ObjectId(id);
   }
 }

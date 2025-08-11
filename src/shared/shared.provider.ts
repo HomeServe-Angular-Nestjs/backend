@@ -1,6 +1,7 @@
-import { ADMIN_MAPPER, BOOKED_SLOT_MAPPER, CHAT_MAPPER, CUSTOMER_MAPPER, MESSAGE_MAPPER, PLAN_MAPPER, PROVIDER_MAPPER, SCHEDULES_MAPPER, SERVICE_OFFERED_MAPPER, SLOT_RULE_MAPPER, SUBSCRIPTION_MAPPER, TRANSACTION_MAPPER } from '@core/constants/mappers.constant';
+import { ADMIN_MAPPER, BOOKED_SLOT_MAPPER, BOOKING_MAPPER, CHAT_MAPPER, CUSTOMER_MAPPER, MESSAGE_MAPPER, PLAN_MAPPER, PROVIDER_MAPPER, SCHEDULES_MAPPER, SERVICE_OFFERED_MAPPER, SLOT_RULE_MAPPER, SUBSCRIPTION_MAPPER, TRANSACTION_MAPPER } from '@core/constants/mappers.constant';
 import { AdminMapper } from '@core/dto-mapper/implementation/admin.mapper';
 import { BookedSlotMapper } from '@core/dto-mapper/implementation/booked-slot.mapper';
+import { BookingMapper } from '@core/dto-mapper/implementation/booking.mapper';
 import { ChatMapper } from '@core/dto-mapper/implementation/chat.mapper';
 import { CustomerMapper } from '@core/dto-mapper/implementation/customer.mapper';
 import { MessageMapper } from '@core/dto-mapper/implementation/message.mapper';
@@ -29,6 +30,10 @@ export const sharedProviders: Provider[] = [
     {
         provide: ADMIN_MAPPER,
         useClass: AdminMapper
+    },
+    {
+        provide: BOOKING_MAPPER,
+        useClass: BookingMapper
     },
     {
         provide: CUSTOMER_MAPPER,
