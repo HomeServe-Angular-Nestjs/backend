@@ -1,8 +1,9 @@
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
 
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 
 import { BookingStatus, CancelStatus, PaymentStatus } from '../enum/bookings.enum';
+import { ISlotResponse } from '@core/entities/interfaces/slot-rule.entity.interface';
 
 @Schema({ timestamps: true })
 export class BookingDocument extends Document {
@@ -49,19 +50,11 @@ export class BookingDocument extends Document {
     };
 
     @Prop({
-        type: {
-            scheduleID: { type: String },
-            month: { type: String },
-            dayId: { type: String },
-            slotId: { type: String }
-        }
+        type: Types.ObjectId,
+        required: true,
+        index: true
     })
-    scheduleData: {
-        scheduleId: string;
-        month: string;
-        dayId: string;
-        slotId: string;
-    }
+    slotId: Types.ObjectId;
 
     @Prop({
         type: [

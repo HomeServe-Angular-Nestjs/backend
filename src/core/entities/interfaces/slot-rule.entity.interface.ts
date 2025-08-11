@@ -1,6 +1,6 @@
 import { IEntity } from "@core/entities/base/interfaces/base-entity.entity.interface";
 import { IPagination } from "@core/entities/interfaces/booking.entity.interface";
-import { RuleSortEnum, WeekEnum } from "@core/enum/slot-rule.enum";
+import { RuleSortEnum, WeekEnum } from "@core/enum/slot.enum";
 
 export type WeekType = `${WeekEnum}`;
 
@@ -46,5 +46,6 @@ export interface ISlotResponse extends IAvailableSlot {
 export interface ISlotGroup {
     ruleId: string;
     priority: number;
+    breakDuration: number;
     slots: IAvailableSlot[]
 } 

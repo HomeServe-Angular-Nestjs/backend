@@ -1,12 +1,15 @@
-import { SLOT_RULE_MAPPER } from "@core/constants/mappers.constant";
-import { SLOT_RULE_REPOSITORY_NAME } from "@core/constants/repository.constant";
+import { BOOKED_SLOT_MAPPER, SLOT_RULE_MAPPER } from "@core/constants/mappers.constant";
+import { BOOKED_SLOT_REPOSITORY_NAME, SLOT_RULE_REPOSITORY_NAME } from "@core/constants/repository.constant";
+import { IBookedSlotMapper } from "@core/dto-mapper/interface/booked-slots.mapper.interface";
 import { ISlotRuleMapper } from "@core/dto-mapper/interface/slot-rule.mapper.interface";
+import { IBookedSlot } from "@core/entities/interfaces/booked-slot.entity.interface";
 import { IAvailableSlot, IRuleFilter, ISlotGroup, ISlotResponse, ISlotRule, ISlotRulePaginatedResponse, WeekType } from "@core/entities/interfaces/slot-rule.entity.interface";
 import { ErrorMessage } from "@core/enum/error.enum";
-import { RuleSortEnum, WeekEnum } from "@core/enum/slot-rule.enum";
+import { RuleSortEnum, SlotStatusEnum, WeekEnum } from "@core/enum/slot.enum";
 import { ICustomLogger } from "@core/logger/interface/custom-logger.interface";
 import { ILoggerFactory, LOGGER_FACTORY } from "@core/logger/interface/logger-factory.interface";
 import { IResponse } from "@core/misc/response.util";
+import { IBookedSlotRepository } from "@core/repositories/interfaces/booked-slot-repo.interface";
 import { ISlotRuleRepository } from "@core/repositories/interfaces/slot-rule-repo.interface";
 import { CreateRuleDto, EditRuleDto, RuleFilterDto, RuleIdDto } from "@modules/slots/dtos/slot.rule.dto";
 import { ISlotRuleService } from "@modules/slots/services/interfaces/slot-rule-service.interface";
@@ -22,8 +25,12 @@ export class SlotRuleService implements ISlotRuleService {
         private readonly _loggerFactory: ILoggerFactory,
         @Inject(SLOT_RULE_REPOSITORY_NAME)
         private readonly _slotRuleRepository: ISlotRuleRepository,
+        @Inject(BOOKED_SLOT_REPOSITORY_NAME)
+        private readonly _bookedSlotRepository: IBookedSlotRepository,
         @Inject(SLOT_RULE_MAPPER)
         private readonly _slotRuleMapper: ISlotRuleMapper,
+        @Inject(BOOKED_SLOT_MAPPER)
+        private readonly _bookedSlotMapper: IBookedSlotMapper,
     ) {
         this.logger = this._loggerFactory.createLogger(SlotRuleService.name);
     }
@@ -118,6 +125,15 @@ export class SlotRuleService implements ISlotRuleService {
         date.setHours(hours, minutes, 0);
         return date;
     };
+
+
+    private _isAlreadyBooked(slot: ISlotResponse, bookedSlots: IBookedSlot[]) {
+        return bookedSlots.some(booked =>
+            booked.from === slot.from &&
+            booked.to === slot.to &&
+            booked.status !== SlotStatusEnum.AVAILABLE
+        );
+    }
 
     async createRule(providerId: string, dto: CreateRuleDto): Promise<IResponse<ISlotRule>> {
 
@@ -253,14 +269,24 @@ export class SlotRuleService implements ISlotRuleService {
             return {
                 ruleId: rule.id,
                 priority: rule.priority,
+                breakDuration: rule.breakDuration,
                 slots: this._generateSlots(rule)
             }
         }).filter((slot): slot is ISlotGroup => slot !== null);
 
+        const bookedSlotDocument = await this._bookedSlotRepository.find({ date: selectedDate });
+        const bookedSlots = (bookedSlotDocument ?? []).map(slotDoc => this._bookedSlotMapper.toEntity(slotDoc));
+
+        const finalSortedSlots = this._getFinalAvailableSlots(slots)
+            .filter(slot => !this._isAlreadyBooked(slot, bookedSlots))
+            .sort((a, b) =>
+                Number(a.from.split(':')[0]) - Number(b.from.split(':')[0])
+            );
+
         return {
             success: true,
             message: 'Fetched available slots',
-            data: this._getFinalAvailableSlots(slots)
+            data: finalSortedSlots
         }
     }
 }

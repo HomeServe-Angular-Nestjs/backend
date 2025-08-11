@@ -12,8 +12,10 @@ export class BookedSlotMapper implements IBookedSlotMapper {
             id: (doc._id as Types.ObjectId).toString(),
             providerId: doc.providerId.toString(),
             ruleId: doc.ruleId.toString(),
+            date: doc.date,
             from: doc.from,
             to: doc.to,
+            status: doc.status,
             createdAt: doc.createdAt,
             updatedAt: doc.updatedAt
         });

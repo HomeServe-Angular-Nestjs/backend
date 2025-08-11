@@ -14,6 +14,7 @@ export class BookingMapper implements IBookingMapper {
             customerId: doc.customerId,
             providerId: doc.providerId,
             totalAmount: doc.totalAmount,
+            slotId: doc.slotId.toString(),
             services: doc.services,
             bookingStatus: doc.bookingStatus,
             paymentStatus: doc.paymentStatus,

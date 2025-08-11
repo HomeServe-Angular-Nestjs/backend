@@ -1,52 +1,54 @@
 export enum ErrorMessage {
     LOGIN_FAILED = 'Login failed, please check your credentials',
-
-    // Not Found
     PROVIDER_NOT_FOUND = 'Provider not found',
     SERVICE_NOT_FOUND = 'Service not found',
     USER_NOT_FOUND = 'User not found',
     SUBSCRIPTION_NOT_FOUND = 'Subscription not found',
     PLAN_NOT_FOUND = 'Plan not found',
     DOCUMENT_NOT_FOUND = 'Document not found',
-
-    // With ID placeholders
     PROVIDER_NOT_FOUND_WITH_ID = 'Provider not found with ID: ',
     CUSTOMER_NOT_FOUND_WITH_ID = 'Customer not found with ID: ',
     SERVICE_NOT_FOUND_WITH_ID = 'Service not found with ID: ',
-
-    // Bad Request
     INVALID_INPUT = 'Invalid input data',
     MISSING_FIELDS = 'Required fields are missing',
     FILE_UPLOAD_FAILED = 'File upload failed',
     INVALID_CREDENTIALS = 'Invalid email or password',
-
-
-    // Type Error
     MUST_BE_STRING = 'must be a string',
     SHOULD_NOT_BE_EMPTY = 'should not be empty',
-
-
-    // Forbidden
     FORBIDDEN_ACTION = 'You are not allowed to perform this action',
-
-    // Unauthorized
     UNAUTHORIZED_ACCESS = 'Unauthorized access, please login',
     USER_BLOCKED = 'You are blocked by the admin.',
-
-    // Server Errors
     INTERNAL_SERVER_ERROR = 'An unexpected error occurred. Please try again later',
     DOCUMENT_CREATION_ERROR = 'Error creating document',
-
-    // Conflict Error
     DOCUMENT_ALREADY_EXISTS = 'Already exists',
-
-    // Socket Error
     SOCKET_CONNECTION_REJECTED = 'Socket connection rejected: ',
-
-    // Token Errors
     NO_TOKEN_FOUND = 'No token provided.',
     INVALID_REFRESH_TOKEN = 'Invalid or expired refresh token.',
     TOKEN_VERIFICATION_FAILED = 'Token verification failed.',
-
     UPLOAD_FAILED = 'Failed to upload an image.',
+    PAYMENT_IN_PROGRESS = 'Payment already in progress.',
+}
+
+export enum ErrorCodes {
+    MONGO_DUPLICATE_KEY = 'MONGO_DUPLICATE_KEY',
+    PAYMENT_IN_PROGRESS = 'PAYMENT_IN_PROGRESS',
+    USER_NOT_AUTHORIZED = 'USER_NOT_AUTHORIZED',
+    INVALID_CREDENTIALS = 'INVALID_CREDENTIALS',
+    RESOURCE_NOT_FOUND = 'RESOURCE_NOT_FOUND',
+    VALIDATION_FAILED = 'VALIDATION_FAILED',
+    SESSION_EXPIRED = 'SESSION_EXPIRED',
+    ACCOUNT_LOCKED = 'ACCOUNT_LOCKED',
+    EMAIL_ALREADY_REGISTERED = 'EMAIL_ALREADY_REGISTERED',
+    PASSWORD_TOO_WEAK = 'PASSWORD_TOO_WEAK',
+    INSUFFICIENT_FUNDS = 'INSUFFICIENT_FUNDS',
+    PAYMENT_METHOD_DECLINED = 'PAYMENT_METHOD_DECLINED',
+    RATE_LIMIT_EXCEEDED = 'RATE_LIMIT_EXCEEDED',
+    SERVICE_UNAVAILABLE = 'SERVICE_UNAVAILABLE',
+    DATABASE_CONNECTION_FAILED = 'DATABASE_CONNECTION_FAILED',
+    TOKEN_INVALID = 'TOKEN_INVALID',
+    TOKEN_EXPIRED = 'TOKEN_EXPIRED',
+    RESOURCE_CONFLICT = 'RESOURCE_CONFLICT',
+    OPERATION_NOT_ALLOWED = 'OPERATION_NOT_ALLOWED',
+    FILE_TOO_LARGE = 'FILE_TOO_LARGE',
+    UNSUPPORTED_FILE_TYPE = 'UNSUPPORTED_FILE_TYPE',
 }

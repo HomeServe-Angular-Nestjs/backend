@@ -1,6 +1,6 @@
 import { SLOT_RULE_MODEL_NAME } from "@core/constants/model.constant";
 import { IRuleFilter, ISlotRule } from "@core/entities/interfaces/slot-rule.entity.interface";
-import { RuleSortEnum } from "@core/enum/slot-rule.enum";
+import { RuleSortEnum } from "@core/enum/slot.enum";
 import { BaseRepository } from "@core/repositories/base/implementations/base.repository";
 import { ISlotRuleRepository } from "@core/repositories/interfaces/slot-rule-repo.interface";
 import { SlotRuleDocument } from "@core/schema/slot-rule.schema";

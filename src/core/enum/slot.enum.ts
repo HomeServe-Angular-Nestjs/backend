@@ -14,3 +14,10 @@ export enum RuleSortEnum {
     HIGH_PRIORITY = 'high_priority',
     LOW_PRIORITY = 'low_priority',
 }
+
+export enum SlotStatusEnum {
+    AVAILABLE = 'available',
+    PENDING = 'pending',
+    COMPLETED = 'completed',
+    CANCELLED = 'cancelled',
+} 

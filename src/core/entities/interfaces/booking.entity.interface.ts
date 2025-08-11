@@ -1,3 +1,4 @@
+import { Types } from 'mongoose';
 import { BookingStatus, CancelStatus, PaymentStatus } from '../../enum/bookings.enum';
 import { IEntity } from '../base/interfaces/base-entity.entity.interface';
 
@@ -79,12 +80,7 @@ export interface IBooking extends IEntity {
         address: string;
         coordinates: [number, number];
     };
-    scheduleData: {
-        scheduleId: string;
-        month: string;
-        dayId: string;
-        slotId: string;
-    };
+    slotId: string;
     services: {
         serviceId: string;
         subserviceIds: string[];

@@ -1,19 +1,16 @@
-import { Types } from 'mongoose';
-
 import {
+    BadRequestException,
     ConflictException, Inject, Injectable, InternalServerErrorException, NotFoundException
 } from '@nestjs/common';
 
 import {
+    BOOKED_SLOT_REPOSITORY_NAME,
     BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME,
-    SCHEDULES_REPOSITORY_NAME, SERVICE_OFFERED_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME
+    SERVICE_OFFERED_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME
 } from '@core/constants/repository.constant';
 import {
     IBookingDetailCustomer, IBookingResponse, IBookingWithPagination
 } from '@core/entities/interfaces/booking.entity.interface';
-import {
-    IScheduleDay, ISlot
-} from '@core/entities/interfaces/schedules.entity.interface';
 import { BookingStatus, CancelStatus, PaymentStatus } from '@core/enum/bookings.enum';
 import { ErrorMessage } from '@core/enum/error.enum';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
@@ -28,9 +25,6 @@ import {
     IProviderRepository
 } from '@core/repositories/interfaces/provider-repo.interface';
 import {
-    ISchedulesRepository
-} from '@core/repositories/interfaces/schedules-repo.interface';
-import {
     IServiceOfferedRepository
 } from '@core/repositories/interfaces/serviceOffered-repo.interface';
 import {
@@ -38,24 +32,34 @@ import {
 } from '@core/repositories/interfaces/transaction-repo.interface';
 import { BookingDto, CancelBookingDto, IPriceBreakupDto, SelectedServiceDto, UpdateBookingDto } from '@modules/bookings/dtos/booking.dto';
 import { IBookingService } from '@modules/bookings/services/interfaces/booking-service.interface';
+import { IBookedSlotRepository } from '@core/repositories/interfaces/booked-slot-repo.interface';
+import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
+import { Types } from 'mongoose';
+import { SlotStatusEnum } from '@core/enum/slot.enum';
 
 @Injectable()
 export class BookingService implements IBookingService {
     private readonly logger: ICustomLogger;
+
     constructor(
+        @Inject(LOGGER_FACTORY)
+        private readonly _loggerFactor: ILoggerFactory,
         @Inject(SERVICE_OFFERED_REPOSITORY_NAME)
         private readonly _serviceOfferedRepository: IServiceOfferedRepository,
         @Inject(BOOKING_REPOSITORY_NAME)
         private readonly _bookingRepository: IBookingRepository,
-        @Inject(SCHEDULES_REPOSITORY_NAME)
-        private readonly _scheduleRepository: ISchedulesRepository,
         @Inject(CUSTOMER_REPOSITORY_INTERFACE_NAME)
         private readonly _customerRepository: ICustomerRepository,
         @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
         private readonly _providerRepository: IProviderRepository,
         @Inject(TRANSACTION_REPOSITORY_NAME)
         private readonly _transactionRepository: ITransactionRepository,
-    ) { }
+        @Inject(BOOKED_SLOT_REPOSITORY_NAME)
+        private readonly _bookedSlotRepository: IBookedSlotRepository
+
+    ) {
+        this.logger = this._loggerFactor.createLogger(BookingService.name);
+    }
 
     private _combineDateAndTime(dateStr: string, timeStr: string): Date {
         const fullDateTimeStr = `${dateStr} ${timeStr}`;
@@ -108,105 +112,77 @@ export class BookingService implements IBookingService {
         };
     }
 
-    // Creates a booking for a customer by selecting an available slot from a given schedule.
     async createBooking(customerId: string, data: BookingDto): Promise<IResponse> {
+        const { slotData } = data;
 
-        // const isSlotExist 
-        // const { dayId, month, scheduleId, slotId } = data.slotData;
-        // const scheduleObjectId = new Types.ObjectId(scheduleId);
-        // const dayObjectId = new Types.ObjectId(dayId);
-        // const slotObjectId = new Types.ObjectId(slotId);
-        // const customerObjectId = new Types.ObjectId(customerId);
+        if (!slotData.ruleId) {
+            this.logger.error('ruleId is missing in the request.');
+            throw new BadRequestException(ErrorMessage.MISSING_FIELDS);
+        }
 
-        // const schedule = await this._scheduleRepository.findById(scheduleObjectId);
-        // if (!schedule) {
-        //     throw new NotFoundException(`Schedule ID ${scheduleId} not found`)
-        // }
+        const isSlotExist = await this._bookedSlotRepository.isAlreadyBooked(slotData.ruleId, slotData.from, slotData.to);
 
-        // let updatedSlot: ISlot | undefined;
-        // let updatedDay: IScheduleDay | undefined;
+        if (isSlotExist) {
+            return {
+                success: false,
+                message: 'Slot is already booked.'
+            };
+        }
 
-        // try {
-        //     const result = await this._scheduleRepository.findOneAndUpdate(
-        //         {
-        //             _id: scheduleObjectId,
-        //             month,
-        //             'days._id': dayObjectId,
-        //             'days.slots._id': slotObjectId
-        //         },
-        //         {
-        //             $set: {
-        //                 'days.$[day].slots.$[slot].takenBy': customerObjectId
-        //             }
-        //         },
-        //         {
-        //             arrayFilters: [
-        //                 { 'day._id': dayObjectId },
-        //                 { 'slot._id': slotObjectId }
-        //             ],
-        //             new: true
-        //         }
-        //     );
+        const bookedSlot = await this._bookedSlotRepository.create({
+            providerId: new Types.ObjectId(data.providerId),
+            ruleId: new Types.ObjectId(slotData.ruleId),
+            date: new Date(slotData.date),
+            from: slotData.from,
+            to: slotData.to,
+            status: SlotStatusEnum.PENDING
+        });
 
-        //     if (!result) {
-        //         throw new ConflictException('Slot has already been taken');
-        //     }
+        if (!bookedSlot) {
+            this.logger.error('Failed to create booked slot.');
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+        }
 
-        //     updatedDay = result.days.find(day => day.id === dayId);
-        //     updatedSlot = updatedDay?.slots.find(slot => slot.id === slotId);
+        const expectedArrivalTime = this._combineDateAndTime(data.slotData.date, data.slotData.from);
 
-        //     if (!updatedSlot) {
-        //         throw new NotFoundException(`Slot ID ${data.slotData.slotId} not found`);
-        //     }
-        // } catch (err) {
-        //     this.logger.error('Failed to update slot in schedule', err);
-        //     throw new InternalServerErrorException(err.message);
-        // }
+        const newBooking = await this._bookingRepository.create({
+            customerId,
+            providerId: data.providerId,
+            totalAmount: data.total,
+            slotId: bookedSlot.id,
+            actualArrivalTime: null,
+            expectedArrivalTime,
+            location: {
+                address: data.location.address,
+                coordinates: data.location.coordinates
+            },
+            services: data.serviceIds.map(s => ({
+                serviceId: s.id,
+                subserviceIds: s.selectedIds
+            })),
+            bookingStatus: BookingStatus.PENDING,
+            cancellationReason: null,
+            cancelStatus: null,
+            cancelledAt: null,
+            transactionId: data.transactionId,
+            paymentStatus: data.transactionId ? PaymentStatus.PAID : PaymentStatus.UNPAID,
+        });
 
-        // if (!updatedDay || !updatedSlot) {
-        //     throw new NotFoundException('slot data missing.');
-        // }
+        if (!newBooking) {
+            this.logger.error('Failed to create new booking.');
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+        }
 
-        // const expectedArrivalTime = this._combineDateAndTime(updatedDay.date, updatedSlot.from);
+        const hasSlotUpdated = await this._bookedSlotRepository.updateSlotStatus(slotData.ruleId, slotData.from, slotData.to);
+        if (!hasSlotUpdated) {
+            this.logger.error('Failed to update booked slot status.');
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+        }
 
-        // try {
-        //     await this._bookingRepository.create({
-        //         customerId,
-        //         providerId: data.providerId,
-        //         totalAmount: data.total,
-        //         scheduleData: {
-        //             scheduleId,
-        //             month,
-        //             dayId,
-        //             slotId,
-        //         },
-        //         actualArrivalTime: null,
-        //         expectedArrivalTime,
-        //         location: {
-        //             address: data.location.address,
-        //             coordinates: data.location.coordinates
-        //         },
-        //         services: data.serviceIds.map(s => ({
-        //             serviceId: s.id,
-        //             subserviceIds: s.selectedIds
-        //         })),
-        //         bookingStatus: BookingStatus.PENDING,
-        //         cancellationReason: null,
-        //         cancelStatus: null,
-        //         cancelledAt: null,
-        //         transactionId: data.transactionId,
-        //         paymentStatus: data.transactionId ? PaymentStatus.PAID : PaymentStatus.UNPAID,
-        //     });
-
-        //     await this._customerRepository.findOneAndUpdate(
-        //         { _id: customerId },
-        //         { $set: { isReviewed: false } },
-        //     );
-
-        // } catch (err) {
-        //     this.logger.error('Failed to create booking', err);
-        //     throw new InternalServerErrorException('Failed to create booking');
-        // }
+        await this._customerRepository.findOneAndUpdate(
+            { _id: customerId },
+            { $set: { isReviewed: false } },
+        );
 
         return {
             success: true,

@@ -42,10 +42,14 @@ export class SelectedServiceType {
     selectedIds: string[];
 }
 
- class SlotDataType {
+class SlotDataType {
     @IsString()
     @IsNotEmpty()
     ruleId: string;
+    
+    @IsNotEmpty()
+    @IsString()
+    date: string;
 
     @IsNotEmpty()
     @IsString()
@@ -90,7 +94,6 @@ export class BookingDto {
     @IsNumber()
     total: number;
 
-    @IsNotEmpty()
     @ValidateNested()
     @Type(() => SlotDataType)
     slotData: SlotDataType;
