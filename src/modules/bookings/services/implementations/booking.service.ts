@@ -4,7 +4,6 @@ import {
 } from '@nestjs/common';
 
 import {
-    BOOKED_SLOT_REPOSITORY_NAME,
     BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME,
     SERVICE_OFFERED_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME
 } from '@core/constants/repository.constant';
@@ -32,12 +31,11 @@ import {
 } from '@core/repositories/interfaces/transaction-repo.interface';
 import { BookingDto, CancelBookingDto, IPriceBreakupDto, SelectedServiceDto, UpdateBookingDto } from '@modules/bookings/dtos/booking.dto';
 import { IBookingService } from '@modules/bookings/services/interfaces/booking-service.interface';
-import { IBookedSlotRepository } from '@core/repositories/interfaces/booked-slot-repo.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { Types } from 'mongoose';
 import { SlotStatusEnum } from '@core/enum/slot.enum';
-import { BOOKING_MAPPER } from '@core/constants/mappers.constant';
 import { IBookingMapper } from '@core/dto-mapper/interface/bookings.mapper.interface';
+import { BOOKING_MAPPER } from '@core/constants/mappers.constant';
 
 @Injectable()
 export class BookingService implements IBookingService {
@@ -56,8 +54,6 @@ export class BookingService implements IBookingService {
         private readonly _providerRepository: IProviderRepository,
         @Inject(TRANSACTION_REPOSITORY_NAME)
         private readonly _transactionRepository: ITransactionRepository,
-        @Inject(BOOKED_SLOT_REPOSITORY_NAME)
-        private readonly _bookedSlotRepository: IBookedSlotRepository,
         @Inject(BOOKING_MAPPER)
         private readonly _bookingMapper: IBookingMapper,
 
@@ -124,7 +120,7 @@ export class BookingService implements IBookingService {
             throw new BadRequestException(ErrorMessage.MISSING_FIELDS);
         }
 
-        const isSlotExist = await this._bookedSlotRepository.isAlreadyBooked(slotData.ruleId, slotData.from, slotData.to);
+        const isSlotExist = await this._bookingRepository.isAlreadyBooked(slotData.ruleId, slotData.from, slotData.to);
 
         if (isSlotExist) {
             return {
@@ -133,24 +129,9 @@ export class BookingService implements IBookingService {
             };
         }
 
-        const bookedSlot = await this._bookedSlotRepository.create({
-            providerId: new Types.ObjectId(data.providerId),
-            ruleId: new Types.ObjectId(slotData.ruleId),
-            date: new Date(slotData.date),
-            from: slotData.from,
-            to: slotData.to,
-            status: SlotStatusEnum.PENDING
-        });
-
-        if (!bookedSlot) {
-            this.logger.error('Failed to create booked slot.');
-            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
-        }
-
         const expectedArrivalTime = this._combineDateAndTime(data.slotData.date, data.slotData.from);
 
         const newBooking = await this._bookingRepository.create({
-            slotId: new Types.ObjectId(bookedSlot.id as string),
             customerId: new Types.ObjectId(customerId),
             providerId: new Types.ObjectId(data.providerId),
             totalAmount: data.total,
@@ -164,6 +145,13 @@ export class BookingService implements IBookingService {
                 serviceId: s.id,
                 subserviceIds: s.selectedIds
             })),
+            slot: {
+                ruleId: new Types.ObjectId(slotData.ruleId),
+                date: new Date(slotData.date),
+                from: slotData.from,
+                to: slotData.to,
+                status: SlotStatusEnum.PENDING
+            },
             bookingStatus: BookingStatus.PENDING,
             cancellationReason: null,
             cancelStatus: null,
@@ -177,7 +165,7 @@ export class BookingService implements IBookingService {
             throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
         }
 
-        const hasSlotUpdated = await this._bookedSlotRepository.updateSlotStatus(slotData.ruleId, slotData.from, slotData.to);
+        const hasSlotUpdated = await this._bookingRepository.updateSlotStatus(slotData.ruleId, slotData.from, slotData.to);
         if (!hasSlotUpdated) {
             this.logger.error('Failed to update booked slot status.');
             throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
@@ -352,7 +340,8 @@ export class BookingService implements IBookingService {
                 $set: {
                     cancelStatus: CancelStatus.IN_PROGRESS,
                     cancellationReason: dto.reason,
-                    cancelledAt: new Date()
+                    cancelledAt: new Date(),
+                    'slot.status': SlotStatusEnum.AVAILABLE
                 }
             },
             { new: true }

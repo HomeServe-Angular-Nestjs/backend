@@ -1,6 +1,7 @@
 import { Types } from 'mongoose';
 import { BookingStatus, CancelStatus, PaymentStatus } from '../../enum/bookings.enum';
 import { IEntity } from '../base/interfaces/base-entity.entity.interface';
+import { SlotStatusEnum } from '@core/enum/slot.enum';
 
 export interface IBookingResponse {
     bookingId: string;
@@ -66,6 +67,14 @@ export interface IResponseProviderBookingLists {
     paginationData: IPagination;
 }
 
+export interface IBookedSlot {
+    ruleId: string;
+    date: Date;
+    from: string;
+    to: string;
+    status: SlotStatusEnum;
+}
+
 export interface IBooking extends IEntity {
     customerId: string;
     providerId: string;
@@ -80,7 +89,7 @@ export interface IBooking extends IEntity {
         address: string;
         coordinates: [number, number];
     };
-    slotId: string;
+    slot: IBookedSlot;
     services: {
         serviceId: string;
         subserviceIds: string[];

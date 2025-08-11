@@ -4,31 +4,27 @@ import { Provider } from '@nestjs/common';
 import { getModelToken } from '@nestjs/mongoose';
 
 import {
-    BOOKED_SLOT_MODEL_NAME,
-    BOOKINGS_MODEL_NAME, CUSTOMER_MODEL_NAME, PROVIDER_MODEL_NAME, SCHEDULES_MODEL_NAME,
+    BOOKINGS_MODEL_NAME, CUSTOMER_MODEL_NAME, PROVIDER_MODEL_NAME,
     SERVICE_OFFERED_MODEL_NAME, TRANSACTION_MODEL_NAME
-} from '../../../core/constants/model.constant';
+} from '@core/constants/model.constant';
 import {
-    BOOKED_SLOT_REPOSITORY_NAME,
     BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME,
     SERVICE_OFFERED_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME
-} from '../../../core/constants/repository.constant';
-import { BookingRepository } from '../../../core/repositories/implementations/bookings.repository';
-import { CustomerRepository } from '../../../core/repositories/implementations/customer.repository';
-import { ProviderRepository } from '../../../core/repositories/implementations/provider.repository';
+} from '@core/constants/repository.constant';
+import { BookingRepository } from '@core/repositories/implementations/bookings.repository';
+import { CustomerRepository } from '@core/repositories/implementations/customer.repository';
+import { ProviderRepository } from '@core/repositories/implementations/provider.repository';
 import {
     ServiceOfferedRepository
-} from '../../../core/repositories/implementations/serviceOffered.repository';
+} from '@core/repositories/implementations/serviceOffered.repository';
 import {
     TransactionRepository
-} from '../../../core/repositories/implementations/transaction.repository';
-import { BookingDocument } from '../../../core/schema/bookings.schema';
-import { CustomerDocument } from '../../../core/schema/customer.schema';
-import { ProviderDocument } from '../../../core/schema/provider.schema';
-import { ServiceDocument } from '../../../core/schema/service.schema';
-import { TransactionDocument } from '../../../core/schema/transaction.schema';
-import { BookedSlotDocument } from '@core/schema/booked-slot.schema';
-import { BookedSlotsRepository } from '@core/repositories/implementations/booked-slots.repository';
+} from '@core/repositories/implementations/transaction.repository';
+import { BookingDocument } from '@core/schema/bookings.schema';
+import { CustomerDocument } from '@core/schema/customer.schema';
+import { ProviderDocument } from '@core/schema/provider.schema';
+import { ServiceDocument } from '@core/schema/service.schema';
+import { TransactionDocument } from '@core/schema/transaction.schema';
 
 export const repositoryProviders: Provider[] = [
     {
@@ -61,10 +57,4 @@ export const repositoryProviders: Provider[] = [
             new TransactionRepository(transactionModel),
         inject: [getModelToken(TRANSACTION_MODEL_NAME)]
     },
-    {
-        provide: BOOKED_SLOT_REPOSITORY_NAME,
-        useFactory: (bookedSlotModel: Model<BookedSlotDocument>) =>
-            new BookedSlotsRepository(bookedSlotModel),
-        inject: [getModelToken(BOOKED_SLOT_MODEL_NAME)]
-    }
 ]

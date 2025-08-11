@@ -1,9 +1,44 @@
-import mongoose, { Document, Types } from 'mongoose';
+import { Document, Types } from 'mongoose';
 
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 
 import { BookingStatus, CancelStatus, PaymentStatus } from '../enum/bookings.enum';
-import { ISlotResponse } from '@core/entities/interfaces/slot-rule.entity.interface';
+import { SlotStatusEnum } from '@core/enum/slot.enum';
+
+@Schema({ _id: false })
+export class SlotDocument {
+    @Prop({
+        type: Types.ObjectId,
+        index: true,
+        required: true
+    })
+    ruleId: Types.ObjectId;
+
+    @Prop({
+        type: Date,
+        required: true
+    })
+    date: Date;
+
+    @Prop({
+        type: String,
+        required: true
+    })
+    from: string;
+
+    @Prop({
+        type: String,
+        required: true
+    })
+    to: string;
+
+    @Prop({
+        type: String,
+        default: SlotStatusEnum.AVAILABLE,
+        enum: Object.values(SlotStatusEnum)
+    })
+    status: SlotStatusEnum
+}
 
 @Schema({ timestamps: true })
 export class BookingDocument extends Document {
@@ -19,7 +54,7 @@ export class BookingDocument extends Document {
     @Prop({ type: Date })
     expectedArrivalTime: Date;
 
-    @Prop({ type: Date, default: null }) G
+    @Prop({ type: Date, default: null })
     actualArrivalTime: Date | null;
 
     @Prop({ type: String, enum: BookingStatus, default: BookingStatus.PENDING })
@@ -50,11 +85,10 @@ export class BookingDocument extends Document {
     };
 
     @Prop({
-        type: Types.ObjectId,
-        required: true,
-        index: true
+        type: SlotDocument,
+        required: true
     })
-    slotId: Types.ObjectId | string;
+    slot: SlotDocument;
 
     @Prop({
         type: [

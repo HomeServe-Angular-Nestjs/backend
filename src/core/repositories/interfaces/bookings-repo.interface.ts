@@ -1,9 +1,9 @@
 import { FilterQuery, Types, UpdateQuery } from 'mongoose';
 
-import { IBooking, IBookingStats } from '@core/entities/interfaces/booking.entity.interface';
+import { IBookedSlot, IBooking, IBookingStats } from '@core/entities/interfaces/booking.entity.interface';
 import { ITopProviders } from '@core/entities/interfaces/user.entity.interface';
 import { IBaseRepository } from '@core/repositories/base/interfaces/base-repo.interface';
-import { BookingDocument } from '@core/schema/bookings.schema';
+import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
 import { IBookingReportData, IReportCustomerMatrix, IReportDownloadBookingData, IReportProviderMatrix } from '@core/entities/interfaces/admin.entity.interface';
 
 export interface IBookingRepository extends IBaseRepository<BookingDocument> {
@@ -16,5 +16,10 @@ export interface IBookingRepository extends IBaseRepository<BookingDocument> {
     generateBookingReport(data: Partial<IReportDownloadBookingData>): Promise<IBookingReportData[]>;
     getCustomerReportMatrix(id: string): Promise<IReportCustomerMatrix>;
     getProviderReportMatrix(id: string): Promise<IReportProviderMatrix>;
-    // findBookingsBySlotId(slotId: string): Promise<BookingDocument[]>;
+
+    findSlotsByDate(date: Date): Promise<SlotDocument[]>;
+    findBookedSlots(ruleId: string): Promise<SlotDocument[]>;
+    isAlreadyBooked(ruleId: string, from: string, to: string): Promise<boolean>;
+    updateSlotStatus(ruleId: string, from: string, to: string): Promise<boolean>;
+    // findBookedSlotsByProviderId(providerId: string): Promise<SlotDocument[]>;
 }

@@ -11,4 +11,3 @@ export const MESSAGE_REPOSITORY_INTERFACE_NAME = 'IMessageRepository';
 export const PLAN_REPOSITORY_INTERFACE_NAME = 'IPlanRepository';
 export const SUBSCRIPTION_REPOSITORY_NAME = 'ISubscriptionRepository';
 export const SLOT_RULE_REPOSITORY_NAME = 'ISlotRuleRepository';
-export const BOOKED_SLOT_REPOSITORY_NAME = 'IBookedSlotRepository';

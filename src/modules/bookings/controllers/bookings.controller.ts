@@ -51,6 +51,7 @@ export class BookingsController {
 
     @Post('confirm')
     async handleBooking(@Req() req: Request, @Body() dto: BookingDto) {
+        this.logger.debug(dto);
         const user = req.user as IPayload;
 
         if (!Array.isArray(dto.serviceIds) || dto.serviceIds.some(s => !s.id || !Array.isArray(s.selectedIds))) {
@@ -62,19 +63,9 @@ export class BookingsController {
 
     @Get('fetch')
     async fetchBooking(@Req() req: Request, @Query() dto: BookingPaginationFilterDto): Promise<IBookingWithPagination> {
-        try {
-            const user = req.user as IPayload;
-            if (!user.sub) {
-                throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
-            }
-
-            const { page, ...filter } = dto;
-
-            return await this._bookingService.fetchBookings(user.sub, page);
-        } catch (err) {
-            this.logger.error(`Error fetching bookings: ${err}`);
-            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
-        }
+        const user = req.user as IPayload;
+        const { page, ...filter } = dto;
+        return await this._bookingService.fetchBookings(user.sub, page);
     }
 
     @Get('view_details')

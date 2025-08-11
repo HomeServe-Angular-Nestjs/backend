@@ -3,7 +3,6 @@ import {
 } from '@nestjs/common';
 
 import {
-    BOOKED_SLOT_REPOSITORY_NAME,
     BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, SERVICE_OFFERED_REPOSITORY_NAME,
     TRANSACTION_REPOSITORY_NAME
 } from '../../../../core/constants/repository.constant';
@@ -31,7 +30,6 @@ import {
 } from '../../../../core/repositories/interfaces/transaction-repo.interface';
 import { FilterFields, UpdateBookingStatusDto } from '../../dtos/booking.dto';
 import { IProviderBookingService } from '../interfaces/provider-booking-service.interface';
-import { IBookedSlotRepository } from '@core/repositories/interfaces/booked-slot-repo.interface';
 import { BOOKING_MAPPER } from '@core/constants/mappers.constant';
 import { IBookingMapper } from '@core/dto-mapper/interface/bookings.mapper.interface';
 
@@ -50,8 +48,6 @@ export class ProviderBookingService implements IProviderBookingService {
         private readonly _customerRepository: ICustomerRepository,
         @Inject(TRANSACTION_REPOSITORY_NAME)
         private readonly _transactionRepository: ITransactionRepository,
-        @Inject(BOOKED_SLOT_REPOSITORY_NAME)
-        private readonly _bookedSlotRepository: IBookedSlotRepository,
         @Inject(BOOKING_MAPPER)
         private readonly _bookingMapper: IBookingMapper,
     ) {
@@ -389,7 +385,7 @@ export class ProviderBookingService implements IProviderBookingService {
 
     async fetchBookedSlots(providerId: string): Promise<IResponse> {
         const [bookedSlotDocument] = await Promise.all([
-            this._bookedSlotRepository.findBookedSlotsByProviderId(providerId),
+            // this._bookingRepository.findBookedSlotsByProviderId(providerId),
             this._bookingRepository
         ]);
         return {

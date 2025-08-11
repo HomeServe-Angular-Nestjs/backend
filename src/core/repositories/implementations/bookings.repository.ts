@@ -4,12 +4,13 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 
 import { BOOKINGS_MODEL_NAME } from '@core/constants/model.constant';
-import { IBookingStats } from '@core/entities/interfaces/booking.entity.interface';
+import { IBookedSlot, IBookingStats } from '@core/entities/interfaces/booking.entity.interface';
 import { ITopProviders } from '@core/entities/interfaces/user.entity.interface';
-import { BookingDocument } from '@core/schema/bookings.schema';
+import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
 import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
 import { IBookingRepository } from '@core/repositories/interfaces/bookings-repo.interface';
 import { IBookingReportData, IReportCustomerMatrix, IReportDownloadBookingData, IReportProviderMatrix } from '@core/entities/interfaces/admin.entity.interface';
+import { SlotStatusEnum } from '@core/enum/slot.enum';
 
 @Injectable()
 export class BookingRepository extends BaseRepository<BookingDocument> implements IBookingRepository {
@@ -220,7 +221,7 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
             }
         });
 
-        return this._bookingModel.aggregate(pipeline).exec();
+        return await this._bookingModel.aggregate(pipeline);
     }
 
     async getCustomerReportMatrix(id: string): Promise<IReportCustomerMatrix> {
@@ -257,7 +258,7 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
             }
         )
 
-        const [reportMatrix] = await this._bookingModel.aggregate(pipeline).exec();
+        const [reportMatrix] = await this._bookingModel.aggregate(pipeline);
         return reportMatrix ?? {
             totalBookings: 0,
             totalSpend: 0,
@@ -301,7 +302,7 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
             }
         )
 
-        const [matrix] = await this._bookingModel.aggregate(pipeline).exec();
+        const [matrix] = await this._bookingModel.aggregate(pipeline);
         return matrix ?? {
             totalBookings: 0,
             totalEarnings: 0,
@@ -309,7 +310,40 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
         };
     }
 
-    // async findBookingsBySlotId(slotId: string): Promise<BookingDocument[]> {
-    //     return
-    // }
+    async findSlotsByDate(date: string | Date): Promise<SlotDocument[]> {
+        const dateOnly = new Date(date);
+        const result = await this._bookingModel.find({ 'slot.date': dateOnly }).lean();
+        return result.map(r => r.slot);
+    }
+
+    async findBookedSlots(ruleId: string): Promise<SlotDocument[]> {
+        const result = await this._bookingModel
+            .find({ 'slot.ruleId': this._toObjectId(ruleId) })
+            .lean();
+        return result.map(r => r.slot)
+    }
+
+    async isAlreadyBooked(ruleId: string, from: string, to: string): Promise<boolean> {
+        const result = await this._bookingModel.find(
+            {
+                'slot.ruleId': this._toObjectId(ruleId),
+                'slot.from': from,
+                'slot.to': to
+            });
+        return result.length !== 0;
+    }
+
+    async updateSlotStatus(ruleId: string, from: string, to: string): Promise<boolean> {
+        return !!(await this._bookingModel.findOneAndUpdate(
+            {
+                'slot.ruleId': this._toObjectId(ruleId),
+                'slot.from': from,
+                'slot.to': to
+            },
+            {
+                $set: { 'slot.status': SlotStatusEnum.PENDING }
+            },
+            { new: true }
+        ));
+    }
 }
