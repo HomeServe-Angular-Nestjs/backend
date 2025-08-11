@@ -60,29 +60,22 @@ export class ChatGateway extends BaseSocketGateway {
     ) {
         super()
         this.logger = this.loggerFactory.createLogger(ChatGateway.name);
-
     }
 
     protected override async onClientConnect(client: Socket): Promise<void> {
         try {
-            const token = this._authSocketService.extractTokenFromCookie(client);
-            const payload = await this._authSocketService.validateTokenWithRetry(token);
+            const payload = await this._authSocketService.validateToken(client);
 
-            if (!payload.sub || !payload.type) {
-                throw new Error('Payload not found');
-            }
-
-            const userId = payload.sub;
-            const roomName = `user_${payload.sub}`;
-            client.data.user = { id: payload.sub, type: payload.type };
+            const { sub: userId, type: userType } = payload;
+            const roomName = `user_${userId}`;
+            client.data.user = { id: userId, type: userType };
 
             await this._userSocketService.addSocket(userId, client.id);
-
             client.join(roomName);
-        } catch (err) {
-            this.logger.error(ErrorMessage.UNAUTHORIZED_ACCESS);
-            client.emit('auth-error', ErrorMessage.UNAUTHORIZED_ACCESS);
-            client.disconnect();
+        } catch (error) {   
+            this.logger.error(ErrorMessage.TOKEN_VERIFICATION_FAILED);
+            client.emit('token:expired');
+            setTimeout(() => client.disconnect(), 200);
         }
     }
 

@@ -102,7 +102,7 @@ export class TokenService implements ITokenService {
     });
   }
 
-  async validateRefreshToken(userId: string, refreshToken: string): Promise<IPayload | null> {
+  async validateRefreshToken(refreshToken: string): Promise<IPayload | null> {
     try {
       const blacklistKey = this.getBlacklistTokenKey(refreshToken);
 

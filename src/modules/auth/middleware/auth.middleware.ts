@@ -66,7 +66,7 @@ export class AuthMiddleware implements NestMiddleware {
                     throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
                 }
 
-                const payload = await this.tokenService.validateRefreshToken(userId, refreshToken);
+                const payload = await this.tokenService.validateRefreshToken(refreshToken);
                 if (!payload) throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
 
                 const newAccessToken = this.tokenService.generateAccessToken(userId, payload.email, userType);
