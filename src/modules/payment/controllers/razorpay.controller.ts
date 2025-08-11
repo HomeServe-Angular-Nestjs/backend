@@ -14,8 +14,11 @@ import {
 } from '@modules/payment/services/interfaces/razorpay-service.interface';
 import {
     BadRequestException, Body, Controller, Inject, InternalServerErrorException, Post, Req,
-    UnauthorizedException
+    UnauthorizedException,
+    UseGuards
 } from '@nestjs/common';
+import { IsPaymentInitializedGuard } from '@modules/payment/guards/is_payment_initialized.guard';
+
 
 @Controller('payment')
 export class RazorpayController {
@@ -31,6 +34,7 @@ export class RazorpayController {
     }
 
     @Post('create_order')
+    @UseGuards(IsPaymentInitializedGuard)
     async createOrder(@Body() { amount }: CreateOrderDto): Promise<IRazorpayOrder> {
         try {
             const numericAmount = Number(amount);
