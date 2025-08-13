@@ -35,6 +35,7 @@ export class ChatController {
 
     @Post('new_access_token')
     async newAccessToken(@Req() req: Request, @Res() res: Response) {
+        this.logger.log('[Socket] Generating new access token...');
         const refreshToken = req.cookies['refresh_token'];;
         if (!refreshToken) {
             throw new UnauthorizedException({
@@ -66,22 +67,14 @@ export class ChatController {
 
     @Get('all')
     async getAllChats(@Req() req: Request): Promise<IResponse<IChatData[]>> {
-        try {
-            const user = req.user as IPayload;
-            if (!user.sub || !user.type) {
-                throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
-            }
+        console.log('Fetching all chats for user...');
+        const user = req.user as IPayload;
+        const sender: IParticipant = {
+            id: new Types.ObjectId(user.sub),
+            type: user.type,
+        };
 
-            const sender: IParticipant = {
-                id: new Types.ObjectId(user.sub),
-                type: user.type,
-            };
-
-            return await this._chatService.getAllChat(sender);
-        } catch (err) {
-            this.logger.error('Error fetching chats: ', err.message, err.stack);
-            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
-        }
+        return await this._chatService.getAllChat(sender);
     }
 
     @Get('one')

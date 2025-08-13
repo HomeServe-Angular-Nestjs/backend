@@ -3,12 +3,13 @@ import { Customer } from "@core/entities/implementation/customer.entity";
 import { ICustomer } from "@core/entities/interfaces/user.entity.interface";
 import { CustomerDocument } from "@core/schema/customer.schema";
 import { Injectable } from "@nestjs/common";
+import { Types } from "mongoose";
 
 @Injectable()
 export class CustomerMapper implements ICustomerMapper {
     toEntity(doc: CustomerDocument): ICustomer {
         return new Customer({
-            id: doc.id,
+            id: (doc._id as Types.ObjectId).toString(),
             email: doc.email,
             username: doc.username,
             avatar: doc.avatar,

@@ -10,7 +10,8 @@ import {
 import { IAdminMapper } from '@core/dto-mapper/interface/admin.mapper.interface';
 import { ICustomerMapper } from '@core/dto-mapper/interface/customer.mapper';
 import { IProviderMapper } from '@core/dto-mapper/interface/provider.mapper';
-import { IUser } from '@core/entities/interfaces/user.entity.interface';
+import { IAdmin } from '@core/entities/interfaces/admin.entity.interface';
+import { ICustomer, IProvider, IUser } from '@core/entities/interfaces/user.entity.interface';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { UserReposType } from '@core/misc/repo.type';
@@ -48,8 +49,6 @@ export class LoginService implements ILoginService {
     private _adminRepository: IAdminRepository,
     @Inject(ARGON_UTILITY_NAME)
     private _argon: IArgonUtility,
-    @Inject(TOKEN_UTILITY_NAME)
-    private _token: ITokenUtility,
     @Inject(MAILER_UTILITY_INTERFACE_NAME)
     private _mailerService: IMailerUtility,
     @Inject(TOKEN_SERVICE_NAME)
@@ -77,6 +76,22 @@ export class LoginService implements ILoginService {
     }
   }
 
+  private _mappedUser(
+    type: UserType,
+    user: CustomerDocument | ProviderDocument | AdminDocument)
+    : ICustomer | IProvider | IAdmin {
+    switch (type) {
+      case 'customer':
+        return this._customerMapper.toEntity(user as CustomerDocument);
+      case 'provider':
+        return this._providerMapper.toEntity(user as ProviderDocument);
+      case 'admin':
+        return this._adminMapper.toEntity(user as AdminDocument);
+      default:
+        throw new BadRequestException('Invalid type Error.');
+    }
+  }
+
   async validateUserCredentials(dto: AuthLoginDto): Promise<IUser> {
     const repository = this._findRepo(dto.type);
     const user = await repository.findByEmail(dto.email);
@@ -98,16 +113,14 @@ export class LoginService implements ILoginService {
       throw new UnauthorizedException('You are blocked by the admin.');
     }
 
-    switch (dto.type) {
-      case 'customer':
-        return this._customerMapper.toEntity(user as CustomerDocument);
-      case 'provider':
-        return this._providerMapper.toEntity(user as ProviderDocument);
-      case 'admin':
-        return this._adminMapper.toEntity(user as AdminDocument);
-      default:
-        throw new BadRequestException('Invalid type Error.');
+    if (dto.type === 'customer' || dto.type === 'provider') {
+      await repository.findOneAndUpdate(
+        { email: dto.email },
+        { $set: { lastLogin: new Date() } },
+      );
     }
+
+    return this._mappedUser(dto.type, user);
   }
 
   async findOrCreateUser(user: GoogleLoginDto): Promise<IUser> {
@@ -127,17 +140,12 @@ export class LoginService implements ILoginService {
 
       if (existingUser) {
         if (existingUser.googleId) {
-          switch (user.type) {
-            case 'customer':
-              return this._customerMapper.toEntity(existingUser as CustomerDocument);
-            case 'provider':
-              return this._providerMapper.toEntity(existingUser as ProviderDocument);
-          }
+          return this._mappedUser(user.type, existingUser);
         }
 
         const updatedUser = await repository.findOneAndUpdate(
           { email: existingUser.email },
-          { $set: { googleId: user.googleId } },
+          { $set: { googleId: user.googleId, lastLogin: new Date() } },
           { new: true },
         );
 
@@ -147,12 +155,7 @@ export class LoginService implements ILoginService {
           );
         }
 
-        switch (user.type) {
-          case 'customer':
-            return this._customerMapper.toEntity(updatedUser as CustomerDocument);
-          case 'provider':
-            return this._providerMapper.toEntity(updatedUser as ProviderDocument);
-        }
+        return this._mappedUser(user.type, updatedUser);
       }
 
       let newUser: CustomerDocument | ProviderDocument;
@@ -164,6 +167,7 @@ export class LoginService implements ILoginService {
           googleId: user.googleId,
           avatar: user.avatar,
           isActive: true,
+          lastLogin: new Date(),
         });
       } else if (user.type === 'provider') {
         newUser = await this._providerRepository.create({
@@ -171,6 +175,7 @@ export class LoginService implements ILoginService {
           username: user.name,
           googleId: user.googleId,
           avatar: user.avatar,
+          lastLogin: new Date(),
           isActive: true,
         });
       } else {
@@ -195,13 +200,11 @@ export class LoginService implements ILoginService {
         ? this._customerRepository
         : this._providerRepository;
 
-    const user = await repository.findByEmail(dto.email);
-    if (!user) throw new NotFoundException('User not found');
+    const userDocument = await repository.findByEmail(dto.email);
+    if (!userDocument) throw new NotFoundException('User not found');
+    const user = this._mappedUser(dto.type, userDocument);
 
-    const token = this._token.generateAccessToken({
-      ...dto,
-      sub: user.id,
-    });
+    const token = this._tokenService.generateAccessToken(user.id, user.email, dto.type);
 
     await this._mailerService.sendEmail(dto.email, token, 'link');
   }
@@ -222,7 +225,7 @@ export class LoginService implements ILoginService {
       throw new InternalServerErrorException('Failed to update password');
     }
   }
-  
+
 }
 
 

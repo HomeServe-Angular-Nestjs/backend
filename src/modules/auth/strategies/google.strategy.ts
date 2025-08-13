@@ -29,7 +29,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy) {
       passReqToCallback: true,
     });
 
-    this.logger = this.loggerFactory.createLogger(GoogleStrategy.name); 
+    this.logger = this.loggerFactory.createLogger(GoogleStrategy.name);
   }
 
   async validate(req: Request, accessToken: string, refreshToken: string, profile: Profile,) {

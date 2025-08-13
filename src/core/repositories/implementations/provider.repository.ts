@@ -22,7 +22,7 @@ export class ProviderRepository extends BaseRepository<ProviderDocument> impleme
   }
 
   async findByEmail(email: string): Promise<ProviderDocument | null> {
-    return await this._providerModel.findOne({ email }).exec();
+    return await this._providerModel.findOne({ email }).lean();
   }
 
   async count(filter?: FilterQuery<ProviderDocument>): Promise<number> {

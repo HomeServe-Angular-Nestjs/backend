@@ -9,7 +9,7 @@ import { Types } from "mongoose";
 export class ProviderMapper implements IProviderMapper {
     toEntity(doc: ProviderDocument): IProvider {
         return new Provider({
-            id: doc.id,
+            id: (doc._id as Types.ObjectId).toString(),
             email: doc.email,
             username: doc.username,
             password: doc.password,

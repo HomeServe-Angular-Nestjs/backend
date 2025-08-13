@@ -132,7 +132,7 @@ export class LoginController {
     try {
       const user = req.user as IUser;
 
-      if (!user || !user.type) {
+      if (!user || !user.id || !user.type) {
         throw new NotFoundException('User is missing in the request');
       }
 

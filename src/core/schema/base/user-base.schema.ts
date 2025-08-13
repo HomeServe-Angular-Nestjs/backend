@@ -64,6 +64,9 @@ export class BaseUserDocument extends Document {
   isDeleted: boolean;
 
   @Prop({ type: Date })
+  lastLogin?: Date;
+
+  @Prop({ type: Date })
   createdAt?: Date;
 
   @Prop({ type: Date })

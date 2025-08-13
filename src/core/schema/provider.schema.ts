@@ -11,8 +11,6 @@ import { ServiceDocument } from './service.schema';
 
 @Schema()
 export class Review {
-  _id?: Types.ObjectId;
-
   @Prop({ required: true })
   reviewedBy: string;
 
