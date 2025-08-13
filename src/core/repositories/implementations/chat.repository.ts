@@ -15,4 +15,17 @@ export class ChatRepository extends BaseRepository<ChatDocument> implements ICha
     ) {
         super(_chatModel)
     }
+
+    async updateLastSentMessage(message: string, chatId: string): Promise<boolean> {
+        const updateResult = await this._chatModel.updateOne(
+            { _id: chatId },
+            {
+                $set: {
+                    lastMessage: message
+                }
+            }
+        );
+
+        return updateResult.modifiedCount === 0;
+    }
 }

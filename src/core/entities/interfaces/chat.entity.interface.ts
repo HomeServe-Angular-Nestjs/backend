@@ -15,6 +15,7 @@ export interface IChat extends IEntity {
 export interface IParticipant {
     id: Types.ObjectId;
     type: UserType;
+    // lastMessage: string;
 }
 
 

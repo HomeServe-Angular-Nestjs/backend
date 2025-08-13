@@ -1,6 +1,6 @@
 import { Types } from 'mongoose';
 
-import { MESSAGE_REPOSITORY_INTERFACE_NAME } from '@core/constants/repository.constant';
+import { CHAT_REPOSITORY_INTERFACE_NAME, MESSAGE_REPOSITORY_INTERFACE_NAME } from '@core/constants/repository.constant';
 import {
     ICreateMessage, IMessage,
 } from '@core/entities/interfaces/message.entity.interface';
@@ -9,9 +9,11 @@ import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-fa
 import { IResponse } from '@core/misc/response.util';
 import { IMessagesRepository } from '@core/repositories/interfaces/message-repo.interface';
 import { IMessageService } from '@modules/websockets/services/interface/message-service.interface';
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { MESSAGE_MAPPER } from '@core/constants/mappers.constant';
 import { IMessageMapper } from '@core/dto-mapper/interface/message.mapper';
+import { IChatRepository } from '@core/repositories/interfaces/chat-repo.interface';
+import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
 
 @Injectable()
 export class MessageService implements IMessageService {
@@ -22,6 +24,8 @@ export class MessageService implements IMessageService {
         private readonly loggerFactory: ILoggerFactory,
         @Inject(MESSAGE_REPOSITORY_INTERFACE_NAME)
         private readonly _messageRepository: IMessagesRepository,
+        @Inject(CHAT_REPOSITORY_INTERFACE_NAME)
+        private readonly _chatRepository: IChatRepository,
         @Inject(MESSAGE_MAPPER)
         private readonly _messageMapper: IMessageMapper,
     ) {
@@ -29,11 +33,20 @@ export class MessageService implements IMessageService {
     }
 
     async createMessage(messageData: ICreateMessage): Promise<IMessage> {
-        const messageDocument = await this._messageRepository.create({
-            ...messageData,
-            isRead: false,
-            isDeleted: false
-        });
+        const [messageDocument, isChatUpdated] = await Promise.all([
+            this._messageRepository.create({
+                ...messageData,
+                isRead: false,
+                isDeleted: false
+            }),
+            this._chatRepository.updateLastSentMessage(messageData.content, messageData.chatId.toString())
+        ]);
+
+        if (!isChatUpdated) {
+            this.logger.error(`Chat with ID  ${messageData.chatId} not found.`);
+            throw new NotFoundException(ErrorMessage.DOCUMENT_NOT_FOUND);
+        }
+
         return this._messageMapper.toEntity(messageDocument);
     }
 
