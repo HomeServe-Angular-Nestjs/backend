@@ -42,6 +42,11 @@ export class MessageService implements IMessageService {
             this._chatRepository.updateLastSentMessage(messageData.content, messageData.chatId.toString())
         ]);
 
+        if (!messageDocument) {
+            this.logger.error(`Failed to create message for chat ID: ${messageData.chatId}`);
+            throw new NotFoundException(ErrorMessage.DOCUMENT_NOT_FOUND);
+        }
+
         if (!isChatUpdated) {
             this.logger.error(`Chat with ID  ${messageData.chatId} not found.`);
             throw new NotFoundException(ErrorMessage.DOCUMENT_NOT_FOUND);

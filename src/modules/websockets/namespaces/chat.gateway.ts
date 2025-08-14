@@ -62,17 +62,21 @@ export class ChatGateway extends BaseSocketGateway {
         this.logger = this.loggerFactory.createLogger(ChatGateway.name);
     }
 
+    private _roomKey(userId: string): string {
+        return `room:${userId}`
+    }
+
     protected override async onClientConnect(client: Socket): Promise<void> {
         try {
             const payload = await this._authSocketService.validateToken(client);
 
             const { sub: userId, type: userType } = payload;
-            const roomName = `user_${userId}`;
             client.data.user = { id: userId, type: userType };
 
             await this._userSocketService.addSocket(userId, client.id);
-            client.join(roomName);
-        } catch (error) {   
+            client.join(this._roomKey(userId));
+            this.logger.log(`User ${userId} connected with socket ID: ${client.id}`);
+        } catch (error) {
             this.logger.error(ErrorMessage.TOKEN_VERIFICATION_FAILED);
             client.emit('token:expired');
             setTimeout(() => client.disconnect(), 200);
@@ -128,14 +132,15 @@ export class ChatGateway extends BaseSocketGateway {
                 throw new NotFoundException(ErrorMessage.DOCUMENT_NOT_FOUND);
             }
 
-            const senderSockets = await this._userSocketService.getSockets(receiver.id.toString());
-            const receiverSockets = await this._userSocketService.getSockets(sender.id.toString());
+            const senderSockets = await this._userSocketService.getSockets(sender.id.toString());
+            const receiverSockets = await this._userSocketService.getSockets(receiver.id.toString());
 
             const allSockets = [...new Set([...senderSockets, ...receiverSockets])];
 
             for (const socketId of allSockets) {
                 this.server.to(socketId).emit('newMessage', newMessage);
             }
+
         } catch (err) {
             this.logger.error('Caught error in send new message socket:', err);
             throw err;

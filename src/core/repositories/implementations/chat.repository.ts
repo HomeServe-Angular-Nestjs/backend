@@ -26,6 +26,6 @@ export class ChatRepository extends BaseRepository<ChatDocument> implements ICha
             }
         );
 
-        return updateResult.modifiedCount === 0;
+        return updateResult.modifiedCount === 1;
     }
 }
