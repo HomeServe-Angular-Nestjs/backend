@@ -10,13 +10,15 @@ import { ReportCategoryType } from '@core/entities/interfaces/admin.entity.inter
 export type FilterStatusType = true | false | 'all';
 export type RoleType = 'customer' | 'provider';
 
-export class GetUsersWithFilterDto {
+export class PageDto {
     @IsOptional()
     @Transform(({ value }) => Number(value) || 1)
     @IsNumber()
     @Min(1)
     page: number;
+}
 
+export class GetUsersWithFilterDto extends PageDto {
     @IsNotEmpty()
     @IsIn(['customer', 'provider'], {
         message: 'Role must be either "customer" or "provider"',
@@ -67,15 +69,7 @@ export class RemoveUserDto {
     role: RoleType;
 }
 
-export class GetBookingsFilter {
-    @Transform(({ value }) => {
-        const num = Number(value);
-        if (isNaN(num)) return 1;
-        return num;
-    })
-    @IsOptional()
-    page: number;
-
+export class GetBookingsFilter extends PageDto {
     @IsOptional()
     @IsString()
     search: string;
@@ -94,16 +88,7 @@ export class GetBookingsFilter {
     paymentStatus: PaymentStatus;
 }
 
-export class FilterWithPaginationDto {
-    @Transform(({ value }) => {
-        const num = Number(value);
-        if (isNaN(num)) return 1;
-        return num;
-    })
-    @IsNumber()
-    @IsOptional()
-    page?: number;
-
+export class FilterWithPaginationDto extends PageDto {
     @IsOptional()
     @Transform(({ value }) => {
         if (!value) return;

@@ -7,6 +7,7 @@ import { ITransactionRepository } from '@core/repositories/interfaces/transactio
 import { TransactionDocument } from '@core/schema/transaction.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import { IReportDownloadTransactionData, IReportTransactionData } from '@core/entities/interfaces/admin.entity.interface';
+import { ITransaction, ITransactionStats, ITransactionTableData } from '@core/entities/interfaces/transaction.entity.interface';
 
 export class TransactionRepository extends BaseRepository<TransactionDocument> implements ITransactionRepository {
     constructor(
@@ -14,6 +15,10 @@ export class TransactionRepository extends BaseRepository<TransactionDocument> i
         private readonly _transactionModel: Model<TransactionDocument>
     ) {
         super(_transactionModel);
+    }
+
+    async count(): Promise<number> {
+        return await this._transactionModel.countDocuments();
     }
 
     async getTotalRevenue(date: Date): Promise<number> {
@@ -82,5 +87,55 @@ export class TransactionRepository extends BaseRepository<TransactionDocument> i
         );
 
         return await this._transactionModel.aggregate(pipeline).exec();
+    }
+
+    async getTransactionStats(): Promise<ITransactionStats> {
+        const pipeline: PipelineStage[] = [
+            {
+                $group: {
+                    _id: null,
+                    totalTransactions: { $sum: 1 },
+                    totalRevenue: { $sum: "$amount" }
+                }
+            },
+            {
+                $addFields: {
+                    successRate: 100, // all are paid
+                    avgTransactionValue: {
+                        $cond: [
+                            { $eq: ["$totalTransactions", 0] },
+                            0,
+                            { $divide: ["$totalRevenue", "$totalTransactions"] }
+                        ]
+                    }
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    totalTransactions: 1,
+                    totalRevenue: 1,
+                    successRate: 1,
+                    avgTransactionValue: 1
+                }
+            }
+        ];
+
+        const result = await this._transactionModel.aggregate(pipeline);
+        return result[0] || {
+            totalRevenue: 0,
+            successRate: 0,
+            avgTransactionValue: 0
+        };
+    }
+
+
+    async fetchTransactionsWithPagination(page: number, limit = 1, skip = 1): Promise<TransactionDocument[]> {
+        return await this._transactionModel
+            .find({})
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit)
+            .lean();
     }
 }
