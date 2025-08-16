@@ -1,16 +1,16 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { Document } from "mongoose";
+import { Document, Types } from "mongoose";
 
 
 @Schema({ timestamps: true })
 export class WalletDocument extends Document {
     @Prop({
-        type: String,
+        type: Types.ObjectId,
         required: true,
         unique: true,
         index: true,
     })
-    userId: string;
+    userId: Types.ObjectId;
 
     @Prop({
         type: Number,

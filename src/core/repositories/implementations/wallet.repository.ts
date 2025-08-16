@@ -13,4 +13,8 @@ export class WalletRepository extends BaseRepository<WalletDocument> implements 
     ) {
         super(_walletModel);
     }
+
+    async findWallet(userId: string): Promise<WalletDocument | null> {
+        return await this._walletModel.findOne({ userId: this._toObjectId(userId) });
+    }
 }
