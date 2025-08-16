@@ -1,4 +1,5 @@
 import { IEntity } from '@core/entities/base/interfaces/base-entity.entity.interface';
+import { IPagination } from '@core/entities/interfaces/booking.entity.interface';
 import { TransactionStatus, TransactionType } from '@core/enum/transaction.enum';
 
 export interface ITransaction extends IEntity {
@@ -33,4 +34,29 @@ export interface IRazorpayOrder {
 export interface IVerifiedPayment {
     verified: boolean,
     transaction: ITransaction
+}
+
+export interface ITransactionStats {
+    totalTransactions: number;
+    totalRevenue: number;
+    successRate: number;
+    avgTransactionValue: number;
+}
+
+export interface ITransactionTableData {
+    transactionId: string;
+    orderId: string;
+    paymentId: string;
+    userId: string;
+    amount: number;
+    userEmail?: string;
+    contact?: string;
+    method?: string;
+    transactionType: string;
+    createdAt: Date;
+}
+
+export interface ITransactionDataWithPagination {
+    tableData: ITransactionTableData[];
+    pagination: IPagination;
 }
