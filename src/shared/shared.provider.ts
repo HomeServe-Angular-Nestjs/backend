@@ -1,4 +1,4 @@
-import { ADMIN_MAPPER, BOOKING_MAPPER, CHAT_MAPPER, CUSTOMER_MAPPER, MESSAGE_MAPPER, PLAN_MAPPER, PROVIDER_MAPPER, SCHEDULES_MAPPER, SERVICE_OFFERED_MAPPER, SLOT_RULE_MAPPER, SUBSCRIPTION_MAPPER, TRANSACTION_MAPPER } from '@core/constants/mappers.constant';
+import { ADMIN_MAPPER, BOOKING_MAPPER, CHAT_MAPPER, CUSTOMER_MAPPER, MESSAGE_MAPPER, PLAN_MAPPER, PROVIDER_MAPPER, SCHEDULES_MAPPER, SERVICE_OFFERED_MAPPER, SLOT_RULE_MAPPER, SUBSCRIPTION_MAPPER, TRANSACTION_MAPPER, WALLET_MAPPER } from '@core/constants/mappers.constant';
 import { AdminMapper } from '@core/dto-mapper/implementation/admin.mapper';
 import { BookingMapper } from '@core/dto-mapper/implementation/booking.mapper';
 import { ChatMapper } from '@core/dto-mapper/implementation/chat.mapper';
@@ -11,6 +11,7 @@ import { ServiceOfferedMapper } from '@core/dto-mapper/implementation/serviceOff
 import { SlotRuleMapper } from '@core/dto-mapper/implementation/slot-rule.mapper';
 import { SubscriptionMapper } from '@core/dto-mapper/implementation/subscription.mapper';
 import { TransactionMapper } from '@core/dto-mapper/implementation/transaction.mapper';
+import { WalletMapper } from '@core/dto-mapper/implementation/wallet.mapper';
 import { CustomLogger } from '@core/logger/implementation/custom-logger';
 import { LoggerFactory } from '@core/logger/implementation/logger.factory';
 import { CUSTOM_LOGGER } from '@core/logger/interface/custom-logger.interface';
@@ -74,4 +75,8 @@ export const sharedProviders: Provider[] = [
         provide: SLOT_RULE_MAPPER,
         useClass: SlotRuleMapper
     },
+    {
+        provide: WALLET_MAPPER,
+        useClass: WalletMapper
+    }
 ];

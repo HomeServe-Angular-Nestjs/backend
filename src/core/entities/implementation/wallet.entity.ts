@@ -9,6 +9,6 @@ export class Wallet extends BaseEntity implements IWallet {
 
     constructor(partial: Partial<Wallet>) {
         super(partial);
-        Object.assign(partial);
+        Object.assign(this, partial);
     }
 }
