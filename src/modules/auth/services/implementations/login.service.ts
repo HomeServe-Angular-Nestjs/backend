@@ -118,14 +118,10 @@ export class LoginService implements ILoginService {
       dto.password,
     );
 
-    console.log(isValidPassword);
-    
     if (!isValidPassword) {
       throw new UnauthorizedException('Invalid email or password.');
     }
     
-    console.log(user);
-
     if (dto.type === 'customer' || dto.type === 'provider') {
       if (!user.isActive) {
         throw new UnauthorizedException('You are blocked by the admin.');
@@ -139,7 +135,6 @@ export class LoginService implements ILoginService {
       ]);
     }
 
-    console.log(user);
     return user;
   }
 
