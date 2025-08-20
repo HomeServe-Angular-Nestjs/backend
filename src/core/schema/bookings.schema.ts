@@ -118,3 +118,15 @@ export class BookingDocument extends Document {
 }
 
 export const BookingSchema = SchemaFactory.createForClass(BookingDocument);
+BookingSchema.index(
+    {
+        'slot.ruleId': 1,
+        'slot.date': 1,
+        'slot.from': 1,
+        'slot.to': 1
+    },
+    {
+        unique: true,
+        name: 'uniq_rule_date_time'
+    }
+);

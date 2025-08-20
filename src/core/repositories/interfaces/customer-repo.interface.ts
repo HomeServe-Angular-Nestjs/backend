@@ -10,4 +10,5 @@ export interface ICustomerRepository extends IBaseRepository<CustomerDocument> {
   count(filter?: FilterQuery<CustomerDocument>): Promise<number>;
   getCustomerStatistics(): Promise<IStats>;
   generateCustomersReport(data: Partial<IReportDownloadUserData>): Promise<IReportUserData[]>;
+  changeReviewStatus(id: string, status: boolean): Promise<void>;
 }

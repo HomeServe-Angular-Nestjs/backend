@@ -24,7 +24,7 @@ export class IsPaymentInitializedGuard implements CanActivate {
         const key = `payment:${user.sub}`;
 
         // @ts-expect-error
-        const wasSet = await this._redis.set(key, 'Payment is in progress', 'NX', 'EX', 120);
+        const wasSet = await this._redis.set(key, 'Payment is in progress', 'NX', 'EX', 5);
 
         if (!wasSet) {
             this.logger.error(`Payment for user ${user.sub} is already in progress.`);

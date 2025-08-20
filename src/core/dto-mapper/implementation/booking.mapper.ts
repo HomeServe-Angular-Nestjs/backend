@@ -39,4 +39,31 @@ export class BookingMapper implements IBookingMapper {
             status: doc.status
         });
     }
+
+    toDocument(entity: Omit<IBooking, 'id'>): Partial<BookingDocument> {
+        return {
+            customerId: new Types.ObjectId(entity.customerId),
+            providerId: new Types.ObjectId(entity.providerId),
+            totalAmount: entity.totalAmount,
+            expectedArrivalTime: entity.expectedArrivalTime,
+            location: entity.location,
+            services: entity.services,
+            slot: {
+                ruleId: new Types.ObjectId(entity.slot.ruleId),
+                date: entity.slot.date,
+                from: entity.slot.from,
+                to: entity.slot.to,
+                status: entity.slot.status,
+            },
+            bookingStatus: entity.bookingStatus,
+            transactionId: entity.transactionId
+                ? new Types.ObjectId(entity.transactionId)
+                : null,
+            paymentStatus: entity.paymentStatus,
+            cancellationReason: entity.cancellationReason,
+            cancelStatus: entity.cancelStatus,
+            cancelledAt: entity.cancelledAt,
+            actualArrivalTime: entity.actualArrivalTime,
+        }
+    }
 }

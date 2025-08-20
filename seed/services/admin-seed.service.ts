@@ -1,16 +1,16 @@
 import { Inject, Injectable, InternalServerErrorException, } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ISeedAdminService } from '../interface/seed-service.interface';
-import { ADMIN_REPOSITORY_INTERFACE_NAME } from '../../src/core/constants/repository.constant';
-import { IAdminRepository } from '../../src/core/repositories/interfaces/admin-repo.interface';
-import { ARGON_UTILITY_NAME } from '../../src/core/constants/utility.constant';
-import { IArgonUtility } from '../../src/core/utilities/interface/argon.utility.interface';
-import { Admin } from '../../src/core/entities/implementation/admin.entity';
+import { ADMIN_REPOSITORY_INTERFACE_NAME } from '@core/constants/repository.constant';
+import { IAdminRepository } from '@core/repositories/interfaces/admin-repo.interface';
+import { ARGON_UTILITY_NAME } from '@core/constants/utility.constant';
+import { IArgonUtility } from '@core/utilities/interface/argon.utility.interface';
 import { ADMIN_MAPPER } from '@core/constants/mappers.constant';
 import { IAdminMapper } from '@core/dto-mapper/interface/admin.mapper.interface';
 import { ErrorMessage } from '@core/enum/error.enum';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
+import { IAdmin } from '@core/entities/interfaces/admin.entity.interface';
 
 @Injectable()
 export class SeedAdminService implements ISeedAdminService {
@@ -30,18 +30,19 @@ export class SeedAdminService implements ISeedAdminService {
     this.logger = this._loggerFactory.createLogger(SeedAdminService.name);
   }
 
-  async seedAdmin(): Promise<Admin> {
+  async seedAdmin(): Promise<IAdmin> {
     try {
-      const email = this._config.get<string>('ADMIN_EMAIL') || 'admin@homeserve.com';
-      const password = this._config.get<string>('ADMIN_PASSWORD') || 'adminHomeServe@123';
+      const email = this._config.get<string>('ADMIN_EMAIL');
+      const password = this._config.get<string>('ADMIN_PASSWORD');
 
-      const admin = await this._adminRepository.findByEmail(email);
-      if (admin) {
-        return this._adminMapper.toEntity(admin);
+      if (!email || !password) {
+        throw new Error('Failed to fetch admin credentials from env.');
       }
 
       const hashedPassword = await this._argon.hash(password);
-      const newAdmin = await this._adminRepository.create({ email, password: hashedPassword });
+
+      const newAdmin = await this._adminRepository.createAdmin(email, hashedPassword);
+
       if (!newAdmin) {
         throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
       }

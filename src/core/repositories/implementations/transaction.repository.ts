@@ -8,6 +8,7 @@ import { TransactionDocument } from '@core/schema/transaction.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import { IReportDownloadTransactionData, IReportTransactionData } from '@core/entities/interfaces/admin.entity.interface';
 import { ITransaction, ITransactionStats, ITransactionTableData } from '@core/entities/interfaces/transaction.entity.interface';
+import { Types } from 'mongoose';
 
 export class TransactionRepository extends BaseRepository<TransactionDocument> implements ITransactionRepository {
     constructor(
@@ -15,6 +16,12 @@ export class TransactionRepository extends BaseRepository<TransactionDocument> i
         private readonly _transactionModel: Model<TransactionDocument>
     ) {
         super(_transactionModel);
+    }
+
+    async findTransactionById(id: string): Promise<TransactionDocument | null> {
+        return await this._transactionModel
+            .findById(id)
+            .lean();
     }
 
     async count(): Promise<number> {

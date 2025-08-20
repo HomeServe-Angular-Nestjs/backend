@@ -11,7 +11,7 @@ import {
     IBookingDetailCustomer, IBookingResponse, IBookingWithPagination
 } from '@core/entities/interfaces/booking.entity.interface';
 import { BookingStatus, CancelStatus, PaymentStatus } from '@core/enum/bookings.enum';
-import { ErrorMessage } from '@core/enum/error.enum';
+import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { IResponse } from '@core/misc/response.util';
 import {
@@ -35,7 +35,13 @@ import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-fa
 import { Types } from 'mongoose';
 import { SlotStatusEnum } from '@core/enum/slot.enum';
 import { IBookingMapper } from '@core/dto-mapper/interface/bookings.mapper.interface';
-import { BOOKING_MAPPER } from '@core/constants/mappers.constant';
+import { BOOKING_MAPPER, TRANSACTION_MAPPER } from '@core/constants/mappers.constant';
+import { ITransactionMapper } from '@core/dto-mapper/interface/transaction.mapper.interface';
+import { ITransaction } from '@core/entities/interfaces/transaction.entity.interface';
+import { PRICING_UTILITY_NAME, SLOT_UTILITY_NAME, TIME_UTILITY_NAME } from '@core/constants/utility.constant';
+import { IPricingUtility } from '@core/utilities/interface/pricing.utility.interface';
+import { ISlotUtility } from '@core/utilities/interface/slot.utility.interface';
+import { ITimeUtility } from '@core/utilities/interface/time.utility.interface';
 
 @Injectable()
 export class BookingService implements IBookingService {
@@ -54,60 +60,55 @@ export class BookingService implements IBookingService {
         private readonly _providerRepository: IProviderRepository,
         @Inject(TRANSACTION_REPOSITORY_NAME)
         private readonly _transactionRepository: ITransactionRepository,
+        @Inject(PRICING_UTILITY_NAME)
+        private readonly _pricingUtility: IPricingUtility,
+        @Inject(SLOT_UTILITY_NAME)
+        private readonly _slotUtility: ISlotUtility,
+        @Inject(TIME_UTILITY_NAME)
+        private readonly _timeUtility: ITimeUtility,
         @Inject(BOOKING_MAPPER)
         private readonly _bookingMapper: IBookingMapper,
+        @Inject(TRANSACTION_MAPPER)
+        private readonly _transactionMapper: ITransactionMapper,
 
     ) {
         this.logger = this._loggerFactor.createLogger(BookingService.name);
     }
 
-    private _combineDateAndTime(dateStr: string, timeStr: string): Date {
-        const fullDateTimeStr = `${dateStr} ${timeStr}`;
-        return new Date(fullDateTimeStr);
+    private async _getTransactionData(txId?: string | null): Promise<ITransaction | null> {
+        if (!txId) return null;
+
+        const txDoc = await this._transactionRepository.findTransactionById(txId);
+        if (!txDoc) {
+            throw new NotFoundException({
+                code: ErrorCodes.DOCUMENT_NOT_FOUND,
+                message: 'Transaction document not found'
+            });
+        }
+
+        return this._transactionMapper.toEntity(txDoc);
     }
 
     // Calculates the detailed price breakup for a list of selected services and subServices.
     async preparePriceBreakup(dto: SelectedServiceDto[]): Promise<IPriceBreakupDto> {
-        // Fetch all selected services from the repository
-        let services = await Promise.all(
-            dto.map(item => this._serviceOfferedRepository.findOne({ _id: item.serviceId }))
-        );
 
-        // Filter each service's subServices to include only the ones selected by the user
-        const filteredServices = services.map((service, index) => {
-            const selectedSubServiceIds = dto[index].subServiceIds;
+        const subServiceIds = dto.flatMap(ids => ids.subServiceIds);
+        const subServiceDocuments = await this._serviceOfferedRepository.findSubServicesByIds(subServiceIds);
 
-            // Filter subServices by the selected subservice IDs
-            const matchedSubServices = service?.subService.filter(sub =>
-                selectedSubServiceIds.includes(sub.id as string)
-            );
-
-            return {
-                ...service,
-                subService: matchedSubServices
-            };
+        const prices = subServiceDocuments.flatMap(sub => {
+            const price = Number(sub.price);
+            if (isNaN(price)) throw new BadRequestException({
+                code: ErrorCodes.INVALID_REQUEST_BODY,
+                message: 'Invalid price'
+            });
+            return price;
         });
 
-        let subTotal = 0;
-        filteredServices.forEach(service => {
-            (service.subService ?? []).forEach(sub => {
-                const price = Number(sub.price);
-                if (isNaN(price)) {
-                    throw new Error(`Invalid price in subservice: ${sub.title || 'Unnamed SubService'}`);
-                }
-                subTotal += price;
-            });
-        })
-
-        const visitingFee = 50;
-        const taxRate = 0.18;
-        const tax = parseFloat((subTotal * taxRate).toFixed(2));
-        const total = subTotal + visitingFee + tax;
+        const { subTotal, tax, total } = this._pricingUtility.computeBreakup(prices);
 
         return {
             subTotal,
             tax,
-            visitingFee,
             total,
         };
     }
@@ -115,25 +116,25 @@ export class BookingService implements IBookingService {
     async createBooking(customerId: string, data: BookingDto): Promise<IResponse> {
         const { slotData } = data;
 
-        if (!slotData.ruleId) {
-            this.logger.error('ruleId is missing in the request.');
-            throw new BadRequestException(ErrorMessage.MISSING_FIELDS);
-        }
+        const isAvailable = await this._slotUtility.isAvailable(
+            slotData.ruleId,
+            slotData.date,
+            slotData.from,
+            slotData.to
+        );
 
-        const isSlotExist = await this._bookingRepository.isAlreadyBooked(slotData.ruleId, slotData.from, slotData.to);
-
-        if (isSlotExist) {
+        if (!isAvailable) {
             return {
                 success: false,
                 message: 'Slot is already booked.'
             };
         }
 
-        const expectedArrivalTime = this._combineDateAndTime(data.slotData.date, data.slotData.from);
+        const expectedArrivalTime = this._timeUtility.combineLocalDateAndTimeUTC(slotData.date, slotData.from);
 
-        const newBooking = await this._bookingRepository.create({
-            customerId: new Types.ObjectId(customerId),
-            providerId: new Types.ObjectId(data.providerId),
+        const bookingDoc = await this._bookingRepository.create(this._bookingMapper.toDocument({
+            customerId,
+            providerId: data.providerId,
             totalAmount: data.total,
             actualArrivalTime: null,
             expectedArrivalTime,
@@ -146,7 +147,7 @@ export class BookingService implements IBookingService {
                 subserviceIds: s.selectedIds
             })),
             slot: {
-                ruleId: new Types.ObjectId(slotData.ruleId),
+                ruleId: slotData.ruleId,
                 date: new Date(slotData.date),
                 from: slotData.from,
                 to: slotData.to,
@@ -156,25 +157,17 @@ export class BookingService implements IBookingService {
             cancellationReason: null,
             cancelStatus: null,
             cancelledAt: null,
-            transactionId: data.transactionId ? new Types.ObjectId(data.transactionId) : null,
+            transactionId: data.transactionId,
             paymentStatus: data.transactionId ? PaymentStatus.PAID : PaymentStatus.UNPAID,
-        });
+        }));
 
-        if (!newBooking) {
+        if (!bookingDoc) {
             this.logger.error('Failed to create new booking.');
             throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
         }
 
-        const hasSlotUpdated = await this._bookingRepository.updateSlotStatus(slotData.ruleId, slotData.from, slotData.to);
-        if (!hasSlotUpdated) {
-            this.logger.error('Failed to update booked slot status.');
-            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
-        }
-
-        await this._customerRepository.findOneAndUpdate(
-            { _id: customerId },
-            { $set: { isReviewed: false } },
-        );
+        await this._slotUtility.reserve(slotData.ruleId, slotData.date, slotData.from, slotData.to);
+        await this._customerRepository.changeReviewStatus(customerId, false);
 
         return {
             success: true,
@@ -187,21 +180,15 @@ export class BookingService implements IBookingService {
         const skip = (page - 1) * limit;
 
         const total = await this._bookingRepository.countDocumentsByCustomer(id);
+        if (!total) return { bookingData: [], paginationData: { total: 0, page, limit } };
 
-        if (!total) {
-            const customer = await this._customerRepository.findById(id);
-            if (!customer) {
-                throw new InternalServerErrorException(`Customer with ID ${id} not found.`);
-            }
+        const bookingDocs = await this._bookingRepository.findBookingsByCustomerIdWithPagination(id, skip, limit);
+        // const providerIds = [...new Set(bookingDocs.map(doc => String(doc.providerId)))];
+        // const [] = await Promise.all([
+        //     this._providerRepository
+        // ])
 
-            return {
-                bookingData: [],
-                paginationData: { total: 0, page, limit }
-            }
-        }
-
-        const paginatedBookings = await this._bookingRepository.findBookingsByCustomerIdWithPagination(id, skip, limit);
-        const bookings = paginatedBookings.map(booking => this._bookingMapper.toEntity(booking));
+        const bookings = bookingDocs.map(booking => this._bookingMapper.toEntity(booking));
 
         // Map and enrich booking data
         const bookingData: IBookingResponse[] = await Promise.all(
@@ -224,6 +211,9 @@ export class BookingService implements IBookingService {
                         };
                     })
                 );
+
+                let transaction: ITransaction | null = await this._getTransactionData(booking.transactionId);
+
                 return {
                     bookingId: booking.id,
                     provider: {
@@ -239,7 +229,10 @@ export class BookingService implements IBookingService {
                     paymentStatus: booking.paymentStatus,
                     totalAmount: booking.totalAmount,
                     createdAt: booking.createdAt as Date,
-                    transactionId: booking.transactionId ? booking.transactionId.toString() : null
+                    transaction: transaction ? {
+                        transactionId: transaction.id,
+                        paymentSource: transaction.source
+                    } : null
                 };
             })
         );
@@ -305,7 +298,7 @@ export class BookingService implements IBookingService {
             transaction: transaction ? {
                 id: transaction.id,
                 paymentDate: transaction.createdAt as Date,
-                paymentMethod: transaction.method as string
+                paymentMethod: transaction.direction as string
             } : null
         }
     }
@@ -392,6 +385,8 @@ export class BookingService implements IBookingService {
             })
         );
 
+        let transaction: ITransaction | null = await this._getTransactionData(updatedBooking.transactionId?.toString());
+
         const updatedData: IBookingResponse = {
             bookingId: updatedBooking.id,
             bookingStatus: updatedBooking.bookingStatus,
@@ -407,7 +402,10 @@ export class BookingService implements IBookingService {
             },
             services,
             totalAmount: updatedBooking.totalAmount,
-            transactionId: updatedBooking.transactionId ? updatedBooking.transactionId.toString() : null
+            transaction: transaction ? {
+                transactionId: transaction.id,
+                paymentSource: transaction.source
+            } : null
         }
 
         return {

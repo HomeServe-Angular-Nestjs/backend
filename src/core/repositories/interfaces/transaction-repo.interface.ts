@@ -4,6 +4,7 @@ import { BaseRepository } from '@core/repositories/base/implementations/base.rep
 import { TransactionDocument } from '@core/schema/transaction.schema';
 
 export interface ITransactionRepository extends BaseRepository<TransactionDocument> {
+    findTransactionById(id: string): Promise<TransactionDocument | null>;
     count(): Promise<number>;
     getTotalRevenue(date: Date): Promise<number>;
     getReportDetails(filter: IReportDownloadTransactionData): Promise<IReportTransactionData[]>;

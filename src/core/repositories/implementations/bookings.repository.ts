@@ -323,22 +323,25 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
         return result.map(r => r.slot)
     }
 
-    async isAlreadyBooked(ruleId: string, from: string, to: string): Promise<boolean> {
+    async isAlreadyBooked(ruleId: string, from: string, to: string, dateISO: string): Promise<boolean> {
         const result = await this._bookingModel.find(
             {
                 'slot.ruleId': this._toObjectId(ruleId),
                 'slot.from': from,
-                'slot.to': to
+                'slot.to': to,
+                'slot.date': new Date(dateISO)
             });
         return result.length !== 0;
     }
 
-    async updateSlotStatus(ruleId: string, from: string, to: string): Promise<boolean> {
+    async updateSlotStatus(ruleId: string, from: string, to: string, dateISO: string, status: SlotStatusEnum): Promise<boolean> {
         return !!(await this._bookingModel.findOneAndUpdate(
             {
                 'slot.ruleId': this._toObjectId(ruleId),
                 'slot.from': from,
-                'slot.to': to
+                'slot.to': to,
+                'slot.date': new Date(dateISO),
+                'slot.status': status
             },
             {
                 $set: { 'slot.status': SlotStatusEnum.PENDING }

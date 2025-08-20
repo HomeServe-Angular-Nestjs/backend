@@ -12,12 +12,24 @@ import { IAdminRepository } from '../interfaces/admin-repo.interface';
 export class AdminRepository extends BaseRepository<AdminDocument> implements IAdminRepository {
   constructor(
     @InjectModel(ADMIN_MODEL_NAME)
-    private adminModel: Model<AdminDocument>,
+    private _adminModel: Model<AdminDocument>,
   ) {
-    super(adminModel);
+    super(_adminModel);
   }
 
+
   async findByEmail(email: string): Promise<AdminDocument | null> {
-    return await this.adminModel.findOne({ email }).exec();
+    return await this._adminModel.findOne({ email }).exec();
+  }
+
+  async createAdmin(email: string, password: string): Promise<AdminDocument> {
+    return await this._adminModel.findOneAndUpdate(
+      { email },
+      { $set: { email, password } },
+      {
+        upsert: true,
+        new: true
+      }
+    );
   }
 }

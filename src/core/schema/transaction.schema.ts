@@ -2,7 +2,7 @@ import { Document } from 'mongoose';
 
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 
-import { TransactionStatus, TransactionType } from '../enum/transaction.enum';
+import { PaymentDirection, PaymentSource, TransactionStatus, TransactionType } from '../enum/transaction.enum';
 
 @Schema({ timestamps: true })
 export class TransactionDocument extends Document {
@@ -14,21 +14,31 @@ export class TransactionDocument extends Document {
 
     @Prop({
         type: String,
+        required: true,
+        enum: Object.values(TransactionType)
+    })
+    transactionType: TransactionType
+
+    @Prop({
+        type: String,
+        enum: Object.values(PaymentDirection),
         required: true
     })
-    orderId: string;
+    direction: PaymentDirection;
 
     @Prop({
         type: String,
-        default: null
+        enum: Object.values(PaymentSource),
+        required: true
     })
-    paymentId: string;
+    source: PaymentSource;
 
     @Prop({
         type: String,
-        default: null
+        enum: Object.values(TransactionStatus),
+        required: true
     })
-    signature: string;
+    status: TransactionStatus;
 
     @Prop({
         type: Number,
@@ -43,36 +53,31 @@ export class TransactionDocument extends Document {
     currency: string;
 
     @Prop({
-        type: String,
-        enum: Object.values(TransactionStatus),
-        default: 'created'
+        type: {
+            orderId: { type: String, required: true },
+            paymentId: { type: String, required: true },
+            signature: { type: String, required: true },
+            receipt: { type: String },
+            // card
+        }
     })
-    status: TransactionStatus;
+    gateWayDetails: {
+        orderId: string,
+        paymentId: string,
+        signature: string,
+        receipt: string | null,
+    }
 
     @Prop({
-        type: String,
-        default: null
+        type: {
+            email: { type: String, required: true },
+            contact: { type: String, required: true }
+        }
     })
-    method: string;
-
-    @Prop({ type: String })
-    email: string;
-
-    @Prop({ type: String })
-    contact: string;
-
-    @Prop({
-        type: String,
-        default: null
-    })
-    receipt: string;
-
-    @Prop({
-        type: String,
-        required: true,
-        enum: Object.values(TransactionType)
-    })
-    transactionType: TransactionType
+    userDetails: {
+        email: string,
+        contact: string,
+    }
 
     @Prop({ type: Date })
     createdAt: Date;
@@ -80,5 +85,4 @@ export class TransactionDocument extends Document {
     @Prop({ type: Date })
     updatedAt: Date;
 }
-
 export const TransactionSchema = SchemaFactory.createForClass(TransactionDocument)

@@ -6,7 +6,7 @@ import {
 } from '@core/constants/repository.constant';
 import { TOKEN_SERVICE_NAME } from '@core/constants/service.constant';
 import {
-  ARGON_UTILITY_NAME, MAILER_UTILITY_INTERFACE_NAME, TOKEN_UTILITY_NAME
+  ARGON_UTILITY_NAME, MAILER_UTILITY_INTERFACE_NAME
 } from '@core/constants/utility.constant';
 import { IAdminMapper } from '@core/dto-mapper/interface/admin.mapper.interface';
 import { ICustomerMapper } from '@core/dto-mapper/interface/customer.mapper';
@@ -25,7 +25,6 @@ import { CustomerDocument } from '@core/schema/customer.schema';
 import { ProviderDocument } from '@core/schema/provider.schema';
 import { IArgonUtility } from '@core/utilities/interface/argon.utility.interface';
 import { IMailerUtility } from '@core/utilities/interface/mailer.utility.interface';
-import { ITokenUtility } from '@core/utilities/interface/token.utility.interface';
 import {
   AuthLoginDto, ChangePasswordDto, ForgotPasswordDto, GoogleLoginDto, UserType, VerifyTokenDto
 } from '@modules/auth/dtos/login.dto';
@@ -119,22 +118,28 @@ export class LoginService implements ILoginService {
       dto.password,
     );
 
+    console.log(isValidPassword);
+    
     if (!isValidPassword) {
       throw new UnauthorizedException('Invalid email or password.');
     }
-
-    if (!user.isActive) {
-      throw new UnauthorizedException('You are blocked by the admin.');
-    }
+    
+    console.log(user);
 
     if (dto.type === 'customer' || dto.type === 'provider') {
-      await repository.findOneAndUpdate(
-        { email: dto.email },
-        { $set: { lastLogin: new Date() } },
-      );
+      if (!user.isActive) {
+        throw new UnauthorizedException('You are blocked by the admin.');
+      }
+      await Promise.all([
+        repository.findOneAndUpdate(
+          { email: dto.email },
+          { $set: { lastLogin: new Date() } },
+        ),
+        this._createWallet(user.id)
+      ]);
     }
 
-    await this._createWallet(user.id);
+    console.log(user);
     return user;
   }
 
@@ -154,11 +159,7 @@ export class LoginService implements ILoginService {
 
     if (existingUser) {
       if (existingUser.googleId) {
-        // TODO - remove this.
-        const newUser = this._mappedUser(user.type, existingUser);
-        await this._createWallet(newUser.id);
-        return newUser;
-        //  return this._mappedUser(user.type, existingUser);
+        return this._mappedUser(user.type, existingUser);
       }
 
       const updatedUser = await repository.findOneAndUpdate(
