@@ -294,7 +294,7 @@ export class ProviderBookingService implements IProviderBookingService {
             transaction: transaction ? {
                 id: transaction.id,
                 paymentDate: transaction.createdAt as Date,
-                paymentMethod: transaction.method as string
+                paymentMethod: transaction.direction as string
             } : null
         }
     }
@@ -368,7 +368,7 @@ export class ProviderBookingService implements IProviderBookingService {
                 transaction: transaction ? {
                     id: transaction.id,
                     paymentDate: transaction.createdAt as Date,
-                    paymentMethod: transaction.method as string
+                    paymentMethod: transaction.direction as string
                 } : null
             }
 

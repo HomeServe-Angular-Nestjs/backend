@@ -3,4 +3,5 @@ import { TransactionDocument } from "@core/schema/transaction.schema";
 
 export interface ITransactionMapper {
     toEntity(doc: TransactionDocument): ITransaction;
+    toDocument(entity: Omit<ITransaction, 'id'>): Partial<TransactionDocument>;
 }

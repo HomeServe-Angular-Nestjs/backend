@@ -79,9 +79,6 @@ export class IPriceBreakupDto {
     tax: number;
 
     @IsNumber()
-    visitingFee: number;
-
-    @IsNumber()
     total: number;
 }
 

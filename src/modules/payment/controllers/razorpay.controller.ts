@@ -4,7 +4,7 @@ import { RAZORPAYMENT_SERVICE_NAME } from '@core/constants/service.constant';
 import {
     IRazorpayOrder, IVerifiedPayment
 } from '@core/entities/interfaces/transaction.entity.interface';
-import { ErrorMessage } from '@core/enum/error.enum';
+import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { IPayload } from '@core/misc/payload.interface';
@@ -65,10 +65,15 @@ export class RazorpayController {
                 throw new BadRequestException('Missing or invalid payment verification fields.');
             }
 
-            return await this._paymentService.verifySignature(user.sub, user.type || dto.role, dto.verifyData, dto.orderData);
+            this.logger.debug(dto);
+
+            return await this._paymentService.verifySignature(user.sub, user.type, dto.verifyData, dto.orderData);
         } catch (err) {
             this.logger.error(`Error verifying the payment: ${err.message}`, err.stack);
-            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+            throw new InternalServerErrorException({
+                code: ErrorCodes.PAYMENT_VERIFICATION_FAILED,
+                message: ErrorMessage.PAYMENT_VERIFICATION_FAILED
+            });
         }
     }
 }

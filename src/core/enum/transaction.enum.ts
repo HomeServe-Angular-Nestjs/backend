@@ -1,7 +1,5 @@
 export enum TransactionStatus {
-    CREATED = 'created',
-    ATTEMPTED = 'attempted',
-    PAID = 'paid',
+    SUCCESS = 'success',
     FAILED = 'failed',
     REFUNDED = 'refunded'
 }
@@ -9,4 +7,14 @@ export enum TransactionStatus {
 export enum TransactionType {
     BOOKING = 'Booking',
     SUBSCRIPTION = 'Subscription',
+}
+
+export enum PaymentDirection {
+    DEBIT = 'debit',
+    CREDIT = 'credit',   
+}
+
+export enum PaymentSource {
+    RAZORPAY = 'razorpay',
+    WALLET = 'wallet'
 }

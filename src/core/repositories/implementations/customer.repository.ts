@@ -29,6 +29,13 @@ export class CustomerRepository extends BaseRepository<CustomerDocument> impleme
     return await this._customerModel.countDocuments(filter);
   }
 
+  async changeReviewStatus(id: string, status: boolean): Promise<void> {
+    await this._customerModel.updateOne(
+      { _id: id },
+      { $set: { isReviewed: status } }
+    );
+  }
+
   async getCustomerStatistics(): Promise<IStats> {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);

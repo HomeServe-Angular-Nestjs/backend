@@ -1,20 +1,25 @@
 import { BaseEntity } from '@core/entities/base/implementation/base.entity';
 import { ITransaction } from '@core/entities/interfaces/transaction.entity.interface';
-import { TransactionStatus, TransactionType } from '@core/enum/transaction.enum';
+import { PaymentDirection, PaymentSource, TransactionStatus, TransactionType } from '@core/enum/transaction.enum';
 
 export class Transaction extends BaseEntity implements ITransaction {
     userId: string;
-    orderId: string;
-    paymentId: string;
-    signature: string;
+    transactionType: TransactionType
+    direction: PaymentDirection;
+    source: PaymentSource;
+    status: TransactionStatus;
     amount: number;
     currency: string;
-    status: TransactionStatus
-    method?: string;
-    email?: string;
-    contact?: string;
-    receipt?: string;
-    transactionType: TransactionType;
+    gateWayDetails: {
+        orderId: string,
+        paymentId: string,
+        signature: string,
+        receipt: string | null,
+    }
+    userDetails: {
+        email: string,
+        contact: string,
+    }
 
     constructor(partial: Partial<Transaction>) {
         super(partial);

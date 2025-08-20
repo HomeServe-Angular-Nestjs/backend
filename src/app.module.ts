@@ -20,6 +20,7 @@ import { ConfigModule } from '@nestjs/config';
 import { SeedsModule } from '../seed/seed.module';
 import { AdminModule } from './modules/users/admin.module';
 import { SlotModule } from '@modules/slots/slots.module';
+import { WalletModule } from '@modules/wallet/wallet.module';
 
 @Module({
   imports: [
@@ -48,7 +49,8 @@ import { SlotModule } from '@modules/slots/slots.module';
     WebSocketModule,
     PlanModule,
     SubscriptionModules,
-    SlotModule
+    SlotModule,
+    WalletModule,
   ],
   controllers: [AppController],
   providers: [
@@ -58,6 +60,6 @@ import { SlotModule } from '@modules/slots/slots.module';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-      consumer.apply(AuthMiddleware).forRoutes('*');
+    consumer.apply(AuthMiddleware).forRoutes('*');
   }
 }

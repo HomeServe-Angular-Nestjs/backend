@@ -34,6 +34,7 @@ export class RazorPaymentService implements IRazorPaymentService {
     ) { }
 
     async createOrder(amount: number, currency: string = 'INR'): Promise<IRazorpayOrder> {
+        console.log(amount)
         return await this._paymentService.createOrder(amount, currency);
     }
 
@@ -55,20 +56,25 @@ export class RazorPaymentService implements IRazorPaymentService {
         );
 
         try {
-            const transaction = await this._transactionRepository.create({
-                orderId: orderData.id,
-                paymentId: verifyData.razorpay_payment_id,
-                signature: verifyData.razorpay_signature,
-                amount: orderData.amount,
-                contact: user.phone,
-                currency: orderData.currency,
-                email: user.email,
-                status: orderData.status,
+            const transaction = await this._transactionRepository.create(this._transactionMapper.toDocument({
                 userId: user.id,
-                method: orderData.method,
-                receipt: orderData.receipt,
                 transactionType: orderData.transactionType,
-            });
+                gateWayDetails: {
+                    orderId: orderData.id,
+                    paymentId: verifyData.razorpay_payment_id,
+                    signature: verifyData.razorpay_signature,
+                    receipt: orderData.receipt ?? null,
+                },
+                currency: 'INR',
+                amount: orderData.amount,
+                userDetails: {
+                    contact: user.phone,
+                    email: user.email,
+                },
+                status: orderData.status,
+                direction: orderData.direction,
+                source: orderData.source,
+            }));
 
             return { verified, transaction: this._transactionMapper.toEntity(transaction) };
 

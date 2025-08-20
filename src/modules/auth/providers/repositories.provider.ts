@@ -1,11 +1,13 @@
 import { Model } from 'mongoose';
 
 import {
-    ADMIN_MODEL_NAME, CUSTOMER_MODEL_NAME, OTP_MODEL_NAME, PROVIDER_MODEL_NAME
+  ADMIN_MODEL_NAME, CUSTOMER_MODEL_NAME, OTP_MODEL_NAME, PROVIDER_MODEL_NAME,
+  WALLET_MODEL_NAME
 } from '@core/constants/model.constant';
 import {
-    ADMIN_REPOSITORY_INTERFACE_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME,
-    OTP_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME
+  ADMIN_REPOSITORY_INTERFACE_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME,
+  OTP_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME,
+  WALLET_REPOSITORY_NAME
 } from '@core/constants/repository.constant';
 import { AdminRepository } from '@core/repositories/implementations/admin.repository';
 import { CustomerRepository } from '@core/repositories/implementations/customer.repository';
@@ -17,6 +19,8 @@ import { OtpDocument } from '@core/schema/otp.schema';
 import { ProviderDocument } from '@core/schema/provider.schema';
 import { Provider } from '@nestjs/common';
 import { getModelToken } from '@nestjs/mongoose';
+import { WalletDocument } from '@core/schema/wallet.schema';
+import { WalletRepository } from '@core/repositories/implementations/wallet.repository';
 
 export const repositoryProvider: Provider[] = [
   {
@@ -41,5 +45,11 @@ export const repositoryProvider: Provider[] = [
     useFactory: (adminModel: Model<AdminDocument>) =>
       new AdminRepository(adminModel),
     inject: [getModelToken(ADMIN_MODEL_NAME)],
+  },
+  {
+    provide: WALLET_REPOSITORY_NAME,
+    useFactory: (walletModel: Model<WalletDocument>) =>
+      new WalletRepository(walletModel),
+    inject: [getModelToken(WALLET_MODEL_NAME)],
   },
 ];

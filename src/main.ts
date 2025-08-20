@@ -13,6 +13,7 @@ import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-fa
 import { ICustomerRepository } from '@core/repositories/interfaces/customer-repo.interface';
 import { IProviderRepository } from '@core/repositories/interfaces/provider-repo.interface';
 import { BlockGuard } from '@modules/auth/guards/block.guard';
+import morgan from 'morgan';
 
 async function bootstrap() {
   if (process.argv.includes('seed:admin')) {
@@ -52,6 +53,8 @@ async function bootstrap() {
       saveUninitialized: false,
     }),
   );
+
+  app.use(morgan('dev'));
 
   app.setGlobalPrefix('api');
 

@@ -20,7 +20,7 @@ export class CustomLogger extends Logger implements ICustomLogger {
         super.error(message, trace, stack);
     }
 
-    override debug(message: string | object) {
+    override debug(message: any) {
         super.debug(message);
     }
 }

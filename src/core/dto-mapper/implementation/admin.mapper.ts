@@ -18,4 +18,11 @@ export class AdminMapper implements IAdminMapper {
             updatedAt: doc.updatedAt
         });
     }
+
+    toDocument(entity: Partial<IAdmin>): Partial<AdminDocument> {
+        return {
+            email: entity.email,
+            password: entity.password,
+        }
+    }
 }

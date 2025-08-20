@@ -21,7 +21,7 @@ export class RazorpayUtility implements IPaymentGateway {
 
     async createOrder(amount: number, currency: string = 'INR'): Promise<IRazorpayOrder> {
         const options = {
-            amount: amount * 100,
+            amount: Math.round(amount * 100), 
             currency,
             receipt: `receipt_${Date.now()}`,
             payment_capture: 1

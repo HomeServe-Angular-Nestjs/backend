@@ -51,7 +51,6 @@ export class BookingsController {
 
     @Post('confirm')
     async handleBooking(@Req() req: Request, @Body() dto: BookingDto) {
-        this.logger.debug(dto);
         const user = req.user as IPayload;
 
         if (!Array.isArray(dto.serviceIds) || dto.serviceIds.some(s => !s.id || !Array.isArray(s.selectedIds))) {
@@ -64,7 +63,7 @@ export class BookingsController {
     @Get('fetch')
     async fetchBooking(@Req() req: Request, @Query() dto: BookingPaginationFilterDto): Promise<IBookingWithPagination> {
         const user = req.user as IPayload;
-        const { page, ...filter } = dto;
+        const { page } = dto;
         return await this._bookingService.fetchBookings(user.sub, page);
     }
 

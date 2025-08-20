@@ -2,6 +2,8 @@ import { Types } from 'mongoose';
 import { BookingStatus, CancelStatus, PaymentStatus } from '../../enum/bookings.enum';
 import { IEntity } from '../base/interfaces/base-entity.entity.interface';
 import { SlotStatusEnum } from '@core/enum/slot.enum';
+import { ITransaction } from '@core/entities/interfaces/transaction.entity.interface';
+import { PaymentSource } from '@core/enum/transaction.enum';
 
 export interface IBookingResponse {
     bookingId: string;
@@ -21,7 +23,10 @@ export interface IBookingResponse {
     cancelStatus: CancelStatus | null;
     totalAmount: number;
     createdAt: Date;
-    transactionId: string | null;
+    transaction: {
+        transactionId: string,
+        paymentSource: PaymentSource
+    } | null;
 }
 
 export interface IPagination {

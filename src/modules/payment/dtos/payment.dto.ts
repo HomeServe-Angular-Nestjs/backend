@@ -1,10 +1,10 @@
 import { Transform, Type } from 'class-transformer';
 import {
-    IsArray, IsEmail, IsIn, IsNotEmpty, IsNumber, IsOptional, IsPhoneNumber, IsPositive, IsString,
+    IsIn, IsNotEmpty, IsNumber, IsOptional, IsString,
     Min, ValidateNested
 } from 'class-validator';
 
-import { TransactionStatus, TransactionType } from '@core/enum/transaction.enum';
+import { PaymentDirection, PaymentSource, TransactionStatus, TransactionType } from '@core/enum/transaction.enum';
 
 export class CreateOrderDto {
     @IsNotEmpty()
@@ -31,35 +31,32 @@ export class VerifyOrderData {
     @IsString()
     id: string;
 
+    @IsNotEmpty()
     @IsString()
     @IsIn(Object.values(TransactionType))
     transactionType: TransactionType;
+
+    @IsNotEmpty()
+    @IsString()
+    @IsIn(Object.values(PaymentDirection))
+    direction: PaymentDirection;
+
+    @IsNotEmpty()
+    @IsString()
+    @IsIn(Object.values(PaymentSource))
+    source: PaymentSource;
 
     @Transform(({ value }) => Number(value))
     @IsNumber()
     @Min(0)
     amount: number;
 
-    @IsString()
-    currency: string;
-
     @IsIn(Object.values(TransactionStatus))
     status: TransactionStatus;
 
     @IsOptional()
     @IsString()
-    method?: string;
-
-    @IsOptional()
-    @IsString()
     receipt?: string;
-
-    @IsOptional()
-    @IsString()
-    offer_id?: string | null;
-
-    @IsNumber()
-    created_at: number;
 }
 
 export class RazorpayVerifyDto {
@@ -70,8 +67,4 @@ export class RazorpayVerifyDto {
     @Type(() => VerifyOrderData)
     @ValidateNested()
     orderData: VerifyOrderData;
-
-    @IsString()
-    @IsIn(['customer', 'provider'])
-    role: string;
 }
