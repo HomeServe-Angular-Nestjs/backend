@@ -1,8 +1,9 @@
 import { NotificationType } from "@core/enum/notification.enum";
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import { Document } from "mongoose";
 
 @Schema({ timestamps: true })
-export class NotificationDocument {
+export class NotificationDocument extends Document {
     @Prop({
         type: String,
         required: true,
