@@ -12,16 +12,6 @@ export class InitiateSignupDto {
   type: UserType;
 }
 
-export class VerifyOtpDto {
-  @IsEmail()
-  @IsNotEmpty()
-  email: string;
-
-  @IsString()
-  @Length(4, 4)
-  code: string;
-}
-
 export class CompleteSignupDto {
   @IsEmail()
   @IsNotEmpty()
@@ -38,4 +28,8 @@ export class CompleteSignupDto {
   @IsNotEmpty()
   @IsString()
   type: UserType;
+
+  @IsNotEmpty()
+  @IsString()
+  code: string;
 }

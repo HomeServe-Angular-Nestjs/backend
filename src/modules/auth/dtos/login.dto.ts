@@ -2,31 +2,29 @@ import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
 
 export type UserType = 'customer' | 'provider' | 'admin';
 
-export class AuthLoginDto {
+export class EmailAndTypeDto {
   @IsNotEmpty()
   @IsEmail()
   email: string;
 
+  @IsNotEmpty()
+  type: UserType;
+}
+
+export class AuthLoginDto extends EmailAndTypeDto {
   @MinLength(8)
   @IsString()
   password: string;
-
-  @IsNotEmpty()
-  type: UserType;
 }
 
-export class ForgotPasswordDto {
-  @IsEmail()
-  email: string;
-
-  @IsNotEmpty()
-  type: UserType;
-}
-
-export class VerifyTokenDto {
+export class VerifyOtpForgotPassDto {
   @IsNotEmpty()
   @IsString()
-  token: string;
+  code: string;
+
+  @IsEmail()
+  @IsNotEmpty()
+  email: string;
 }
 
 export class LogoutDto {

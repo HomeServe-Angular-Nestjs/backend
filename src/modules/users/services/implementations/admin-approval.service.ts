@@ -6,7 +6,7 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import { IAdminApprovalService } from '../interfaces/admin-approval-service.interface';
 import { PROVIDER_MAPPER } from '@core/constants/mappers.constant';
-import { IProviderMapper } from '@core/dto-mapper/interface/provider.mapper';
+import { IProviderMapper } from '@core/dto-mapper/interface/provider.mapper.interface';
 
 @Injectable()
 export class AdminApprovalService implements IAdminApprovalService {

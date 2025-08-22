@@ -11,7 +11,13 @@ export class OtpMapper implements IOtpMapper {
             id: doc.id,
             email: doc.email,
             code: doc.code,
-            expiresAt: doc.expiresAt,
         });
+    }
+
+    toDocument(entity: Partial<IOtp>): Partial<OtpDocument> {
+        return {
+            email: entity.email,
+            code: entity.code,
+        }
     }
 }

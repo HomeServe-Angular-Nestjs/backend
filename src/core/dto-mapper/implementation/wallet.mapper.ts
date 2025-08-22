@@ -17,4 +17,10 @@ export class WalletMapper implements IWalletMapper {
             createdAt: doc.createdAt
         });
     }
+
+    toDocument(entity: Partial<IWallet>): Partial<WalletDocument> {
+        return {
+            userId: new Types.ObjectId(entity.userId),
+        }
+    }
 }

@@ -11,7 +11,6 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { JsonWebTokenError, JwtService, TokenExpiredError } from '@nestjs/jwt';
 import { v4 as uuidv4 } from 'uuid'
-import { VerifyTokenDto } from '@modules/auth/dtos/login.dto';
 import { ErrorMessage } from '@core/enum/error.enum';
 
 @Injectable()

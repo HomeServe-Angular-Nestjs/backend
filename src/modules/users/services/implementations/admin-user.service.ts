@@ -17,8 +17,8 @@ import { ICustomerRepository } from '@/core/repositories/interfaces/customer-rep
 import { IProviderRepository } from '@/core/repositories/interfaces/provider-repo.interface';
 import { CUSTOMER_MAPPER, PROVIDER_MAPPER } from '@core/constants/mappers.constant';
 import { PDF_SERVICE } from '@core/constants/service.constant';
-import { ICustomerMapper } from '@core/dto-mapper/interface/customer.mapper';
-import { IProviderMapper } from '@core/dto-mapper/interface/provider.mapper';
+import { ICustomerMapper } from '@core/dto-mapper/interface/customer.mapper..interface';
+import { IProviderMapper } from '@core/dto-mapper/interface/provider.mapper.interface';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { IBookingRepository } from '@core/repositories/interfaces/bookings-repo.interface';

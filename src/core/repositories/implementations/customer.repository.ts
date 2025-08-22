@@ -17,6 +17,14 @@ export class CustomerRepository extends BaseRepository<CustomerDocument> impleme
     super(_customerModel);
   }
 
+  async updateGoogleId(email: string, googleId: string): Promise<CustomerDocument | null> {
+    return await this._customerModel.findOneAndUpdate(
+      { email },
+      { $set: { googleId, lastLogin: new Date() } },
+      { new: true }
+    ).lean();
+  }
+
   async findByGoogleId(id: string): Promise<CustomerDocument | null> {
     return await this._customerModel.findOne({ googleId: id }).exec();
   }
@@ -25,8 +33,20 @@ export class CustomerRepository extends BaseRepository<CustomerDocument> impleme
     return await this._customerModel.findOne({ email }).exec();
   }
 
+  async updatePassword(email: string, hashedPassword: string): Promise<CustomerDocument | null> {
+    return await this._customerModel.findOneAndUpdate(
+      { email },
+      { $set: { password: hashedPassword } },
+      { new: true }
+    ).lean();
+  }
+
   async count(filter?: FilterQuery<CustomerDocument>): Promise<number> {
     return await this._customerModel.countDocuments(filter);
+  }
+
+  async updateLastLogin(email: string): Promise<void> {
+    await this._customerModel.updateOne({ email }, { $set: { lastLogin: new Date() } });
   }
 
   async changeReviewStatus(id: string, status: boolean): Promise<void> {

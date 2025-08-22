@@ -20,7 +20,7 @@ export class OtpRepository extends BaseRepository<OtpDocument> implements IOtpRe
     await this.otpModel.deleteMany({ email });
   }
 
-  async findValidOtp(email: string, code: string): Promise<OtpDocument | null> {
-    return this.otpModel.findOne({ email, code });
+  async findOtp(email: string): Promise<OtpDocument | null> {
+    return this.otpModel.findOne({ email });
   }
 }

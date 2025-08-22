@@ -1,22 +1,17 @@
+import { BadRequestException, Body, Controller, Get, Inject, InternalServerErrorException, NotFoundException, Post, Put, Query, Req, Res, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { Request, Response } from 'express';
 
 import { LOGIN_SERVICE_INTERFACE_NAME, TOKEN_SERVICE_NAME } from '@core/constants/service.constant';
 import { IUser } from '@core/entities/interfaces/user.entity.interface';
-import { ErrorMessage } from '@core/enum/error.enum';
+import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
 import { BACKEND_URL, FRONTEND_URL } from '@core/environments/environments';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { prepareResponse } from '@core/misc/response.util';
-import {
-  AuthLoginDto, ChangePasswordDto, ForgotPasswordDto, VerifyTokenDto
-} from '@modules/auth/dtos/login.dto';
+import { AuthLoginDto, ChangePasswordDto, EmailAndTypeDto, VerifyOtpForgotPassDto } from '@modules/auth/dtos/login.dto';
 import { GoogleAuthGuard } from '@modules/auth/guards/google-auth.guard';
 import { ILoginService } from '@modules/auth/services/interfaces/login-service.interface';
 import { ITokenService } from '@modules/auth/services/interfaces/token-service.interface';
-import {
-  Body, Controller, Get, HttpCode, Inject, InternalServerErrorException, Logger,
-  NotFoundException, Post, Put, Query, Req, Res, UnauthorizedException, UseGuards
-} from '@nestjs/common';
 
 @Controller('login')
 export class LoginController {
@@ -35,58 +30,52 @@ export class LoginController {
 
   @Post('auth')
   async validateCredentials(@Body() dto: AuthLoginDto, @Res({ passthrough: true }) response: Response,) {
-    try {
-      const user = await this._loginService.validateUserCredentials(dto);
-      if (!user) {
-        throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
-      }
-
-      const accessToken = this._tokenService.generateAccessToken(user.id, user.email, dto.type);
-      if (!accessToken) {
-        throw new NotFoundException('Access token is missing');
-      }
-
-      const refreshToken = await this._tokenService.generateRefreshToken(user.id, user.email, dto.type);
-      if (!refreshToken) {
-        throw new NotFoundException('Refresh token is missing');
-      }
-
-      response.cookie('access_token', accessToken, {
-        httpOnly: true,
-        secure: false,
-        sameSite: 'strict',
-        path: '/',
-      });
-
-      response.cookie('refresh_token', refreshToken, {
-        httpOnly: true,
-        secure: false,
-        sameSite: 'strict',
-        path: '/',
-      });
-
-      return { email: user.email, id: user.id, type: user.type };
-    } catch (error: unknown) {
-      this.logger.error(`Login Error: ${error}`);
-      throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
+    const user = await this._loginService.validateUserCredentials(dto);
+    if (!user) {
+      throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
     }
+
+    const accessToken = this._tokenService.generateAccessToken(user.id, user.email, dto.type);
+    if (!accessToken) {
+      throw new UnauthorizedException('Access token is missing');
+    }
+
+    const refreshToken = await this._tokenService.generateRefreshToken(user.id, user.email, dto.type);
+    if (!refreshToken) {
+      throw new UnauthorizedException('Refresh token is missing');
+    }
+
+    response.cookie('access_token', accessToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'strict',
+      path: '/',
+    });
+
+    response.cookie('refresh_token', refreshToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'strict',
+      path: '/',
+    });
+
+    return { email: user.email, id: user.id, type: user.type };
   }
 
-  @Post('forgot_password')
-  @HttpCode(200)
-  async forgotPassword(@Body() dto: ForgotPasswordDto) {
-    await this._loginService.forgotPassword(dto);
+  @Post('otp_forgot_password')
+  async forgotPassword(@Body() dto: EmailAndTypeDto) {
+    return await this._loginService.requestOtpForForgotPassword(dto);
   }
 
-  @Post('verify_token')
-  @HttpCode(200)
-  async verifyToken(@Body() dto: VerifyTokenDto) {
-    try {
-      return await this._tokenService.verifyToken(dto.token);
-    } catch (err) {
-      this.logger.error(`Google Login Error: ${err}`);
-      throw new UnauthorizedException(ErrorMessage.TOKEN_VERIFICATION_FAILED);
-    }
+  @Post('verify_otp_forgot')
+  async verifyOtpFromForgotPassword(@Body() dto: VerifyOtpForgotPassDto) {
+    const { code, email } = dto;
+    if (!code || !email) throw new BadRequestException({
+      code: ErrorCodes.BAD_REQUEST,
+      message: 'otp code or email is missing.'
+    })
+
+    return await this._loginService.verifyOtpFromForgotPassword(email, code)
   }
 
   @Put('change_password')

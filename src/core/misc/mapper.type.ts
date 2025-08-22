@@ -1,6 +1,6 @@
 import { IAdminMapper } from "@core/dto-mapper/interface/admin.mapper.interface";
-import { ICustomerMapper } from "@core/dto-mapper/interface/customer.mapper";
-import { IProviderMapper } from "@core/dto-mapper/interface/provider.mapper";
+import { ICustomerMapper } from "@core/dto-mapper/interface/customer.mapper..interface";
+import { IProviderMapper } from "@core/dto-mapper/interface/provider.mapper.interface";
 import { AdminDocument } from "@core/schema/admin.schema";
 import { CustomerDocument } from "@core/schema/customer.schema";
 import { ProviderDocument } from "@core/schema/provider.schema";

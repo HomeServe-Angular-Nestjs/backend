@@ -1,4 +1,4 @@
-import { IProviderMapper } from "@core/dto-mapper/interface/provider.mapper";
+import { IProviderMapper } from "@core/dto-mapper/interface/provider.mapper.interface";
 import { Provider } from "@core/entities/implementation/provider.entity";
 import { IProvider } from "@core/entities/interfaces/user.entity.interface";
 import { ProviderDocument } from "@core/schema/provider.schema";
@@ -55,5 +55,16 @@ export class ProviderMapper implements IProviderMapper {
             reviews: doc.reviews,
             workImages: doc.workImages,
         });
+    }
+
+    toDocument(entity: Partial<IProvider>): Partial<ProviderDocument> {
+        return {
+            email: entity.email,
+            username: entity.username,
+            googleId: entity.googleId,
+            avatar: entity.avatar,
+            isActive: true,
+            lastLogin: new Date(),
+        }
     }
 }

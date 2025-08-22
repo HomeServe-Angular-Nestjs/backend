@@ -1,12 +1,11 @@
+import { IResponse } from '@core/misc/response.util';
 import { IUser } from '../../../../core/entities/interfaces/user.entity.interface';
-import { IPayload } from '../../../../core/misc/payload.interface';
-import {
-  AuthLoginDto, ChangePasswordDto, ForgotPasswordDto, GoogleLoginDto, VerifyTokenDto
-} from '../../dtos/login.dto';
+import { AuthLoginDto, ChangePasswordDto, EmailAndTypeDto, GoogleLoginDto } from '../../dtos/login.dto';
 
 export interface ILoginService {
   validateUserCredentials(dto: AuthLoginDto): Promise<IUser>;
-  forgotPassword(dto: ForgotPasswordDto): Promise<void>;
-  changePassword(dto: ChangePasswordDto): Promise<void>;
+  requestOtpForForgotPassword(dto: EmailAndTypeDto): Promise<IResponse>;
+  verifyOtpFromForgotPassword(email: string, code: string): Promise<IResponse>;
+  changePassword(dto: ChangePasswordDto): Promise<IResponse>;
   findOrCreateUser(user: GoogleLoginDto): Promise<IUser>;
 }

@@ -14,7 +14,7 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { FilterWithPaginationDto, UpdateReviewStatus } from '../../dtos/admin-user.dto';
 import { IAdminReviewService } from '../interfaces/admin-reviews-service.interface';
 import { PROVIDER_MAPPER } from '@core/constants/mappers.constant';
-import { IProviderMapper } from '@core/dto-mapper/interface/provider.mapper';
+import { IProviderMapper } from '@core/dto-mapper/interface/provider.mapper.interface';
 
 @Injectable()
 export class AdminReviewService implements IAdminReviewService {
