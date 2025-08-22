@@ -1,8 +1,12 @@
 export enum ErrorMessage {
     LOGIN_FAILED = 'Login failed, please check your credentials',
+    EMAIL_CONFLICT_ERROR = 'User already exists.',
+    USER_NOT_FOUND = 'User not found.',
+    UNAUTHORIZED_ACCESS = 'Unauthorized access, please login',
+    INVALID_TYPE = 'Invalid type found.',
+
     PROVIDER_NOT_FOUND = 'Provider not found',
     SERVICE_NOT_FOUND = 'Service not found',
-    USER_NOT_FOUND = 'User not found',
     SUBSCRIPTION_NOT_FOUND = 'Subscription not found',
     PLAN_NOT_FOUND = 'Plan not found',
     DOCUMENT_NOT_FOUND = 'Document not found',
@@ -16,7 +20,6 @@ export enum ErrorMessage {
     MUST_BE_STRING = 'must be a string',
     SHOULD_NOT_BE_EMPTY = 'should not be empty',
     FORBIDDEN_ACTION = 'You are not allowed to perform this action',
-    UNAUTHORIZED_ACCESS = 'Unauthorized access, please login',
     USER_BLOCKED = 'You are blocked by the admin.',
     INTERNAL_SERVER_ERROR = 'An unexpected error occurred. Please try again later',
     DOCUMENT_CREATION_ERROR = 'Error creating document',
@@ -27,7 +30,6 @@ export enum ErrorMessage {
     TOKEN_VERIFICATION_FAILED = 'Token verification failed.',
     UPLOAD_FAILED = 'Failed to upload an image.',
     SLOT_RESERVATION_FAILED = 'Failed reserve slot.',
-
     PAYMENT_IN_PROGRESS = 'Payment already in progress.',
     PAYMENT_VERIFICATION_FAILED = 'Payment verification failed.',
 }
@@ -39,8 +41,9 @@ export enum ErrorCodes {
     PAYMENT_VERIFICATION_FAILED = 'PAYMENT_VERIFICATION_FAILED',
     VALIDATION_FAILED = 'VALIDATION_FAILED',
     DATABASE_OPERATION_FAILED = 'DATABASE_OPERATION_FAILED',
-    DOCUMENT_NOT_FOUND = 'DOCUMENT_NOT_FOUND',
-    INVALID_REQUEST_BODY = 'INVALID_REQUEST_BODY',
+    BAD_REQUEST = 'BAD_REQUEST',
+    CONFLICT = 'CONFLICT',
+    NOT_FOUND = 'NOT_FOUND',
 
     USER_NOT_AUTHORIZED = 'USER_NOT_AUTHORIZED',
     INVALID_CREDENTIALS = 'INVALID_CREDENTIALS',

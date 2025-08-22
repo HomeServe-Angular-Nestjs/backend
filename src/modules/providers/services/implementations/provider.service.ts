@@ -20,7 +20,7 @@ import { UserType } from '@modules/auth/dtos/login.dto';
 import { FilterDto, GetProvidersFromLocationSearch, SlotDto, UpdateBioDto } from '@modules/providers/dtos/provider.dto';
 import { IProviderServices } from '@modules/providers/services/interfaces/provider-service.interface';
 import { PROVIDER_MAPPER } from '@core/constants/mappers.constant';
-import { IProviderMapper } from '@core/dto-mapper/interface/provider.mapper';
+import { IProviderMapper } from '@core/dto-mapper/interface/provider.mapper.interface';
 
 @Injectable()
 export class ProviderServices implements IProviderServices {

@@ -1,9 +1,10 @@
-import { ADMIN_MAPPER, BOOKING_MAPPER, CHAT_MAPPER, CUSTOMER_MAPPER, MESSAGE_MAPPER, PLAN_MAPPER, PROVIDER_MAPPER, SCHEDULES_MAPPER, SERVICE_OFFERED_MAPPER, SLOT_RULE_MAPPER, SUBSCRIPTION_MAPPER, TRANSACTION_MAPPER, WALLET_MAPPER } from '@core/constants/mappers.constant';
+import { ADMIN_MAPPER, BOOKING_MAPPER, CHAT_MAPPER, CUSTOMER_MAPPER, MESSAGE_MAPPER, OTP_MAPPER, PLAN_MAPPER, PROVIDER_MAPPER, SCHEDULES_MAPPER, SERVICE_OFFERED_MAPPER, SLOT_RULE_MAPPER, SUBSCRIPTION_MAPPER, TRANSACTION_MAPPER, WALLET_MAPPER } from '@core/constants/mappers.constant';
 import { AdminMapper } from '@core/dto-mapper/implementation/admin.mapper';
 import { BookingMapper } from '@core/dto-mapper/implementation/booking.mapper';
 import { ChatMapper } from '@core/dto-mapper/implementation/chat.mapper';
 import { CustomerMapper } from '@core/dto-mapper/implementation/customer.mapper';
 import { MessageMapper } from '@core/dto-mapper/implementation/message.mapper';
+import { OtpMapper } from '@core/dto-mapper/implementation/otp.mapper';
 import { PlanMapper } from '@core/dto-mapper/implementation/plan.mapper';
 import { ProviderMapper } from '@core/dto-mapper/implementation/provider.mapper';
 import { SchedulesMapper } from '@core/dto-mapper/implementation/schedules.mapper';
@@ -26,6 +27,10 @@ export const sharedProviders: Provider[] = [
     {
         provide: LOGGER_FACTORY,
         useClass: LoggerFactory
+    },
+    {
+        provide: OTP_MAPPER,
+        useClass: OtpMapper
     },
     {
         provide: ADMIN_MAPPER,

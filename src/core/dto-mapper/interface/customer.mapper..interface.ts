@@ -3,4 +3,5 @@ import { CustomerDocument } from "@core/schema/customer.schema";
 
 export interface ICustomerMapper {
     toEntity(doc: CustomerDocument): ICustomer;
+    toDocument(entity: Partial<ICustomer>): Partial<CustomerDocument>;
 }

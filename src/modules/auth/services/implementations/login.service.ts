@@ -1,18 +1,15 @@
-import { ADMIN_MAPPER, CUSTOMER_MAPPER, PROVIDER_MAPPER } from '@core/constants/mappers.constant';
-import {
-  ADMIN_REPOSITORY_INTERFACE_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME,
-  PROVIDER_REPOSITORY_INTERFACE_NAME,
-  WALLET_REPOSITORY_NAME
-} from '@core/constants/repository.constant';
-import { TOKEN_SERVICE_NAME } from '@core/constants/service.constant';
-import {
-  ARGON_UTILITY_NAME, MAILER_UTILITY_INTERFACE_NAME
-} from '@core/constants/utility.constant';
+import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { ADMIN_MAPPER, CUSTOMER_MAPPER, PROVIDER_MAPPER, WALLET_MAPPER } from '@core/constants/mappers.constant';
+import { ADMIN_REPOSITORY_INTERFACE_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, WALLET_REPOSITORY_NAME } from '@core/constants/repository.constant';
+import { OTP_SERVICE_INTERFACE_NAME } from '@core/constants/service.constant';
+import { ARGON_UTILITY_NAME } from '@core/constants/utility.constant';
 import { IAdminMapper } from '@core/dto-mapper/interface/admin.mapper.interface';
-import { ICustomerMapper } from '@core/dto-mapper/interface/customer.mapper';
-import { IProviderMapper } from '@core/dto-mapper/interface/provider.mapper';
+import { ICustomerMapper } from '@core/dto-mapper/interface/customer.mapper..interface';
+import { IProviderMapper } from '@core/dto-mapper/interface/provider.mapper.interface';
+import { IWalletMapper } from '@core/dto-mapper/interface/wallet.mapper.interface';
 import { IAdmin } from '@core/entities/interfaces/admin.entity.interface';
 import { ICustomer, IProvider, IUser } from '@core/entities/interfaces/user.entity.interface';
+import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { UserReposType } from '@core/misc/repo.type';
@@ -24,17 +21,10 @@ import { AdminDocument } from '@core/schema/admin.schema';
 import { CustomerDocument } from '@core/schema/customer.schema';
 import { ProviderDocument } from '@core/schema/provider.schema';
 import { IArgonUtility } from '@core/utilities/interface/argon.utility.interface';
-import { IMailerUtility } from '@core/utilities/interface/mailer.utility.interface';
-import {
-  AuthLoginDto, ChangePasswordDto, ForgotPasswordDto, GoogleLoginDto, UserType, VerifyTokenDto
-} from '@modules/auth/dtos/login.dto';
+import { AuthLoginDto, ChangePasswordDto, EmailAndTypeDto, GoogleLoginDto, UserType } from '@modules/auth/dtos/login.dto';
 import { ILoginService } from '@modules/auth/services/interfaces/login-service.interface';
-import { ITokenService } from '@modules/auth/services/interfaces/token-service.interface';
-import {
-  BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException,
-  UnauthorizedException
-} from '@nestjs/common';
-import { Types } from 'mongoose';
+import { IOtpService } from '@modules/auth/services/interfaces/otp-service.interface';
+import { IResponse } from '@core/misc/response.util';
 
 @Injectable()
 export class LoginService implements ILoginService {
@@ -49,20 +39,20 @@ export class LoginService implements ILoginService {
     private _providerRepository: IProviderRepository,
     @Inject(ADMIN_REPOSITORY_INTERFACE_NAME)
     private _adminRepository: IAdminRepository,
+    @Inject(WALLET_REPOSITORY_NAME)
+    private readonly _walletRepository: IWalletRepository,
+    @Inject(OTP_SERVICE_INTERFACE_NAME)
+    private readonly _otpService: IOtpService,
     @Inject(ARGON_UTILITY_NAME)
     private _argon: IArgonUtility,
-    @Inject(MAILER_UTILITY_INTERFACE_NAME)
-    private _mailerService: IMailerUtility,
-    @Inject(TOKEN_SERVICE_NAME)
-    private _tokenService: ITokenService,
     @Inject(ADMIN_MAPPER)
     private readonly _adminMapper: IAdminMapper,
     @Inject(PROVIDER_MAPPER)
     private readonly _providerMapper: IProviderMapper,
     @Inject(CUSTOMER_MAPPER)
     private readonly _customerMapper: ICustomerMapper,
-    @Inject(WALLET_REPOSITORY_NAME)
-    private readonly _walletRepository: IWalletRepository
+    @Inject(WALLET_MAPPER)
+    private readonly _walletMapper: IWalletMapper,
   ) {
     this.logger = this.loggerFactory.createLogger(LoginService.name);
   }
@@ -98,9 +88,7 @@ export class LoginService implements ILoginService {
   private async _createWallet(userId: string) {
     const wallet = await this._walletRepository.findWallet(userId);
     if (wallet) return;
-    await this._walletRepository.create({
-      userId: new Types.ObjectId(userId),
-    });
+    await this._walletRepository.create(this._walletMapper.toDocument({ userId }));
   }
 
   async validateUserCredentials(dto: AuthLoginDto): Promise<IUser> {
@@ -118,28 +106,28 @@ export class LoginService implements ILoginService {
       dto.password,
     );
 
-    console.log(isValidPassword);
-    
     if (!isValidPassword) {
-      throw new UnauthorizedException('Invalid email or password.');
+      throw new UnauthorizedException({
+        code: ErrorCodes.UNAUTHORIZED_ACCESS,
+        message: ErrorMessage.LOGIN_FAILED
+      });
     }
-    
-    console.log(user);
 
     if (dto.type === 'customer' || dto.type === 'provider') {
       if (!user.isActive) {
-        throw new UnauthorizedException('You are blocked by the admin.');
+        throw new UnauthorizedException({
+          code: ErrorCodes.UNAUTHORIZED_ACCESS,
+          message: 'You are blocked by the admin.'
+        });
       }
-      await Promise.all([
-        repository.findOneAndUpdate(
-          { email: dto.email },
-          { $set: { lastLogin: new Date() } },
-        ),
-        this._createWallet(user.id)
-      ]);
+
+      dto.type === 'customer'
+        ? await this._customerRepository.updateLastLogin(dto.email)
+        : await this._providerRepository.updateLastLogin(dto.email);
+
+      this._createWallet(user.id)
     }
 
-    console.log(user);
     return user;
   }
 
@@ -162,16 +150,10 @@ export class LoginService implements ILoginService {
         return this._mappedUser(user.type, existingUser);
       }
 
-      const updatedUser = await repository.findOneAndUpdate(
-        { email: existingUser.email },
-        { $set: { googleId: user.googleId, lastLogin: new Date() } },
-        { new: true },
-      );
+      const updatedUser = await repository.updateGoogleId(existingUser.email, user.googleId);
 
       if (!updatedUser) {
-        throw new InternalServerErrorException(
-          'Failed to update user with Google ID',
-        );
+        throw new InternalServerErrorException('Failed to update user with Google ID');
       }
 
       return this._mappedUser(user.type, updatedUser);
@@ -180,25 +162,26 @@ export class LoginService implements ILoginService {
     let newUserDocument: CustomerDocument | ProviderDocument;
 
     if (user.type === 'customer') {
-      newUserDocument = await this._customerRepository.create({
-        email: user.email,
-        username: user.name,
-        googleId: user.googleId,
-        avatar: user.avatar,
-        isActive: true,
-        lastLogin: new Date(),
-      });
+      newUserDocument = await this._customerRepository.create(
+        this._customerMapper.toDocument({
+          email: user.email,
+          username: user.name,
+          googleId: user.googleId,
+          avatar: user.avatar,
+        }));
     } else if (user.type === 'provider') {
-      newUserDocument = await this._providerRepository.create({
-        email: user.email,
-        username: user.name,
-        googleId: user.googleId,
-        avatar: user.avatar,
-        lastLogin: new Date(),
-        isActive: true,
-      });
+      newUserDocument = await this._providerRepository.create(
+        this._providerMapper.toDocument({
+          email: user.email,
+          username: user.name,
+          googleId: user.googleId,
+          avatar: user.avatar,
+        }));
     } else {
-      throw new BadRequestException('Invalid user type');
+      throw new BadRequestException({
+        code: ErrorCodes.BAD_REQUEST,
+        message: 'Invalid user type'
+      });
     }
 
     const newUser = this._mappedUser(user.type, newUserDocument);
@@ -206,36 +189,48 @@ export class LoginService implements ILoginService {
     return newUser;
   }
 
-  async forgotPassword(dto: ForgotPasswordDto): Promise<void> {
-    const repository =
-      dto.type === 'customer'
-        ? this._customerRepository
-        : this._providerRepository;
+  async requestOtpForForgotPassword(dto: EmailAndTypeDto): Promise<IResponse> {
+    const repository = dto.type === 'customer'
+      ? this._customerRepository
+      : this._providerRepository;
 
     const userDocument = await repository.findByEmail(dto.email);
-    if (!userDocument) throw new NotFoundException('User not found');
+    if (!userDocument) throw new NotFoundException({
+      code: ErrorCodes.NOT_FOUND,
+      message: ErrorMessage.USER_NOT_FOUND
+    });
+
     const user = this._mappedUser(dto.type, userDocument);
-
-    const token = this._tokenService.generateAccessToken(user.id, user.email, dto.type);
-
-    await this._mailerService.sendEmail(dto.email, token, 'link');
+    await this._otpService.generateAndSendOtp(user.email);
+    return { success: true, message: 'Otp requested' }
   }
 
-  async changePassword(dto: ChangePasswordDto): Promise<void> {
-    try {
-      const repository = this._findRepo(dto.type);
-      const hashedPassword = await this._argon.hash(dto.password);
+  async verifyOtpFromForgotPassword(email: string, code: string): Promise<IResponse> {
+    await this._otpService.verifyOtp(email, code);
+    return { success: true, message: 'Otp verified.' }
+  }
 
-      const updatedUser = await repository.findOneAndUpdate(
-        { email: dto.email },
-        { $set: { password: hashedPassword } },
-      );
+  async changePassword(dto: ChangePasswordDto): Promise<IResponse> {
+    if (dto.type === 'admin') throw new UnauthorizedException({
+      code: ErrorCodes.UNAUTHORIZED_ACCESS,
+      message: ErrorMessage.INVALID_TYPE
+    });
 
-      if (!updatedUser) throw new NotFoundException('Not found Exception');
-    } catch (err) {
-      this.logger.error(err);
-      throw new InternalServerErrorException('Failed to update password');
+    const hashedPassword = await this._argon.hash(dto.password);
+    let updatedUser: CustomerDocument | ProviderDocument | null = null;
+
+    if (dto.type === 'customer') {
+      updatedUser = await this._customerRepository.updatePassword(dto.email, hashedPassword);
+    } else if (dto.type === 'provider') {
+      updatedUser = await this._providerRepository.updatePassword(dto.email, hashedPassword);
     }
+
+    if (!updatedUser) throw new NotFoundException({
+      code: ErrorCodes.NOT_FOUND,
+      message: 'Not found Exception'
+    });
+
+    return { success: true, message: 'Otp verified.' }
   }
 
 }

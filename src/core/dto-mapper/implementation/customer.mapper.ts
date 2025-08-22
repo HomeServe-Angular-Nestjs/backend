@@ -1,4 +1,4 @@
-import { ICustomerMapper } from "@core/dto-mapper/interface/customer.mapper";
+import { ICustomerMapper } from "@core/dto-mapper/interface/customer.mapper..interface";
 import { Customer } from "@core/entities/implementation/customer.entity";
 import { ICustomer } from "@core/entities/interfaces/user.entity.interface";
 import { CustomerDocument } from "@core/schema/customer.schema";
@@ -26,5 +26,16 @@ export class CustomerMapper implements ICustomerMapper {
             isReviewed: doc.isReviewed,
             address: doc.address,
         });
+    }
+
+    toDocument(entity: Partial<ICustomer>): Partial<CustomerDocument> {
+        return {
+            email: entity.email,
+            username: entity.username,
+            googleId: entity.googleId,
+            avatar: entity.avatar,
+            isActive: true,
+            lastLogin: new Date(),
+        }
     }
 }

@@ -81,7 +81,7 @@ export class BookingService implements IBookingService {
         const txDoc = await this._transactionRepository.findTransactionById(txId);
         if (!txDoc) {
             throw new NotFoundException({
-                code: ErrorCodes.DOCUMENT_NOT_FOUND,
+                code: ErrorCodes.NOT_FOUND,
                 message: 'Transaction document not found'
             });
         }
@@ -98,7 +98,7 @@ export class BookingService implements IBookingService {
         const prices = subServiceDocuments.flatMap(sub => {
             const price = Number(sub.price);
             if (isNaN(price)) throw new BadRequestException({
-                code: ErrorCodes.INVALID_REQUEST_BODY,
+                code: ErrorCodes.BAD_REQUEST,
                 message: 'Invalid price'
             });
             return price;

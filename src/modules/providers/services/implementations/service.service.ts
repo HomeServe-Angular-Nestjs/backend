@@ -16,7 +16,7 @@ import { IServiceFeatureService } from '@modules/providers/services/interfaces/s
 import { PROVIDER_MAPPER, SERVICE_OFFERED_MAPPER } from '@core/constants/mappers.constant';
 import { IServiceOfferedMapper } from '@core/dto-mapper/interface/serviceOffered.mapper.interface';
 import { SubServiceDocument } from '@core/schema/subservice.schema';
-import { IProviderMapper } from '@core/dto-mapper/interface/provider.mapper';
+import { IProviderMapper } from '@core/dto-mapper/interface/provider.mapper.interface';
 
 @Injectable()
 export class ServiceFeatureService implements IServiceFeatureService {

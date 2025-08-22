@@ -17,16 +17,37 @@ export class ProviderRepository extends BaseRepository<ProviderDocument> impleme
     super(_providerModel);
   }
 
+
   async findByGoogleId(id: string): Promise<ProviderDocument | null> {
     return await this._providerModel.findOne({ googleId: id });
+  }
+
+  async updateGoogleId(email: string, googleId: string): Promise<ProviderDocument | null> {
+    return await this._providerModel.findOneAndUpdate(
+      { email },
+      { $set: { googleId, lastLogin: new Date() } },
+      { new: true }
+    );
   }
 
   async findByEmail(email: string): Promise<ProviderDocument | null> {
     return await this._providerModel.findOne({ email }).lean();
   }
 
+  async updatePassword(email: string, hashedPassword: string): Promise<ProviderDocument | null> {
+    return await this._providerModel.findOneAndUpdate(
+      { email },
+      { $set: { password: hashedPassword } },
+      { new: true }
+    ).lean();
+  }
+
   async count(filter?: FilterQuery<ProviderDocument>): Promise<number> {
     return await this._providerModel.countDocuments(filter);
+  }
+
+  async updateLastLogin(email: string): Promise<void> {
+    await this._providerModel.updateOne({ email }, { $set: { lastLogin: new Date() } });
   }
 
   async isExists(filter: FilterQuery<ProviderDocument>): Promise<boolean> {

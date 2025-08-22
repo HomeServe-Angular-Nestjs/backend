@@ -19,7 +19,7 @@ import { ChangePasswordDto } from '@modules/customer/dtos/customer.dto';
 import { ICustomerService } from '@modules/customer/services/interfaces/customer-service.interface';
 import { SubmitReviewDto, UpdateProfileDto, UpdateSavedProvidersDto } from '@modules/customer/dtos/customer.dto';
 import { CUSTOMER_MAPPER } from '@core/constants/mappers.constant';
-import { ICustomerMapper } from '@core/dto-mapper/interface/customer.mapper';
+import { ICustomerMapper } from '@core/dto-mapper/interface/customer.mapper..interface';
 
 @Injectable()
 export class CustomerService implements ICustomerService {
