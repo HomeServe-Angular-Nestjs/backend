@@ -116,7 +116,6 @@ export class ChatGateway extends BaseSocketGateway {
                 chat = await this._chatSocketService.createChat(sender, receiver);
             }
 
-
             const messageData: ICreateMessage = {
                 chatId: new Types.ObjectId(chat.id),
                 content: bodyPayload.message,

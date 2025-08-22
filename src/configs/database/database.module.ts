@@ -2,6 +2,7 @@ import { Connection, ConnectionStates } from 'mongoose';
 
 import {
   ADMIN_MODEL_NAME, BOOKINGS_MODEL_NAME, CHAT_MODEL_NAME, CUSTOMER_MODEL_NAME, MESSAGE_MODEL_NAME,
+  NOTIFICATION_MODEL_NAME,
   OTP_MODEL_NAME, PLAN_MODEL_NAME, PROVIDER_MODEL_NAME, SCHEDULES_MODEL_NAME,
   SERVICE_OFFERED_MODEL_NAME, SLOT_RULE_MODEL_NAME, SUBSCRIPTION_MODEL_NAME, TRANSACTION_MODEL_NAME,
   WALLET_MODEL_NAME
@@ -23,6 +24,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { SlotRuleSchema } from '@core/schema/slot-rule.schema';
 import { WalletSchema } from '@core/schema/wallet.schema';
+import { NotificationSchema } from '@core/schema/notification.schema';
 
 @Global()
 @Module({
@@ -70,6 +72,7 @@ import { WalletSchema } from '@core/schema/wallet.schema';
       { name: SUBSCRIPTION_MODEL_NAME, schema: SubscriptionSchema },
       { name: SLOT_RULE_MODEL_NAME, schema: SlotRuleSchema },
       { name: WALLET_MODEL_NAME, schema: WalletSchema },
+      { name: NOTIFICATION_MODEL_NAME, schema: NotificationSchema },
     ]),
   ],
   exports: [MongooseModule],
