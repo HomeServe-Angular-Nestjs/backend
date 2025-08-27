@@ -1,5 +1,6 @@
 import { Type } from 'class-transformer';
 import {
+    ArrayMaxSize,
     ArrayMinSize, IsArray, IsDefined, IsEmail, IsNotEmpty, IsNumber, IsString, Matches, Max, Min,
     ValidateNested
 } from 'class-validator';
@@ -22,30 +23,31 @@ export class AddressDto {
 }
 
 export class UpdateProfileDto {
-    @IsDefined()
+    @IsNotEmpty()
     @IsString()
     fullname: string;
 
-    @IsDefined()
+    @IsNotEmpty()
     @IsString()
     username: string;
 
-    @IsDefined()
-    @IsString()
-    @IsEmail()
-    email: string;
-
-    @IsDefined()
+    @IsNotEmpty()
     @IsString()
     @Matches(/^[6-9]\d{9}$/, {
         message: 'Invalid phone number'
     })
     phone: string;
 
-    @IsDefined()
-    @ValidateNested()
-    @Type(() => AddressDto)
-    location: AddressDto
+    @IsArray()
+    @ArrayMinSize(2)
+    @ArrayMaxSize(2)
+    @Type(() => Number)
+    @IsNumber({}, { each: true })
+    coordinates: number[];
+
+    @IsNotEmpty()
+    @IsString()
+    address: string;
 }
 
 export class ChangePasswordDto {

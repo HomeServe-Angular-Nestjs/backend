@@ -1,15 +1,20 @@
-import { NotificationType } from "@core/enum/notification.enum";
+import { NotificationTemplateId, NotificationType } from "@core/enum/notification.enum";
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { Document } from "mongoose";
+import { Document, Types } from "mongoose";
 
 @Schema({ timestamps: true })
 export class NotificationDocument extends Document {
     @Prop({
-        type: String,
+        type: Types.ObjectId,
         required: true,
-        index: true
     })
-    userId: string;
+    userId: Types.ObjectId;
+
+    @Prop({
+        type: String,
+        enum: Object.values(NotificationTemplateId)
+    })
+    templateId: NotificationTemplateId;
 
     @Prop({
         type: String,
@@ -44,3 +49,4 @@ export class NotificationDocument extends Document {
 }
 
 export const NotificationSchema = SchemaFactory.createForClass(NotificationDocument);
+NotificationSchema.index({ userId: 1, templateId: 1 });

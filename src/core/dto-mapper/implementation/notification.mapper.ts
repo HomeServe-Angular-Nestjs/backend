@@ -10,7 +10,8 @@ export class NotificationMapper implements INotificationMapper {
     toEntity(doc: NotificationDocument): INotification {
         return new Notification({
             id: (doc._id as Types.ObjectId).toString(),
-            userId: doc.userId,
+            userId: doc.userId.toString(),
+            templateId: doc.templateId,
             type: doc.type,
             title: doc.title,
             message: doc.message,
@@ -22,9 +23,10 @@ export class NotificationMapper implements INotificationMapper {
 
     toDocument(entity: Omit<INotification, 'id'>): Partial<NotificationDocument> {
         return {
-            userId: entity.userId,
+            userId: new Types.ObjectId(entity.userId),
             type: entity.type,
             title: entity.title,
+            templateId: entity.templateId,
             message: entity.message,
             isRead: entity.isRead,
         };

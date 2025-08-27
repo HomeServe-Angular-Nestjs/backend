@@ -10,7 +10,7 @@ export class LocationDocument {
     default: 'Point',
     required: true,
   })
-  type: string;
+  type: 'Point';
 
   @Prop({
     type: [Number],
@@ -49,10 +49,7 @@ export class BaseUserDocument extends Document {
   @Prop({
     type: LocationSchema,
   })
-  location: {
-    type: 'Point';
-    coordinates: [number, number];
-  };
+  location: LocationDocument;
 
   @Prop({ type: String })
   address: string;

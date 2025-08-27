@@ -1,7 +1,7 @@
 export interface IUserSocketStoreService {
-    addSocket(userId: string, socketId: string): Promise<void>;
-    removeSocket(userId: string, socketId: string): Promise<void>;
-    getSockets(userId: string): Promise<string[]>;
-    hasSockets(userId: string): Promise<boolean>;
-    removeAllSockets(userId: string): Promise<void>;
+    addSocket(userId: string, socketId: string, namespace: string): Promise<void>;
+    removeSocket(userId: string, socketId: string, namespace: string): Promise<void>;
+    getSockets(userId: string, namespace: string): Promise<string[]>;
+    hasSockets(userId: string, namespace: string): Promise<boolean>;
+    removeAllSockets(userId: string, namespace: string): Promise<void>;
 }
