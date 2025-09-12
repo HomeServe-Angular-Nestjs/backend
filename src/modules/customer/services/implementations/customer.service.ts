@@ -90,13 +90,13 @@ export class CustomerService implements ICustomerService {
 
         if (search) {
             const regex = new RegExp(search, 'i');
-            const providers = await this._providerRepository.find({ 'location.address': regex });
+            const providers = await this._providerRepository.find({ address: regex });
 
             result = providers.map(prov => ({
                 id: prov.id,
                 avatar: prov.avatar,
-                name: prov.fullname ?? prov.username,
-                address: prov.address ?? ''
+                name: prov?.fullname ?? prov.username,
+                address: prov?.address ?? ''
             }));
         }
 

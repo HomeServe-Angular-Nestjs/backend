@@ -1,7 +1,5 @@
 import { Types } from 'mongoose';
-
 import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
-
 import { PROVIDER_REPOSITORY_INTERFACE_NAME, SERVICE_OFFERED_REPOSITORY_NAME } from '@core/constants/repository.constant';
 import { UPLOAD_UTILITY_NAME } from '@core/constants/utility.constant';
 import { IService, IServicesWithPagination, ISubService } from '@core/entities/interfaces/service.entity.interface';
@@ -167,7 +165,6 @@ export class ServiceFeatureService implements IServiceFeatureService {
     return result
   }
 
-
   async updateService(updateData: UpdateServiceDto): Promise<IResponse<IService>> {
     if (!updateData?.id) {
       throw new BadRequestException('Service ID is missing.');
@@ -308,9 +305,7 @@ export class ServiceFeatureService implements IServiceFeatureService {
       }
     }
 
-
     return filteredServices;
-
   }
 
   async toggleServiceStatus(dto: ToggleServiceStatusDto): Promise<boolean> {
