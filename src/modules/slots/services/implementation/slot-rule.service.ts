@@ -86,7 +86,7 @@ export class SlotRuleService implements ISlotRuleService {
             currentStart = addMinutes(currentEnd, rule.breakDuration);
         }
 
-        return slots;
+        return slots.filter(slot => new Date() < this._parseTime(slot.from));
     }
 
     private _getFinalAvailableSlots(slotGroups: ISlotGroup[]): ISlotResponse[] {
@@ -125,7 +125,6 @@ export class SlotRuleService implements ISlotRuleService {
         date.setHours(hours, minutes, 0);
         return date;
     };
-
 
     private _isAlreadyBooked(slot: ISlotResponse, bookedSlots: IBookedSlot[]) {
         return bookedSlots.some(booked =>
@@ -274,9 +273,11 @@ export class SlotRuleService implements ISlotRuleService {
             }
         }).filter((slot): slot is ISlotGroup => slot !== null);
 
+        console.log(JSON.stringify(slots, null, 2));
+
         const bookedSlotDocument = await this._bookingRepository.findSlotsByDate(selectedDate);
         const bookedSlots = bookedSlotDocument.map(slot => this._bookingMapper.toSlotEntity(slot));
-        
+
         const finalSortedSlots = this._getFinalAvailableSlots(slots)
             .filter(slot => !this._isAlreadyBooked(slot, bookedSlots))
             .sort((a, b) =>
