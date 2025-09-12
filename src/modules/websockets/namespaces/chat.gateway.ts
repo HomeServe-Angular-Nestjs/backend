@@ -1,45 +1,25 @@
+import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
+import { Inject, NotFoundException, UnauthorizedException, UseFilters } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { Server, Socket } from 'socket.io';
 
-import {
-    AUTH_SOCKET_SERVICE_NAME, CHAT_SOCKET_SERVICE_NAME, MESSAGE_SERVICE_NAME,
-    USER_SOCKET_STORE_SERVICE_NAME
-} from '@/core/constants/service.constant';
+import { AUTH_SOCKET_SERVICE_NAME, CHAT_SOCKET_SERVICE_NAME, MESSAGE_SERVICE_NAME, USER_SOCKET_STORE_SERVICE_NAME } from '@/core/constants/service.constant';
 import { IParticipant } from '@/core/entities/interfaces/chat.entity.interface';
 import { ICreateMessage, IMessage } from '@/core/entities/interfaces/message.entity.interface';
 import { ErrorMessage } from '@/core/enum/error.enum';
-import { FRONTEND_URL } from '@/core/environments/environments';
 import { GlobalWsExceptionFilter } from '@/core/exception-filters/ws-exception.filters';
-import {
-    ICustomDtoValidator
-} from '@/core/utilities/interface/custom-dto-validator.utility.interface';
+import { ICustomDtoValidator } from '@/core/utilities/interface/custom-dto-validator.utility.interface';
 import { CUSTOM_DTO_VALIDATOR_NAME } from '@core/constants/utility.constant';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { SendMessageDto } from '@modules/websockets/dto/message.dto';
-import { BaseSocketGateway } from '@modules/websockets/namespaces/base.gateway';
-import {
-    IAuthSocketService
-} from '@modules/websockets/services/interface/auth-socket-service.interface';
-import {
-    IChatSocketService
-} from '@modules/websockets/services/interface/chat-socket-service.interface';
+import { BaseSocketGateway, corsOption } from '@modules/websockets/namespaces/base.gateway';
+import { IAuthSocketService } from '@modules/websockets/services/interface/auth-socket-service.interface';
+import { IChatSocketService } from '@modules/websockets/services/interface/chat-socket-service.interface';
 import { IMessageService } from '@modules/websockets/services/interface/message-service.interface';
-import {
-    IUserSocketStoreService
-} from '@modules/websockets/services/interface/user-socket-store-service.interface';
-import { Inject, NotFoundException, UnauthorizedException, UseFilters } from '@nestjs/common';
-import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
-import {
-    ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer
-} from '@nestjs/websockets';
-
-const cors: CorsOptions = {
-    origin: FRONTEND_URL,
-    credentials: true
-}
+import { IUserSocketStoreService } from '@modules/websockets/services/interface/user-socket-store-service.interface';
 
 @UseFilters(GlobalWsExceptionFilter)
-@WebSocketGateway({ cors })
+@WebSocketGateway({ cors: corsOption, namespace: 'chat' })
 export class ChatGateway extends BaseSocketGateway {
     @WebSocketServer()
     private server: Server;
@@ -73,7 +53,7 @@ export class ChatGateway extends BaseSocketGateway {
             const { sub: userId, type: userType } = payload;
             client.data.user = { id: userId, type: userType };
 
-            await this._userSocketService.addSocket(userId, client.id);
+            await this._userSocketService.addSocket(userId, client.id, 'chat');
             client.join(this._roomKey(userId));
             this.logger.log(`User ${userId} connected with socket ID: ${client.id}`);
         } catch (error) {
@@ -86,7 +66,7 @@ export class ChatGateway extends BaseSocketGateway {
     protected override async onClientDisConnect(client: Socket): Promise<void> {
         const user = client.data.user;
         if (user?.id) {
-            await this._userSocketService.removeSocket(user.id, client.id);
+            await this._userSocketService.removeSocket(user.id, client.id, 'chat');
         }
     }
 
@@ -116,7 +96,6 @@ export class ChatGateway extends BaseSocketGateway {
                 chat = await this._chatSocketService.createChat(sender, receiver);
             }
 
-
             const messageData: ICreateMessage = {
                 chatId: new Types.ObjectId(chat.id),
                 content: bodyPayload.message,
@@ -132,8 +111,8 @@ export class ChatGateway extends BaseSocketGateway {
                 throw new NotFoundException(ErrorMessage.DOCUMENT_NOT_FOUND);
             }
 
-            const senderSockets = await this._userSocketService.getSockets(sender.id.toString());
-            const receiverSockets = await this._userSocketService.getSockets(receiver.id.toString());
+            const senderSockets = await this._userSocketService.getSockets(sender.id.toString(), 'chat');
+            const receiverSockets = await this._userSocketService.getSockets(receiver.id.toString(), 'chat');
 
             const allSockets = [...new Set([...senderSockets, ...receiverSockets])];
 

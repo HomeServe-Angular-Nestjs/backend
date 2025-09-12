@@ -7,9 +7,10 @@ import { ITransactionRepository } from '@core/repositories/interfaces/transactio
 import { TransactionDocument } from '@core/schema/transaction.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import { IReportDownloadTransactionData, IReportTransactionData } from '@core/entities/interfaces/admin.entity.interface';
-import { ITransaction, ITransactionStats, ITransactionTableData } from '@core/entities/interfaces/transaction.entity.interface';
-import { Types } from 'mongoose';
+import { ITransactionStats } from '@core/entities/interfaces/transaction.entity.interface';
+import { Injectable } from '@nestjs/common';
 
+@Injectable()
 export class TransactionRepository extends BaseRepository<TransactionDocument> implements ITransactionRepository {
     constructor(
         @InjectModel(TRANSACTION_MODEL_NAME)

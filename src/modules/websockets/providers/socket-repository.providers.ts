@@ -1,13 +1,6 @@
 import { Model } from 'mongoose';
-
-import {
-    ADMIN_MODEL_NAME, CHAT_MODEL_NAME, CUSTOMER_MODEL_NAME, MESSAGE_MODEL_NAME, PROVIDER_MODEL_NAME
-} from '@/core/constants/model.constant';
-import {
-    ADMIN_REPOSITORY_INTERFACE_NAME, CHAT_REPOSITORY_INTERFACE_NAME,
-    CUSTOMER_REPOSITORY_INTERFACE_NAME, MESSAGE_REPOSITORY_INTERFACE_NAME,
-    PROVIDER_REPOSITORY_INTERFACE_NAME
-} from '@/core/constants/repository.constant';
+import { ADMIN_MODEL_NAME, CHAT_MODEL_NAME, CUSTOMER_MODEL_NAME, MESSAGE_MODEL_NAME, NOTIFICATION_MODEL_NAME, PROVIDER_MODEL_NAME } from '@/core/constants/model.constant';
+import { ADMIN_REPOSITORY_INTERFACE_NAME, CHAT_REPOSITORY_INTERFACE_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, MESSAGE_REPOSITORY_INTERFACE_NAME, NOTIFICATION_REPOSITORY_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME } from '@/core/constants/repository.constant';
 import { AdminRepository } from '@/core/repositories/implementations/admin.repository';
 import { ChatRepository } from '@/core/repositories/implementations/chat.repository';
 import { CustomerRepository } from '@/core/repositories/implementations/customer.repository';
@@ -20,6 +13,8 @@ import { MessageDocument } from '@/core/schema/message.schema';
 import { ProviderDocument } from '@/core/schema/provider.schema';
 import { Provider } from '@nestjs/common';
 import { getModelToken } from '@nestjs/mongoose';
+import { NotificationDocument } from '@core/schema/notification.schema';
+import { NotificationRepository } from '@core/repositories/implementations/notification.repository';
 
 export const socketRepositoryProviders: Provider[] = [
     {
@@ -51,5 +46,11 @@ export const socketRepositoryProviders: Provider[] = [
         useFactory: (messageModel: Model<MessageDocument>) =>
             new MessageRepository(messageModel),
         inject: [getModelToken(MESSAGE_MODEL_NAME)]
+    },
+    {
+        provide: NOTIFICATION_REPOSITORY_NAME,
+        useFactory: (notificationModel: Model<NotificationDocument>) =>
+            new NotificationRepository(notificationModel),
+        inject: [getModelToken(NOTIFICATION_MODEL_NAME)]
     }
 ];
