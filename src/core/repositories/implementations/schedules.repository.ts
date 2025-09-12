@@ -5,7 +5,9 @@ import { BaseRepository } from '@core/repositories/base/implementations/base.rep
 import { ISchedulesRepository } from '@core/repositories/interfaces/schedules-repo.interface';
 import { SchedulesDocument } from '@core/schema/schedules.schema';
 import { InjectModel } from '@nestjs/mongoose';
+import { Injectable } from '@nestjs/common';
 
+@Injectable()
 export class SchedulesRepository extends BaseRepository<SchedulesDocument> implements ISchedulesRepository {
     constructor(
         @InjectModel(SCHEDULES_MODEL_NAME)

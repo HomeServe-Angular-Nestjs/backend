@@ -5,7 +5,9 @@ import { BaseRepository } from '@core/repositories/base/implementations/base.rep
 import { IMessagesRepository } from '@core/repositories/interfaces/message-repo.interface';
 import { MessageDocument } from '@core/schema/message.schema';
 import { InjectModel } from '@nestjs/mongoose';
+import { Injectable } from '@nestjs/common';
 
+@Injectable()
 export class MessageRepository extends BaseRepository<MessageDocument> implements IMessagesRepository {
     constructor(
         @InjectModel(MESSAGE_MODEL_NAME)

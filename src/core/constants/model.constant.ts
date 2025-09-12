@@ -12,3 +12,4 @@ export const PLAN_MODEL_NAME = 'Plan';
 export const SUBSCRIPTION_MODEL_NAME = 'Subscription';
 export const SLOT_RULE_MODEL_NAME = 'SlotRule';
 export const WALLET_MODEL_NAME = 'Wallet';
+export const NOTIFICATION_MODEL_NAME = 'Notification';

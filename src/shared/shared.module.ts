@@ -1,4 +1,4 @@
-import { ADMIN_MAPPER, BOOKING_MAPPER, CHAT_MAPPER, CUSTOMER_MAPPER, MESSAGE_MAPPER, OTP_MAPPER, PLAN_MAPPER, PROVIDER_MAPPER, SCHEDULES_MAPPER, SERVICE_OFFERED_MAPPER, SLOT_RULE_MAPPER, SUBSCRIPTION_MAPPER, TRANSACTION_MAPPER, WALLET_MAPPER } from '@core/constants/mappers.constant';
+import { ADMIN_MAPPER, BOOKING_MAPPER, CHAT_MAPPER, CUSTOMER_MAPPER, MESSAGE_MAPPER, NOTIFICATION_MAPPER, OTP_MAPPER, PLAN_MAPPER, PROVIDER_MAPPER, SCHEDULES_MAPPER, SERVICE_OFFERED_MAPPER, SLOT_RULE_MAPPER, SUBSCRIPTION_MAPPER, TRANSACTION_MAPPER, WALLET_MAPPER } from '@core/constants/mappers.constant';
 import { CUSTOM_LOGGER } from '@core/logger/interface/custom-logger.interface';
 import { LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { Module } from '@nestjs/common';
@@ -22,7 +22,8 @@ import { sharedProviders } from '@shared/shared.provider';
         SLOT_RULE_MAPPER,
         BOOKING_MAPPER,
         WALLET_MAPPER,
-        OTP_MAPPER
+        OTP_MAPPER,
+        NOTIFICATION_MAPPER,
     ]
 })
 export class SharedModule { }
