@@ -129,7 +129,6 @@ export class BookingService implements IBookingService {
                 message: 'Slot is already booked.'
             };
         }
-
         const expectedArrivalTime = this._timeUtility.combineLocalDateAndTimeUTC(slotData.date, slotData.from);
 
         const bookingDoc = await this._bookingRepository.create(this._bookingMapper.toDocument({
@@ -183,10 +182,6 @@ export class BookingService implements IBookingService {
         if (!total) return { bookingData: [], paginationData: { total: 0, page, limit } };
 
         const bookingDocs = await this._bookingRepository.findBookingsByCustomerIdWithPagination(id, skip, limit);
-        // const providerIds = [...new Set(bookingDocs.map(doc => String(doc.providerId)))];
-        // const [] = await Promise.all([
-        //     this._providerRepository
-        // ])
 
         const bookings = bookingDocs.map(booking => this._bookingMapper.toEntity(booking));
 
@@ -322,7 +317,6 @@ export class BookingService implements IBookingService {
         if (!isWithin24Hours) {
             throw new ConflictException('Cancellation is allowed only within 24 hours of booking.');
         }
-
 
         const updatedBooking = await this._bookingRepository.findOneAndUpdate(
             {

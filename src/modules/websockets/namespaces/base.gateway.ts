@@ -33,4 +33,8 @@ export abstract class BaseSocketGateway implements OnGatewayConnection, OnGatewa
 
     protected abstract onClientConnect(client: Socket): Promise<void>;
     protected abstract onClientDisConnect(client: Socket): Promise<void>;
+
+    protected _getClient(client: Socket): IClientData {
+        return client.data.user;
+    }
 }

@@ -1,4 +1,4 @@
-import { Inject, InternalServerErrorException, NotFoundException, UseFilters } from "@nestjs/common";
+import { Inject, NotFoundException, UseFilters } from "@nestjs/common";
 import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer } from "@nestjs/websockets";
 import { Server, Socket } from "socket.io";
 import { AUTH_SOCKET_SERVICE_NAME, NOTIFICATION_SERVICE_NAME, USER_SOCKET_STORE_SERVICE_NAME } from "@core/constants/service.constant";
@@ -7,21 +7,20 @@ import { GlobalWsExceptionFilter } from "@core/exception-filters/ws-exception.fi
 import { ILoggerFactory, LOGGER_FACTORY } from "@core/logger/interface/logger-factory.interface";
 import { ICustomDtoValidator } from "@core/utilities/interface/custom-dto-validator.utility.interface";
 import { TemplateIdDto, NotificationIdDto, SendNewNotificationDto } from "@modules/websockets/dto/notification.dto";
-import { BaseSocketGateway, corsOption, IClientData } from "@modules/websockets/namespaces/base.gateway";
+import { BaseSocketGateway, corsOption } from "@modules/websockets/namespaces/base.gateway";
 import { IAuthSocketService } from "@modules/websockets/services/interface/auth-socket-service.interface";
 import { IUserSocketStoreService } from "@modules/websockets/services/interface/user-socket-store-service.interface";
-import { NotificationTemplateId, NotificationType } from "@core/enum/notification.enum";
-import { UserType } from "@modules/auth/dtos/login.dto";
+import { NotificationType } from "@core/enum/notification.enum";
 import { INotificationService } from "@modules/websockets/services/interface/notification-service.interface";
 import { ErrorCodes } from "@core/enum/error.enum";
 
-const NAMESPACE = 'notification';
+const namespace = 'notification';
 const NEW_NOTIFICATION = 'notification:new';
 const MARK_AS_READ = 'notification:read';
 const REMOVE_NOTIFICATION = 'notification:remove';
 
 @UseFilters(GlobalWsExceptionFilter)
-@WebSocketGateway({ cors: corsOption, namespace: NAMESPACE })
+@WebSocketGateway({ cors: corsOption, namespace })
 export class NotificationGateway extends BaseSocketGateway {
     @WebSocketServer()
     private server: Server;
@@ -59,21 +58,17 @@ export class NotificationGateway extends BaseSocketGateway {
     }
 
     protected override async onClientDisConnect(client: Socket): Promise<void> {
-        const user = client.data.user;
+        const user = this._getClient(client);
         if (user?.id) {
-            await this._userSocketService.removeSocket(user.id, client.id, 'notification');
+            await this._userSocketService.removeSocket(user.id, client.id, namespace);
         }
-    }
-
-    private _getClient(client: Socket): { id: string, type: UserType } {
-        return client.data.user;
     }
 
     @SubscribeMessage(NEW_NOTIFICATION)
     async handleMessage(@ConnectedSocket() client: Socket, @MessageBody() body: SendNewNotificationDto) {
         await this._customDtoValidatorUtility.validateDto(SendNewNotificationDto, body);
 
-        const user = client.data.user as IClientData;
+        const user = this._getClient(client);
         if (body.type === NotificationType.SYSTEM) {
             let notification = await this._notificationService.findNotification(user.id, body.type, body.templateId);
 
@@ -86,7 +81,7 @@ export class NotificationGateway extends BaseSocketGateway {
                 });
             }
 
-            const senderSockets = await this._userSocketService.getSockets(user.id, NAMESPACE);
+            const senderSockets = await this._userSocketService.getSockets(user.id, namespace);
             for (const socketId of senderSockets) {
                 this.server.to(socketId).emit(NEW_NOTIFICATION, notification);
             }
@@ -107,7 +102,7 @@ export class NotificationGateway extends BaseSocketGateway {
             });
         }
 
-        const senderSockets = await this._userSocketService.getSockets(user.id, NAMESPACE);
+        const senderSockets = await this._userSocketService.getSockets(user.id, namespace);
         for (const socketId of senderSockets) {
             this.server.to(socketId).emit(MARK_AS_READ, markedNotification);
         }
@@ -127,7 +122,7 @@ export class NotificationGateway extends BaseSocketGateway {
             });
         }
 
-        const senderSockets = await this._userSocketService.getSockets(user.id, NAMESPACE);
+        const senderSockets = await this._userSocketService.getSockets(user.id, namespace);
         for (const socketId of senderSockets) {
             this.server.to(socketId).emit(MARK_AS_READ, removedNotification.id);
         }

@@ -13,3 +13,4 @@ export const SUBSCRIPTION_REPOSITORY_NAME = 'ISubscriptionRepository';
 export const SLOT_RULE_REPOSITORY_NAME = 'ISlotRuleRepository';
 export const WALLET_REPOSITORY_NAME = 'IWalletRepository';
 export const NOTIFICATION_REPOSITORY_NAME = Symbol('NOTIFICATION_REPOSITORY_NAME');
+export const RESERVATION_REPOSITORY_NAME = Symbol('RESERVATION_REPOSITORY_NAME'); 

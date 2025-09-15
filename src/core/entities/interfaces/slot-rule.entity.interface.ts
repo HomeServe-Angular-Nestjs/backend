@@ -41,6 +41,7 @@ export interface IAvailableSlot {
 
 export interface ISlotResponse extends IAvailableSlot {
     ruleId: string;
+    status: boolean;
 }
 
 export interface ISlotGroup {

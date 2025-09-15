@@ -1,9 +1,9 @@
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
-import { ArgumentsHost, BadRequestException, Catch, Inject, WsExceptionFilter } from '@nestjs/common';
+import { ArgumentsHost, BadRequestException, Catch, ConflictException, Inject, WsExceptionFilter } from '@nestjs/common';
 import { WsException } from '@nestjs/websockets';
 
-@Catch(BadRequestException, WsException)
+@Catch(BadRequestException, WsException, ConflictException)
 export class GlobalWsExceptionFilter implements WsExceptionFilter {
     private readonly logger: ICustomLogger;
 
@@ -16,6 +16,8 @@ export class GlobalWsExceptionFilter implements WsExceptionFilter {
 
     catch(exception: any, host: ArgumentsHost) {
         const client = host.switchToWs().getClient();
+
+        console.log(exception);
 
         this.logger.error(exception.message);
         if (exception instanceof BadRequestException) {

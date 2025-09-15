@@ -4,4 +4,6 @@ export interface IUserSocketStoreService {
     getSockets(userId: string, namespace: string): Promise<string[]>;
     hasSockets(userId: string, namespace: string): Promise<boolean>;
     removeAllSockets(userId: string, namespace: string): Promise<void>;
+    addToProviderRoom(providerId: string, customerId: string): Promise<void>;
+    removeFromProviderRoom(providerId: string, customerId: string): Promise<void>;
 }
