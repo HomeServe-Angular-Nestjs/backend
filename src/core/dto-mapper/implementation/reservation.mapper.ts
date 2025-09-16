@@ -1,8 +1,10 @@
 import { Reservation } from "@core/entities/implementation/reservation.entity";
 import { IReservation } from "@core/entities/interfaces/reservation.entity.interface";
 import { ReservationDocument } from "@core/schema/reservation.schema";
+import { Injectable } from "@nestjs/common";
 import { Types } from "mongoose";
 
+@Injectable()
 export class ReservationMapper {
     toEntity(doc: ReservationDocument): IReservation {
         return new Reservation({

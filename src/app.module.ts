@@ -21,6 +21,7 @@ import { SeedsModule } from '../seed/seed.module';
 import { AdminModule } from './modules/users/admin.module';
 import { SlotModule } from '@modules/slots/slots.module';
 import { WalletModule } from '@modules/wallet/wallet.module';
+import { ReportModule } from '@modules/reports/report.module';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { WalletModule } from '@modules/wallet/wallet.module';
     SubscriptionModules,
     SlotModule,
     WalletModule,
+    ReportModule,
   ],
   controllers: [AppController],
   providers: [

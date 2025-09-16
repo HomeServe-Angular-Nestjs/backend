@@ -14,3 +14,4 @@ export const SLOT_RULE_MAPPER = Symbol('SLOT_RULE_MAPPER');
 export const WALLET_MAPPER = Symbol('WALLET_MAPPER');
 export const NOTIFICATION_MAPPER = Symbol('NOTIFICATION_MAPPER');
 export const RESERVATION_MAPPER = Symbol('RESERVATION_MAPPER');
+export const REPORT_MAPPER = Symbol('REPORT_MAPPER');

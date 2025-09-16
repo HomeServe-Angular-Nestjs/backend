@@ -1,4 +1,4 @@
-import { ADMIN_MAPPER, BOOKING_MAPPER, CHAT_MAPPER, CUSTOMER_MAPPER, MESSAGE_MAPPER, NOTIFICATION_MAPPER, OTP_MAPPER, PLAN_MAPPER, PROVIDER_MAPPER, RESERVATION_MAPPER, SCHEDULES_MAPPER, SERVICE_OFFERED_MAPPER, SLOT_RULE_MAPPER, SUBSCRIPTION_MAPPER, TRANSACTION_MAPPER, WALLET_MAPPER } from '@core/constants/mappers.constant';
+import { ADMIN_MAPPER, BOOKING_MAPPER, CHAT_MAPPER, CUSTOMER_MAPPER, MESSAGE_MAPPER, NOTIFICATION_MAPPER, OTP_MAPPER, PLAN_MAPPER, PROVIDER_MAPPER, REPORT_MAPPER, RESERVATION_MAPPER, SCHEDULES_MAPPER, SERVICE_OFFERED_MAPPER, SLOT_RULE_MAPPER, SUBSCRIPTION_MAPPER, TRANSACTION_MAPPER, WALLET_MAPPER } from '@core/constants/mappers.constant';
 import { AdminMapper } from '@core/dto-mapper/implementation/admin.mapper';
 import { BookingMapper } from '@core/dto-mapper/implementation/booking.mapper';
 import { ChatMapper } from '@core/dto-mapper/implementation/chat.mapper';
@@ -8,6 +8,7 @@ import { NotificationMapper } from '@core/dto-mapper/implementation/notification
 import { OtpMapper } from '@core/dto-mapper/implementation/otp.mapper';
 import { PlanMapper } from '@core/dto-mapper/implementation/plan.mapper';
 import { ProviderMapper } from '@core/dto-mapper/implementation/provider.mapper';
+import { ReportMapper } from '@core/dto-mapper/implementation/report.mapper';
 import { ReservationMapper } from '@core/dto-mapper/implementation/reservation.mapper';
 import { SchedulesMapper } from '@core/dto-mapper/implementation/schedules.mapper';
 import { ServiceOfferedMapper } from '@core/dto-mapper/implementation/serviceOffered.mapper';
@@ -93,5 +94,9 @@ export const sharedProviders: Provider[] = [
     {
         provide: RESERVATION_MAPPER,
         useClass: ReservationMapper
+    },
+    {
+        provide: REPORT_MAPPER,
+        useClass: ReportMapper
     },
 ];

@@ -14,3 +14,4 @@ export const SLOT_RULE_MODEL_NAME = 'SlotRule';
 export const WALLET_MODEL_NAME = 'Wallet';
 export const NOTIFICATION_MODEL_NAME = 'Notification';
 export const RESERVATION_MODEL_NAME = 'Reservation';
+export const REPORT_MODEL_NAME = 'Report';

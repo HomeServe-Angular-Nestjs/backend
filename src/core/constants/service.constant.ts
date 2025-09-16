@@ -27,6 +27,7 @@ export const WALLET_SERVICE_NAME = 'IWalletService';
 export const MESSAGE_SERVICE_NAME = 'IMessageService';
 export const NOTIFICATION_SERVICE_NAME = Symbol('NOTIFICATION_SERVICE_NAME');
 export const RESERVATION_SERVICE_NAME = Symbol('RESERVATION_SERVICE_NAME');
+export const REPORT_SERVICE_NAME = Symbol('REPORT_SERVICE_NAME');
 
 export const AUTH_SOCKET_SERVICE_NAME = 'IAuthSocketService';
 export const CHAT_SOCKET_SERVICE_NAME = 'IChatSocketService';
