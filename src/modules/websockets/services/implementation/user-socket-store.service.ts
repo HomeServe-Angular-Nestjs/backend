@@ -14,6 +14,10 @@ export class UserSocketStoreService implements IUserSocketStoreService {
         return `user_socket:${namespace}:${userId}`;
     }
 
+    private _getProviderRoomKey(providerId: string): string {
+        return `provider_room:${providerId}`;
+    }
+
     async addSocket(userId: string, socketId: string, namespace: string): Promise<void> {
         const key = this._getRedisKey(userId, namespace);
         await this._redis.sadd(key, socketId);
@@ -41,5 +45,15 @@ export class UserSocketStoreService implements IUserSocketStoreService {
     async removeAllSockets(userId: string, namespace: string): Promise<void> {
         const key = this._getRedisKey(userId, namespace);
         await this._redis.del(key);
+    }
+
+    async addToProviderRoom(providerId: string, customerId: string): Promise<void> {
+        const key = this._getProviderRoomKey(providerId);
+        await this._redis.sadd(key, customerId);
+    }
+
+    async removeFromProviderRoom(providerId: string, customerId: string): Promise<void> {
+        const key = this._getProviderRoomKey(providerId);
+        await this._redis.srem(key, customerId);
     }
 }

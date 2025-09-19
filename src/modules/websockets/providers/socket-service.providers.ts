@@ -1,5 +1,5 @@
 import {
-    AUTH_SOCKET_SERVICE_NAME, CHAT_SOCKET_SERVICE_NAME, MESSAGE_SERVICE_NAME, NOTIFICATION_SERVICE_NAME, TOKEN_SERVICE_NAME,
+    AUTH_SOCKET_SERVICE_NAME, CHAT_SOCKET_SERVICE_NAME, MESSAGE_SERVICE_NAME, NOTIFICATION_SERVICE_NAME, RESERVATION_SERVICE_NAME, TOKEN_SERVICE_NAME,
     USER_SOCKET_STORE_SERVICE_NAME
 } from '@/core/constants/service.constant';
 import { TokenService } from '@/modules/auth/services/implementations/token.service';
@@ -7,6 +7,7 @@ import { AuthSocketService } from '@modules/websockets/services/implementation/a
 import { ChatSocketService } from '@modules/websockets/services/implementation/chat-socket.service';
 import { MessageService } from '@modules/websockets/services/implementation/message.service';
 import { NotificationService } from '@modules/websockets/services/implementation/notification.service';
+import { ReservationService } from '@modules/websockets/services/implementation/reservation.service';
 import {
     UserSocketStoreService
 } from '@modules/websockets/services/implementation/user-socket-store.service';
@@ -36,5 +37,9 @@ export const socketServiceProviders: Provider[] = [
     {
         provide: NOTIFICATION_SERVICE_NAME,
         useClass: NotificationService
+    },
+    {
+        provide: RESERVATION_SERVICE_NAME,
+        useClass: ReservationService
     }
 ]

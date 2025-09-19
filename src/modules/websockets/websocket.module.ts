@@ -10,6 +10,7 @@ import { socketServiceProviders } from './providers/socket-service.providers';
 import { socketUtilityProviders } from './providers/socket-utility.providers';
 import { NotificationController } from '@modules/websockets/controllers/notification.controller';
 import { NotificationGateway } from '@modules/websockets/namespaces/notification.gateway';
+import { ReservationGateway } from '@modules/websockets/namespaces/reservation.gateway';
 
 @Module({
     imports: [JwtConfigModule, SharedModule],
@@ -17,6 +18,7 @@ import { NotificationGateway } from '@modules/websockets/namespaces/notification
     providers: [
         ChatGateway,
         NotificationGateway,
+        ReservationGateway, 
         ...socketServiceProviders,
         ...socketRepositoryProviders,
         ...socketUtilityProviders,

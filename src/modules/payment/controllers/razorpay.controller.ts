@@ -17,7 +17,6 @@ import {
     UnauthorizedException,
     UseGuards
 } from '@nestjs/common';
-import { IsPaymentInitializedGuard } from '@modules/payment/guards/is_payment_initialized.guard';
 
 
 @Controller('payment')
@@ -34,7 +33,6 @@ export class RazorpayController {
     }
 
     @Post('create_order')
-    @UseGuards(IsPaymentInitializedGuard)
     async createOrder(@Body() { amount }: CreateOrderDto): Promise<IRazorpayOrder> {
         try {
             const numericAmount = Number(amount);
@@ -64,8 +62,6 @@ export class RazorpayController {
                 this.logger.warn(`Missing payment fields: orderId=${razorpay_order_id}, paymentId=${razorpay_payment_id}`);
                 throw new BadRequestException('Missing or invalid payment verification fields.');
             }
-
-            this.logger.debug(dto);
 
             return await this._paymentService.verifySignature(user.sub, user.type, dto.verifyData, dto.orderData);
         } catch (err) {

@@ -35,7 +35,7 @@ export class ChatSocketService implements IChatSocketService {
         @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
         private readonly _providerRepository: IProviderRepository,
         @Inject(ADMIN_REPOSITORY_INTERFACE_NAME)
-        private readonly _adminRepository: IAdminRepository,
+        private readonly _adminRepository: IAdminRepository, //!Todo remove 
         @Inject(MESSAGE_REPOSITORY_INTERFACE_NAME)
         private readonly _messageRepository: IMessagesRepository,
         @Inject(CHAT_MAPPER)

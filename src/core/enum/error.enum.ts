@@ -5,11 +5,12 @@ export enum ErrorMessage {
     UNAUTHORIZED_ACCESS = 'Unauthorized access, please login',
     INVALID_TYPE = 'Invalid type found.',
 
+    DOCUMENT_NOT_FOUND = 'Document not found',
+
     PROVIDER_NOT_FOUND = 'Provider not found',
     SERVICE_NOT_FOUND = 'Service not found',
     SUBSCRIPTION_NOT_FOUND = 'Subscription not found',
     PLAN_NOT_FOUND = 'Plan not found',
-    DOCUMENT_NOT_FOUND = 'Document not found',
     PROVIDER_NOT_FOUND_WITH_ID = 'Provider not found with ID: ',
     CUSTOMER_NOT_FOUND_WITH_ID = 'Customer not found with ID: ',
     SERVICE_NOT_FOUND_WITH_ID = 'Service not found with ID: ',
@@ -29,7 +30,7 @@ export enum ErrorMessage {
     INVALID_REFRESH_TOKEN = 'Invalid or expired refresh token.',
     TOKEN_VERIFICATION_FAILED = 'Token verification failed.',
     UPLOAD_FAILED = 'Failed to upload an image.',
-    SLOT_RESERVATION_FAILED = 'Failed reserve slot.',
+    SLOT_RESERVATION_FAILED = 'Slot already reserved. Please select another.',
     PAYMENT_IN_PROGRESS = 'Payment already in progress.',
     PAYMENT_VERIFICATION_FAILED = 'Payment verification failed.',
 }

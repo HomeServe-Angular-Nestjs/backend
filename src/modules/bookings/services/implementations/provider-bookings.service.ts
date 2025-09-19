@@ -285,6 +285,7 @@ export class ProviderBookingService implements IProviderBookingService {
             cancelReason: booking.cancellationReason,
             cancelledAt: booking.cancelledAt,
             customer: {
+                id: customer.id,
                 name: customer.fullname || customer.username,
                 email: customer.email,
                 phone: customer.phone,
@@ -359,6 +360,7 @@ export class ProviderBookingService implements IProviderBookingService {
                 cancelReason: updatedBooking.cancellationReason,
                 cancelledAt: updatedBooking.cancelledAt,
                 customer: {
+                    id: customer.id,
                     name: customer.fullname || customer.username,
                     email: customer.email,
                     phone: customer.phone,
@@ -393,5 +395,4 @@ export class ProviderBookingService implements IProviderBookingService {
             message: ''
         }
     }
-
 }

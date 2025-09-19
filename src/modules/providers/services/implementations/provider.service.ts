@@ -21,6 +21,7 @@ import { FilterDto, GetProvidersFromLocationSearch, SlotDto, UpdateBioDto } from
 import { IProviderServices } from '@modules/providers/services/interfaces/provider-service.interface';
 import { PROVIDER_MAPPER } from '@core/constants/mappers.constant';
 import { IProviderMapper } from '@core/dto-mapper/interface/provider.mapper.interface';
+import { ProviderDocument } from '@core/schema/provider.schema';
 
 @Injectable()
 export class ProviderServices implements IProviderServices {
@@ -60,12 +61,16 @@ export class ProviderServices implements IProviderServices {
       query.isCertified = filter.isCertified
     }
 
-    const providers = await this._providerRepository.find(query);
+    const providerDocs = await this._providerRepository.find(query);
+    const providers = (providerDocs || []).map(provider => {
+      const avatar = provider?.avatar ? this._uploadsUtility.getSignedImageUrl(provider.avatar) : '';
+      return this._providerMapper.toEntity({ ...provider, avatar } as ProviderDocument)
+    });
 
     return {
       success: true,
       message: 'Providers fetched successfully.',
-      data: (providers || []).map(provider => this._providerMapper.toEntity(provider))
+      data: providers
     }
   }
 
@@ -98,24 +103,27 @@ export class ProviderServices implements IProviderServices {
   }
 
   async fetchOneProvider(id: string): Promise<IProvider> {
-    const provider = await this._providerRepository.findOne({ _id: id });
+    const providerDoc = await this._providerRepository.findOne({ _id: id });
 
-    if (!provider) {
+    if (!providerDoc) {
       throw new NotFoundException(`No provider found for user ID: ${id}`);
     }
 
-    return this._providerMapper.toEntity(provider);
+    const provider = this._providerMapper.toEntity(providerDoc);
+    provider.avatar = provider?.avatar ? this._uploadsUtility.getSignedImageUrl(provider.avatar) : '';
+    return provider;
   }
 
   // Performs a full update on the provider's data including avatar upload if a file is provided.
   async bulkUpdateProvider(id: string, updateData: Partial<IProvider>, file?: Express.Multer.File,): Promise<IProvider> {
     if (file) {
-      const response = await this._cloudinaryService.uploadImage(file);
+      const publicId = this._uploadsUtility.getPublicId('provider', id, UploadsType.USER, uuidv4());
+      const ImageResponse = await this._cloudinaryService.uploadsImage(file, publicId);
 
-      if (!response) {
+      if (!ImageResponse) {
         throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
       }
-      updateData.avatar = response.url;
+      updateData.avatar = ImageResponse.public_id;
     }
 
     const sanitizedUpdate = Object.fromEntries(

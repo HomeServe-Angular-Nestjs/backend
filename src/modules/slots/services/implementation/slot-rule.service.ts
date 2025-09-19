@@ -1,5 +1,5 @@
 import { BOOKING_MAPPER, SLOT_RULE_MAPPER } from "@core/constants/mappers.constant";
-import { BOOKING_REPOSITORY_NAME, SLOT_RULE_REPOSITORY_NAME } from "@core/constants/repository.constant";
+import { BOOKING_REPOSITORY_NAME, RESERVATION_REPOSITORY_NAME, SLOT_RULE_REPOSITORY_NAME } from "@core/constants/repository.constant";
 import { IBookingMapper } from "@core/dto-mapper/interface/bookings.mapper.interface";
 import { ISlotRuleMapper } from "@core/dto-mapper/interface/slot-rule.mapper.interface";
 import { IBookedSlot } from "@core/entities/interfaces/booking.entity.interface";
@@ -10,6 +10,7 @@ import { ICustomLogger } from "@core/logger/interface/custom-logger.interface";
 import { ILoggerFactory, LOGGER_FACTORY } from "@core/logger/interface/logger-factory.interface";
 import { IResponse } from "@core/misc/response.util";
 import { IBookingRepository } from "@core/repositories/interfaces/bookings-repo.interface";
+import { IReservationRepository } from "@core/repositories/interfaces/reservation-repo.interface";
 import { ISlotRuleRepository } from "@core/repositories/interfaces/slot-rule-repo.interface";
 import { CreateRuleDto, EditRuleDto, RuleFilterDto } from "@modules/slots/dtos/slot.rule.dto";
 import { ISlotRuleService } from "@modules/slots/services/interfaces/slot-rule-service.interface";
@@ -27,6 +28,8 @@ export class SlotRuleService implements ISlotRuleService {
         private readonly _slotRuleRepository: ISlotRuleRepository,
         @Inject(BOOKING_REPOSITORY_NAME)
         private readonly _bookingRepository: IBookingRepository,
+        @Inject(RESERVATION_REPOSITORY_NAME)
+        private readonly _reservationRepository: IReservationRepository,
         @Inject(SLOT_RULE_MAPPER)
         private readonly _slotRuleMapper: ISlotRuleMapper,
         @Inject(BOOKING_MAPPER)
@@ -86,12 +89,13 @@ export class SlotRuleService implements ISlotRuleService {
             currentStart = addMinutes(currentEnd, rule.breakDuration);
         }
 
-        return slots;
+        return slots.filter(slot => new Date() < this._parseTime(slot.from));
     }
 
-    private _getFinalAvailableSlots(slotGroups: ISlotGroup[]): ISlotResponse[] {
+    private async _getFinalAvailableSlots(providerId: string, date: Date, slotGroups: ISlotGroup[]): Promise<ISlotResponse[]> {
         if (!slotGroups.length) return [];
 
+        const reservations = await this._reservationRepository.findAllForDate(providerId, date);
         const finalSlots: ISlotResponse[] = [];
 
         const sortedGroups = [...slotGroups].sort((a, b) => b.priority - a.priority);
@@ -107,10 +111,13 @@ export class SlotRuleService implements ISlotRuleService {
                     return fromTime < existingTo && existingFrom < toTime;
                 });
 
+                const isReserved = reservations.some(r => (r.from === slot.from && r.to === slot.to))
+
                 if (!isOverlapping) {
                     finalSlots.push({
                         ...slot,
-                        ruleId: group.ruleId
+                        ruleId: group.ruleId,
+                        status: !isReserved
                     });
                 }
             }
@@ -125,7 +132,6 @@ export class SlotRuleService implements ISlotRuleService {
         date.setHours(hours, minutes, 0);
         return date;
     };
-
 
     private _isAlreadyBooked(slot: ISlotResponse, bookedSlots: IBookedSlot[]) {
         return bookedSlots.some(booked =>
@@ -276,8 +282,8 @@ export class SlotRuleService implements ISlotRuleService {
 
         const bookedSlotDocument = await this._bookingRepository.findSlotsByDate(selectedDate);
         const bookedSlots = bookedSlotDocument.map(slot => this._bookingMapper.toSlotEntity(slot));
-        
-        const finalSortedSlots = this._getFinalAvailableSlots(slots)
+
+        const finalSortedSlots = (await this._getFinalAvailableSlots(providerId, selectedDate, slots))
             .filter(slot => !this._isAlreadyBooked(slot, bookedSlots))
             .sort((a, b) =>
                 Number(a.from.split(':')[0]) - Number(b.from.split(':')[0])

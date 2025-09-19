@@ -1,3 +1,4 @@
 export enum UploadsType {
-    GALLERY = 'gallery'
+    GALLERY = 'gallery',
+    USER = 'user',
 }

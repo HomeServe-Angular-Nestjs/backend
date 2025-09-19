@@ -32,7 +32,6 @@ import {
 import { BookingDto, CancelBookingDto, IPriceBreakupDto, SelectedServiceDto, UpdateBookingDto } from '@modules/bookings/dtos/booking.dto';
 import { IBookingService } from '@modules/bookings/services/interfaces/booking-service.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
-import { Types } from 'mongoose';
 import { SlotStatusEnum } from '@core/enum/slot.enum';
 import { IBookingMapper } from '@core/dto-mapper/interface/bookings.mapper.interface';
 import { BOOKING_MAPPER, TRANSACTION_MAPPER } from '@core/constants/mappers.constant';
@@ -129,7 +128,6 @@ export class BookingService implements IBookingService {
                 message: 'Slot is already booked.'
             };
         }
-
         const expectedArrivalTime = this._timeUtility.combineLocalDateAndTimeUTC(slotData.date, slotData.from);
 
         const bookingDoc = await this._bookingRepository.create(this._bookingMapper.toDocument({
@@ -183,10 +181,6 @@ export class BookingService implements IBookingService {
         if (!total) return { bookingData: [], paginationData: { total: 0, page, limit } };
 
         const bookingDocs = await this._bookingRepository.findBookingsByCustomerIdWithPagination(id, skip, limit);
-        // const providerIds = [...new Set(bookingDocs.map(doc => String(doc.providerId)))];
-        // const [] = await Promise.all([
-        //     this._providerRepository
-        // ])
 
         const bookings = bookingDocs.map(booking => this._bookingMapper.toEntity(booking));
 
@@ -322,7 +316,6 @@ export class BookingService implements IBookingService {
         if (!isWithin24Hours) {
             throw new ConflictException('Cancellation is allowed only within 24 hours of booking.');
         }
-
 
         const updatedBooking = await this._bookingRepository.findOneAndUpdate(
             {
