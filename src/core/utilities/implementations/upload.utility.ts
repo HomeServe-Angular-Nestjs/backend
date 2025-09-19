@@ -6,6 +6,8 @@ import { CloudinaryService } from '../../../configs/cloudinary/cloudinary.servic
 import { ICustomLogger } from '../../logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '../../logger/interface/logger-factory.interface';
 import { IUploadsUtility } from '../interface/upload.utility.interface';
+import { UploadsType } from '@core/enum/uploads.enum';
+import { UserType } from '@modules/auth/dtos/login.dto';
 
 @Injectable()
 export class UploadsUtility implements IUploadsUtility {
@@ -17,6 +19,10 @@ export class UploadsUtility implements IUploadsUtility {
     private readonly _cloudinaryService: CloudinaryService
   ) {
     this.logger = this._loggerFactory.createLogger(UploadsUtility.name);
+  }
+
+  getPublicId(userType: UserType, userId: string, uploadType: UploadsType, uniqueId: string): string {
+    return `${userType}/${userId}/${uploadType}/${uniqueId}`;
   }
 
   async uploadImage(file: Express.Multer.File): Promise<string> {

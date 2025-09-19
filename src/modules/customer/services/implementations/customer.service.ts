@@ -1,4 +1,5 @@
 import { Types } from 'mongoose';
+import { v4 as uuidv4 } from 'uuid';
 
 import { Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 
@@ -20,6 +21,7 @@ import { ICustomerService } from '@modules/customer/services/interfaces/customer
 import { SubmitReviewDto, UpdateProfileDto, UpdateSavedProvidersDto } from '@modules/customer/dtos/customer.dto';
 import { CUSTOMER_MAPPER } from '@core/constants/mappers.constant';
 import { ICustomerMapper } from '@core/dto-mapper/interface/customer.mapper..interface';
+import { UploadsType } from '@core/enum/uploads.enum';
 
 @Injectable()
 export class CustomerService implements ICustomerService {
@@ -47,7 +49,9 @@ export class CustomerService implements ICustomerService {
     async fetchOneCustomer(id: string): Promise<ICustomer | null> {
         const customerDocument = await this._customerRepository.findOne({ _id: id });
         if (!customerDocument) return null;
-        return this._customerMapper.toEntity(customerDocument);
+        const customer = this._customerMapper.toEntity(customerDocument);
+        customer.avatar = customer?.avatar ? this._uploadsUtility.getSignedImageUrl(customer.avatar) : ''; //!Todo handle google image
+        return customer;
     }
 
     async partialUpdate(id: string, data: Partial<ICustomer>): Promise<ICustomer> {
@@ -172,17 +176,18 @@ export class CustomerService implements ICustomerService {
     }
 
     async changeAvatar(customerId: string, file: Express.Multer.File): Promise<IResponse<ICustomer>> {
+        const publicId = this._uploadsUtility.getPublicId('customer', customerId, UploadsType.USER, uuidv4());
 
-        const avatarUrl = await this._uploadsUtility.uploadImage(file);
+        const uploadResponse = await this._uploadsUtility.uploadsImage(file, publicId);
 
-        if (!avatarUrl) {
+        if (!uploadResponse) {
             throw new InternalServerErrorException(ErrorMessage.FILE_UPLOAD_FAILED);
         }
 
         const updatedCustomer = await this._customerRepository.findOneAndUpdate(
             { _id: customerId },
             {
-                $set: { avatar: avatarUrl }
+                $set: { avatar: uploadResponse.public_id }
             },
             { nw: true }
         );
