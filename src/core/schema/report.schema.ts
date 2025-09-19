@@ -1,4 +1,5 @@
-import { ReportedType, ReportStatus } from "@core/entities/interfaces/report.entity.interface";
+import { ReportedType } from "@core/entities/interfaces/report.entity.interface";
+import { ReportStatus } from "@core/enum/report.enum";
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Document, Types } from "mongoose";
 
@@ -37,7 +38,8 @@ export class ReportDocument extends Document {
 
     @Prop({
         type: String,
-        required: true
+        required: true,
+        enum: Object.values(ReportStatus)
     })
     status: ReportStatus;
 

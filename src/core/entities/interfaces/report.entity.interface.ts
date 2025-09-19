@@ -1,7 +1,8 @@
 import { IEntity } from "@core/entities/base/interfaces/base-entity.entity.interface";
+import { IPagination } from "@core/entities/interfaces/booking.entity.interface";
+import { ReportStatus } from "@core/enum/report.enum";
 
 export type ReportedType = 'customer' | 'provider';
-export type ReportStatus = 'pending' | 'reviewed' | 'resolved';
 
 export interface IReport extends IEntity {
     reportedId: string;
@@ -10,4 +11,47 @@ export interface IReport extends IEntity {
     reason: string;
     description: string;
     status: ReportStatus;
+}
+
+export interface IReportFilter {
+    page?: number;
+    search?: string;
+    status?: ReportStatus;
+    type?: ReportedType;
+}
+
+export interface IReportWithPagination {
+    reports: IReport[];
+    pagination: IPagination;
+}
+
+export interface IReportDetail {
+    id: string;
+    reportedBy: {
+        reportedId: string;
+        name: string;
+        email: string;
+        avatar: string;
+    };
+    target: {
+        targetId: string;
+        name: string;
+        email: string;
+        avatar: string;
+    };
+    type: ReportedType;
+    reason: string;
+    status: ReportStatus;
+    description: string;
+    createdAt: Date | string;
+    updatedAt: Date | string;
+}
+
+export interface IReportOverViewMatrix {
+    total: number;
+    pending: number;
+    resolved: number;
+    rejected: number;
+    flagged: number;
+    in_progress: number;
 }

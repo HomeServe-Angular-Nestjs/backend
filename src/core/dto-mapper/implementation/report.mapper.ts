@@ -18,14 +18,17 @@ export class ReportMapper implements IReportMapper {
         }
     }
 
-    toEntity(doc: Partial<ReportDocument>): Partial<IReport> {
+    toEntity(doc: Partial<ReportDocument>): IReport {
         return new Report({
-            reportedId: String(doc.reportedId),
+            id: (doc._id as Types.ObjectId).toString(),
+            reportedId: String(doc.reportedId), 
             targetId: String(doc.targetId),
             type: doc.type,
             reason: doc.reason,
             description: doc.description,
             status: doc.status,
-        })
+            createdAt: doc.createdAt,
+            updatedAt: doc.updatedAt
+        });
     }
 }

@@ -32,7 +32,6 @@ import {
 import { BookingDto, CancelBookingDto, IPriceBreakupDto, SelectedServiceDto, UpdateBookingDto } from '@modules/bookings/dtos/booking.dto';
 import { IBookingService } from '@modules/bookings/services/interfaces/booking-service.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
-import { Types } from 'mongoose';
 import { SlotStatusEnum } from '@core/enum/slot.enum';
 import { IBookingMapper } from '@core/dto-mapper/interface/bookings.mapper.interface';
 import { BOOKING_MAPPER, TRANSACTION_MAPPER } from '@core/constants/mappers.constant';

@@ -1,5 +1,6 @@
 import { BaseEntity } from "@core/entities/base/implementation/base.entity";
-import { IReport, ReportedType, ReportStatus } from "@core/entities/interfaces/report.entity.interface";
+import { IReport, ReportedType } from "@core/entities/interfaces/report.entity.interface";
+import { ReportStatus } from "@core/enum/report.enum";
 
 export class Report extends BaseEntity implements IReport {
     reportedId: string;
