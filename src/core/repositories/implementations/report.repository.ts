@@ -8,6 +8,7 @@ import { ReportDocument } from "@core/schema/report.schema";
 import { IReportFilter, IReportOverViewMatrix } from "@core/entities/interfaces/report.entity.interface";
 import { PipelineStage } from "mongoose";
 import { ReportStatus } from "@core/enum/report.enum";
+import { stringify } from "node:querystring";
 
 @Injectable()
 export class ReportRepository extends BaseRepository<ReportDocument> implements IReportRepository {
@@ -91,6 +92,7 @@ export class ReportRepository extends BaseRepository<ReportDocument> implements 
         ];
 
         let flaggedPipeline: PipelineStage[] = [
+            { $match: { status: { $nin: [ReportStatus.RESOLVED, ReportStatus.REJECTED] } } },
             { $group: { _id: "$targetId", count: { $sum: 1 } } },
             { $match: { count: { $gt: 1 } } },
             { $count: "flagged" }
