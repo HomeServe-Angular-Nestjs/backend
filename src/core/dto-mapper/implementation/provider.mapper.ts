@@ -15,7 +15,7 @@ export class ProviderMapper implements IProviderMapper {
             password: doc.password,
             googleId: doc.googleId,
             additionalSkills: doc.additionalSkills ?? [],
-            avatar: doc.avatar || '',
+            avatar: doc?.avatar || '',
             awards: doc.awards ?? [],
             bio: doc.bio || '',
             expertise: doc.expertise ?? [],
