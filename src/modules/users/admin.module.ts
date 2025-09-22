@@ -14,6 +14,7 @@ import { userServiceProvider } from './providers/service.provider';
 import { adminUtilityProviders } from './providers/utility.provider';
 import { PdfModule } from '@core/services/pdf/pdf.module';
 import { AdminTransactionController } from '@modules/users/controllers/transaction.controller';
+import { AdminSettingsController } from '@modules/users/controllers/settings.controller';
 
 @Module({
   imports: [
@@ -29,7 +30,8 @@ import { AdminTransactionController } from '@modules/users/controllers/transacti
     AdminBookingController,
     ReviewController,
     AdminDashboardController,
-    AdminTransactionController
+    AdminTransactionController,
+    AdminSettingsController,
   ],
   providers: [
     ...userServiceProvider,

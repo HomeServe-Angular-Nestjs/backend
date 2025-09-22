@@ -1,10 +1,12 @@
 import { Model } from 'mongoose';
 
 import {
+    ADMIN_SETTINGS_MODEL_NAME,
     BOOKINGS_MODEL_NAME, CUSTOMER_MODEL_NAME, PROVIDER_MODEL_NAME, SUBSCRIPTION_MODEL_NAME,
     TRANSACTION_MODEL_NAME
 } from '@/core/constants/model.constant';
 import {
+    ADMIN_SETTINGS_REPOSITORY_NAME,
     BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME,
     SUBSCRIPTION_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME
 } from '@/core/constants/repository.constant';
@@ -22,6 +24,8 @@ import { SubscriptionDocument } from '@/core/schema/subscription.schema';
 import { TransactionDocument } from '@/core/schema/transaction.schema';
 import { Provider } from '@nestjs/common';
 import { getModelToken } from '@nestjs/mongoose';
+import { AdminSettingsDocument } from '@core/schema/admin-settings.schema';
+import { AdminSettingsRepository } from '@core/repositories/implementations/admin-settings.repository';
 
 export const adminRepositoryProviders: Provider[] = [
     {
@@ -54,5 +58,11 @@ export const adminRepositoryProviders: Provider[] = [
             new SubscriptionRepository(subscriptionModel),
         inject: [getModelToken(SUBSCRIPTION_MODEL_NAME)]
     },
+    {
+        provide: ADMIN_SETTINGS_REPOSITORY_NAME,
+        useFactory: (settingsModel: Model<AdminSettingsDocument>) =>
+            new AdminSettingsRepository(settingsModel),
+        inject: [getModelToken(ADMIN_SETTINGS_MODEL_NAME)]
+    }
 
 ] 

@@ -1,7 +1,7 @@
 import { Connection, ConnectionStates } from 'mongoose';
 
 import {
-  ADMIN_MODEL_NAME, BOOKINGS_MODEL_NAME, CHAT_MODEL_NAME, CUSTOMER_MODEL_NAME, MESSAGE_MODEL_NAME,
+  ADMIN_MODEL_NAME, ADMIN_SETTINGS_MODEL_NAME, BOOKINGS_MODEL_NAME, CHAT_MODEL_NAME, CUSTOMER_MODEL_NAME, MESSAGE_MODEL_NAME,
   NOTIFICATION_MODEL_NAME,
   OTP_MODEL_NAME, PLAN_MODEL_NAME, PROVIDER_MODEL_NAME, REPORT_MODEL_NAME, RESERVATION_MODEL_NAME, SCHEDULES_MODEL_NAME,
   SERVICE_OFFERED_MODEL_NAME, SLOT_RULE_MODEL_NAME, SUBSCRIPTION_MODEL_NAME, TRANSACTION_MODEL_NAME,
@@ -27,6 +27,7 @@ import { WalletSchema } from '@core/schema/wallet.schema';
 import { NotificationSchema } from '@core/schema/notification.schema';
 import { ReservationSchema } from '@core/schema/reservation.schema';
 import { ReportSchema } from '@core/schema/report.schema';
+import { AdminSettingSchema } from '@core/schema/admin-settings.schema';
 
 @Global()
 @Module({
@@ -60,23 +61,24 @@ import { ReportSchema } from '@core/schema/report.schema';
     }),
 
     MongooseModule.forFeature([
+      { name: ADMIN_SETTINGS_MODEL_NAME,schema: AdminSettingSchema },
+      { name: SUBSCRIPTION_MODEL_NAME, schema: SubscriptionSchema },
+      { name: NOTIFICATION_MODEL_NAME, schema: NotificationSchema },
+      { name: SERVICE_OFFERED_MODEL_NAME, schema: ServiceSchema },
+      { name: TRANSACTION_MODEL_NAME, schema: TransactionSchema },
+      { name: RESERVATION_MODEL_NAME, schema: ReservationSchema },
+      { name: SCHEDULES_MODEL_NAME, schema: SchedulesSchema },
+      { name: SLOT_RULE_MODEL_NAME, schema: SlotRuleSchema },
       { name: CUSTOMER_MODEL_NAME, schema: CustomerSchema },
       { name: PROVIDER_MODEL_NAME, schema: ProviderSchema },
-      { name: OTP_MODEL_NAME, schema: OtpSchema },
-      { name: ADMIN_MODEL_NAME, schema: AdminSchema },
-      { name: SERVICE_OFFERED_MODEL_NAME, schema: ServiceSchema },
       { name: BOOKINGS_MODEL_NAME, schema: BookingSchema },
-      { name: TRANSACTION_MODEL_NAME, schema: TransactionSchema },
-      { name: SCHEDULES_MODEL_NAME, schema: SchedulesSchema },
-      { name: CHAT_MODEL_NAME, schema: ChatSchema },
       { name: MESSAGE_MODEL_NAME, schema: MessageSchema },
-      { name: PLAN_MODEL_NAME, schema: PlanSchema },
-      { name: SUBSCRIPTION_MODEL_NAME, schema: SubscriptionSchema },
-      { name: SLOT_RULE_MODEL_NAME, schema: SlotRuleSchema },
+      { name: REPORT_MODEL_NAME, schema: ReportSchema },
       { name: WALLET_MODEL_NAME, schema: WalletSchema },
-      { name: NOTIFICATION_MODEL_NAME, schema: NotificationSchema },
-      { name: RESERVATION_MODEL_NAME, schema: ReservationSchema },
-      { name: REPORT_MODEL_NAME, schema: ReportSchema }
+      { name: ADMIN_MODEL_NAME, schema: AdminSchema },
+      { name: CHAT_MODEL_NAME, schema: ChatSchema },
+      { name: PLAN_MODEL_NAME, schema: PlanSchema },
+      { name: OTP_MODEL_NAME, schema: OtpSchema },
     ]),
   ],
   exports: [MongooseModule],
