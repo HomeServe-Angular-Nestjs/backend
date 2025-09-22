@@ -165,3 +165,17 @@ export class TransactionReportDownloadDto extends ReportDownloadDto {
     @IsString()
     transactionType: string;
 }
+
+export class SettingsDto {
+    @IsOptional()
+    @IsNumber()
+    gstPercentage: number;
+
+    @IsOptional()
+    @IsNumber()
+    providerCommission: number;
+
+    @IsOptional()
+    @IsNumber()
+    customerCommission: number;
+}

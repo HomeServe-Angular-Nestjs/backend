@@ -2,7 +2,7 @@ import { Provider } from '@nestjs/common';
 
 import {
   ADMIN_APPROVAL_SERVICE_NAME, ADMIN_BOOKINGS_SERVICE_NAME, ADMIN_DASHBOARD_OVERVIEW_SERVICE_NAME,
-  ADMIN_REVIEWS_SERVICE_NAME, ADMIN_TRANSACTION_SERVICE_NAME, ADMIN_USER_MANAGEMENT_SERVICE_NAME, TOKEN_SERVICE_NAME
+  ADMIN_REVIEWS_SERVICE_NAME, ADMIN_SETTINGS_SERVICE_NAME, ADMIN_TRANSACTION_SERVICE_NAME, ADMIN_USER_MANAGEMENT_SERVICE_NAME, TOKEN_SERVICE_NAME
 } from '../../../core/constants/service.constant';
 import { TokenService } from '../../auth/services/implementations/token.service';
 import { AdminApprovalService } from '../services/implementations/admin-approval.service';
@@ -13,6 +13,7 @@ import {
 import { AdminReviewService } from '../services/implementations/admin-reviews.service';
 import { AdminUserManagementService } from '../services/implementations/admin-user.service';
 import { AdminTransactionService } from '@modules/users/services/implementations/admin-transaction.service';
+import { AdminSettingService } from '@modules/users/services/implementations/settings.service';
 
 export const userServiceProvider: Provider[] = [
   {
@@ -42,5 +43,9 @@ export const userServiceProvider: Provider[] = [
   {
     provide: ADMIN_TRANSACTION_SERVICE_NAME,
     useClass: AdminTransactionService
+  },
+  {
+    provide: ADMIN_SETTINGS_SERVICE_NAME,
+    useClass: AdminSettingService
   }
 ];
