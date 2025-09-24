@@ -371,10 +371,19 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
             {
                 $set: {
                     paymentStatus: status,
-                    transactionId:this._toObjectId(transactionId)
+                    transactionId: this._toObjectId(transactionId)
                 }
             },
             { new: true }
         );
     }
+
+    async updateBookingStatus(bookingId: string, status: BookingStatus): Promise<BookingDocument | null> {
+        return await this._bookingModel.findOneAndUpdate(
+            { _id: bookingId },
+            { $set: { bookingStatus: status } },
+            { new: true }
+        );
+    }
+
 }

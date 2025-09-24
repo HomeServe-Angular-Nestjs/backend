@@ -9,6 +9,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { IReportDownloadTransactionData, IReportTransactionData } from '@core/entities/interfaces/admin.entity.interface';
 import { ITransactionStats } from '@core/entities/interfaces/transaction.entity.interface';
 import { Injectable } from '@nestjs/common';
+import { TransactionStatus } from '@core/enum/transaction.enum';
 
 @Injectable()
 export class TransactionRepository extends BaseRepository<TransactionDocument> implements ITransactionRepository {
@@ -137,7 +138,6 @@ export class TransactionRepository extends BaseRepository<TransactionDocument> i
         };
     }
 
-
     async fetchTransactionsWithPagination(page: number, limit = 1, skip = 1): Promise<TransactionDocument[]> {
         return await this._transactionModel
             .find({})
@@ -145,5 +145,13 @@ export class TransactionRepository extends BaseRepository<TransactionDocument> i
             .skip(skip)
             .limit(limit)
             .lean();
+    }
+
+    async updateStatus(txId: string, status: TransactionStatus): Promise<boolean> {
+        return !!(await this._transactionModel.findOneAndUpdate(
+            { _id: txId },
+            { $set: { status } },
+            { new: true }
+        ));
     }
 }

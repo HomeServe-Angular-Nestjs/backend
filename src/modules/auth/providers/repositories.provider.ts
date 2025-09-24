@@ -44,7 +44,7 @@ export const repositoryProvider: Provider[] = [
   {
     provide: ADMIN_REPOSITORY_INTERFACE_NAME,
     useFactory: (adminModel: Model<AdminDocument>) =>
-      new AdminRepository(adminModel),
+      new AdminRepository(adminModel, new LoggerFactory()),
     inject: [getModelToken(ADMIN_MODEL_NAME)],
   },
   {

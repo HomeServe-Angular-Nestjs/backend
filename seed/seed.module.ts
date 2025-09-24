@@ -41,7 +41,7 @@ import { WalletMapper } from '@core/dto-mapper/implementation/wallet.mapper';
     {
       provide: ADMIN_REPOSITORY_INTERFACE_NAME,
       useFactory: (adminModel: Model<AdminDocument>) =>
-        new AdminRepository(adminModel),
+        new AdminRepository(adminModel, new LoggerFactory()),
       inject: [getModelToken(ADMIN_MODEL_NAME)],
     },
     {

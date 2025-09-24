@@ -50,6 +50,7 @@ export class TransactionMapper implements ITransactionMapper {
                 receipt: entity.gateWayDetails.receipt ?? null,
             } : null,
             amount: entity.amount,
+            currency: entity.currency,
             userDetails: entity.userDetails ? {
                 contact: entity.userDetails.contact,
                 email: entity.userDetails.email,

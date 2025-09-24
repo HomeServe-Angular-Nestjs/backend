@@ -23,6 +23,7 @@ import { IPricingBreakup, IPricingUtility } from '@core/utilities/interface/pric
 import { ISlotUtility } from '@core/utilities/interface/slot.utility.interface';
 import { ITimeUtility } from '@core/utilities/interface/time.utility.interface';
 import { IWalletRepository } from '@core/repositories/interfaces/wallet-repo.interface';
+import { TransactionStatus } from '@core/enum/transaction.enum';
 
 @Injectable()
 export class BookingService implements IBookingService {
@@ -308,12 +309,14 @@ export class BookingService implements IBookingService {
             message: ErrorMessage.DOCUMENT_NOT_FOUND
         });
 
-        const cancelledAmount = updatedBooking.totalAmount * 100;
-        console.log(cancelledAmount)
-        await Promise.all([
-            this._walletRepository.updateAdminAmount(-cancelledAmount),
-            this._walletRepository.updateUserAmount(booking.customerId, 'customer', cancelledAmount)
-        ]);
+        if (booking.transactionId) {
+            const isUpdated = await this._transactionRepository.updateStatus(booking.transactionId, TransactionStatus.REFUNDED);
+            const cancelledAmount = updatedBooking.totalAmount * 100;
+            await Promise.all([
+                this._walletRepository.updateAdminAmount(-cancelledAmount),
+                this._walletRepository.updateUserAmount(booking.customerId, 'customer', cancelledAmount)
+            ]);
+        }
 
         return {
             success: true,

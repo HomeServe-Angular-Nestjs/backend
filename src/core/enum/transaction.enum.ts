@@ -11,6 +11,7 @@ export enum TransactionType {
     PROVIDER_COMMISSION = 'provider_commission',
     REFUND = 'refund',
     BOOKING_RELEASE = 'booking_release',
+    TAX = 'tax',
 }
 
 export enum PaymentDirection {

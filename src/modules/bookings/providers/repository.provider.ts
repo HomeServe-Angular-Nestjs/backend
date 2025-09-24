@@ -4,12 +4,14 @@ import { Provider } from '@nestjs/common';
 import { getModelToken } from '@nestjs/mongoose';
 
 import {
+    ADMIN_MODEL_NAME,
     ADMIN_SETTINGS_MODEL_NAME,
     BOOKINGS_MODEL_NAME, CUSTOMER_MODEL_NAME, PROVIDER_MODEL_NAME,
     SERVICE_OFFERED_MODEL_NAME, TRANSACTION_MODEL_NAME,
     WALLET_MODEL_NAME
 } from '@core/constants/model.constant';
 import {
+    ADMIN_REPOSITORY_INTERFACE_NAME,
     ADMIN_SETTINGS_REPOSITORY_NAME,
     BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME,
     SERVICE_OFFERED_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME,
@@ -34,6 +36,8 @@ import { AdminSettingsRepository } from '@core/repositories/implementations/admi
 import { LoggerFactory } from '@core/logger/implementation/logger.factory';
 import { WalletDocument } from '@core/schema/wallet.schema';
 import { WalletRepository } from '@core/repositories/implementations/wallet.repository';
+import { AdminRepository } from '@core/repositories/implementations/admin.repository';
+import { AdminDocument } from '@core/schema/admin.schema';
 
 export const repositoryProviders: Provider[] = [
     {
@@ -77,5 +81,11 @@ export const repositoryProviders: Provider[] = [
         useFactory: (walletModel: Model<WalletDocument>) =>
             new WalletRepository(new LoggerFactory(), walletModel),
         inject: [getModelToken(WALLET_MODEL_NAME)]
+    },
+    {
+        provide: ADMIN_REPOSITORY_INTERFACE_NAME,
+        useFactory: (adminModel: Model<AdminDocument>) =>
+            new AdminRepository(adminModel, new LoggerFactory()),
+        inject: [getModelToken(ADMIN_MODEL_NAME)]
     },
 ]

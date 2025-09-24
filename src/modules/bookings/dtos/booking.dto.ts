@@ -161,7 +161,8 @@ export class UpdateBookingStatusDto {
 
     @IsNotEmpty()
     @IsString()
-    newStatus: string;
+    @IsIn(Object.values(BookingStatus))
+    newStatus: BookingStatus;
 }
 
 

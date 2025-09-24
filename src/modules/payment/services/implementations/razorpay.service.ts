@@ -94,82 +94,8 @@ export class RazorPaymentService implements IRazorPaymentService {
             })
         );
 
-        // const adminCommissionTx = await this._transactionRepository.create(
-        //     this._transactionMapper.toDocument({
-        //         userId: 'adminId',
-        //         status: orderData.status,
-        //         transactionType: TransactionType.COMMISSION,
-        //         direction: PaymentDirection.CREDIT,
-        //         amount: commission,
-        //         source: orderData.source,
-        //         currency: 'INR',
-        //         gateWayDetails: null,
-        //         userDetails: null,
-        //         metadata: { bookingId, breakup: { gst: gstAmount } }
-        //     })
-        // );
-        // transactions.push(this._transactionMapper.toEntity(adminCommissionTx));
-
-        // const providerTx = await this._transactionRepository.create(
-        //     this._transactionMapper.toDocument({
-        //         userId: 'providerId',
-        //         status: orderData.status,
-        //         transactionType: TransactionType.BOOKING_RELEASE,
-        //         direction: PaymentDirection.CREDIT,
-        //         amount: providerAmount,
-        //         gateWayDetails: null,
-        //         userDetails: null,
-        //         source: orderData.source,
-        //         currency: 'INR',
-        //         metadata: { bookingId }
-        //     })
-        // );
-        // transactions.push(this._transactionMapper.toEntity(providerTx));
         return this._transactionMapper.toEntity(customerTxDoc);
     }
-
-    // private async updateWallets(transactions: ITransaction[]): Promise<void> {
-    //     for (const tx of transactions) {
-    //         if (tx.status !== TransactionStatus.SUCCESS) continue; 
-
-    //         switch (tx.transactionType) {
-    //             case TransactionType.BOOKING: {
-    //                 // Customer paid -> Admin wallet gets credited
-    //                 await this._walletRepository.updateAdminAmount(tx.amount);
-    //                 break;
-    //             }
-
-    //             case TransactionType.CUSTOMER_COMMISSION: {
-    //                 // Commission from customer -> stays in Admin wallet
-    //                 await this._walletRepository.updateAdminAmount(tx.amount);
-    //                 break;
-    //             }
-
-    //             case TransactionType.PROVIDER_COMMISSION: {
-    //                 // Commission from provider -> stays in Admin wallet
-    //                 await this._walletRepository.updateAdminAmount(tx.amount);
-    //                 break;
-    //             }
-
-    //             case TransactionType.BOOKING_RELEASE: {
-    //                 // Provider payout -> Admin wallet decreases, Provider wallet increases
-    //                 await this._walletRepository.updateAdminAmount(-tx.amount);
-    //                 await this._walletRepository.updateProviderBalance(tx.userId, tx.amount);
-    //                 break;
-    //             }
-
-    //             case TransactionType.REFUND: {
-    //                 // Refund to customer -> Admin wallet decreases
-    //                 await this._walletRepository.updateAdminAmount(-tx.amount);
-    //                 await this._walletRepository.updateCustomerBalance(tx.userId, tx.amount);
-    //                 break;
-    //             }
-
-    //             default:
-    //                 this.logger.warn(`Unhandled transaction type: ${tx.transactionType}`);
-    //         }
-    //     }
-    // }
 
     async handleBookingPayment(userId: string, role: string, verifyData: RazorpayVerifyData, orderData: VerifyOrderData): Promise<IVerifiedBookingsPayment> {
         const repo = role === 'customer' ? this._customerRepository : this._providerRepository;
