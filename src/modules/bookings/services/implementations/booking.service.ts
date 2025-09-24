@@ -1,35 +1,16 @@
-import {
-    BadRequestException,
-    ConflictException, Inject, Injectable, InternalServerErrorException, NotFoundException
-} from '@nestjs/common';
-
-import {
-    BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME,
-    SERVICE_OFFERED_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME
-} from '@core/constants/repository.constant';
-import {
-    IBookingDetailCustomer, IBookingResponse, IBookingWithPagination
-} from '@core/entities/interfaces/booking.entity.interface';
-import { BookingStatus, CancelStatus, PaymentStatus } from '@core/enum/bookings.enum';
+import { BadRequestException, ConflictException, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SERVICE_OFFERED_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME, WALLET_REPOSITORY_NAME } from '@core/constants/repository.constant';
+import { IBooking, IBookingDetailCustomer, IBookingResponse, IBookingWithPagination } from '@core/entities/interfaces/booking.entity.interface';
+import { BookingStatus, PaymentStatus } from '@core/enum/bookings.enum';
 import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { IResponse } from '@core/misc/response.util';
-import {
-    IBookingRepository
-} from '@core/repositories/interfaces/bookings-repo.interface';
-import {
-    ICustomerRepository
-} from '@core/repositories/interfaces/customer-repo.interface';
-import {
-    IProviderRepository
-} from '@core/repositories/interfaces/provider-repo.interface';
-import {
-    IServiceOfferedRepository
-} from '@core/repositories/interfaces/serviceOffered-repo.interface';
-import {
-    ITransactionRepository
-} from '@core/repositories/interfaces/transaction-repo.interface';
-import { BookingDto, CancelBookingDto, IPriceBreakupDto, SelectedServiceDto, UpdateBookingDto } from '@modules/bookings/dtos/booking.dto';
+import { IBookingRepository } from '@core/repositories/interfaces/bookings-repo.interface';
+import { ICustomerRepository } from '@core/repositories/interfaces/customer-repo.interface';
+import { IProviderRepository } from '@core/repositories/interfaces/provider-repo.interface';
+import { IServiceOfferedRepository } from '@core/repositories/interfaces/serviceOffered-repo.interface';
+import { ITransactionRepository } from '@core/repositories/interfaces/transaction-repo.interface';
+import { BookingDto, CancelBookingDto, SelectedServiceDto, UpdateBookingDto, UpdateBookingPaymentStatusDto } from '@modules/bookings/dtos/booking.dto';
 import { IBookingService } from '@modules/bookings/services/interfaces/booking-service.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { SlotStatusEnum } from '@core/enum/slot.enum';
@@ -38,9 +19,10 @@ import { BOOKING_MAPPER, TRANSACTION_MAPPER } from '@core/constants/mappers.cons
 import { ITransactionMapper } from '@core/dto-mapper/interface/transaction.mapper.interface';
 import { ITransaction } from '@core/entities/interfaces/transaction.entity.interface';
 import { PRICING_UTILITY_NAME, SLOT_UTILITY_NAME, TIME_UTILITY_NAME } from '@core/constants/utility.constant';
-import { IPricingUtility } from '@core/utilities/interface/pricing.utility.interface';
+import { IPricingBreakup, IPricingUtility } from '@core/utilities/interface/pricing.utility.interface';
 import { ISlotUtility } from '@core/utilities/interface/slot.utility.interface';
 import { ITimeUtility } from '@core/utilities/interface/time.utility.interface';
+import { IWalletRepository } from '@core/repositories/interfaces/wallet-repo.interface';
 
 @Injectable()
 export class BookingService implements IBookingService {
@@ -59,6 +41,8 @@ export class BookingService implements IBookingService {
         private readonly _providerRepository: IProviderRepository,
         @Inject(TRANSACTION_REPOSITORY_NAME)
         private readonly _transactionRepository: ITransactionRepository,
+        @Inject(WALLET_REPOSITORY_NAME)
+        private readonly _walletRepository: IWalletRepository,
         @Inject(PRICING_UTILITY_NAME)
         private readonly _pricingUtility: IPricingUtility,
         @Inject(SLOT_UTILITY_NAME)
@@ -69,7 +53,6 @@ export class BookingService implements IBookingService {
         private readonly _bookingMapper: IBookingMapper,
         @Inject(TRANSACTION_MAPPER)
         private readonly _transactionMapper: ITransactionMapper,
-
     ) {
         this.logger = this._loggerFactor.createLogger(BookingService.name);
     }
@@ -89,8 +72,7 @@ export class BookingService implements IBookingService {
     }
 
     // Calculates the detailed price breakup for a list of selected services and subServices.
-    async preparePriceBreakup(dto: SelectedServiceDto[]): Promise<IPriceBreakupDto> {
-
+    async preparePriceBreakup(dto: SelectedServiceDto[]): Promise<IPricingBreakup> {
         const subServiceIds = dto.flatMap(ids => ids.subServiceIds);
         const subServiceDocuments = await this._serviceOfferedRepository.findSubServicesByIds(subServiceIds);
 
@@ -103,16 +85,10 @@ export class BookingService implements IBookingService {
             return price;
         });
 
-        const { subTotal, tax, total } = this._pricingUtility.computeBreakup(prices);
-
-        return {
-            subTotal,
-            tax,
-            total,
-        };
+        return await this._pricingUtility.computeBreakup(prices);
     }
 
-    async createBooking(customerId: string, data: BookingDto): Promise<IResponse> {
+    async createBooking(customerId: string, data: BookingDto): Promise<IResponse<IBooking>> {
         const { slotData } = data;
 
         const isAvailable = await this._slotUtility.isAvailable(
@@ -169,7 +145,8 @@ export class BookingService implements IBookingService {
 
         return {
             success: true,
-            message: 'Service booked successfully.'
+            message: 'Service booked successfully.',
+            data: this._bookingMapper.toEntity(bookingDoc)
         }
     }
 
@@ -298,13 +275,19 @@ export class BookingService implements IBookingService {
     }
 
     async cancelBooking(dto: CancelBookingDto): Promise<IResponse> {
-        const booking = await this._bookingRepository.findById(dto.bookingId);
-        if (!booking) {
-            throw new NotFoundException(ErrorMessage.DOCUMENT_NOT_FOUND);
-        }
+        const bookingDoc = await this._bookingRepository.findById(dto.bookingId);
+        if (!bookingDoc) throw new NotFoundException({
+            code: ErrorCodes.NOT_FOUND,
+            message: ErrorMessage.DOCUMENT_NOT_FOUND
+        });
+
+        const booking = this._bookingMapper.toEntity(bookingDoc);
 
         if (booking.bookingStatus === BookingStatus.CANCELLED) {
-            throw new ConflictException('Booking is already cancelled.');
+            throw new ConflictException({
+                code: ErrorCodes.CONFLICT,
+                message: 'Booking is already cancelled.'
+            });
         }
 
         const bookingDate = new Date(booking.createdAt ?? 0);
@@ -313,29 +296,24 @@ export class BookingService implements IBookingService {
 
         const isWithin24Hours = (now.getTime() - bookingDate.getTime()) <= TWENTY_FOUR_HOURS;
 
-        if (!isWithin24Hours) {
-            throw new ConflictException('Cancellation is allowed only within 24 hours of booking.');
-        }
+        if (!isWithin24Hours) throw new ConflictException({
+            code: ErrorCodes.CONFLICT,
+            message: 'Cancellation is allowed only within 24 hours of booking.'
+        });
 
-        const updatedBooking = await this._bookingRepository.findOneAndUpdate(
-            {
-                _id: dto.bookingId,
-                bookingStatus: { $ne: BookingStatus.CANCELLED }
-            },
-            {
-                $set: {
-                    cancelStatus: CancelStatus.IN_PROGRESS,
-                    cancellationReason: dto.reason,
-                    cancelledAt: new Date(),
-                    'slot.status': SlotStatusEnum.AVAILABLE
-                }
-            },
-            { new: true }
-        );
+        const updatedBooking = await this._bookingRepository.cancelBooking(booking.id, dto.reason);
 
-        if (!updatedBooking) {
-            throw new NotFoundException('Booking ', ErrorMessage.DOCUMENT_NOT_FOUND);
-        }
+        if (!updatedBooking) throw new NotFoundException({
+            code: ErrorCodes.NOT_FOUND,
+            message: ErrorMessage.DOCUMENT_NOT_FOUND
+        });
+
+        const cancelledAmount = updatedBooking.totalAmount * 100;
+        console.log(cancelledAmount)
+        await Promise.all([
+            this._walletRepository.updateAdminAmount(-cancelledAmount),
+            this._walletRepository.updateUserAmount(booking.customerId, 'customer', cancelledAmount)
+        ]);
 
         return {
             success: true,
@@ -407,4 +385,19 @@ export class BookingService implements IBookingService {
             data: updatedData
         }
     }
+
+    async updateBookingPaymentStatus(dto: UpdateBookingPaymentStatusDto): Promise<IResponse<boolean>> {
+        const result = await this._bookingRepository.updatePaymentStatus(
+            dto.bookingId,
+            dto.paymentStatus,
+            dto.transactionId
+        );
+
+        return {
+            success: !!result,
+            message: !!result ? 'Status updated successfully' : 'failed to update status',
+            data: !!result
+        }
+    }
+
 }

@@ -1,6 +1,7 @@
 import { IEntity } from '@core/entities/base/interfaces/base-entity.entity.interface';
 import { IPagination } from '@core/entities/interfaces/booking.entity.interface';
 import { PaymentDirection, PaymentSource, TransactionStatus, TransactionType } from '@core/enum/transaction.enum';
+import { Types } from 'mongoose';
 
 export interface ITransaction extends IEntity {
     userId: string;
@@ -10,15 +11,29 @@ export interface ITransaction extends IEntity {
     status: TransactionStatus;
     amount: number;
     currency: string;
-    gateWayDetails: {
-        orderId: string,
-        paymentId: string,
-        signature: string,
-        receipt: string | null,
-    }
-    userDetails: {
-        email: string,
-        contact: string,
+    gateWayDetails: IGatewayDetails | null;
+    userDetails: ITxUserDetails | null;
+    metadata?: ITransactionMetadata | null;
+}
+
+export interface ITxUserDetails {
+    email: string,
+    contact: string,
+}
+
+export interface IGatewayDetails {
+    orderId: string,
+    paymentId: string,
+    signature: string,
+    receipt: string | null,
+}
+
+export interface ITransactionMetadata {
+    bookingId?: string | null;
+    breakup?: {
+        providerAmount?: number | null;
+        commission?: number | null;
+        gst?: number | null;
     }
 }
 
@@ -36,9 +51,10 @@ export interface IRazorpayOrder {
     created_at: number;
 }
 
-export interface IVerifiedPayment {
-    verified: boolean,
-    transaction: ITransaction
+export interface IVerifiedBookingsPayment {
+    verified: boolean;
+    bookingId: string;
+    transaction: ITransaction;
 }
 
 export interface ITransactionStats {

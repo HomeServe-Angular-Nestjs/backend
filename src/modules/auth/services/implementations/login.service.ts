@@ -85,10 +85,10 @@ export class LoginService implements ILoginService {
     }
   }
 
-  private async _createWallet(userId: string) {
+  private async _createWallet(userId: string, type: UserType) {
     const wallet = await this._walletRepository.findWallet(userId);
     if (wallet) return;
-    await this._walletRepository.create(this._walletMapper.toDocument({ userId }));
+    await this._walletRepository.create(this._walletMapper.toDocument({ userId, type }));
   }
 
   async validateUserCredentials(dto: AuthLoginDto): Promise<IUser> {
@@ -125,7 +125,7 @@ export class LoginService implements ILoginService {
         ? await this._customerRepository.updateLastLogin(dto.email)
         : await this._providerRepository.updateLastLogin(dto.email);
 
-      this._createWallet(user.id)
+      this._createWallet(user.id, user.type as UserType)
     }
 
     return user;
@@ -138,6 +138,7 @@ export class LoginService implements ILoginService {
       );
     }
 
+
     const repository =
       user.type === 'customer'
         ? this._customerRepository
@@ -147,6 +148,7 @@ export class LoginService implements ILoginService {
 
     if (existingUser) {
       if (existingUser.googleId) {
+        await this._createWallet(existingUser.id, user.type);
         return this._mappedUser(user.type, existingUser);
       }
 
@@ -156,6 +158,7 @@ export class LoginService implements ILoginService {
         throw new InternalServerErrorException('Failed to update user with Google ID');
       }
 
+      await this._createWallet(updatedUser.id, user.type);
       return this._mappedUser(user.type, updatedUser);
     }
 
@@ -185,7 +188,7 @@ export class LoginService implements ILoginService {
     }
 
     const newUser = this._mappedUser(user.type, newUserDocument);
-    await this._createWallet(newUser.id);
+    await this._createWallet(newUser.id, user.type);
     return newUser;
   }
 

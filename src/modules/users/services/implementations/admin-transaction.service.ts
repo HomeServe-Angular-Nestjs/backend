@@ -62,12 +62,12 @@ export class AdminTransactionService implements IAdminTransactionService {
 
         const tableData = (transactions ?? []).map(transaction => ({
             transactionId: transaction.id,
-            orderId: transaction.gateWayDetails.orderId,
-            paymentId: transaction.gateWayDetails.paymentId,
+            orderId: transaction.gateWayDetails ? transaction.gateWayDetails.orderId : '',
+            paymentId: transaction.gateWayDetails ? transaction.gateWayDetails.paymentId : '',
             amount: transaction.amount,
             userId: transaction.userId,
-            userEmail: transaction.userDetails.email,
-            contact: transaction.userDetails.contact,
+            userEmail: transaction.userDetails ? transaction.userDetails.email : '',
+            contact: transaction.userDetails ? transaction.userDetails.contact : '',
             method: transaction.direction,
             transactionType: transaction.transactionType,
             createdAt: transaction.createdAt as Date

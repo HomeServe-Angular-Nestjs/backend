@@ -13,6 +13,7 @@ export class WalletMapper implements IWalletMapper {
             userId: (doc.userId as Types.ObjectId).toString(),
             balance: doc.balance,
             currency: doc.currency,
+            type: doc.type,
             lastTransactionDate: doc.lastTransactionDate,
             createdAt: doc.createdAt
         });
@@ -21,6 +22,7 @@ export class WalletMapper implements IWalletMapper {
     toDocument(entity: Partial<IWallet>): Partial<WalletDocument> {
         return {
             userId: new Types.ObjectId(entity.userId),
+            type: entity.type,
         }
     }
 }

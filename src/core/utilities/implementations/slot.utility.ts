@@ -29,18 +29,18 @@ export class SlotUtility implements ISlotUtility {
     }
 
     async reserve(ruleId: string, dateISO: string, from: string, to: string,): Promise<void> {
-        await this._updateSlotStatus(ruleId, from, to, dateISO, SlotStatusEnum.PENDING);
+        await this._updateSlotStatus(ruleId, dateISO, from, to, SlotStatusEnum.PENDING);
     }
 
     async release(ruleId: string, dateISO: string, from: string, to: string): Promise<void> {
-        await this._updateSlotStatus(ruleId, from, to, dateISO, SlotStatusEnum.AVAILABLE);
+        await this._updateSlotStatus(ruleId, dateISO, from, to,SlotStatusEnum.AVAILABLE);
     }
 
     async complete(ruleId: string, dateISO: string, from: string, to: string): Promise<void> {
-        await this._updateSlotStatus(ruleId, from, to, dateISO, SlotStatusEnum.COMPLETED);
+        await this._updateSlotStatus(ruleId, dateISO, from, to, SlotStatusEnum.COMPLETED);
     }
 
     async cancel(ruleId: string, dateISO: string, from: string, to: string): Promise<void> {
-        await this._updateSlotStatus(ruleId, from, to, dateISO, SlotStatusEnum.CANCELLED);
+        await this._updateSlotStatus(ruleId, dateISO, from, to, SlotStatusEnum.CANCELLED);
     }
 }

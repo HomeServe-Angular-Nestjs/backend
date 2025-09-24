@@ -21,6 +21,7 @@ import { Provider } from '@nestjs/common';
 import { getModelToken } from '@nestjs/mongoose';
 import { WalletDocument } from '@core/schema/wallet.schema';
 import { WalletRepository } from '@core/repositories/implementations/wallet.repository';
+import { LoggerFactory } from '@core/logger/implementation/logger.factory';
 
 export const repositoryProvider: Provider[] = [
   {
@@ -49,7 +50,7 @@ export const repositoryProvider: Provider[] = [
   {
     provide: WALLET_REPOSITORY_NAME,
     useFactory: (walletModel: Model<WalletDocument>) =>
-      new WalletRepository(walletModel),
+      new WalletRepository(new LoggerFactory(), walletModel),
     inject: [getModelToken(WALLET_MODEL_NAME)],
   },
 ];

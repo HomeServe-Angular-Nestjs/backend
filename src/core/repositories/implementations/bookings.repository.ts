@@ -1,16 +1,15 @@
 import { FilterQuery, Model, PipelineStage, Types } from 'mongoose';
-
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-
 import { BOOKINGS_MODEL_NAME } from '@core/constants/model.constant';
-import { IBookedSlot, IBookingStats } from '@core/entities/interfaces/booking.entity.interface';
+import { IBookingStats } from '@core/entities/interfaces/booking.entity.interface';
 import { ITopProviders } from '@core/entities/interfaces/user.entity.interface';
 import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
 import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
 import { IBookingRepository } from '@core/repositories/interfaces/bookings-repo.interface';
 import { IBookingReportData, IReportCustomerMatrix, IReportDownloadBookingData, IReportProviderMatrix } from '@core/entities/interfaces/admin.entity.interface';
 import { SlotStatusEnum } from '@core/enum/slot.enum';
+import { BookingStatus, CancelStatus, PaymentStatus } from '@core/enum/bookings.enum';
 
 @Injectable()
 export class BookingRepository extends BaseRepository<BookingDocument> implements IBookingRepository {
@@ -139,8 +138,6 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
 
         return result.length > 0 ? result : [];
     }
-
-
 
     async generateBookingReport(data: Partial<IReportDownloadBookingData>): Promise<IBookingReportData[]> {
         const pipeline: PipelineStage[] = [];
@@ -348,5 +345,36 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
             },
             { new: true }
         ));
+    }
+
+    async cancelBooking(bookingId: string, reason: string): Promise<BookingDocument | null> {
+        return await this._bookingModel.findOneAndUpdate(
+            {
+                _id: bookingId,
+                bookingStatus: { $ne: BookingStatus.CANCELLED }
+            },
+            {
+                $set: {
+                    cancelStatus: CancelStatus.IN_PROGRESS,
+                    cancellationReason: reason,
+                    cancelledAt: new Date(),
+                    'slot.status': SlotStatusEnum.AVAILABLE
+                }
+            },
+            { new: true }
+        );
+    }
+
+    async updatePaymentStatus(bookingId: string, status: PaymentStatus, transactionId: string): Promise<BookingDocument | null> {
+        return this._bookingModel.findOneAndUpdate(
+            { _id: bookingId },
+            {
+                $set: {
+                    paymentStatus: status,
+                    transactionId:this._toObjectId(transactionId)
+                }
+            },
+            { new: true }
+        );
     }
 }

@@ -18,4 +18,10 @@ export class WalletController {
         const user = req.user as IPayload;
         return await this._walletService.getWallet(user.sub);
     }
+
+    // @Get('')
+    // async getWallet(@Req() req: Request): Promise<IResponse<IWallet | null>> {
+    //     const user = req.user as IPayload;
+    //     return await this._walletService.getWallet(user.sub);
+    // }
 }

@@ -7,8 +7,8 @@ import { ErrorCodes } from "@core/enum/error.enum";
 export class TimeUtility implements ITimeUtility {
     private readonly _tz: string;
 
-    constructor(cfg: ITimeConfig) {
-        this._tz = cfg.timeZone;
+    constructor() {
+        this._tz = process.env.APP_TZ ?? 'UTC'
     }
 
     // Combines a local date  + time into a UTC Date object.

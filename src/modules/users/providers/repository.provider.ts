@@ -26,6 +26,7 @@ import { Provider } from '@nestjs/common';
 import { getModelToken } from '@nestjs/mongoose';
 import { AdminSettingsDocument } from '@core/schema/admin-settings.schema';
 import { AdminSettingsRepository } from '@core/repositories/implementations/admin-settings.repository';
+import { LoggerFactory } from '@core/logger/implementation/logger.factory';
 
 export const adminRepositoryProviders: Provider[] = [
     {
@@ -61,7 +62,7 @@ export const adminRepositoryProviders: Provider[] = [
     {
         provide: ADMIN_SETTINGS_REPOSITORY_NAME,
         useFactory: (settingsModel: Model<AdminSettingsDocument>) =>
-            new AdminSettingsRepository(settingsModel),
+            new AdminSettingsRepository(settingsModel, new LoggerFactory()),
         inject: [getModelToken(ADMIN_SETTINGS_MODEL_NAME)]
     }
 

@@ -33,6 +33,10 @@ export class VerifyOrderData {
 
     @IsNotEmpty()
     @IsString()
+    bookingId: string;
+
+    @IsNotEmpty()
+    @IsString()
     @IsIn(Object.values(TransactionType))
     transactionType: TransactionType;
 
