@@ -83,7 +83,8 @@ export class PdfService implements IPdfService {
 
         const html = template({
             date: new Date().toLocaleString(),
-            invoice: invoiceData
+            invoice: invoiceData,
+            heading: invoiceData.userType === "customer" ? "Customer Details" : "Provider Details"
         });
 
         const browser = await this._getBrowser();

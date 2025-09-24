@@ -96,10 +96,10 @@
         <!-- Customer & Booking Info -->
         <div class="info-columns">
             <div class="column">
-                <h3>Customer Details</h3>
-                <p>Name: {{invoice.customer.name}}</p>
-                <p>Email: {{invoice.customer.email}}</p>
-                <p>Contact:{{invoice.customer.contact}}</p>
+                <h3>{{heading}}</h3>
+                <p>Name: {{invoice.user.name}}</p>
+                <p>Email: {{invoice.user.email}}</p>
+                <p>Contact:{{invoice.user.contact}}</p>
             </div>
             <div class="column">
                 <h3>Booking Details</h3>
@@ -117,7 +117,7 @@
             <p>Coordinates: {{invoice.location.coordinates}}</p>
         </div>
 
-        <!-- todo Services --> 
+        <!-- todo Services -->
         <div class="section">
             <h3>Services</h3>
             <table>

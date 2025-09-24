@@ -203,8 +203,9 @@ export interface IBookingInvoice {
     paymentSource: PaymentSource | null;
     currency: string | null;
     services: IBookedService[];
+    userType: 'customer' | 'provider';
 
-    customer: {
+    user: {
         name: string;
         email: string;
         contact?: string;

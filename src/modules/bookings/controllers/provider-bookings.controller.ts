@@ -82,10 +82,9 @@ export class ProviderBookingsController {
     }
 
     @Post('download_invoice')
-    async downloadInvoice(@Body() { bookingId }: BookingIdDto, @Res() res: Response) {
-        const start = Date.now();
-        const pdfBuffer = await this._providerBookingService.downloadBookingInvoice(bookingId);
-        this.logger.debug(`[Admin] - PDF Generation Time: ${Date.now() - start}ms`);
+    async downloadInvoice(@Body() { bookingId }: BookingIdDto, @Req() req: Request, @Res() res: Response) {
+        const user = req.user as IPayload;
+        const pdfBuffer = await this._providerBookingService.downloadBookingInvoice(bookingId, user.type);
 
         res.set({
             'Content-Type': 'application/pdf',

@@ -1,5 +1,5 @@
 import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException, } from '@nestjs/common';
-import { ADMIN_REPOSITORY_INTERFACE_NAME, ADMIN_SETTINGS_REPOSITORY_NAME, BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, SERVICE_OFFERED_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME, WALLET_REPOSITORY_NAME } from '../../../../core/constants/repository.constant';
+import { ADMIN_REPOSITORY_INTERFACE_NAME, ADMIN_SETTINGS_REPOSITORY_NAME, BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SERVICE_OFFERED_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME, WALLET_REPOSITORY_NAME } from '../../../../core/constants/repository.constant';
 import { IBookedService, IBookingDetailProvider, IBookingInvoice, IBookingOverviewChanges, IBookingOverviewData, IResponseProviderBookingLists } from '../../../../core/entities/interfaces/booking.entity.interface';
 import { BookingStatus, DateRange, PaymentStatus } from '../../../../core/enum/bookings.enum';
 import { ICustomLogger } from '../../../../core/logger/interface/custom-logger.interface';
@@ -11,7 +11,7 @@ import { IServiceOfferedRepository } from '../../../../core/repositories/interfa
 import { ITransactionRepository } from '../../../../core/repositories/interfaces/transaction-repo.interface';
 import { FilterFields, UpdateBookingStatusDto } from '../../dtos/booking.dto';
 import { IProviderBookingService } from '../interfaces/provider-booking-service.interface';
-import { BOOKING_MAPPER, TRANSACTION_MAPPER } from '@core/constants/mappers.constant';
+import { BOOKING_MAPPER, CUSTOMER_MAPPER, PROVIDER_MAPPER, TRANSACTION_MAPPER } from '@core/constants/mappers.constant';
 import { IBookingMapper } from '@core/dto-mapper/interface/bookings.mapper.interface';
 import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
 import { ITransaction, ITransactionMetadata } from '@core/entities/interfaces/transaction.entity.interface';
@@ -22,6 +22,11 @@ import { IAdminSettingsRepository } from '@core/repositories/interfaces/admin-se
 import { IWalletRepository } from '@core/repositories/interfaces/wallet-repo.interface';
 import { PDF_SERVICE } from '@core/constants/service.constant';
 import { IPdfService } from '@core/services/pdf/pdf.interface';
+import { ICustomer, IProvider } from '@core/entities/interfaces/user.entity.interface';
+import { ICustomerMapper } from '@core/dto-mapper/interface/customer.mapper..interface';
+import { IProviderMapper } from '@core/dto-mapper/interface/provider.mapper.interface';
+import { IProviderRepository } from '@core/repositories/interfaces/provider-repo.interface';
+import { UserType } from '@modules/auth/dtos/login.dto';
 
 @Injectable()
 export class ProviderBookingService implements IProviderBookingService {
@@ -29,13 +34,15 @@ export class ProviderBookingService implements IProviderBookingService {
 
     constructor(
         @Inject(LOGGER_FACTORY)
-        private readonly loggerFactory: ILoggerFactory,
+        private readonly _loggerFactory: ILoggerFactory,
         @Inject(SERVICE_OFFERED_REPOSITORY_NAME)
         private readonly _serviceOfferedRepository: IServiceOfferedRepository,
         @Inject(BOOKING_REPOSITORY_NAME)
         private readonly _bookingRepository: IBookingRepository,
         @Inject(CUSTOMER_REPOSITORY_INTERFACE_NAME)
         private readonly _customerRepository: ICustomerRepository,
+        @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
+        private readonly _providerRepository: IProviderRepository,
         @Inject(TRANSACTION_REPOSITORY_NAME)
         private readonly _transactionRepository: ITransactionRepository,
         @Inject(BOOKING_MAPPER)
@@ -50,8 +57,12 @@ export class ProviderBookingService implements IProviderBookingService {
         private readonly _walletRepository: IWalletRepository,
         @Inject(PDF_SERVICE)
         private readonly _pdfService: IPdfService,
+        @Inject(CUSTOMER_MAPPER)
+        private readonly _customerMapper: ICustomerMapper,
+        @Inject(PROVIDER_MAPPER)
+        private readonly _providerMapper: IProviderMapper,
     ) {
-        this.logger = this.loggerFactory.createLogger(ProviderBookingService.name);
+        this.logger = this._loggerFactory.createLogger(ProviderBookingService.name);
     }
 
     private async _createCompleteBookingTransaction(providerId: string, transactionMetadata: ITransactionMetadata): Promise<number> {
@@ -439,7 +450,7 @@ export class ProviderBookingService implements IProviderBookingService {
         }
     }
 
-    async downloadBookingInvoice(bookingId: string): Promise<Buffer> {
+    async downloadBookingInvoice(bookingId: string, userType: UserType): Promise<Buffer> {
         const bookingDoc = await this._bookingRepository.findById(bookingId);
         if (!bookingDoc) throw new NotFoundException({
             code: ErrorCodes.NOT_FOUND,
@@ -450,11 +461,22 @@ export class ProviderBookingService implements IProviderBookingService {
 
         const services = await this._getBookedServices(booking.services);
 
-        const customerDoc = await this._customerRepository.findById(booking.customerId);
-        if (!customerDoc) throw new NotFoundException({
-            code: ErrorCodes.NOT_FOUND,
-            message: `Customer ${ErrorMessage.DOCUMENT_NOT_FOUND}`
-        });
+        let user: IProvider | ICustomer;
+        if (userType === 'customer') {
+            const customerDoc = await this._customerRepository.findById(booking.customerId);
+            if (!customerDoc) throw new NotFoundException({
+                code: ErrorCodes.NOT_FOUND,
+                message: `Customer ${ErrorMessage.DOCUMENT_NOT_FOUND}`
+            });
+            user = this._customerMapper.toEntity(customerDoc);
+        } else {
+            const providerDoc = await this._providerRepository.findById(booking.providerId);
+            if (!providerDoc) throw new NotFoundException({
+                code: ErrorCodes.NOT_FOUND,
+                message: `Provider ${ErrorMessage.DOCUMENT_NOT_FOUND}`
+            });
+            user = this._providerMapper.toEntity(providerDoc);
+        }
 
         let transaction: ITransaction | null = null;
         if (booking.transactionId) {
@@ -482,12 +504,13 @@ export class ProviderBookingService implements IProviderBookingService {
             paymentSource: transaction ? transaction.source : null,
             transactionType: transaction ? transaction.transactionType : null,
             currency: transaction ? transaction.currency : null,
+            userType: 'provider',
             services,
 
-            customer: {
-                name: customerDoc.username,
-                email: customerDoc.email,
-                contact: customerDoc?.phone,
+            user: {
+                name: user.username,
+                email: user.email,
+                contact: user?.phone,
             },
 
             bookingDetails: {
@@ -501,8 +524,8 @@ export class ProviderBookingService implements IProviderBookingService {
             },
 
             location: {
-                address: customerDoc.address,
-                coordinates: customerDoc.location.coordinates
+                address: user.address,
+                coordinates: user?.location?.coordinates as [number, number]
             },
 
             paymentBreakup: {
