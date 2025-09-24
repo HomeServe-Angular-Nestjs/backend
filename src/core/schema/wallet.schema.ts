@@ -1,6 +1,6 @@
+import { UserType } from "@modules/auth/dtos/login.dto";
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Document, Types } from "mongoose";
-
 
 @Schema({ timestamps: true })
 export class WalletDocument extends Document {
@@ -26,6 +26,12 @@ export class WalletDocument extends Document {
         default: 'INR'
     })
     currency: string;
+
+    @Prop({
+        type: String,
+        required: true,
+    })
+    type: UserType;
 
     @Prop({ type: Date })
     lastTransactionDate: Date;

@@ -1,22 +1,14 @@
 import { Request } from 'express';
 
 import { RAZORPAYMENT_SERVICE_NAME } from '@core/constants/service.constant';
-import {
-    IRazorpayOrder, IVerifiedPayment
-} from '@core/entities/interfaces/transaction.entity.interface';
+import { IRazorpayOrder, IVerifiedBookingsPayment } from '@core/entities/interfaces/transaction.entity.interface';
 import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { IPayload } from '@core/misc/payload.interface';
 import { CreateOrderDto, RazorpayVerifyDto } from '@modules/payment/dtos/payment.dto';
-import {
-    IRazorPaymentService
-} from '@modules/payment/services/interfaces/razorpay-service.interface';
-import {
-    BadRequestException, Body, Controller, Inject, InternalServerErrorException, Post, Req,
-    UnauthorizedException,
-    UseGuards
-} from '@nestjs/common';
+import { IRazorPaymentService } from '@modules/payment/services/interfaces/razorpay-service.interface';
+import { BadRequestException, Body, Controller, Inject, InternalServerErrorException, Post, Req, UnauthorizedException, } from '@nestjs/common';
 
 
 @Controller('payment')
@@ -25,11 +17,11 @@ export class RazorpayController {
 
     constructor(
         @Inject(LOGGER_FACTORY)
-        private readonly loggerFactory: ILoggerFactory,
+        private readonly _loggerFactory: ILoggerFactory,
         @Inject(RAZORPAYMENT_SERVICE_NAME)
         private readonly _paymentService: IRazorPaymentService
     ) {
-        this.logger = this.loggerFactory.createLogger(RazorpayController.name);
+        this.logger = this._loggerFactory.createLogger(RazorpayController.name);
     }
 
     @Post('create_order')
@@ -49,7 +41,7 @@ export class RazorpayController {
     }
 
     @Post('verify_signature')
-    async verifySignature(@Req() req: Request, @Body() dto: RazorpayVerifyDto): Promise<IVerifiedPayment> {
+    async verifySignature(@Req() req: Request, @Body() dto: RazorpayVerifyDto) {
         try {
             const user = req.user as IPayload;
             if (!user.sub || !user.type) {
@@ -63,7 +55,7 @@ export class RazorpayController {
                 throw new BadRequestException('Missing or invalid payment verification fields.');
             }
 
-            return await this._paymentService.verifySignature(user.sub, user.type, dto.verifyData, dto.orderData);
+            return await this._paymentService.handleBookingPayment(user.sub, user.type, dto.verifyData, dto.orderData);
         } catch (err) {
             this.logger.error(`Error verifying the payment: ${err.message}`, err.stack);
             throw new InternalServerErrorException({

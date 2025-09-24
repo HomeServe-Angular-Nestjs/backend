@@ -1,7 +1,8 @@
+export const ADMIN_REPOSITORY_INTERFACE_NAME = 'IAdminRepository';
+export const ADMIN_SETTINGS_REPOSITORY_NAME = Symbol('ADMIN_SETTINGS_REPOSITORY_NAME');
 export const CUSTOMER_REPOSITORY_INTERFACE_NAME = 'ICustomerRepository';
 export const OTP_REPOSITORY_INTERFACE_NAME = 'IOtpRepository';
 export const PROVIDER_REPOSITORY_INTERFACE_NAME = 'IProviderRepository';
-export const ADMIN_REPOSITORY_INTERFACE_NAME = 'IAdminRepository';
 export const SERVICE_OFFERED_REPOSITORY_NAME = 'IServiceOfferedRepository';
 export const BOOKING_REPOSITORY_NAME = 'IBookingRepository';
 export const TRANSACTION_REPOSITORY_NAME = 'ITransactionRepository';

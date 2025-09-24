@@ -1,6 +1,6 @@
-import { Request } from 'express';
+import { Request, Response } from 'express';
 
-import { BadRequestException, Body, Controller, Get, Inject, InternalServerErrorException, Patch, Query, Req, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Inject, InternalServerErrorException, Patch, Post, Query, Req, Res, UnauthorizedException } from '@nestjs/common';
 
 import { PROVIDER_BOOKING_SERVICE_NAME } from '../../../core/constants/service.constant';
 import { IResponseProviderBookingLists } from '../../../core/entities/interfaces/booking.entity.interface';
@@ -79,5 +79,19 @@ export class ProviderBookingsController {
     async fetchBookedSlots(@Req() req: Request): Promise<IResponse> {
         const user = req.user as IPayload;
         return this._providerBookingService.fetchBookedSlots(user.sub);
+    }
+
+    @Post('download_invoice')
+    async downloadInvoice(@Body() { bookingId }: BookingIdDto, @Req() req: Request, @Res() res: Response) {
+        const user = req.user as IPayload;
+        const pdfBuffer = await this._providerBookingService.downloadBookingInvoice(bookingId, user.type);
+
+        res.set({
+            'Content-Type': 'application/pdf',
+            'Content-Disposition': 'attachment; filename="booking-invoice.pdf"',
+            'Content-Length': pdfBuffer.length,
+        });
+
+        res.send(pdfBuffer);
     }
 }

@@ -3,7 +3,7 @@ import { BookingStatus, CancelStatus, PaymentStatus } from '../../enum/bookings.
 import { IEntity } from '../base/interfaces/base-entity.entity.interface';
 import { SlotStatusEnum } from '@core/enum/slot.enum';
 import { ITransaction } from '@core/entities/interfaces/transaction.entity.interface';
-import { PaymentSource } from '@core/enum/transaction.enum';
+import { PaymentSource, TransactionType } from '@core/enum/transaction.enum';
 
 export interface IBookingResponse {
     bookingId: string;
@@ -130,16 +130,18 @@ export interface IBookingDetailsBase {
     cancelledAt: Date | null;
     expectedArrivalTime: Date;
     totalAmount: number;
-    orderedServices: {
-        title: string;
-        price: string;
-        estimatedTime: string;
-    }[];
+    orderedServices: IBookedService[];
     transaction: {
         id: string;
         paymentMethod: string;
         paymentDate: Date
     } | null;
+}
+
+export interface IBookedService {
+    title: string;
+    price: string;
+    estimatedTime: string;
 }
 
 export interface IBookingDetailCustomer extends IBookingDetailsBase {
@@ -191,4 +193,50 @@ export interface IBookingStats {
     cancelled: number;
     unpaid: number;
     refunded: number;
+}
+
+export interface IBookingInvoice {
+    invoiceId: string;
+    transactionId: string | null;
+    transactionType: TransactionType | null;
+    paymentStatus: PaymentStatus;
+    paymentSource: PaymentSource | null;
+    currency: string | null;
+    services: IBookedService[];
+    userType: 'customer' | 'provider';
+
+    user: {
+        name: string;
+        email: string;
+        contact?: string;
+    };
+
+    bookingDetails: {
+        status: BookingStatus;
+        expectedArrivalTime: string;
+        actualArrivalTime?: string | null;
+        slot: {
+            from: string;
+            to: string;
+        };
+    };
+
+    location: {
+        address: string;
+        coordinates: [number, number];
+    };
+
+    paymentBreakup: {
+        providerAmount: number;
+        commission: number;
+        gst: number;
+        total: number;
+    };
+
+    paymentDetails: {
+        orderId: string;
+        paymentId: string;
+        receipt: string;
+        signature: string;
+    } | null;
 }

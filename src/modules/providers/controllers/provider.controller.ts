@@ -16,15 +16,22 @@ import {
     UploadCertificateDto, UploadGalleryImageDto
 } from '../dtos/provider.dto';
 import { IProviderServices } from '../services/interfaces/provider-service.interface';
+import { error } from 'node:console';
+import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
+import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 
 @Controller('provider')
 export class ProviderController {
-    private readonly logger = new CustomLogger(ProviderController.name);
+    private readonly logger: ICustomLogger;
 
     constructor(
+        @Inject(LOGGER_FACTORY)
+        private readonly _loggerFactory: ILoggerFactory,
         @Inject(PROVIDER_SERVICE_NAME)
         private readonly _providerServices: IProviderServices,
-    ) { }
+    ) {
+        this.logger = this._loggerFactory.createLogger(ProviderController.name);
+    }
 
     @Get('fetch_providers')
     async fetchProviders(@Query() dto: FilterDto & GetProvidersFromLocationSearch) {

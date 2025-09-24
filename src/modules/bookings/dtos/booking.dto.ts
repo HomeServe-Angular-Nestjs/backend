@@ -1,9 +1,5 @@
 import { Transform, Type } from 'class-transformer';
-import {
-    ArrayMaxSize, ArrayMinSize, ArrayNotEmpty, IsArray, IsDefined, IsEnum, IsNotEmpty, IsNumber,
-    IsOptional, IsString, Min, ValidateNested
-} from 'class-validator';
-
+import { ArrayMaxSize, ArrayMinSize, ArrayNotEmpty, IsArray, IsEnum, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, Min, ValidateNested } from 'class-validator';
 import { BookingStatus, DateRange, PaymentStatus, SortBy } from '@core/enum/bookings.enum';
 
 export class SlotType {
@@ -46,7 +42,7 @@ class SlotDataType {
     @IsString()
     @IsNotEmpty()
     ruleId: string;
-    
+
     @IsNotEmpty()
     @IsString()
     date: string;
@@ -165,7 +161,8 @@ export class UpdateBookingStatusDto {
 
     @IsNotEmpty()
     @IsString()
-    newStatus: string;
+    @IsIn(Object.values(BookingStatus))
+    newStatus: BookingStatus;
 }
 
 
@@ -182,6 +179,21 @@ export class UpdateBookingDto {
     bookingId: string;
 
     @IsOptional()
+    @IsString()
+    transactionId: string;
+}
+
+export class UpdateBookingPaymentStatusDto {
+    @IsNotEmpty()
+    @IsString()
+    bookingId: string;
+
+    @IsNotEmpty()
+    @IsString()
+    @IsIn(Object.values(PaymentStatus))
+    paymentStatus: PaymentStatus;
+
+    @IsNotEmpty()
     @IsString()
     transactionId: string;
 }

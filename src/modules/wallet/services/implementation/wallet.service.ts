@@ -19,9 +19,7 @@ export class WalletService implements IWalletService {
 
     async getWallet(userId: string): Promise<IResponse<IWallet | null>> {
         const walletDocument = await this._walletRepository.findWallet(userId);
-        console.log(walletDocument)
         const wallet = walletDocument ? this._walletMapper.toEntity(walletDocument) : null;
-        console.log(wallet);
         return {
             success: !!wallet,
             message: wallet
@@ -30,4 +28,13 @@ export class WalletService implements IWalletService {
             data: wallet
         }
     }
+
+    // async getAdminWalletBalance(adminId: string): Promise<IResponse<number>> {
+    //     const balance = await this._walletRepository.getAdminAmount(adminId);
+    //     return {
+    //         success: true,
+    //         message: 'Wallet amount fetched',
+    //         data: balance
+    //     }
+    // }
 }

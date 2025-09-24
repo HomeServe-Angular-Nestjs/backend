@@ -1,25 +1,13 @@
 import { Request } from 'express';
-
-import {
-    BadRequestException, Body, Controller, Get, Inject, InternalServerErrorException, Patch, Post,
-    Query, Req, UnauthorizedException
-} from '@nestjs/common';
-
+import { BadRequestException, Body, Controller, Get, Inject, InternalServerErrorException, Patch, Post, Query, Req } from '@nestjs/common';
 import { CUSTOMER_SERVICE_NAME } from '../../../core/constants/service.constant';
-import {
-    IBookingDetailCustomer, IBookingResponse, IBookingWithPagination
-} from '../../../core/entities/interfaces/booking.entity.interface';
+import { IBookingDetailCustomer, IBookingResponse, IBookingWithPagination } from '../../../core/entities/interfaces/booking.entity.interface';
 import { ErrorMessage } from '../../../core/enum/error.enum';
 import { ICustomLogger } from '../../../core/logger/interface/custom-logger.interface';
-import {
-    ILoggerFactory, LOGGER_FACTORY
-} from '../../../core/logger/interface/logger-factory.interface';
+import { ILoggerFactory, LOGGER_FACTORY } from '../../../core/logger/interface/logger-factory.interface';
 import { IPayload } from '../../../core/misc/payload.interface';
 import { IResponse } from '../../../core/misc/response.util';
-import {
-    BookingDto, BookingIdDto, BookingPaginationFilterDto, CancelBookingDto, SelectedServiceDto,
-    UpdateBookingDto
-} from '../dtos/booking.dto';
+import { BookingDto, BookingIdDto, BookingPaginationFilterDto, CancelBookingDto, SelectedServiceDto, UpdateBookingDto, UpdateBookingPaymentStatusDto } from '../dtos/booking.dto';
 import { IBookingService } from '../services/interfaces/booking-service.interface';
 
 @Controller('booking')
@@ -96,6 +84,16 @@ export class BookingsController {
     async updateBooking(@Body() dto: UpdateBookingDto): Promise<IResponse<IBookingResponse>> {
         try {
             return await this._bookingService.updateBooking(dto);
+        } catch (err) {
+            this.logger.error(`Error cancelling a booking: ${err}`);
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Patch('payment_status')
+    async updatePaymentStatus(@Body() dto: UpdateBookingPaymentStatusDto): Promise<IResponse<boolean>> {
+        try {
+            return await this._bookingService.updateBookingPaymentStatus(dto);
         } catch (err) {
             this.logger.error(`Error cancelling a booking: ${err}`);
             throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);

@@ -17,6 +17,7 @@ import { NotificationDocument } from '@core/schema/notification.schema';
 import { NotificationRepository } from '@core/repositories/implementations/notification.repository';
 import { ReservationDocument } from '@core/schema/reservation.schema';
 import { ReservationRepository } from '@core/repositories/implementations/reservation.repository';
+import { LoggerFactory } from '@core/logger/implementation/logger.factory';
 
 export const socketRepositoryProviders: Provider[] = [
     {
@@ -34,7 +35,7 @@ export const socketRepositoryProviders: Provider[] = [
     {
         provide: ADMIN_REPOSITORY_INTERFACE_NAME,
         useFactory: (adminModel: Model<AdminDocument>) =>
-            new AdminRepository(adminModel),
+            new AdminRepository(adminModel, new LoggerFactory()),
         inject: [getModelToken(ADMIN_MODEL_NAME)]
     },
     {

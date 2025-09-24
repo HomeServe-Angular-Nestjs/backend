@@ -18,12 +18,12 @@ import { JwtModule } from '@nestjs/jwt';
               throw new Error('JWT secret missing');
             })(),
           signOptions: {
-            expiresIn:
-              config.get<string>('JWT_ACCESS_EXPIRES_IN') ||
-              (() => {
-                console.error('MISSING JWT_SECRET IN ENV');
-                throw new Error('JWT secret missing');
-              })(),
+            // expiresIn:
+            //   config.get<string>('JWT_ACCESS_EXPIRES_IN') ||
+            //   (() => {
+            //     console.error('MISSING JWT_SECRET IN ENV');
+            //     throw new Error('JWT secret missing');
+            //   })(),
           },
         };
       },

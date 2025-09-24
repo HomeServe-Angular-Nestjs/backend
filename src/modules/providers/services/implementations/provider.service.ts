@@ -64,7 +64,8 @@ export class ProviderServices implements IProviderServices {
     const providerDocs = await this._providerRepository.find(query);
     const providers = (providerDocs || []).map(provider => {
       const avatar = provider?.avatar ? this._uploadsUtility.getSignedImageUrl(provider.avatar) : '';
-      return this._providerMapper.toEntity({ ...provider, avatar } as ProviderDocument)
+      provider.avatar = avatar;
+      return this._providerMapper.toEntity(provider);
     });
 
     return {

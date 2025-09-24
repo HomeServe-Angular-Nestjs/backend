@@ -1,10 +1,9 @@
 import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
-
-import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, TRANSACTION_REPOSITORY_NAME } from '@core/constants/repository.constant';
-import { TRANSACTION_MAPPER } from '@core/constants/mappers.constant';
+import { ADMIN_SETTINGS_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, TRANSACTION_REPOSITORY_NAME, WALLET_REPOSITORY_NAME } from '@core/constants/repository.constant';
+import { CUSTOMER_MAPPER, PROVIDER_MAPPER, TRANSACTION_MAPPER } from '@core/constants/mappers.constant';
 import { PAYMENT_UTILITY_NAME } from '@core/constants/utility.constant';
 import { ITransactionMapper } from '@core/dto-mapper/interface/transaction.mapper.interface';
-import { IRazorpayOrder, IVerifiedPayment } from '@core/entities/interfaces/transaction.entity.interface';
+import { IRazorpayOrder, ITransaction, IVerifiedBookingsPayment } from '@core/entities/interfaces/transaction.entity.interface';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { ICustomerRepository } from '@core/repositories/interfaces/customer-repo.interface';
@@ -13,6 +12,15 @@ import { ITransactionRepository } from '@core/repositories/interfaces/transactio
 import { IPaymentGateway } from '@core/utilities/interface/razorpay.utility.interface';
 import { RazorpayVerifyData, VerifyOrderData } from '@modules/payment/dtos/payment.dto';
 import { IRazorPaymentService } from '@modules/payment/services/interfaces/razorpay-service.interface';
+import { PaymentDirection, TransactionType } from '@core/enum/transaction.enum';
+import { IWalletRepository } from '@core/repositories/interfaces/wallet-repo.interface';
+import { ErrorCodes } from '@core/enum/error.enum';
+import { IAdminSettingsRepository } from '@core/repositories/interfaces/admin-settings-repo.interface';
+import { ICustomer, IProvider } from '@core/entities/interfaces/user.entity.interface';
+import { ICustomerMapper } from '@core/dto-mapper/interface/customer.mapper..interface';
+import { IProviderMapper } from '@core/dto-mapper/interface/provider.mapper.interface';
+import { CustomerDocument } from '@core/schema/customer.schema';
+import { ProviderDocument } from '@core/schema/provider.schema';
 
 @Injectable()
 export class RazorPaymentService implements IRazorPaymentService {
@@ -27,26 +35,95 @@ export class RazorPaymentService implements IRazorPaymentService {
         private readonly _transactionRepository: ITransactionRepository,
         @Inject(CUSTOMER_REPOSITORY_INTERFACE_NAME)
         private readonly _customerRepository: ICustomerRepository,
+        @Inject(WALLET_REPOSITORY_NAME)
+        private readonly _walletRepository: IWalletRepository,
         @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
         private readonly _providerRepository: IProviderRepository,
         @Inject(TRANSACTION_MAPPER)
         private readonly _transactionMapper: ITransactionMapper,
-    ) { }
+        @Inject(ADMIN_SETTINGS_REPOSITORY_NAME)
+        private readonly _adminSettingsRepository: IAdminSettingsRepository,
+        @Inject(CUSTOMER_MAPPER)
+        private readonly _customerMapper: ICustomerMapper,
+        @Inject(PROVIDER_MAPPER)
+        private readonly _providerMapper: IProviderMapper,
+    ) {
+        this.logger = this._loggerFactory.createLogger(RazorPaymentService.name);
+    }
 
     async createOrder(amount: number, currency: string = 'INR'): Promise<IRazorpayOrder> {
-        console.log(amount)
         return await this._paymentService.createOrder(amount, currency);
     }
 
-    async verifySignature(userId: string, role: string, verifyData: RazorpayVerifyData, orderData: VerifyOrderData): Promise<IVerifiedPayment> {
-        const repo = role === 'customer' ? this._customerRepository : this._providerRepository;
-        if (!repo) {
-            throw new BadRequestException(`Invalid role provided: ${role}`);
-        }
+    private async _settleBookingPayment(orderData: VerifyOrderData, user: ICustomer | IProvider, verifyData: RazorpayVerifyData,): Promise<ITransaction> {
+        const totalAmount = orderData.amount;
+        const commissionRate = await this._adminSettingsRepository.getCustomerCommission();
+        const gstRate = await this._adminSettingsRepository.getTax();
 
-        const user = await repo.findById(userId);
-        if (!user) {
-            throw new NotFoundException(`${role} with ID ${userId} not found.`);
+        // Back-calc baseAmount from total
+        const divisor = 1 + (commissionRate / 100) + (gstRate / 100);
+        const baseAmount = Math.round(totalAmount / divisor); // 19900 => (₹199.00)
+
+        // Derive commission & GST from base
+        const commission = Math.round(baseAmount * (commissionRate / 100));
+        const gstAmount = Math.round(baseAmount * (gstRate / 100));
+
+        // Provider’s share
+        const providerAmount = baseAmount - commission;
+
+        const customerTxDoc = await this._transactionRepository.create(
+            this._transactionMapper.toDocument({
+                userId: user.id,
+                transactionType: TransactionType.BOOKING,
+                direction: PaymentDirection.DEBIT,
+                amount: totalAmount,
+                currency: 'INR',
+                source: orderData.source,
+                status: orderData.status,
+                gateWayDetails: {
+                    orderId: orderData.id,
+                    paymentId: verifyData.razorpay_payment_id,
+                    signature: verifyData.razorpay_signature,
+                    receipt: orderData.receipt ?? null,
+                },
+                userDetails: { contact: user.phone, email: user.email },
+                metadata: {
+                    bookingId: orderData.bookingId,
+                    breakup: { providerAmount, commission, gst: gstAmount }
+                }
+            })
+        );
+
+        return this._transactionMapper.toEntity(customerTxDoc);
+    }
+
+    async handleBookingPayment(userId: string, role: string, verifyData: RazorpayVerifyData, orderData: VerifyOrderData): Promise<IVerifiedBookingsPayment> {
+        const repo = role === 'customer' ? this._customerRepository : this._providerRepository;
+        if (!repo) throw new BadRequestException({
+            code: ErrorCodes.BAD_REQUEST,
+            message: `Invalid role provided: ${role}`
+        });
+
+        const userDoc = await repo.findById(userId);
+        if (!userDoc) throw new NotFoundException({
+            code: ErrorCodes.NOT_FOUND,
+            message: `${role} with ID ${userId} not found.`
+        });
+
+        let user: IProvider | ICustomer;
+        switch (role) {
+            case 'customer':
+                user = this._customerMapper.toEntity(userDoc as CustomerDocument);
+                break;
+            case 'provider':
+                user = this._providerMapper.toEntity(userDoc as ProviderDocument);
+                break;
+            default:
+                this.logger.error('Tried to access this route by an unidentified user type.')
+                throw new BadRequestException({
+                    code: ErrorCodes.BAD_REQUEST,
+                    message: 'Invalid user type.'
+                });
         }
 
         const verified = this._paymentService.verifySignature(
@@ -55,32 +132,21 @@ export class RazorPaymentService implements IRazorPaymentService {
             verifyData.razorpay_signature
         );
 
-        try {
-            const transaction = await this._transactionRepository.create(this._transactionMapper.toDocument({
-                userId: user.id,
-                transactionType: orderData.transactionType,
-                gateWayDetails: {
-                    orderId: orderData.id,
-                    paymentId: verifyData.razorpay_payment_id,
-                    signature: verifyData.razorpay_signature,
-                    receipt: orderData.receipt ?? null,
-                },
-                currency: 'INR',
-                amount: orderData.amount,
-                userDetails: {
-                    contact: user.phone,
-                    email: user.email,
-                },
-                status: orderData.status,
-                direction: orderData.direction,
-                source: orderData.source,
-            }));
+        if (!verified) throw new BadRequestException({
+            code: ErrorCodes.BAD_REQUEST,
+            message: 'Payment verification failed'
+        });
 
-            return { verified, transaction: this._transactionMapper.toEntity(transaction) };
-
-        } catch (error) {
-            this.logger.error(`Transaction creation failed: ${error.message}`, error.stack);
-            throw new InternalServerErrorException('Failed to create transaction.');
+        let transaction: ITransaction | null = null;
+        if (orderData.transactionType === TransactionType.BOOKING) {
+            transaction = await this._settleBookingPayment(orderData, user, verifyData);
         }
+
+        if (!transaction) {
+            throw new InternalServerErrorException('Transaction could not be created.');
+        }
+
+        await this._walletRepository.bulkUpdate(transaction);
+        return { verified, bookingId: orderData.bookingId, transaction };
     }
 }

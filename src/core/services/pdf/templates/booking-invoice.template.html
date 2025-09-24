@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Invoice</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            font-size: 14px;
+            margin: 0;
+            padding: 0;
+            background-color: #fff;
+            color: #000;
+        }
+
+        .invoice-container {
+            max-width: 800px;
+            margin: 10px auto;
+            padding: 0 30px;
+            border: 1px solid #000;
+        }
+
+        .invoice-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .invoice-header h1 {
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+
+        .invoice-header p {
+            margin: 2px 0;
+        }
+
+        .info-columns {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .info-columns .column {
+            width: 48%;
+        }
+
+        h3 {
+            border-bottom: 1px solid #000;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        table th,
+        table td {
+            padding: 8px;
+            border: 1px solid #000;
+        }
+
+        table th {
+            background-color: #f0f0f0;
+            font-weight: bold;
+            text-align: left;
+        }
+
+        .total-row td {
+            font-weight: bold;
+        }
+
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 12px;
+            color: #555;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="invoice-container">
+
+        <!-- Header -->
+        <div class="invoice-header">
+            <h1>Booking Invoice</h1>
+            <p>Invoice ID: <strong>{{invoice.invoiceId}}</strong></p>
+            <p>Transaction ID: <strong>{{invoice.transactionId}}</strong></p>
+        </div>
+
+        <!-- Customer & Booking Info -->
+        <div class="info-columns">
+            <div class="column">
+                <h3>{{heading}}</h3>
+                <p>Name: {{invoice.user.name}}</p>
+                <p>Email: {{invoice.user.email}}</p>
+                <p>Contact:{{invoice.user.contact}}</p>
+            </div>
+            <div class="column">
+                <h3>Booking Details</h3>
+                <p>Status: {{invoice.bookingDetails.status}}</p>
+                <p>Expected Arrival: {{invoice.bookingDetails.expectedArrivalTime}}</p>
+                <p>Actual Arrival: {{invoice.bookingDetails.actualArrivalTime}}</p>
+                <p>Slot: {{invoice.bookingDetails.slot.from}} - {{invoice.bookingDetails.slot.from}}</p>
+            </div>
+        </div>
+
+        <!-- Location -->
+        <div class="section">
+            <h3>Location</h3>
+            <p>Address: {{invoice.location.address}}</p>
+            <p>Coordinates: {{invoice.location.coordinates}}</p>
+        </div>
+
+        <!-- todo Services -->
+        <div class="section">
+            <h3>Services</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Service Title</th>
+                        <th>Estimated Time</th>
+                        <th>Price (INR)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Full Body Massage</td>
+                        <td>60 mins</td>
+                        <td>1,500</td>
+                    </tr>
+                    <tr>
+                        <td>Facial Treatment</td>
+                        <td>30 mins</td>
+                        <td>800</td>
+                    </tr>
+                    <tr class="total-row">
+                        <td colspan="2">Total</td>
+                        <td>2,300</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Billing Summary -->
+        <div class="section">
+            <h3>Billing Summary</h3>
+            <table>
+                <tbody>
+                    <tr>
+                        <td>Provider Amount</td>
+                        <td style="text-align: right;">₹{{invoice.paymentBreakup.providerAmount}}</td>
+                    </tr>
+                    <tr>
+                        <td>Commission</td>
+                        <td style="text-align: right;">₹{{invoice.paymentBreakup.commission}}</td>
+                    </tr>
+                    <tr>
+                        <td>GST</td>
+                        <td style="text-align: right;">₹{{invoice.paymentBreakup.gst}}</td>
+                    </tr>
+                    <tr class="total-row">
+                        <td>Grand Total</td>
+                        <td style="text-align: right;">₹{{invoice.paymentBreakup.total}}</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3 style="margin-top: 20px;">Payment Information</h3>
+            <p><strong>Payment Source:</strong> Razorpay</p>
+            <p><strong>Order ID:</strong> {{invoice.paymentDetails}}</p>
+            <p><strong>Payment ID:</strong> {{invoice.paymentDetails.paymentId}}</p>
+            <p><strong>Receipt:</strong> {{invoice.paymentDetails.receipt}}</p>
+            <p><strong>Signature:</strong> {{invoice.paymentDetails.signature}}</p>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>Thank you for your booking!</p>
+        </div>
+
+    </div>
+</body>
+
+</html>

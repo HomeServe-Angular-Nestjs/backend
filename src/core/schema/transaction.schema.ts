@@ -1,16 +1,15 @@
-import { Document } from 'mongoose';
-
+import { Document, Types } from 'mongoose';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-
 import { PaymentDirection, PaymentSource, TransactionStatus, TransactionType } from '../enum/transaction.enum';
+import { IGatewayDetails, ITxUserDetails } from '@core/entities/interfaces/transaction.entity.interface';
 
 @Schema({ timestamps: true })
 export class TransactionDocument extends Document {
     @Prop({
-        type: String,
+        type: Types.ObjectId,
         required: true
     })
-    userId: string;
+    userId: Types.ObjectId;
 
     @Prop({
         type: String,
@@ -54,30 +53,45 @@ export class TransactionDocument extends Document {
 
     @Prop({
         type: {
-            orderId: { type: String, required: true },
-            paymentId: { type: String, required: true },
-            signature: { type: String, required: true },
+            orderId: { type: String, },
+            paymentId: { type: String },
+            signature: { type: String },
             receipt: { type: String },
-            // card
-        }
+        },
+        default: null,
+        _id: false,
     })
-    gateWayDetails: {
-        orderId: string,
-        paymentId: string,
-        signature: string,
-        receipt: string | null,
-    }
+    gateWayDetails: IGatewayDetails | null;
 
     @Prop({
         type: {
-            email: { type: String, required: true },
-            contact: { type: String, required: true }
+            email: { type: String },
+            contact: { type: String },
+            _id: false
         }
     })
-    userDetails: {
-        email: string,
-        contact: string,
-    }
+    userDetails: ITxUserDetails | null;
+
+    @Prop({
+        type: {
+            bookingId: { type: Types.ObjectId, default: null },
+            breakup: {
+                providerAmount: { type: Number, default: null },
+                commission: { type: Number, default: null },
+                gst: { type: Number, default: null }
+            }
+        },
+        default: null,
+        _id: false
+    })
+    metadata: {
+        bookingId: Types.ObjectId | null;
+        breakup: {
+            providerAmount: number | null;
+            commission: number | null;
+            gst: number | null;
+        }
+    } | null;
 
     @Prop({ type: Date })
     createdAt: Date;

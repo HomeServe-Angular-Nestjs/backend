@@ -26,7 +26,7 @@ export class AuthMiddleware implements NestMiddleware {
         const isAuthRoute = ['login', 'signup'].some(route =>
             req.originalUrl.split('/').includes(route)
         );
-
+        this.logger.debug(req.body);
         if (isAuthRoute) {
             return next();
         }

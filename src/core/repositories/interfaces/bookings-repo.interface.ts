@@ -5,6 +5,7 @@ import { IBaseRepository } from '@core/repositories/base/interfaces/base-repo.in
 import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
 import { IBookingReportData, IReportCustomerMatrix, IReportDownloadBookingData, IReportProviderMatrix } from '@core/entities/interfaces/admin.entity.interface';
 import { SlotStatusEnum } from '@core/enum/slot.enum';
+import { BookingStatus, PaymentStatus } from '@core/enum/bookings.enum';
 
 export interface IBookingRepository extends IBaseRepository<BookingDocument> {
     findBookingsByCustomerIdWithPagination(customerId: string | Types.ObjectId, skip: number, limit: number): Promise<BookingDocument[]>;
@@ -20,4 +21,7 @@ export interface IBookingRepository extends IBaseRepository<BookingDocument> {
     findBookedSlots(ruleId: string): Promise<SlotDocument[]>;
     isAlreadyBooked(ruleId: string, from: string, to: string, dateISO: string): Promise<boolean>;
     updateSlotStatus(ruleId: string, from: string, to: string, dateISO: string, status: SlotStatusEnum): Promise<boolean>;
+    cancelBooking(bookingId: string, reason: string): Promise<BookingDocument | null>;
+    updatePaymentStatus(bookingId: string, status: PaymentStatus, transactionId: string): Promise<BookingDocument | null>;
+    updateBookingStatus(bookingId: string, status: BookingStatus): Promise<BookingDocument | null>;
 }
