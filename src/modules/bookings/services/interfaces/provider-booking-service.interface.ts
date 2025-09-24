@@ -1,6 +1,4 @@
-import {
-    IBookingDetailProvider, IBookingOverviewData, IResponseProviderBookingLists
-} from '@core/entities/interfaces/booking.entity.interface';
+import { IBookingDetailProvider, IBookingOverviewData, IResponseProviderBookingLists } from '@core/entities/interfaces/booking.entity.interface';
 import { IResponse } from '@core/misc/response.util';
 import { FilterFields, UpdateBookingStatusDto } from '@modules/bookings/dtos/booking.dto';
 
@@ -9,5 +7,6 @@ export interface IProviderBookingService {
     fetchOverviewData(id: string): Promise<IBookingOverviewData>;
     fetchBookingDetails(bookingId: string): Promise<IBookingDetailProvider>;
     updateBookingStatus(dto: UpdateBookingStatusDto): Promise<IResponse<IBookingDetailProvider>>;
-    fetchBookedSlots(providerId: string): Promise<IResponse>
+    fetchBookedSlots(providerId: string): Promise<IResponse>;
+    downloadBookingInvoice(bookingId: string): Promise<Buffer>;
 }

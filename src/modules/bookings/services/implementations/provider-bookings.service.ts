@@ -1,6 +1,6 @@
 import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException, } from '@nestjs/common';
 import { ADMIN_REPOSITORY_INTERFACE_NAME, ADMIN_SETTINGS_REPOSITORY_NAME, BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, SERVICE_OFFERED_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME, WALLET_REPOSITORY_NAME } from '../../../../core/constants/repository.constant';
-import { IBookingDetailProvider, IBookingOverviewChanges, IBookingOverviewData, IResponseProviderBookingLists } from '../../../../core/entities/interfaces/booking.entity.interface';
+import { IBookedService, IBookingDetailProvider, IBookingInvoice, IBookingOverviewChanges, IBookingOverviewData, IResponseProviderBookingLists } from '../../../../core/entities/interfaces/booking.entity.interface';
 import { BookingStatus, DateRange, PaymentStatus } from '../../../../core/enum/bookings.enum';
 import { ICustomLogger } from '../../../../core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '../../../../core/logger/interface/logger-factory.interface';
@@ -14,12 +14,14 @@ import { IProviderBookingService } from '../interfaces/provider-booking-service.
 import { BOOKING_MAPPER, TRANSACTION_MAPPER } from '@core/constants/mappers.constant';
 import { IBookingMapper } from '@core/dto-mapper/interface/bookings.mapper.interface';
 import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
-import { ITransactionMetadata } from '@core/entities/interfaces/transaction.entity.interface';
+import { ITransaction, ITransactionMetadata } from '@core/entities/interfaces/transaction.entity.interface';
 import { ITransactionMapper } from '@core/dto-mapper/interface/transaction.mapper.interface';
 import { IAdminRepository } from '@core/repositories/interfaces/admin-repo.interface';
 import { PaymentDirection, PaymentSource, TransactionStatus, TransactionType } from '@core/enum/transaction.enum';
 import { IAdminSettingsRepository } from '@core/repositories/interfaces/admin-settings-repo.interface';
 import { IWalletRepository } from '@core/repositories/interfaces/wallet-repo.interface';
+import { PDF_SERVICE } from '@core/constants/service.constant';
+import { IPdfService } from '@core/services/pdf/pdf.interface';
 
 @Injectable()
 export class ProviderBookingService implements IProviderBookingService {
@@ -46,6 +48,8 @@ export class ProviderBookingService implements IProviderBookingService {
         private readonly _adminSettings: IAdminSettingsRepository,
         @Inject(WALLET_REPOSITORY_NAME)
         private readonly _walletRepository: IWalletRepository,
+        @Inject(PDF_SERVICE)
+        private readonly _pdfService: IPdfService,
     ) {
         this.logger = this.loggerFactory.createLogger(ProviderBookingService.name);
     }
@@ -99,6 +103,27 @@ export class ProviderBookingService implements IProviderBookingService {
         ]);
 
         return providerAmount;
+    }
+
+    private async _getBookedServices(services: { serviceId: string; subserviceIds: string[]; }[]): Promise<IBookedService[]> {
+        return (
+            await Promise.all(
+                services.map(async (s) => {
+                    const service = await this._serviceOfferedRepository.findById(s.serviceId);
+                    if (!service) {
+                        throw new InternalServerErrorException(`Service with ID ${s.serviceId} not found.`);
+                    }
+
+                    return service.subService
+                        .filter(sub => sub.id && s.subserviceIds.includes(sub.id))
+                        .map(sub => ({
+                            title: sub.title as string,
+                            price: sub.price as string,
+                            estimatedTime: sub.estimatedTime as string
+                        }));
+                })
+            )
+        ).flat();
     }
 
     async fetchBookingsList(id: string, page: number = 1, filters: FilterFields): Promise<IResponseProviderBookingLists> {
@@ -365,24 +390,7 @@ export class ProviderBookingService implements IProviderBookingService {
             throw new InternalServerErrorException(`Customer with ID ${updatedBooking.customerId} not found.`);
         }
 
-        const orderedServices = (
-            await Promise.all(
-                updatedBooking.services.map(async (s) => {
-                    const service = await this._serviceOfferedRepository.findById(s.serviceId);
-                    if (!service) {
-                        throw new InternalServerErrorException(`Service with ID ${s.serviceId} not found.`);
-                    }
-
-                    return service.subService
-                        .filter(sub => sub.id && s.subserviceIds.includes(sub.id))
-                        .map(sub => ({
-                            title: sub.title as string,
-                            price: sub.price as string,
-                            estimatedTime: sub.estimatedTime as string
-                        }));
-                })
-            )
-        ).flat();
+        const orderedServices = await this._getBookedServices(updatedBooking.services);
 
         const transaction = updatedBooking.transactionId
             ? await this._transactionRepository.findById(updatedBooking.transactionId) : null;
@@ -429,6 +437,90 @@ export class ProviderBookingService implements IProviderBookingService {
             message: 'Status updated successfully',
             data: bookingData
         }
+    }
+
+    async downloadBookingInvoice(bookingId: string): Promise<Buffer> {
+        const bookingDoc = await this._bookingRepository.findById(bookingId);
+        if (!bookingDoc) throw new NotFoundException({
+            code: ErrorCodes.NOT_FOUND,
+            message: `Booking ${ErrorMessage.DOCUMENT_NOT_FOUND}`
+        });
+
+        const booking = this._bookingMapper.toEntity(bookingDoc);
+
+        const services = await this._getBookedServices(booking.services);
+
+        const customerDoc = await this._customerRepository.findById(booking.customerId);
+        if (!customerDoc) throw new NotFoundException({
+            code: ErrorCodes.NOT_FOUND,
+            message: `Customer ${ErrorMessage.DOCUMENT_NOT_FOUND}`
+        });
+
+        let transaction: ITransaction | null = null;
+        if (booking.transactionId) {
+            const tnxDoc = await this._transactionRepository.findById(booking.transactionId);
+            if (!tnxDoc) throw new NotFoundException({
+                code: ErrorCodes.NOT_FOUND,
+                message: `Transaction ${ErrorMessage.DOCUMENT_NOT_FOUND}`
+            });
+            transaction = this._transactionMapper.toEntity(tnxDoc);
+        }
+
+        let providerAmount: number = 0;
+        let commission = 0;
+        if (transaction) {
+            const settings = await this._adminSettings.getSettings();
+            const providerAmountWithCommission = transaction?.metadata?.breakup?.providerAmount as number;
+            providerAmount = Math.floor(providerAmountWithCommission / (1 + (settings.providerCommission) / 100));
+            commission = providerAmountWithCommission - providerAmount;
+        }
+
+        const invoiceData: IBookingInvoice = {
+            invoiceId: booking.id,
+            transactionId: booking.transactionId ?? null,
+            paymentStatus: booking.paymentStatus,
+            paymentSource: transaction ? transaction.source : null,
+            transactionType: transaction ? transaction.transactionType : null,
+            currency: transaction ? transaction.currency : null,
+            services,
+
+            customer: {
+                name: customerDoc.username,
+                email: customerDoc.email,
+                contact: customerDoc?.phone,
+            },
+
+            bookingDetails: {
+                status: booking.bookingStatus,
+                expectedArrivalTime: booking.expectedArrivalTime.toISOString(),
+                actualArrivalTime: booking.actualArrivalTime?.toISOString() ?? null,
+                slot: {
+                    from: booking.slot.from,
+                    to: booking.slot.to,
+                },
+            },
+
+            location: {
+                address: customerDoc.address,
+                coordinates: customerDoc.location.coordinates
+            },
+
+            paymentBreakup: {
+                gst: transaction ? transaction.metadata?.breakup?.gst as number : 0,
+                total: booking.totalAmount,
+                providerAmount,
+                commission
+            },
+
+            paymentDetails: transaction && transaction.gateWayDetails ? {
+                orderId: transaction.gateWayDetails.orderId,
+                paymentId: transaction.gateWayDetails.paymentId,
+                receipt: transaction.gateWayDetails.receipt ?? '',
+                signature: transaction.gateWayDetails.signature
+            } : null
+        };
+
+        return this._pdfService.generateBookingInvoice(invoiceData);
     }
 
     async fetchBookedSlots(providerId: string): Promise<IResponse> {
