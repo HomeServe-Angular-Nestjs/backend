@@ -284,10 +284,10 @@ export class BookingService implements IBookingService {
 
         const booking = this._bookingMapper.toEntity(bookingDoc);
 
-        if (booking.bookingStatus === BookingStatus.CANCELLED) {
+        if (booking.bookingStatus === BookingStatus.CANCELLED || booking.bookingStatus === BookingStatus.COMPLETED) {
             throw new ConflictException({
                 code: ErrorCodes.CONFLICT,
-                message: 'Booking is already cancelled.'
+                message: `Cannot cancel ${booking.bookingStatus} booking.`
             });
         }
 
@@ -320,7 +320,7 @@ export class BookingService implements IBookingService {
 
         return {
             success: true,
-            message: 'Booking cancelled successfully'
+            message: 'Booking cancelled successfully.'
         }
     }
 

@@ -2,7 +2,7 @@ import { TRANSACTION_MAPPER } from "@core/constants/mappers.constant";
 import { TRANSACTION_REPOSITORY_NAME } from "@core/constants/repository.constant";
 import { PDF_SERVICE } from "@core/constants/service.constant";
 import { ITransactionMapper } from "@core/dto-mapper/interface/transaction.mapper.interface";
-import { ITransactionDataWithPagination, ITransactionStats } from "@core/entities/interfaces/transaction.entity.interface";
+import { ITransactionDataWithPagination, ITransactionStats, ITransactionTableData } from "@core/entities/interfaces/transaction.entity.interface";
 import { IResponse } from "@core/misc/response.util";
 import { ITransactionRepository } from "@core/repositories/interfaces/transaction-repo.interface";
 import { createTransactionReportTableTemplate, ITransactionTableTemplate } from "@core/services/pdf/mappers/transaction-report.mapper";
@@ -53,21 +53,20 @@ export class AdminTransactionService implements IAdminTransactionService {
     async getTransactionTableData(page: number): Promise<IResponse<ITransactionDataWithPagination>> {
         page = page || 1;
         const limit = 10;
-        const skip = (page - 1) * limit
+        const skip = (page - 1) * limit;
+
         const [transactionDocument, totalTransactions] = await Promise.all([
             this._transactionRepository.fetchTransactionsWithPagination(page, limit, skip),
             this._transactionRepository.count()
         ]);
+
         const transactions = transactionDocument.map(doc => this._transactionMapper.toEntity(doc));
 
-        const tableData = (transactions ?? []).map(transaction => ({
+        const tableData: ITransactionTableData[] = (transactions ?? []).map(transaction => ({
             transactionId: transaction.id,
-            orderId: transaction.gateWayDetails ? transaction.gateWayDetails.orderId : '',
-            paymentId: transaction.gateWayDetails ? transaction.gateWayDetails.paymentId : '',
+            paymentId: transaction.gateWayDetails ? transaction.gateWayDetails.paymentId : null,
             amount: transaction.amount,
-            userId: transaction.userId,
-            userEmail: transaction.userDetails ? transaction.userDetails.email : '',
-            contact: transaction.userDetails ? transaction.userDetails.contact : '',
+            source: transaction.source,
             method: transaction.direction,
             transactionType: transaction.transactionType,
             createdAt: transaction.createdAt as Date

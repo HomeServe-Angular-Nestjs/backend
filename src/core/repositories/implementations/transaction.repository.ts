@@ -9,7 +9,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { IReportDownloadTransactionData, IReportTransactionData } from '@core/entities/interfaces/admin.entity.interface';
 import { ITransactionStats } from '@core/entities/interfaces/transaction.entity.interface';
 import { Injectable } from '@nestjs/common';
-import { TransactionStatus } from '@core/enum/transaction.enum';
+import { PaymentDirection, TransactionStatus } from '@core/enum/transaction.enum';
 
 @Injectable()
 export class TransactionRepository extends BaseRepository<TransactionDocument> implements ITransactionRepository {
@@ -104,7 +104,11 @@ export class TransactionRepository extends BaseRepository<TransactionDocument> i
                 $group: {
                     _id: null,
                     totalTransactions: { $sum: 1 },
-                    totalRevenue: { $sum: "$amount" }
+                    totalRevenue: {
+                        $sum: {
+                            $cond: [{ $eq: ['$direction', PaymentDirection.CREDIT] }, "$amount", 0]
+                        }
+                    }
                 }
             },
             {
