@@ -1,7 +1,5 @@
 import { Document, model } from 'mongoose';
-
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-
 import { PlanDurationType, PlanRoleType } from '../entities/interfaces/plans.entity.interface';
 
 @Schema({ timestamps: true })

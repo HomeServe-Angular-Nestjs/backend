@@ -20,4 +20,16 @@ export class PlanMapper implements IPlanMapper {
             updatedAt: doc.updatedAt,
         });
     }
+
+    toDocument(entity: Omit<IPlan, 'id'>): Partial<PlanDocument> {
+        return {
+            name: entity.name,
+            price: entity.price,
+            duration: entity.duration,
+            role: entity.role,
+            features: entity.features,
+            isActive: entity.isActive,
+            isDeleted: entity.isDeleted,
+        }
+    }
 }

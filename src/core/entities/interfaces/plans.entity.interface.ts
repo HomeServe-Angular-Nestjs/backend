@@ -1,5 +1,4 @@
 import { IEntity } from '@core/entities/base/interfaces/base-entity.entity.interface';
-
 export type PlanDurationType = 'monthly' | 'yearly' | 'lifetime';
 export type PlanRoleType = 'customer' | 'provider';
 
@@ -12,3 +11,5 @@ export interface IPlan extends IEntity {
     isActive: boolean;
     isDeleted: boolean;
 }
+
+export type ICreatePlan = Omit<IPlan, keyof IEntity>;

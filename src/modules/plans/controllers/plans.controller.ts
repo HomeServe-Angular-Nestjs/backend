@@ -1,24 +1,25 @@
 import { PLAN_SERVICE_NAME } from '@core/constants/service.constant';
 import { IPlan } from '@core/entities/interfaces/plans.entity.interface';
 import { ErrorMessage } from '@core/enum/error.enum';
-import { CustomLogger } from '@core/logger/implementation/custom-logger';
+import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
+import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { IResponse } from '@core/misc/response.util';
-import {
-    GetOnePlanDto, SavePlanDto, UpdatePlanDto, UpdatePlanStatusDto
-} from '@modules/plans/dto/plans.dto';
+import { GetOnePlanDto, UpdatePlanStatusDto } from '@modules/plans/dto/plans.dto';
 import { IPlanService } from '@modules/plans/services/interfaces/plan-service.interface';
-import {
-    Body, Controller, Delete, Get, Inject, InternalServerErrorException, Patch, Post, Put, Query
-} from '@nestjs/common';
+import { Body, Controller, Get, Inject, InternalServerErrorException, Patch, Query } from '@nestjs/common';
 
 @Controller('plans')
 export class PlanController {
-    private readonly logger = new CustomLogger(PlanController.name);
+    private readonly logger: ICustomLogger
 
     constructor(
+        @Inject(LOGGER_FACTORY)
+        private readonly _loggerFactory: ILoggerFactory,
         @Inject(PLAN_SERVICE_NAME)
         private readonly _planService: IPlanService
-    ) { }
+    ) {
+        this.logger = this._loggerFactory.createLogger(PlanController.name);
+    }
 
     @Get('')
     async getPlans(): Promise<IResponse<IPlan[]>> {
@@ -40,27 +41,6 @@ export class PlanController {
         }
     }
 
-    @Post('')
-    async createPlan(@Body() dto: SavePlanDto): Promise<IResponse<IPlan>> {
-        try {
-            return await this._planService.createPlan(dto);
-        } catch (err) {
-            this.logger.error('Error caught while creating plans: ', err.message, err.stack);
-            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR, err.message);
-        }
-    }
-
-    @Put('')
-    async updatePlan(@Body() dto: UpdatePlanDto): Promise<IResponse<IPlan>> {
-        try {
-            const { id, ...data } = dto;
-            return await this._planService.updatePlan(id, data);
-        } catch (err) {
-            this.logger.error('Error caught while creating plans: ', err.message, err.stack);
-            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
-        }
-    }
-
     @Patch('status')
     async updatePlanStatus(@Body() dto: UpdatePlanStatusDto): Promise<IResponse<IPlan>> {
         try {
@@ -70,15 +50,4 @@ export class PlanController {
             throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
         }
     }
-
-    // @Patch('')
-    // async deletePlan(@Body() dto: GetOnePlanDto): Promise<IResponse> {
-    //     try {
-    //         return await this._planService.deletePlan(dto.planId);
-    //     } catch (err) {
-    //         this.logger.error('Error caught while deleting plan: ', err.message, err.stack);
-    //         throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
-    //     }
-    // }
-
 }
