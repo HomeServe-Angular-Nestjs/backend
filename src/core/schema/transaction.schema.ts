@@ -67,6 +67,7 @@ export class TransactionDocument extends Document {
         type: {
             email: { type: String },
             contact: { type: String },
+            role: { type: String },
             _id: false
         }
     })
@@ -75,6 +76,7 @@ export class TransactionDocument extends Document {
     @Prop({
         type: {
             bookingId: { type: Types.ObjectId, default: null },
+            subscriptionId: { type: Types.ObjectId, default: null },
             breakup: {
                 providerAmount: { type: Number, default: null },
                 commission: { type: Number, default: null },
@@ -86,6 +88,7 @@ export class TransactionDocument extends Document {
     })
     metadata: {
         bookingId: Types.ObjectId | null;
+        subscriptionId: Types.ObjectId | null;
         breakup: {
             providerAmount: number | null;
             commission: number | null;

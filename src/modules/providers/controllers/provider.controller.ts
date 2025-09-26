@@ -1,24 +1,15 @@
 import { Request } from 'express';
-
 import { PROVIDER_SERVICE_NAME } from '@core/constants/service.constant';
 import { IProvider } from '@core/entities/interfaces/user.entity.interface';
 import { ErrorMessage } from '@core/enum/error.enum';
-import { CustomLogger } from '@core/logger/implementation/custom-logger';
 import { IPayload } from '@core/misc/payload.interface';
-import {
-    BadRequestException, Body, Controller, Delete, Get, Inject, InternalServerErrorException, Patch,
-    Put, Query, Req, UnauthorizedException, UploadedFile, UseInterceptors
-} from '@nestjs/common';
+import {BadRequestException, Body, Controller, Delete, Get, Inject, InternalServerErrorException, Patch,Put, Query, Req, UnauthorizedException, UploadedFile, UseGuards, UseInterceptors} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-
-import {
-    FilterDto, GetProvidersFromLocationSearch, RemoveCertificateDto, SlotDto, UpdateBioDto,
-    UploadCertificateDto, UploadGalleryImageDto
-} from '../dtos/provider.dto';
+import {FilterDto, GetProvidersFromLocationSearch, RemoveCertificateDto, SlotDto, UpdateBioDto,UploadCertificateDto, UploadGalleryImageDto} from '../dtos/provider.dto';
 import { IProviderServices } from '../services/interfaces/provider-service.interface';
-import { error } from 'node:console';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
+import { SubscriptionGuard } from '@core/guards/subscription.guard';
 
 @Controller('provider')
 export class ProviderController {
@@ -202,6 +193,7 @@ export class ProviderController {
     }
 
     @Get('work_images')
+    @UseGuards(SubscriptionGuard)
     async getWorkImage(@Req() req: Request) {
         try {
             const user = req.user as IPayload;

@@ -1,9 +1,7 @@
 import { BaseEntity } from '@core/entities/base/implementation/base.entity';
-import { PlanRoleType } from '@core/entities/interfaces/plans.entity.interface';
-import {
-    ISubscription, RenewalType, SubsDurationType
-} from '@core/entities/interfaces/subscription.entity.interface';
-import { SubsPaymentStatus } from '@core/enum/subscription.enum';
+import { ISubscription } from '@core/entities/interfaces/subscription.entity.interface';
+import { PaymentStatus } from '@core/enum/bookings.enum';
+import { PlanRoleEnum, RenewalEnum, SubsDurationType } from '@core/enum/subscription.enum';
 
 export class Subscription extends BaseEntity implements ISubscription {
     userId: string;
@@ -12,18 +10,18 @@ export class Subscription extends BaseEntity implements ISubscription {
 
     name: string;
     duration: SubsDurationType;
-    role: PlanRoleType;
+    role: PlanRoleEnum;
     features: string[];
     price: number;
 
-    startTime: string;
-    endDate: string | null;
+    startTime: Date;
+    endDate: Date;
     isActive: boolean;
     isDeleted: boolean;
 
-    renewalType?: RenewalType;
-    paymentStatus?: SubsPaymentStatus;
-    cancelledAt?: string;
+    paymentStatus: PaymentStatus;
+    cancelledAt: Date | null;
+    renewalType?: RenewalEnum;
     metadata?: Record<string, any>;
 
     constructor(partial: Partial<Subscription>) {

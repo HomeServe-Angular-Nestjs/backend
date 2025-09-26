@@ -3,18 +3,12 @@ export enum SubsDurationType {
     Yearly = 'yearly',
 }
 
-export enum PlanRoleType {
+export enum PlanRoleEnum {
     Customer = 'customer',
     Provider = 'provider',
 }
 
-export enum RenewalType {
+export enum RenewalEnum {
     Auto = 'auto',
     Manual = 'manual',
-}
-
-export enum SubsPaymentStatus {
-    Pending = 'pending',
-    Paid = 'paid',
-    Failed = 'failed',
 }

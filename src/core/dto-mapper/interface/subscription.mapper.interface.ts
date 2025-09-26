@@ -3,4 +3,5 @@ import { SubscriptionDocument } from "@core/schema/subscription.schema";
 
 export interface ISubscriptionMapper {
     toEntity(doc: SubscriptionDocument): ISubscription;
+    toDocument(entity: Omit<ISubscription, 'id'>): Partial<SubscriptionDocument>
 }

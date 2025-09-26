@@ -1,7 +1,7 @@
 import { IEntity } from '@core/entities/base/interfaces/base-entity.entity.interface';
 import { IPagination } from '@core/entities/interfaces/booking.entity.interface';
 import { PaymentDirection, PaymentSource, TransactionStatus, TransactionType } from '@core/enum/transaction.enum';
-import { Types } from 'mongoose';
+import { UserType } from '@modules/auth/dtos/login.dto';
 
 export interface ITransaction extends IEntity {
     userId: string;
@@ -17,8 +17,9 @@ export interface ITransaction extends IEntity {
 }
 
 export interface ITxUserDetails {
-    email: string,
-    contact: string,
+    email: string;
+    contact: string;
+    role: string;
 }
 
 export interface IGatewayDetails {
@@ -30,6 +31,7 @@ export interface IGatewayDetails {
 
 export interface ITransactionMetadata {
     bookingId?: string | null;
+    subscriptionId?: string | null;
     breakup?: {
         providerAmount?: number | null;
         commission?: number | null;
@@ -54,6 +56,12 @@ export interface IRazorpayOrder {
 export interface IVerifiedBookingsPayment {
     verified: boolean;
     bookingId: string;
+    transaction: ITransaction;
+}
+
+export interface IVerifiedSubscriptionPayment {
+    verified: boolean;
+    subscriptionId: string;
     transaction: ITransaction;
 }
 

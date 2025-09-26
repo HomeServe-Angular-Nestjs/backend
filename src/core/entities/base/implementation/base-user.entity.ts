@@ -15,6 +15,7 @@ export abstract class BaseUserEntity extends BaseEntity implements IBaseUserEnti
   lastLoginAt?: Date;
   googleId: string;
   address: string;
+  subscriptionId: string | null;
 
   constructor(partial: Partial<BaseUserEntity>) {
     super(partial);

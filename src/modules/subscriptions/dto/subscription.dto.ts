@@ -1,7 +1,8 @@
-import { IsIn, IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import { IsIn, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 
-import { PlanRoleType, SubsDurationType, SubsPaymentStatus } from '@core/enum/subscription.enum';
+import { PlanRoleEnum, SubsDurationType, } from '@core/enum/subscription.enum';
 import { Transform } from 'class-transformer';
+import { PaymentStatus } from '@core/enum/bookings.enum';
 
 export class CreateSubscriptionDto {
     @IsNotEmpty()
@@ -10,11 +11,10 @@ export class CreateSubscriptionDto {
 
     @IsNotEmpty()
     @IsString()
-    transactionId: string;
-
-    @IsNotEmpty()
-    @IsString()
     name: string;
+
+    @IsOptional()
+    transactionId: null;
 
     @IsNotEmpty()
     @IsString()
@@ -23,8 +23,8 @@ export class CreateSubscriptionDto {
 
     @IsNotEmpty()
     @IsString()
-    @IsIn(Object.values(PlanRoleType))
-    role: PlanRoleType;
+    @IsIn(Object.values(PlanRoleEnum))
+    role: PlanRoleEnum;
 
     @IsNotEmpty()
     @IsString({ each: true })
@@ -32,15 +32,16 @@ export class CreateSubscriptionDto {
 
     @IsNotEmpty()
     @IsString()
-    @IsIn(Object.values(SubsPaymentStatus))
-    paymentStatus?: SubsPaymentStatus;
+    @IsIn(Object.values(PaymentStatus))
+    paymentStatus: PaymentStatus;
 
     @IsNotEmpty()
     @IsString()
     startTime: string;
 
     @IsNotEmpty()
-    endDate: string | null;
+    @IsString()
+    endDate: string;
 
     @Transform(({ value }) => {
         const num = Number(value);
@@ -49,4 +50,19 @@ export class CreateSubscriptionDto {
     @IsNotEmpty()
     @IsNumber()
     price: number;
+}
+
+export class IUpdatePaymentStatusDto {
+    @IsNotEmpty()
+    @IsString()
+    transactionId: string;
+
+    @IsNotEmpty()
+    @IsString()
+    @IsIn(Object.values(PaymentStatus))
+    paymentStatus: PaymentStatus;
+
+    @IsNotEmpty()
+    @IsString()
+    subscriptionId: string;
 }

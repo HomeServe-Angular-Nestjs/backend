@@ -25,6 +25,7 @@ export class CustomerMapper implements ICustomerMapper {
             location: doc.location,
             isReviewed: doc.isReviewed,
             address: doc.address,
+            subscriptionId: doc.subscriptionId ? String(doc.subscriptionId) : null,
         });
     }
 

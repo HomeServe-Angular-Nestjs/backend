@@ -62,9 +62,6 @@ export class WalletRepository extends BaseRepository<WalletDocument> implements 
     }
 
     async bulkUpdate(transaction: ITransaction): Promise<void> {
-        // for (const tx of transactions) {
-        // if (tx.status !== TransactionStatus.SUCCESS) return;
-
         switch (transaction.transactionType) {
             case TransactionType.BOOKING: {
                 // Customer paid -> Admin wallet gets credited
@@ -91,10 +88,9 @@ export class WalletRepository extends BaseRepository<WalletDocument> implements 
                 break;
             }
 
-            case TransactionType.REFUND: {
-                // Refund to customer -> Admin wallet decreases
-                await this.updateAdminAmount(-transaction.amount);
-                await this.updateCustomerBalance(transaction.userId, transaction.amount);
+            case TransactionType.SUBSCRIPTION: {
+                // User subscription -> Admin wallet increases
+                await this.updateAdminAmount(transaction.amount);
                 break;
             }
 
@@ -102,6 +98,5 @@ export class WalletRepository extends BaseRepository<WalletDocument> implements 
                 this.logger.warn(`Unhandled transaction type: ${transaction.transactionType}`);
                 throw new Error('')
         }
-        // }
     }
 }

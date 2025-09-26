@@ -1,28 +1,25 @@
 import { IEntity } from '@core/entities/base/interfaces/base-entity.entity.interface';
-import { PlanRoleType } from '@core/entities/interfaces/plans.entity.interface';
-import { SubsPaymentStatus } from '@core/enum/subscription.enum';
-
-export type RenewalType = 'auto' | 'manual';
-export type SubsDurationType = 'monthly' | 'yearly';
+import { PaymentStatus } from '@core/enum/bookings.enum';
+import { PlanRoleEnum, RenewalEnum, SubsDurationType } from '@core/enum/subscription.enum';
 
 export interface ISubscription extends IEntity {
     userId: string;
-    transactionId: string;
+    transactionId: string | null;
     planId: string;
 
     name: string;
     duration: SubsDurationType;
-    role: PlanRoleType;
+    role: PlanRoleEnum;
     features: string[];
     price: number;
 
-    startTime: string;
-    endDate: string | null;
+    startTime: Date;
+    endDate: Date;
     isActive: boolean;
     isDeleted: boolean;
 
-    renewalType?: RenewalType;
-    paymentStatus?: SubsPaymentStatus;
-    cancelledAt?: string;
+    paymentStatus: PaymentStatus;
+    cancelledAt: Date | null;
+    renewalType?: RenewalEnum;
     metadata?: Record<string, any>;
 }

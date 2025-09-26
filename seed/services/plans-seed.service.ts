@@ -1,6 +1,7 @@
 import { PLAN_REPOSITORY_INTERFACE_NAME } from "@core/constants/repository.constant";
 import { ICreatePlan } from "@core/entities/interfaces/plans.entity.interface";
 import { ErrorMessage } from "@core/enum/error.enum";
+import { PlanRoleEnum } from "@core/enum/subscription.enum";
 import { ICustomLogger } from "@core/logger/interface/custom-logger.interface";
 import { ILoggerFactory, LOGGER_FACTORY } from "@core/logger/interface/logger-factory.interface";
 import { IPlanRepository } from "@core/repositories/interfaces/plans-repo.interface";
@@ -11,7 +12,7 @@ const PLAN_SEED_DATA: ICreatePlan[] = [
         "name": "free",
         "price": 0,
         "duration": "lifetime",
-        "role": "provider",
+        "role": PlanRoleEnum.Provider,
         "features": [
             "Basic support ",
             "List up to 5 services",
@@ -25,7 +26,7 @@ const PLAN_SEED_DATA: ICreatePlan[] = [
         "name": "premium",
         "price": 899,
         "duration": "monthly",
-        "role": "provider",
+        "role": PlanRoleEnum.Provider,
         "features": [
             "List unlimited services",
             "Serve multiple cities or service zones",
@@ -39,7 +40,7 @@ const PLAN_SEED_DATA: ICreatePlan[] = [
         "name": "premium",
         "price": 1299,
         "duration": "yearly",
-        "role": "provider",
+        "role": PlanRoleEnum.Provider,
         "features": [
             "List unlimited services",
             "Serve multiple cities or service zones",
@@ -53,7 +54,7 @@ const PLAN_SEED_DATA: ICreatePlan[] = [
         "name": "free",
         "price": 0,
         "duration": "lifetime",
-        "role": "customer",
+        "role": PlanRoleEnum.Customer,
         "features": [
             "adfsdf"
         ],
@@ -64,7 +65,7 @@ const PLAN_SEED_DATA: ICreatePlan[] = [
         "name": "premium",
         "price": 499,
         "duration": "monthly",
-        "role": "customer",
+        "role": PlanRoleEnum.Customer,
         "features": [
             "dafd"
         ],
@@ -75,7 +76,7 @@ const PLAN_SEED_DATA: ICreatePlan[] = [
         "name": "premium",
         "price": 999,
         "duration": "yearly",
-        "role": "customer",
+        "role": PlanRoleEnum.Customer,
         "features": [
             "adfsdfasdf",
             "lkjlkjl;kj"

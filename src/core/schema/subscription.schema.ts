@@ -1,17 +1,18 @@
-import { Document, SchemaTypes } from 'mongoose';
+import { Document, SchemaTypes, Types } from 'mongoose';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { PlanRoleType, RenewalType, SubsDurationType, SubsPaymentStatus } from '../enum/subscription.enum';
+import { PlanRoleEnum, RenewalEnum, SubsDurationType } from '@core/enum/subscription.enum';
+import { PaymentStatus } from '@core/enum/bookings.enum';
 
 @Schema({ timestamps: true })
 export class SubscriptionDocument extends Document {
-    @Prop({ type: String, required: true })
-    userId: string;
+    @Prop({ type: Types.ObjectId, required: true })
+    userId: Types.ObjectId;
 
-    @Prop({ type: String, required: true })
-    transactionId: string;
+    @Prop({ type: Types.ObjectId, default: null })
+    transactionId: Types.ObjectId | null; 
 
-    @Prop({ type: String, required: true })
-    planId: string;
+    @Prop({ type: Types.ObjectId, required: true })
+    planId: Types.ObjectId;
 
     @Prop({ type: String, required: true })
     name: string;
@@ -26,9 +27,9 @@ export class SubscriptionDocument extends Document {
     @Prop({
         type: String,
         required: true,
-        enum: Object.values(PlanRoleType)
+        enum: Object.values(PlanRoleEnum)
     })
-    role: PlanRoleType;
+    role: PlanRoleEnum;
 
     @Prop({ type: [String], required: true })
     features: string[];
@@ -36,8 +37,8 @@ export class SubscriptionDocument extends Document {
     @Prop({ type: Date, required: true })
     startTime: Date;
 
-    @Prop({ type: Date, required: true, default: null })
-    endDate: Date | null;
+    @Prop({ type: Date, required: true })
+    endDate: Date;
 
     @Prop({ type: Number, required: true, default: 0 })
     price: number;
@@ -50,19 +51,19 @@ export class SubscriptionDocument extends Document {
 
     @Prop({
         type: String,
-        enum: Object.values(RenewalType),
-        default: 'auto'
+        enum: Object.values(RenewalEnum),
+        default: RenewalEnum.Manual
     })
-    renewalType?: RenewalType;
+    renewalType?: RenewalEnum;
 
     @Prop({
         type: String,
-        enum: Object.values(SubsPaymentStatus)
+        enum: Object.values(PaymentStatus)
     })
-    paymentStatus?: SubsPaymentStatus;
+    paymentStatus: PaymentStatus;
 
     @Prop({ type: Date })
-    cancelledAt?: Date;
+    cancelledAt: Date | null;
 
     @Prop({ type: SchemaTypes.Mixed })
     metadata?: Record<string, any>;
