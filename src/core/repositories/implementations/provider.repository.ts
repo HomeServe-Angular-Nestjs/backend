@@ -203,4 +203,14 @@ export class ProviderRepository extends BaseRepository<ProviderDocument> impleme
 
     return this._providerModel.aggregate(pipeline).exec();
   }
+
+  async updateSubscriptionId(providerId: string, subscriptionId: string): Promise<boolean> {
+    const result = await this._providerModel.updateOne(
+      { _id: providerId },
+      { $set: { subscriptionId } }
+    );
+
+    return result.modifiedCount === 1;
+  }
+
 }

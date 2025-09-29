@@ -1,6 +1,5 @@
 import { SUBSCRIPTION_REPOSITORY_NAME } from "@core/constants/repository.constant";
 import { ErrorCodes, ErrorMessage } from "@core/enum/error.enum";
-import { PlanRoleEnum } from "@core/enum/subscription.enum";
 import { IPayload } from "@core/misc/payload.interface";
 import { ISubscriptionRepository } from "@core/repositories/interfaces/subscription-repo.interface";
 import { CanActivate, ExecutionContext, ForbiddenException, Inject, Injectable, UnauthorizedException } from "@nestjs/common";
@@ -23,10 +22,7 @@ export class SubscriptionGuard implements CanActivate {
             });
         }
 
-        console.log(user)
-
-        const subscription = await this._subscriptionRepository.findSubscription(user.sub, user.type as PlanRoleEnum);
-
+        const subscription = await this._subscriptionRepository.findActiveSubscriptionByUserId(user.sub, user.type);
         if (!subscription) {
             throw new ForbiddenException({
                 code: ErrorCodes.NO_ACTIVE_SUBSCRIPTION,
@@ -34,14 +30,6 @@ export class SubscriptionGuard implements CanActivate {
             });
         }
 
-        const endDate = new Date(subscription.endDate);
-        const now = new Date();
-
-        if (now >= endDate) {
-            throw new ForbiddenException({
-                code: ErrorCodes.NO_ACTIVE_SUBSCRIPTION,
-                message: 'Your subscription has expired. Please renew to continue.',
-            });
-        } return true;
+        return true;
     }
 }

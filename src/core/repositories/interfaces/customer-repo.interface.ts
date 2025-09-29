@@ -14,4 +14,5 @@ export interface ICustomerRepository extends IBaseRepository<CustomerDocument> {
   getCustomerStatistics(): Promise<IStats>;
   generateCustomersReport(data: Partial<IReportDownloadUserData>): Promise<IReportUserData[]>;
   changeReviewStatus(id: string, status: boolean): Promise<void>;
+  updateSubscriptionId(customerId: string, subscriptionId: string): Promise<boolean>;
 }

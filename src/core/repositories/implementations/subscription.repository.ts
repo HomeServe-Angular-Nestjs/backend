@@ -96,13 +96,25 @@ export class SubscriptionRepository extends BaseRepository<SubscriptionDocument>
         return await this._subscriptionModel.findOne(
             {
                 userId: this._toObjectId(userId),
-                role
+                role,
+                isActive: true
             }
         );
     }
 
     async findSubscriptionById(subscriptionId: string): Promise<SubscriptionDocument | null> {
-        return await this._subscriptionModel.findOne({ _id: subscriptionId });
+        return await this._subscriptionModel.findOne({ _id: subscriptionId, isActive: true });
+    }
+
+    async fetchCurrentActiveSubscription(subscriptionId: string): Promise<SubscriptionDocument | null> {
+        return await this._subscriptionModel.findOne(
+            {
+                _id: subscriptionId,
+                isActive: true,
+                isDeleted: false,
+                endDate: { $lte: new Date() }
+            }
+        );
     }
 
     async updatePaymentStatus(subscriptionId: string, status: PaymentStatus, transactionId: string): Promise<boolean> {
@@ -110,12 +122,41 @@ export class SubscriptionRepository extends BaseRepository<SubscriptionDocument>
             { _id: subscriptionId },
             {
                 $set: {
-                    status,
+                    paymentStatus: status,
                     transactionId: this._toObjectId(transactionId)
                 }
             },
         );
 
         return result.modifiedCount === 1;
+    }
+
+    async cancelSubscriptionByUserId(userId: string, userType: string): Promise<boolean> {
+        const result = await this._subscriptionModel.updateMany(
+            {
+                userId: this._toObjectId(userId),
+                role: userType,
+                isActive: true,
+            },
+            {
+                $set: {
+                    cancelledAt: new Date(),
+                    isActive: false
+                }
+            }
+        );
+
+        return result.modifiedCount >= 1;
+    }
+
+    async findActiveSubscriptionByUserId(userId: string, userType: string): Promise<SubscriptionDocument | null> {
+        return await this._subscriptionModel.findOne(
+            {
+                userId: this._toObjectId(userId),
+                role: userType,
+                isActive: true,
+                endDate: { $lte: new Date() }
+            }
+        );
     }
 }

@@ -36,7 +36,7 @@ export interface ITransactionMetadata {
         providerAmount?: number | null;
         commission?: number | null;
         gst?: number | null;
-    }
+    } | null;
 }
 
 export interface IRazorpayOrder {

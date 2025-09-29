@@ -12,7 +12,7 @@ import { ITransactionRepository } from '@core/repositories/interfaces/transactio
 import { IPaymentGateway } from '@core/utilities/interface/razorpay.utility.interface';
 import { BookingOrderData, RazorpayVerifyData, SubscriptionOrderData } from '@modules/payment/dtos/payment.dto';
 import { IRazorPaymentService } from '@modules/payment/services/interfaces/razorpay-service.interface';
-import { PaymentDirection, PaymentSource, TransactionStatus, TransactionType } from '@core/enum/transaction.enum';
+import { PaymentDirection, TransactionStatus, TransactionType } from '@core/enum/transaction.enum';
 import { IWalletRepository } from '@core/repositories/interfaces/wallet-repo.interface';
 import { ErrorCodes } from '@core/enum/error.enum';
 import { IAdminSettingsRepository } from '@core/repositories/interfaces/admin-settings-repo.interface';
@@ -167,7 +167,8 @@ export class RazorPaymentService implements IRazorPaymentService {
                     role: userDetails.role
                 },
                 metadata: {
-                    subscriptionId: subscription.id
+                    subscriptionId: subscription.id,
+                    breakup: null,
                 }
             })
         );

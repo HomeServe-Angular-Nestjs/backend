@@ -7,6 +7,9 @@ import { SubscriptionDocument } from '@core/schema/subscription.schema';
 export interface ISubscriptionRepository extends IBaseRepository<SubscriptionDocument> {
     getSubscriptionChartData(): Promise<IAdminDashboardSubscription>;
     findSubscriptionById(subscriptionId: string): Promise<SubscriptionDocument | null>;
+    fetchCurrentActiveSubscription(subscriptionId: string): Promise<SubscriptionDocument | null>;
+    findActiveSubscriptionByUserId(userId: string, userType: string): Promise<SubscriptionDocument | null>;
     findSubscription(userId: string, role: PlanRoleEnum): Promise<SubscriptionDocument | null>;
     updatePaymentStatus(subscriptionId: string, status: PaymentStatus, transactionId: string): Promise<boolean>;
+    cancelSubscriptionByUserId(userId: string, userType: string): Promise<boolean>;
 }

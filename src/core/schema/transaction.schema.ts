@@ -75,12 +75,15 @@ export class TransactionDocument extends Document {
 
     @Prop({
         type: {
-            bookingId: { type: Types.ObjectId, default: null },
-            subscriptionId: { type: Types.ObjectId, default: null },
+            bookingId: { type: Types.ObjectId },
+            subscriptionId: { type: Types.ObjectId },
             breakup: {
-                providerAmount: { type: Number, default: null },
-                commission: { type: Number, default: null },
-                gst: { type: Number, default: null }
+                type: {
+                    providerAmount: { type: Number },
+                    commission: { type: Number },
+                    gst: { type: Number },
+                },
+                default: null
             }
         },
         default: null,

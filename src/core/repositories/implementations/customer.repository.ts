@@ -140,5 +140,14 @@ export class CustomerRepository extends BaseRepository<CustomerDocument> impleme
 
     return this._customerModel.aggregate(pipeline).exec();
   }
-}
 
+  async updateSubscriptionId(customerId: string, subscriptionId: string): Promise<boolean> {
+    const result = await this._customerModel.updateOne(
+      { _id: customerId },
+      { $set: { subscriptionId } }
+    );
+
+    return result.modifiedCount === 1;
+  }
+
+}
