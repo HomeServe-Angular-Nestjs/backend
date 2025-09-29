@@ -96,7 +96,7 @@ export class SubscriptionService implements ISubscriptionService {
                 duration: dto.duration,
                 features: dto.features,
                 startTime: new Date(dto.startTime),
-                isActive: true,
+                isActive: false,
                 isDeleted: false,
                 paymentStatus: dto.paymentStatus,
                 cancelledAt: null,
@@ -201,7 +201,7 @@ export class SubscriptionService implements ISubscriptionService {
                 features: dto.features,
                 startTime: new Date(),
                 endDate: new Date(dto.endDate),
-                isActive: true,
+                isActive: false,
                 isDeleted: false,
                 paymentStatus: dto.paymentStatus,
                 cancelledAt: null
@@ -249,6 +249,16 @@ export class SubscriptionService implements ISubscriptionService {
         return {
             success: true,
             message: 'subscription updated successfully.'
+        }
+    }
+
+    async removeSubscription(subscriptionId: string): Promise<IResponse> {
+        const result = await this._subscriptionRepository.removeSubscriptionById(subscriptionId);
+        return {
+            success: result,
+            message: result
+                ? 'Successfully cleaned subscription'
+                : 'Failed to clean subscription'
         }
     }
 }

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Inject, Param, Patch, Post, Req } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Req } from '@nestjs/common';
 import { Request } from 'express';
 import { SUBSCRIPTION_SERVICE_NAME } from '@core/constants/service.constant';
 import { ISubscription } from '@core/entities/interfaces/subscription.entity.interface';
@@ -9,6 +9,7 @@ import { IResponse } from '@core/misc/response.util';
 import { ISubscriptionService } from '@modules/subscriptions/services/interface/subscription-service.interface';
 import { CreateSubscriptionDto, IUpdatePaymentStatusDto, } from '../dto/subscription.dto';
 import { PlanRoleEnum } from '@core/enum/subscription.enum';
+import { isValidIdPipe } from '@core/pipes/is-valid-id.pipe';
 
 @Controller('subscription')
 export class SubscriptionController {
@@ -51,5 +52,11 @@ export class SubscriptionController {
     async updatePaymentStatus(@Req() req: Request, @Body() dto: IUpdatePaymentStatusDto): Promise<IResponse> {
         const user = req.user as IPayload;
         return await this._subscriptionService.updatePaymentStatus(user.sub, user.type, dto);
+    }
+
+    @Delete(':subscriptionId')
+    async removeSubscription(@Param('subscriptionId', new isValidIdPipe()) subscriptionId: string): Promise<IResponse> {
+        return await this._subscriptionService.removeSubscription(subscriptionId);
+
     }
 }

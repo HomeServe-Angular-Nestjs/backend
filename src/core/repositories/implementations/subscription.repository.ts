@@ -92,18 +92,18 @@ export class SubscriptionRepository extends BaseRepository<SubscriptionDocument>
         };
     }
 
-    async findSubscription(userId: string, role: PlanRoleEnum): Promise<SubscriptionDocument | null> {
+    async findSubscription(userId: string, userType: string): Promise<SubscriptionDocument | null> {
         return await this._subscriptionModel.findOne(
             {
                 userId: this._toObjectId(userId),
-                role,
+                role: userType,
                 isActive: true
             }
         );
     }
 
     async findSubscriptionById(subscriptionId: string): Promise<SubscriptionDocument | null> {
-        return await this._subscriptionModel.findOne({ _id: subscriptionId, isActive: true });
+        return await this._subscriptionModel.findOne({ _id: subscriptionId });
     }
 
     async fetchCurrentActiveSubscription(subscriptionId: string): Promise<SubscriptionDocument | null> {
@@ -123,7 +123,8 @@ export class SubscriptionRepository extends BaseRepository<SubscriptionDocument>
             {
                 $set: {
                     paymentStatus: status,
-                    transactionId: this._toObjectId(transactionId)
+                    transactionId: this._toObjectId(transactionId),
+                    isActive: true
                 }
             },
         );
@@ -158,5 +159,10 @@ export class SubscriptionRepository extends BaseRepository<SubscriptionDocument>
                 endDate: { $lte: new Date() }
             }
         );
+    }
+
+    async removeSubscriptionById(subscriptionId: string): Promise<boolean> {
+        const result = await this._subscriptionModel.deleteOne({ _id: subscriptionId });
+        return result && result.deletedCount == 1;
     }
 }

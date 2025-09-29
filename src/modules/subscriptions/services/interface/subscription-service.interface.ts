@@ -10,4 +10,5 @@ export interface ISubscriptionService {
     getUpgradeAmount(role: UserType, currentSubscriptionId: string): Promise<IResponse<number>>;
     upgradeSubscription(userId: string, userTye: string, dto: CreateSubscriptionDto): Promise<IResponse<ISubscription>>;
     updatePaymentStatus(userId: string, userType: string, data: IUpdatePaymentStatusDto): Promise<IResponse>;
+    removeSubscription(subscriptionId: string): Promise<IResponse>;
 }
