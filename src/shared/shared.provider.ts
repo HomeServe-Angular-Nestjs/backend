@@ -1,4 +1,5 @@
 import { ADMIN_MAPPER, ADMIN_SETTINGS_MAPPER, BOOKING_MAPPER, CHAT_MAPPER, CUSTOMER_MAPPER, MESSAGE_MAPPER, NOTIFICATION_MAPPER, OTP_MAPPER, PLAN_MAPPER, PROVIDER_MAPPER, REPORT_MAPPER, RESERVATION_MAPPER, SCHEDULES_MAPPER, SERVICE_OFFERED_MAPPER, SLOT_RULE_MAPPER, SUBSCRIPTION_MAPPER, TRANSACTION_MAPPER, WALLET_MAPPER } from '@core/constants/mappers.constant';
+import { SUBSCRIPTION_REPOSITORY_NAME } from '@core/constants/repository.constant';
 import { AdminSettingsMapper } from '@core/dto-mapper/implementation/admin-settings.mapper';
 import { AdminMapper } from '@core/dto-mapper/implementation/admin.mapper';
 import { BookingMapper } from '@core/dto-mapper/implementation/booking.mapper';
@@ -21,6 +22,7 @@ import { CustomLogger } from '@core/logger/implementation/custom-logger';
 import { LoggerFactory } from '@core/logger/implementation/logger.factory';
 import { CUSTOM_LOGGER } from '@core/logger/interface/custom-logger.interface';
 import { LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
+import { SubscriptionRepository } from '@core/repositories/implementations/subscription.repository';
 import { Provider } from '@nestjs/common';
 
 export const sharedProviders: Provider[] = [
@@ -103,5 +105,9 @@ export const sharedProviders: Provider[] = [
     {
         provide: ADMIN_SETTINGS_MAPPER,
         useClass: AdminSettingsMapper
+    },
+    {
+        provide: SUBSCRIPTION_REPOSITORY_NAME,
+        useClass: SubscriptionRepository
     },
 ];

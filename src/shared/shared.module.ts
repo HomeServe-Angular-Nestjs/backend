@@ -4,13 +4,15 @@ import {
     SCHEDULES_MAPPER, SERVICE_OFFERED_MAPPER, SLOT_RULE_MAPPER, SUBSCRIPTION_MAPPER,
     TRANSACTION_MAPPER, WALLET_MAPPER
 } from '@core/constants/mappers.constant';
+import { SUBSCRIPTION_REPOSITORY_NAME } from '@core/constants/repository.constant';
+import { SubscriptionGuard } from '@core/guards/subscription.guard';
 import { CUSTOM_LOGGER } from '@core/logger/interface/custom-logger.interface';
 import { LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { Module } from '@nestjs/common';
 import { sharedProviders } from '@shared/shared.provider';
 
 @Module({
-    providers: [...sharedProviders],
+    providers: [...sharedProviders, SubscriptionGuard],
     exports: [
         CUSTOM_LOGGER,
         LOGGER_FACTORY,
@@ -32,6 +34,8 @@ import { sharedProviders } from '@shared/shared.provider';
         RESERVATION_MAPPER,
         REPORT_MAPPER,
         ADMIN_SETTINGS_MAPPER,
+        SUBSCRIPTION_REPOSITORY_NAME,
+        SubscriptionGuard
     ]
 })
 export class SharedModule { }

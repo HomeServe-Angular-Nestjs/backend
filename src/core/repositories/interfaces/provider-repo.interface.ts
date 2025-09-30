@@ -18,4 +18,5 @@ export interface IProviderRepository extends IBaseRepository<ProviderDocument> {
   getWorkImages(providerId: string): Promise<string[]>;
   getProviderStatistics(): Promise<IStats>;
   generateProviderReport(data: Partial<IReportDownloadUserData>): Promise<IReportProviderData[]>;
+  updateSubscriptionId(providerId: string, subscriptionId: string): Promise<boolean>;
 }

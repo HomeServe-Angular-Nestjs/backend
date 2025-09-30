@@ -69,7 +69,7 @@ export interface IProvider extends IBaseUserEntity {
   servicesOffered: string[];
   schedules: string[];
   defaultSlots: SlotType[];
-  subscriptionID: string | null;
+  subscriptionId: string | null;
   availability: Availability;
   profession: string;
   experience: number;

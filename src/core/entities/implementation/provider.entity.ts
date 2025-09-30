@@ -16,7 +16,6 @@ export class Provider extends BaseUserEntity implements IProvider {
   docs: IDoc[];
   servicesOffered: string[] = [];
   schedules: string[];
-  subscriptionID: string | null;
   profession: string;
   experience: number;
   availability: Availability;

@@ -1,11 +1,12 @@
+import { PlanRoleEnum } from '@core/enum/subscription.enum';
 import { BaseEntity } from '../base/implementation/base.entity';
-import { IPlan, PlanDurationType, PlanRoleType } from '../interfaces/plans.entity.interface';
+import { IPlan, PlanDurationType } from '../interfaces/plans.entity.interface';
 
 export class Plan extends BaseEntity implements IPlan {
     name: string;
     price: number;
     duration: PlanDurationType;
-    role: PlanRoleType;
+    role: PlanRoleEnum;
     features: string[];
     isActive: boolean;
     isDeleted: boolean;

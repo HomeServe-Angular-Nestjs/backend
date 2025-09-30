@@ -1,7 +1,8 @@
 import { Transform } from 'class-transformer';
 import { IsArray, IsBoolean, IsIn, IsNotEmpty, IsNumber, IsString, Min } from 'class-validator';
 
-import { PlanDurationType, PlanRoleType } from '@core/entities/interfaces/plans.entity.interface';
+import { PlanDurationType} from '@core/entities/interfaces/plans.entity.interface';
+import { PlanRoleEnum } from '@core/enum/subscription.enum';
 
 export class SavePlanDto {
     @IsNotEmpty()
@@ -17,8 +18,8 @@ export class SavePlanDto {
 
     @IsNotEmpty()
     @IsString()
-    @IsIn(['customer', 'provider'])
-    role: PlanRoleType;
+    @IsIn(Object.values(PlanRoleEnum))
+    role: PlanRoleEnum;
 
     @IsNotEmpty()
     @IsString()

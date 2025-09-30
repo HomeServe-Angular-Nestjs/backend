@@ -1,4 +1,4 @@
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
 
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 
@@ -59,6 +59,9 @@ export class BaseUserDocument extends Document {
 
   @Prop({ type: Boolean, default: false })
   isDeleted: boolean;
+
+  @Prop({ type: Types.ObjectId, default: null })
+  subscriptionId: Types.ObjectId | null;
 
   @Prop({ type: Date })
   lastLogin?: Date;

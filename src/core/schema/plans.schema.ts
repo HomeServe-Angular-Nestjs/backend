@@ -1,8 +1,7 @@
 import { Document, model } from 'mongoose';
-
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-
-import { PlanDurationType, PlanRoleType } from '../entities/interfaces/plans.entity.interface';
+import { PlanDurationType } from '../entities/interfaces/plans.entity.interface';
+import { PlanRoleEnum } from '@core/enum/subscription.enum';
 
 @Schema({ timestamps: true })
 export class PlanDocument extends Document {
@@ -28,10 +27,10 @@ export class PlanDocument extends Document {
 
     @Prop({
         type: String,
-        enum: ['customer', 'provider'],
+        enum: Object.values(PlanRoleEnum),
         required: true
     })
-    role: PlanRoleType;
+    role: PlanRoleEnum;
 
     @Prop({
         type: [String],

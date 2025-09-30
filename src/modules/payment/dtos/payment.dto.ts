@@ -27,13 +27,9 @@ export class RazorpayVerifyData {
     razorpay_signature: string;
 }
 
-export class VerifyOrderData {
+class VerifyOrderData {
     @IsString()
     id: string;
-
-    @IsNotEmpty()
-    @IsString()
-    bookingId: string;
 
     @IsNotEmpty()
     @IsString()
@@ -63,12 +59,34 @@ export class VerifyOrderData {
     receipt?: string;
 }
 
-export class RazorpayVerifyDto {
+export class BookingOrderData extends VerifyOrderData {
+    @IsNotEmpty()
+    @IsString()
+    bookingId: string;
+}
+
+export class SubscriptionOrderData extends VerifyOrderData {
+    @IsNotEmpty()
+    @IsString()
+    subscriptionId: string;
+}
+
+export class BookingPaymentVerifyDto {
     @Type(() => RazorpayVerifyData)
     @ValidateNested()
     verifyData: RazorpayVerifyData;
 
-    @Type(() => VerifyOrderData)
+    @Type(() => BookingOrderData)
     @ValidateNested()
-    orderData: VerifyOrderData;
+    orderData: BookingOrderData;
+}
+
+export class SubscriptionPaymentVerifyDto {
+    @Type(() => RazorpayVerifyData)
+    @ValidateNested()
+    verifyData: RazorpayVerifyData;
+
+    @Type(() => SubscriptionOrderData)
+    @ValidateNested()
+    orderData: SubscriptionOrderData;
 }

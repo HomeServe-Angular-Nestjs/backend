@@ -7,6 +7,8 @@ import { ISubscriptionRepository } from '@core/repositories/interfaces/subscript
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { SubscriptionDocument } from '@core/schema/subscription.schema';
+import { PlanRoleEnum } from '@core/enum/subscription.enum';
+import { PaymentStatus } from '@core/enum/bookings.enum';
 
 @Injectable()
 export class SubscriptionRepository extends BaseRepository<SubscriptionDocument> implements ISubscriptionRepository {
@@ -88,5 +90,79 @@ export class SubscriptionRepository extends BaseRepository<SubscriptionDocument>
             monthlyPremium: 0,
             yearlyPremium: 0
         };
+    }
+
+    async findSubscription(userId: string, userType: string): Promise<SubscriptionDocument | null> {
+        return await this._subscriptionModel.findOne(
+            {
+                userId: this._toObjectId(userId),
+                role: userType,
+                isActive: true
+            }
+        );
+    }
+
+    async findSubscriptionById(subscriptionId: string): Promise<SubscriptionDocument | null> {
+        return await this._subscriptionModel.findOne({ _id: subscriptionId });
+    }
+
+    async fetchCurrentActiveSubscription(subscriptionId: string): Promise<SubscriptionDocument | null> {
+        return await this._subscriptionModel.findOne(
+            {
+                _id: subscriptionId,
+                isActive: true,
+                isDeleted: false,
+                endDate: { $lte: new Date() }
+            }
+        );
+    }
+
+    async updatePaymentStatus(subscriptionId: string, status: PaymentStatus, transactionId: string): Promise<boolean> {
+        const result = await this._subscriptionModel.updateOne(
+            { _id: subscriptionId },
+            {
+                $set: {
+                    paymentStatus: status,
+                    transactionId: this._toObjectId(transactionId),
+                    isActive: true
+                }
+            },
+        );
+
+        return result.modifiedCount === 1;
+    }
+
+    async cancelSubscriptionByUserId(userId: string, userType: string): Promise<boolean> {
+        const result = await this._subscriptionModel.updateMany(
+            {
+                userId: this._toObjectId(userId),
+                role: userType,
+                isActive: true,
+            },
+            {
+                $set: {
+                    cancelledAt: new Date(),
+                    isActive: false
+                }
+            }
+        );
+
+        return result.modifiedCount >= 1;
+    }
+
+    async findActiveSubscriptionByUserId(userId: string, userType: string): Promise<SubscriptionDocument | null> {
+        return await this._subscriptionModel.findOne(
+            {
+                userId: this._toObjectId(userId),
+                role: userType,
+                isActive: true,
+                endDate: { $lte: new Date() }
+            }
+        );
+    }
+
+    async removeSubscriptionById(subscriptionId: string): Promise<boolean> {
+        const result = await this._subscriptionModel.deleteOne({ _id: subscriptionId });
+        return result && result.deletedCount == 1;
     }
 }

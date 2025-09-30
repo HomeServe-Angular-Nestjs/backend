@@ -26,10 +26,12 @@ export class TransactionMapper implements ITransactionMapper {
             userDetails: doc.userDetails ? {
                 email: doc.userDetails.email,
                 contact: doc.userDetails.contact,
+                role: doc.userDetails.role
             } : null,
             createdAt: doc.createdAt,
             metadata: doc.metadata ? {
                 bookingId: doc.metadata?.bookingId?.toString() ?? null,
+                subscriptionId: doc.metadata?.subscriptionId?.toString() ?? null,
                 breakup: {
                     providerAmount: doc?.metadata?.breakup?.providerAmount ?? null,
                     commission: doc?.metadata?.breakup?.commission ?? null,
@@ -54,6 +56,7 @@ export class TransactionMapper implements ITransactionMapper {
             userDetails: entity.userDetails ? {
                 contact: entity.userDetails.contact,
                 email: entity.userDetails.email,
+                role: entity.userDetails.role,
             } : null,
             status: entity.status,
             direction: entity.direction,
@@ -61,6 +64,9 @@ export class TransactionMapper implements ITransactionMapper {
             metadata: entity?.metadata ? {
                 bookingId: entity.metadata?.bookingId
                     ? new Types.ObjectId(entity.metadata.bookingId)
+                    : null,
+                subscriptionId: entity.metadata?.subscriptionId
+                    ? new Types.ObjectId(entity.metadata.subscriptionId)
                     : null,
                 breakup: {
                     providerAmount: entity.metadata?.breakup?.providerAmount ?? null,
