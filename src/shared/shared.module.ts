@@ -14,6 +14,7 @@ import { sharedProviders } from '@shared/shared.provider';
 @Module({
     providers: [...sharedProviders, SubscriptionGuard],
     exports: [
+        SubscriptionGuard,
         CUSTOM_LOGGER,
         LOGGER_FACTORY,
         SCHEDULES_MAPPER,
@@ -35,7 +36,6 @@ import { sharedProviders } from '@shared/shared.provider';
         REPORT_MAPPER,
         ADMIN_SETTINGS_MAPPER,
         SUBSCRIPTION_REPOSITORY_NAME,
-        SubscriptionGuard
     ]
 })
 export class SharedModule { }

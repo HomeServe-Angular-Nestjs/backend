@@ -386,4 +386,26 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
         );
     }
 
+    async getCompletionRate(): Promise<number> {
+        const result = await this._bookingModel.aggregate([
+            {
+                $group: {
+                    _id: null,
+                    totalBookings: { $sum: 1 },
+                    totalCompleted: {
+                        $sum: { $cond: [{ $eq: ["$bookingStatus", BookingStatus.COMPLETED] }, 1, 0] }
+                    }
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    completionRate: { $multiply: [{ $divide: ["$totalCompleted", "$totalBookings"] }, 100] }
+                }
+            }
+        ]);
+
+        return result[0]?.completionRate ?? 0;
+    }
+
 }
