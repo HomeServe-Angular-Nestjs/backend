@@ -3,16 +3,15 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 
-import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SERVICE_OFFERED_REPOSITORY_NAME } from '@core/constants/repository.constant';
+import { BOOKING_REPOSITORY_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SERVICE_OFFERED_REPOSITORY_NAME } from '@core/constants/repository.constant';
 import { UPLOAD_UTILITY_NAME } from '@core/constants/utility.constant';
 import { CloudinaryService } from '@configs/cloudinary/cloudinary.service';
-import { IFetchReviews, IProvider } from '@core/entities/interfaces/user.entity.interface';
+import { IProvider, IProviderCardView } from '@core/entities/interfaces/user.entity.interface';
 import { ErrorMessage } from '@core/enum/error.enum';
 import { UploadsType } from '@core/enum/uploads.enum';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { IResponse } from '@core/misc/response.util';
-import { ICustomerRepository } from '@core/repositories/interfaces/customer-repo.interface';
 import { IProviderRepository } from '@core/repositories/interfaces/provider-repo.interface';
 import { IServiceOfferedRepository } from '@core/repositories/interfaces/serviceOffered-repo.interface';
 import { IUploadsUtility } from '@core/utilities/interface/upload.utility.interface';
@@ -21,7 +20,7 @@ import { FilterDto, GetProvidersFromLocationSearch, SlotDto, UpdateBioDto } from
 import { IProviderServices } from '@modules/providers/services/interfaces/provider-service.interface';
 import { PROVIDER_MAPPER } from '@core/constants/mappers.constant';
 import { IProviderMapper } from '@core/dto-mapper/interface/provider.mapper.interface';
-import { ProviderDocument } from '@core/schema/provider.schema';
+import { IBookingRepository } from '@core/repositories/interfaces/bookings-repo.interface';
 
 @Injectable()
 export class ProviderServices implements IProviderServices {
@@ -33,10 +32,10 @@ export class ProviderServices implements IProviderServices {
     private readonly loggerFactory: ILoggerFactory,
     @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
     private readonly _providerRepository: IProviderRepository,
-    @Inject(CUSTOMER_REPOSITORY_INTERFACE_NAME)
-    private readonly _customerService: ICustomerRepository,
     @Inject(SERVICE_OFFERED_REPOSITORY_NAME)
     private readonly _serviceOfferedRepository: IServiceOfferedRepository,
+    @Inject(BOOKING_REPOSITORY_NAME)
+    private readonly _bookingRepository: IBookingRepository,
     @Inject(UPLOAD_UTILITY_NAME)
     private readonly _uploadsUtility: IUploadsUtility,
     @Inject(PROVIDER_MAPPER)
@@ -46,7 +45,7 @@ export class ProviderServices implements IProviderServices {
     this.logger = this.loggerFactory.createLogger(ProviderServices.name);
   }
 
-  async getProviders(filter?: FilterDto): Promise<IResponse<IProvider[]>> {
+  async getProviders(filter?: FilterDto): Promise<IResponse<IProviderCardView[]>> {
     const query: { [key: string]: any } = { isDeleted: false };
 
     if (filter?.search) {
@@ -62,16 +61,36 @@ export class ProviderServices implements IProviderServices {
     }
 
     const providerDocs = await this._providerRepository.find(query);
-    const providers = (providerDocs || []).map(provider => {
+    let providers = (providerDocs || []).map(provider => {
       const avatar = provider?.avatar ? this._uploadsUtility.getSignedImageUrl(provider.avatar) : '';
       provider.avatar = avatar;
       return this._providerMapper.toEntity(provider);
     });
 
+    const stats = await this._bookingRepository.getAvgRatingAndTotalReviews();
+
+    const statsMap = stats.reduce((acc, s) => {
+      acc[s.providerId] = { avgRating: s.avgRating, totalReviews: s.totalReviews };
+      return acc;
+    }, {} as Record<string, { avgRating: number, totalReviews: number }>);
+
+    let mappedProviders: IProviderCardView[] = (providers ?? []).map(p => ({
+      id: p.id,
+      fullname: p.fullname,
+      username: p.username,
+      avatar: p.avatar,
+      address: p.address,
+      profession: p.profession,
+      experience: p.experience,
+      isActive: p.isActive,
+      isCertified: p.isCertified,
+      ...statsMap[p.id]
+    }));
+
     return {
       success: true,
       message: 'Providers fetched successfully.',
-      data: providers
+      data: mappedProviders
     }
   }
 
@@ -281,48 +300,6 @@ export class ProviderServices implements IProviderServices {
       data: filtered
     }
   }
-
-
-  // async getReviews(providerId: string): Promise<IResponse> {
-
-  //   const provider = await this._providerRepository.findById(providerId);
-  //   if (!provider) {
-  //     throw new NotFoundException(ErrorMessage.PROVIDER_NOT_FOUND_WITH_ID, providerId);
-  //   }
-
-  //   const reviews = provider.reviews;
-
-  //   if (reviews.length === 0) {
-  //     return {
-  //       success: true,
-  //       message: 'No reviews found'
-  //     }
-  //   }
-
-  //   const enrichedReviews: IFetchReviews[] = await Promise.all(
-  //     reviews.map(async review => {
-  //       const customer = await this._customerService.findById(review.reviewedBy);
-
-  //       if (!customer) {
-  //         throw new NotFoundException(ErrorMessage.CUSTOMER_NOT_FOUND_WITH_ID, review.reviewedBy);
-  //       }
-
-  //       return {
-  //         avatar: customer.avatar,
-  //         name: customer.fullname ?? customer.username,
-  //         avgRating: provider.avgRating,
-  //         writtenAt: review.writtenAt,
-  //         desc: review.desc,
-  //       }
-  //     })
-  //   );
-
-  //   return {
-  //     success: true,
-  //     message: 'Review Successfully fetched.',
-  //     data: enrichedReviews
-  //   }
-  // }
 
   async getWorkImages(providerId: string): Promise<IResponse<string[]>> {
     const workImages = await this._providerRepository.getWorkImages(providerId);

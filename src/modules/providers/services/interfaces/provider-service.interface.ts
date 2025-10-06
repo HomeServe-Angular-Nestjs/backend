@@ -1,13 +1,13 @@
-import { IProvider } from '@core/entities/interfaces/user.entity.interface';
+import { IProvider, IProviderCardView } from '@core/entities/interfaces/user.entity.interface';
 import { UploadsType } from '@core/enum/uploads.enum';
 import { IResponse } from '@core/misc/response.util';
 import { UserType } from '@modules/auth/dtos/login.dto';
 import {
-    FilterDto, GetProvidersFromLocationSearch, SlotDto, UpdateBioDto
+  FilterDto, GetProvidersFromLocationSearch, SlotDto, UpdateBioDto
 } from '@modules/providers/dtos/provider.dto';
 
 export interface IProviderServices {
-  getProviders(filter?: FilterDto): Promise<IResponse<IProvider[]>>;
+  getProviders(filter?: FilterDto): Promise<IResponse<IProviderCardView[]>>;
   getProvidersLocationBasedSearch(searchData: GetProvidersFromLocationSearch): Promise<IResponse<IProvider[]>>
   // getReviews(providerId: string): Promise<IResponse>;
   fetchOneProvider(id: string): Promise<IProvider>;

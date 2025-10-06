@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { BOOKINGS_MODEL_NAME } from '@core/constants/model.constant';
 import { IBookingStats } from '@core/entities/interfaces/booking.entity.interface';
-import { ITopProviders } from '@core/entities/interfaces/user.entity.interface';
+import { ITopProviders, ITotalReviewAndAvgRating } from '@core/entities/interfaces/user.entity.interface';
 import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
 import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
 import { IBookingRepository } from '@core/repositories/interfaces/bookings-repo.interface';
@@ -403,5 +403,52 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
         );
 
         return result.modifiedCount > 0;
+    }
+
+    // async getAvgRating(providerId: string): Promise<number> {
+    //     const result = await this._bookingModel.aggregate([
+    //         { $match: { providerId: this._toObjectId(providerId) } },
+    //         {
+    //             $group: {
+    //                 _id: null,
+    //                 avg: { $avg: "$review.rating" }
+    //             },
+    //             $project: { avg: 1 }
+    //         },
+    //     ]);
+
+    //     return result[0].avg ?? 0
+    // }
+
+    // async getTotalReviews(providerId: string): Promise<number> {
+    //     return await this._bookingModel.countDocuments({
+    //         providerId: this._toObjectId(providerId),
+    //         review: { $exists: true, $ne: null }
+    //     })
+    // }
+
+    async getAvgRatingAndTotalReviews(): Promise<ITotalReviewAndAvgRating[]> {
+        const result = await this._bookingModel.aggregate([
+            {
+                $match: { review: { $exists: true, $ne: null } }
+            },
+            {
+                $group: {
+                    _id: "$providerId",
+                    avgRating: { $avg: "$review.rating" },
+                    totalReviews: { $sum: 1 }
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    providerId: { $toString: "$_id" },
+                    avgRating: { $ifNull: ["$avgRating", 0] },
+                    totalReviews: 1
+                }
+            }
+        ]);
+
+        return result ?? [];
     }
 } 

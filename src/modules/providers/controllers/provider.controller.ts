@@ -3,13 +3,15 @@ import { PROVIDER_SERVICE_NAME } from '@core/constants/service.constant';
 import { IProvider } from '@core/entities/interfaces/user.entity.interface';
 import { ErrorMessage } from '@core/enum/error.enum';
 import { IPayload } from '@core/misc/payload.interface';
-import {BadRequestException, Body, Controller, Delete, Get, Inject, InternalServerErrorException, Patch,Put, Query, Req, UnauthorizedException, UploadedFile, UseGuards, UseInterceptors} from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, Inject, InternalServerErrorException, Param, Patch, Put, Query, Req, UnauthorizedException, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import {FilterDto, GetProvidersFromLocationSearch, RemoveCertificateDto, SlotDto, UpdateBioDto,UploadCertificateDto, UploadGalleryImageDto} from '../dtos/provider.dto';
+import { FilterDto, GetProvidersFromLocationSearch, RemoveCertificateDto, SlotDto, UpdateBioDto, UploadCertificateDto, UploadGalleryImageDto } from '../dtos/provider.dto';
 import { IProviderServices } from '../services/interfaces/provider-service.interface';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { SubscriptionGuard } from '@core/guards/subscription.guard';
+import { IResponse } from '@core/misc/response.util';
+import { isValidIdPipe } from '@core/pipes/is-valid-id.pipe';
 
 @Controller('provider')
 export class ProviderController {
