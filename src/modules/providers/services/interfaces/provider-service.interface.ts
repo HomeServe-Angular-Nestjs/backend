@@ -9,7 +9,7 @@ import {
 export interface IProviderServices {
   getProviders(filter?: FilterDto): Promise<IResponse<IProvider[]>>;
   getProvidersLocationBasedSearch(searchData: GetProvidersFromLocationSearch): Promise<IResponse<IProvider[]>>
-  getReviews(providerId: string): Promise<IResponse>;
+  // getReviews(providerId: string): Promise<IResponse>;
   fetchOneProvider(id: string): Promise<IProvider>;
   bulkUpdateProvider(id: string, updateData: Partial<IProvider>, file?: Express.Multer.File,): Promise<IProvider>;
   updateBio(providerId: string, dto: UpdateBioDto): Promise<IResponse<IProvider>>;

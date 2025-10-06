@@ -50,9 +50,9 @@ export class ProviderMapper implements IProviderMapper {
                 verificationStatus: d.verificationStatus,
                 verifiedAt: d.verifiedAt
             })),
-            ratingCount: doc.ratingCount,
-            avgRating: doc.avgRating,
-            reviews: doc.reviews,
+            // ratingCount: doc.ratingCount,
+            // avgRating: doc.avgRating,
+            // reviews: doc.reviews,
             workImages: doc.workImages,
         });
     }

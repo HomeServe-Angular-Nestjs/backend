@@ -386,4 +386,22 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
         );
     }
 
-}
+    async addReview(bookingId: string, desc: string, rating: number): Promise<boolean> {
+        const result = await this._bookingModel.updateOne(
+            { _id: bookingId },
+            {
+                $set: {
+                    review: {
+                        desc,
+                        rating,
+                        writtenAt: new Date(),
+                        isReported: false,
+                        isActive: true
+                    }
+                }
+            }
+        );
+
+        return result.modifiedCount > 0;
+    }
+} 

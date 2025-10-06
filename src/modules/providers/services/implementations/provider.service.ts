@@ -283,46 +283,46 @@ export class ProviderServices implements IProviderServices {
   }
 
 
-  async getReviews(providerId: string): Promise<IResponse> {
+  // async getReviews(providerId: string): Promise<IResponse> {
 
-    const provider = await this._providerRepository.findById(providerId);
-    if (!provider) {
-      throw new NotFoundException(ErrorMessage.PROVIDER_NOT_FOUND_WITH_ID, providerId);
-    }
+  //   const provider = await this._providerRepository.findById(providerId);
+  //   if (!provider) {
+  //     throw new NotFoundException(ErrorMessage.PROVIDER_NOT_FOUND_WITH_ID, providerId);
+  //   }
 
-    const reviews = provider.reviews;
+  //   const reviews = provider.reviews;
 
-    if (reviews.length === 0) {
-      return {
-        success: true,
-        message: 'No reviews found'
-      }
-    }
+  //   if (reviews.length === 0) {
+  //     return {
+  //       success: true,
+  //       message: 'No reviews found'
+  //     }
+  //   }
 
-    const enrichedReviews: IFetchReviews[] = await Promise.all(
-      reviews.map(async review => {
-        const customer = await this._customerService.findById(review.reviewedBy);
+  //   const enrichedReviews: IFetchReviews[] = await Promise.all(
+  //     reviews.map(async review => {
+  //       const customer = await this._customerService.findById(review.reviewedBy);
 
-        if (!customer) {
-          throw new NotFoundException(ErrorMessage.CUSTOMER_NOT_FOUND_WITH_ID, review.reviewedBy);
-        }
+  //       if (!customer) {
+  //         throw new NotFoundException(ErrorMessage.CUSTOMER_NOT_FOUND_WITH_ID, review.reviewedBy);
+  //       }
 
-        return {
-          avatar: customer.avatar,
-          name: customer.fullname ?? customer.username,
-          avgRating: provider.avgRating,
-          writtenAt: review.writtenAt,
-          desc: review.desc,
-        }
-      })
-    );
+  //       return {
+  //         avatar: customer.avatar,
+  //         name: customer.fullname ?? customer.username,
+  //         avgRating: provider.avgRating,
+  //         writtenAt: review.writtenAt,
+  //         desc: review.desc,
+  //       }
+  //     })
+  //   );
 
-    return {
-      success: true,
-      message: 'Review Successfully fetched.',
-      data: enrichedReviews
-    }
-  }
+  //   return {
+  //     success: true,
+  //     message: 'Review Successfully fetched.',
+  //     data: enrichedReviews
+  //   }
+  // }
 
   async getWorkImages(providerId: string): Promise<IResponse<string[]>> {
     const workImages = await this._providerRepository.getWorkImages(providerId);

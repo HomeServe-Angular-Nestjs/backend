@@ -1,34 +1,9 @@
 import { Types } from 'mongoose';
-
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-
 import { SERVICE_OFFERED_MODEL_NAME } from '../constants/model.constant';
-import {
-  IDoc, IExpertise, ILanguage, VerificationStatusType
-} from '../entities/interfaces/user.entity.interface';
+import { IDoc, IExpertise, ILanguage, VerificationStatusType } from '../entities/interfaces/user.entity.interface';
 import { BaseUserDocument } from './base/user-base.schema';
 import { ServiceDocument } from './service.schema';
-
-@Schema()
-export class Review {
-  @Prop({ required: true })
-  reviewedBy: string;
-
-  @Prop({ required: true })
-  desc: string;
-
-  @Prop({ required: true })
-  rating: number;
-
-  @Prop({ default: () => new Date() })
-  writtenAt: Date;
-
-  @Prop({ default: false })
-  isReported: boolean;
-
-  @Prop({ default: true })
-  isActive: boolean;
-}
 
 @Schema({ timestamps: true })
 export class ProviderDocument extends BaseUserDocument {
@@ -141,15 +116,6 @@ export class ProviderDocument extends BaseUserDocument {
 
   @Prop({ default: false })
   enableSR: boolean
-
-  @Prop({ type: Number, default: 0 })
-  ratingCount: number;
-
-  @Prop({ type: Number, default: 0 })
-  avgRating: number;
-
-  @Prop({ type: [Review], default: [] })
-  reviews: Review[];
 }
 
 export const ProviderSchema = SchemaFactory.createForClass(ProviderDocument);

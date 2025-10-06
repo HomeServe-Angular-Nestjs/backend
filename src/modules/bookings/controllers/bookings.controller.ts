@@ -7,7 +7,7 @@ import { ICustomLogger } from '../../../core/logger/interface/custom-logger.inte
 import { ILoggerFactory, LOGGER_FACTORY } from '../../../core/logger/interface/logger-factory.interface';
 import { IPayload } from '../../../core/misc/payload.interface';
 import { IResponse } from '../../../core/misc/response.util';
-import { BookingDto, BookingIdDto, BookingPaginationFilterDto, CancelBookingDto, SelectedServiceDto, UpdateBookingDto, UpdateBookingPaymentStatusDto } from '../dtos/booking.dto';
+import { AddReviewDto, BookingDto, BookingIdDto, BookingPaginationFilterDto, CancelBookingDto, SelectedServiceDto, UpdateBookingDto, UpdateBookingPaymentStatusDto } from '../dtos/booking.dto';
 import { IBookingService } from '../services/interfaces/booking-service.interface';
 
 @Controller('booking')
@@ -99,4 +99,9 @@ export class BookingsController {
             throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
         }
     }
+
+    @Patch('add_review')
+    async addReview(@Body() body: AddReviewDto): Promise<IResponse> {
+        return this._bookingService.addReview(body);
+    } 
 }

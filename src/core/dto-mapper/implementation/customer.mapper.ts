@@ -23,7 +23,6 @@ export class CustomerMapper implements ICustomerMapper {
             savedProviders: doc.savedProviders,
             phone: doc.phone,
             location: doc.location,
-            isReviewed: doc.isReviewed,
             address: doc.address,
             subscriptionId: doc.subscriptionId ? String(doc.subscriptionId) : null,
         });

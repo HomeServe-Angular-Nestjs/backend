@@ -1,6 +1,6 @@
 import { BookingStatus, CancelStatus, PaymentStatus } from '@core/enum/bookings.enum';
 import { BaseEntity } from '@core/entities/base/implementation/base.entity';
-import { IBookedSlot, IBooking } from '@core/entities/interfaces/booking.entity.interface';
+import { IBookedSlot, IBooking, IReview } from '@core/entities/interfaces/booking.entity.interface';
 import { SlotStatusEnum } from '@core/enum/slot.enum';
 
 export class Booking extends BaseEntity implements IBooking {
@@ -24,6 +24,7 @@ export class Booking extends BaseEntity implements IBooking {
     paymentStatus: PaymentStatus;
     cancelStatus: CancelStatus | null;
     transactionId: string | null;
+    review: IReview | null;
 
     constructor(partial: Partial<Booking>) {
         super(partial)
@@ -40,6 +41,20 @@ export class BookedSlot implements IBookedSlot {
     status: SlotStatusEnum;
 
     constructor(partial: Partial<BookedSlot>) {
+        Object.assign(this, partial);
+    }
+}
+
+export class Review implements IReview {
+    id: string;
+    reviewedBy: string;
+    desc: string;
+    writtenAt: Date;
+    isReported: boolean;
+    rating: number;
+    isActive: boolean;
+
+    constructor(partial: Partial<Review>) {
         Object.assign(this, partial);
     }
 }

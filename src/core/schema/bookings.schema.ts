@@ -1,9 +1,25 @@
 import { Document, Types } from 'mongoose';
-
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-
 import { BookingStatus, CancelStatus, PaymentStatus } from '../enum/bookings.enum';
 import { SlotStatusEnum } from '@core/enum/slot.enum';
+
+@Schema({ _id: false })
+export class ReviewDocument {
+    @Prop({ type: String, required: true })
+    desc: string;
+
+    @Prop({ type: Number, required: true })
+    rating: number;
+
+    @Prop({ type: Date })
+    writtenAt: Date;
+
+    @Prop({ type: Boolean })
+    isReported: boolean;
+
+    @Prop({ type: Boolean })
+    isActive: boolean;
+}
 
 @Schema({ _id: false })
 export class SlotDocument {
@@ -109,6 +125,9 @@ export class BookingDocument extends Document {
 
     @Prop({ type: String, enum: PaymentStatus, default: PaymentStatus.UNPAID })
     paymentStatus: PaymentStatus;
+
+    @Prop({ type: ReviewDocument, default: null })
+    review: ReviewDocument | null;
 
     @Prop({ type: Date })
     createdAt: Date;

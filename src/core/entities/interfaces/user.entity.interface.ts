@@ -21,7 +21,6 @@ export interface ILocation {
 
 export interface ICustomer extends IBaseUserEntity {
   savedProviders?: string[] | null;
-  isReviewed: boolean;
 }
 
 export interface IExpertise {
@@ -44,15 +43,15 @@ export interface IDoc {
   isDeleted: boolean
 };
 
-export interface IReview {
-  id?: string;
-  reviewedBy: string;
-  desc: string;
-  writtenAt: Date;
-  isReported: boolean;
-  rating: number;
-  isActive: boolean;
-}
+// export interface IReview {
+//   id?: string;
+//   reviewedBy: string;
+//   desc: string;
+//   writtenAt: Date;
+//   isReported: boolean;
+//   rating: number;
+//   isActive: boolean;
+// }
 
 export type VerificationStatusType = 'pending' | 'verified' | 'rejected';
 
@@ -77,9 +76,9 @@ export interface IProvider extends IBaseUserEntity {
   bookingLimit: number | null;
   bufferTime: number | null;
   enableSR: boolean;
-  ratingCount: number;
-  avgRating: number;
-  reviews: IReview[];
+  // ratingCount: number;
+  // avgRating: number;
+  // reviews: IReview[];
 }
 
 export type IUser = ICustomer | IProvider | IAdmin;

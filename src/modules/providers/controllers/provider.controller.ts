@@ -56,15 +56,15 @@ export class ProviderController {
         }
     }
 
-    @Get('reviews')
-    async getReviews(@Query() { providerId }: { providerId: string }) {
-        try {
-            return await this._providerServices.getReviews(providerId);
-        } catch (err) {
-            this.logger.error(`Error fetching provider reviews: ${err.message}`, err.stack);
-            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
-        }
-    }
+    // @Get('reviews')
+    // async getReviews(@Query() { providerId }: { providerId: string }) {
+    //     try {
+    //         return await this._providerServices.getReviews(providerId);
+    //     } catch (err) {
+    //         this.logger.error(`Error fetching provider reviews: ${err.message}`, err.stack);
+    //         throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+    //     }
+    // }
 
     @Put('bio')
     async updateBio(@Req() req: Request, @Body() dto: UpdateBioDto) {

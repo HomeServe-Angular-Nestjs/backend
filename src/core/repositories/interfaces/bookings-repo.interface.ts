@@ -24,4 +24,5 @@ export interface IBookingRepository extends IBaseRepository<BookingDocument> {
     cancelBooking(bookingId: string, reason: string): Promise<BookingDocument | null>;
     updatePaymentStatus(bookingId: string, status: PaymentStatus, transactionId: string): Promise<BookingDocument | null>;
     updateBookingStatus(bookingId: string, status: BookingStatus): Promise<BookingDocument | null>;
+    addReview(bookingId: string, desc: string, rating: number): Promise<boolean>;
 }
