@@ -197,3 +197,17 @@ export class UpdateBookingPaymentStatusDto {
     @IsString()
     transactionId: string;
 }
+
+export class AddReviewDto {
+    @IsNotEmpty()
+    @IsString()
+    bookingId: string;
+
+    @IsNotEmpty()
+    @IsString()
+    description: string;
+
+    @IsNotEmpty()
+    @IsNumber()
+    ratings: number;
+}

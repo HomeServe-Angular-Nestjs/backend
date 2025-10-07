@@ -1,7 +1,7 @@
 import { SlotType } from '../../../modules/bookings/dtos/booking.dto';
 import { BaseUserEntity } from '../base/implementation/base-user.entity';
 import {
-    Availability, IDoc, IExpertise, ILanguage, IProvider, IReview, VerificationStatusType
+    Availability, IDoc, IExpertise, ILanguage, IProvider, VerificationStatusType
 } from '../interfaces/user.entity.interface';
 
 export class Provider extends BaseUserEntity implements IProvider {
@@ -26,22 +26,10 @@ export class Provider extends BaseUserEntity implements IProvider {
   enableSR: boolean;
   ratingCount: number;
   avgRating: number;
-  reviews: IReview[];
+  // reviews: IReview[];
 
   constructor(partial: Partial<Provider>) {
     super(partial);
     Object.assign(this, partial);
-  }
-}
-
-export class Review {
-  id: string;
-  reviewedBy: string;
-  desc: string;
-  writtenAt: Date;
-  isReported: boolean;
-
-  constructor(review: Partial<Review>) {
-    Object.assign(this, review);
   }
 }

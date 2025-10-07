@@ -1,8 +1,6 @@
-import { Types } from 'mongoose';
 import { BookingStatus, CancelStatus, PaymentStatus } from '../../enum/bookings.enum';
 import { IEntity } from '../base/interfaces/base-entity.entity.interface';
 import { SlotStatusEnum } from '@core/enum/slot.enum';
-import { ITransaction } from '@core/entities/interfaces/transaction.entity.interface';
 import { PaymentSource, TransactionType } from '@core/enum/transaction.enum';
 
 export interface IBookingResponse {
@@ -27,6 +25,7 @@ export interface IBookingResponse {
         transactionId: string,
         paymentSource: PaymentSource
     } | null;
+    review: IReview | null;
 }
 
 export interface IPagination {
@@ -80,6 +79,14 @@ export interface IBookedSlot {
     status: SlotStatusEnum;
 }
 
+export interface IReview {
+    desc: string;
+    rating: number;
+    writtenAt: Date | string;
+    isActive: boolean;
+    isReported: boolean;
+}
+
 export interface IBooking extends IEntity {
     customerId: string;
     providerId: string;
@@ -101,6 +108,7 @@ export interface IBooking extends IEntity {
     }[];
     transactionId: string | null;
     paymentStatus: PaymentStatus;
+    review: IReview | null;
 }
 
 export interface IBookingOverviewChanges {

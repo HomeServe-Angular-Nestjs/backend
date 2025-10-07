@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { BOOKINGS_MODEL_NAME } from '@core/constants/model.constant';
 import { IBookingStats } from '@core/entities/interfaces/booking.entity.interface';
-import { ITopProviders } from '@core/entities/interfaces/user.entity.interface';
+import { ITopProviders, ITotalReviewAndAvgRating } from '@core/entities/interfaces/user.entity.interface';
 import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
 import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
 import { IBookingRepository } from '@core/repositories/interfaces/bookings-repo.interface';
@@ -386,26 +386,78 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
         );
     }
 
-    async getCompletionRate(): Promise<number> {
+    async addReview(bookingId: string, desc: string, rating: number): Promise<boolean> {
+        const result = await this._bookingModel.updateOne(
+            { _id: bookingId },
+            {
+                $set: {
+                    review: {
+                        desc,
+                        rating,
+                        writtenAt: new Date(),
+                        isReported: false,
+                        isActive: true
+                    }
+                }
+            }
+        );
+
+        return result.modifiedCount > 0;
+    }
+
+    // async getAvgRating(providerId: string): Promise<number> {
+    //     const result = await this._bookingModel.aggregate([
+    //         { $match: { providerId: this._toObjectId(providerId) } },
+    //         {
+    //             $group: {
+    //                 _id: null,
+    //                 avg: { $avg: "$review.rating" }
+    //             },
+    //             $project: { avg: 1 }
+    //         },
+    //     ]);
+
+    //     return result[0].avg ?? 0
+    // }
+
+    // async getTotalReviews(providerId: string): Promise<number> {
+    //     return await this._bookingModel.countDocuments({
+    //         providerId: this._toObjectId(providerId),
+    //         review: { $exists: true, $ne: null }
+    //     })
+    // }
+
+    async getAvgRatingAndTotalReviews(providerId?: string): Promise<ITotalReviewAndAvgRating[]> {
+        let matchQuery: Record<string, any> = {
+            review: { $exists: true, $ne: null },
+            'review.isActive': true
+        };
+
+        if (providerId) {
+            matchQuery.providerId = this._toObjectId(providerId);
+        }
+
         const result = await this._bookingModel.aggregate([
             {
+                $match: matchQuery
+            },
+            {
                 $group: {
-                    _id: null,
-                    totalBookings: { $sum: 1 },
-                    totalCompleted: {
-                        $sum: { $cond: [{ $eq: ["$bookingStatus", BookingStatus.COMPLETED] }, 1, 0] }
-                    }
+                    _id: "$providerId",
+                    avgRating: { $avg: "$review.rating" },
+                    totalReviews: { $sum: 1 }
                 }
             },
             {
                 $project: {
                     _id: 0,
-                    completionRate: { $multiply: [{ $divide: ["$totalCompleted", "$totalBookings"] }, 100] }
+                    providerId: { $toString: "$_id" },
+                    avgRating: { $ifNull: ["$avgRating", 0] },
+                    totalReviews: 1
                 }
             }
         ]);
 
-        return result[0]?.completionRate ?? 0;
+        return result.length > 0 ? result : [];
     }
-
-}
+} 

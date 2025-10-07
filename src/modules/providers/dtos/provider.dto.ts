@@ -135,3 +135,12 @@ export class UploadGalleryImageDto {
     @IsIn(Object.values(UploadsType))
     type: UploadsType;
 }
+
+export class GetReviewsDto {
+    @IsNotEmpty()
+    @IsString()
+    providerId: string;
+
+    @IsNumber()
+    count: number;
+}

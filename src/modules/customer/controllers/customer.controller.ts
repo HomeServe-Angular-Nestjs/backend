@@ -75,11 +75,11 @@ export class CustomerController {
         return await this._customerService.changeAvatar(user.sub, file);
     }
 
-    @Post('reviews')
-    async submitReview(@Req() req: Request, @Body() dto: SubmitReviewDto): Promise<IResponse<IFetchReviews>> {
-        const user = req.user as IPayload;
-        return await this._customerService.submitReview(user.sub, dto);
-    }
+    // @Post('reviews')
+    // async submitReview(@Req() req: Request, @Body() dto: SubmitReviewDto): Promise<IResponse<IFetchReviews>> {
+    //     const user = req.user as IPayload;
+    //     return await this._customerService.submitReview(user.sub, dto);
+    // }
 
     @Get('gallery_images/:providerId')
     async getGalleryImages(@Param('providerId') providerId: string) {

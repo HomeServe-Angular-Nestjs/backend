@@ -3,13 +3,15 @@ import { PROVIDER_SERVICE_NAME } from '@core/constants/service.constant';
 import { IProvider } from '@core/entities/interfaces/user.entity.interface';
 import { ErrorMessage } from '@core/enum/error.enum';
 import { IPayload } from '@core/misc/payload.interface';
-import { BadRequestException, Body, Controller, Delete, Get, Inject,  Patch, Put, Query, Req, UnauthorizedException, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, Inject, InternalServerErrorException, Param, Patch, Put, Query, Req, UnauthorizedException, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { FilterDto, GetProvidersFromLocationSearch, RemoveCertificateDto, SlotDto, UpdateBioDto, UploadCertificateDto, UploadGalleryImageDto } from '../dtos/provider.dto';
+import { FilterDto, GetProvidersFromLocationSearch, GetReviewsDto, RemoveCertificateDto, SlotDto, UpdateBioDto, UploadCertificateDto, UploadGalleryImageDto } from '../dtos/provider.dto';
 import { IProviderServices } from '../services/interfaces/provider-service.interface';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { SubscriptionGuard } from '@core/guards/subscription.guard';
+import { IResponse } from '@core/misc/response.util';
+import { isValidIdPipe } from '@core/pipes/is-valid-id.pipe';
 
 @Controller('provider')
 export class ProviderController {
@@ -40,16 +42,18 @@ export class ProviderController {
     @Get('fetch_one_provider')
     async fetchOneProvider(@Req() req: Request, @Query() query: { id: string | null }): Promise<IProvider> {
         const user = req.user as IPayload;
-        let arg = user.sub;
+        let id = user.sub;
+
         if (query && query.id !== null && query.id !== 'null') {
-            arg = query.id;
+            id = query.id;
         }
-        return await this._providerServices.fetchOneProvider(arg);
+
+        return await this._providerServices.fetchOneProvider(id);
     }
 
     @Get('reviews')
-    async getReviews(@Query() { providerId }: { providerId: string }) {
-        return await this._providerServices.getReviews(providerId);
+    async getReviews(@Query() dto: GetReviewsDto) {
+        return await this._providerServices.getReviews(dto.providerId, dto.count);
     }
 
     @Put('bio')
@@ -62,6 +66,7 @@ export class ProviderController {
     @UseInterceptors(FileInterceptor('doc'))
     async uploadCertificate(@Req() req: Request, @Body() { label }: UploadCertificateDto, @UploadedFile() file: Express.Multer.File) {
         const user = req.user as IPayload;
+
         if (!label || !file) {
             throw new BadRequestException(ErrorMessage.MISSING_FIELDS);
         }
@@ -77,21 +82,14 @@ export class ProviderController {
         @Body('providerData') dto: string,
         @UploadedFile() file: Express.Multer.File,
     ): Promise<IProvider> {
-
         const user = req.user as IPayload;
-        if (!user.sub) {
-            throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
-
-        }
         const updateData = JSON.parse(dto);
-        this.logger.debug(updateData);
 
         return await this._providerServices.bulkUpdateProvider(user.sub, updateData, file);
     }
 
     @Patch('partial_update')
     async partialUpdate(@Body() dto: Partial<IProvider>): Promise<IProvider> {
-
         const { id, ...updateData } = dto;
         if (!id) {
             throw new BadRequestException('Id is is not found in the request');
@@ -100,19 +98,13 @@ export class ProviderController {
         return this._providerServices.partialUpdate(id, updateData);
     }
 
-    @Patch('default_slots')
+    @Patch('default_slots') //!TODO
     async updateDefaultSlot(@Req() req: Request, @Body() dto: SlotDto): Promise<IProvider> {
         const user = req.user as IPayload;
         return await this._providerServices.updateDefaultSlot(dto, user.sub)
     }
 
-    @Delete('default_slots')
-    async deleteDefaultSlot(@Req() req: Request): Promise<void> {
-        const user = req.user as IPayload;
-        this._providerServices.deleteDefaultSlot(user.sub);
-    }
-
-    @Patch('cert_remove')
+    @Patch('cert_remove') //!TODO
     @UseInterceptors(FileInterceptor('doc'))
     async removeCertificate(@Req() req: Request, @Body() { docId }: RemoveCertificateDto) {
         const user = req.user as IPayload;
