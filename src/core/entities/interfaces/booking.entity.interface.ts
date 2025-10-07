@@ -81,10 +81,10 @@ export interface IBookedSlot {
 
 export interface IReview {
     desc: string;
-    writtenAt: Date;
-    isReported: boolean;
     rating: number;
+    writtenAt: Date | string;
     isActive: boolean;
+    isReported: boolean;
 }
 
 export interface IBooking extends IEntity {

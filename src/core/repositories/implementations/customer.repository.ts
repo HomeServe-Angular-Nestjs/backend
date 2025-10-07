@@ -33,6 +33,12 @@ export class CustomerRepository extends BaseRepository<CustomerDocument> impleme
     return await this._customerModel.findOne({ email }).exec();
   }
 
+  async findByIds(ids: string[]): Promise<CustomerDocument[]> {
+    return await this._customerModel.find({
+      _id: { $in: ids }
+    }).lean();
+  }
+
   async updatePassword(email: string, hashedPassword: string): Promise<CustomerDocument | null> {
     return await this._customerModel.findOneAndUpdate(
       { email },

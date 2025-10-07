@@ -427,10 +427,19 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
     //     })
     // }
 
-    async getAvgRatingAndTotalReviews(): Promise<ITotalReviewAndAvgRating[]> {
+    async getAvgRatingAndTotalReviews(providerId?: string): Promise<ITotalReviewAndAvgRating[]> {
+        let matchQuery: Record<string, any> = {
+            review: { $exists: true, $ne: null },
+            'review.isActive': true
+        };
+
+        if (providerId) {
+            matchQuery.providerId = this._toObjectId(providerId);
+        }
+
         const result = await this._bookingModel.aggregate([
             {
-                $match: { review: { $exists: true, $ne: null } }
+                $match: matchQuery
             },
             {
                 $group: {
@@ -449,6 +458,6 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
             }
         ]);
 
-        return result ?? [];
+        return result.length > 0 ? result : [];
     }
 } 

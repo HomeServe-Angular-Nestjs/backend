@@ -27,5 +27,5 @@ export interface IBookingRepository extends IBaseRepository<BookingDocument> {
     addReview(bookingId: string, desc: string, rating: number): Promise<boolean>;
     // getAvgRating(providerId:string):Promise<number>;
     // getTotalReviews(providerId:string):Promise<number>;
-    getAvgRatingAndTotalReviews(): Promise<ITotalReviewAndAvgRating[]>;
+    getAvgRatingAndTotalReviews(providerId?: string): Promise<ITotalReviewAndAvgRating[]>;
 } 

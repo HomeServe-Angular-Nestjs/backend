@@ -3,10 +3,10 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 
-import { BOOKING_REPOSITORY_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SERVICE_OFFERED_REPOSITORY_NAME } from '@core/constants/repository.constant';
+import { BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SERVICE_OFFERED_REPOSITORY_NAME } from '@core/constants/repository.constant';
 import { UPLOAD_UTILITY_NAME } from '@core/constants/utility.constant';
 import { CloudinaryService } from '@configs/cloudinary/cloudinary.service';
-import { IProvider, IProviderCardView } from '@core/entities/interfaces/user.entity.interface';
+import { IDisplayReviews, IProvider, IProviderCardView } from '@core/entities/interfaces/user.entity.interface';
 import { ErrorMessage } from '@core/enum/error.enum';
 import { UploadsType } from '@core/enum/uploads.enum';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
@@ -18,9 +18,12 @@ import { IUploadsUtility } from '@core/utilities/interface/upload.utility.interf
 import { UserType } from '@modules/auth/dtos/login.dto';
 import { FilterDto, GetProvidersFromLocationSearch, SlotDto, UpdateBioDto } from '@modules/providers/dtos/provider.dto';
 import { IProviderServices } from '@modules/providers/services/interfaces/provider-service.interface';
-import { PROVIDER_MAPPER } from '@core/constants/mappers.constant';
+import { CUSTOMER_MAPPER, PROVIDER_MAPPER } from '@core/constants/mappers.constant';
 import { IProviderMapper } from '@core/dto-mapper/interface/provider.mapper.interface';
 import { IBookingRepository } from '@core/repositories/interfaces/bookings-repo.interface';
+import { ICustomerRepository } from '@core/repositories/interfaces/customer-repo.interface';
+import { ICustomerMapper } from '@core/dto-mapper/interface/customer.mapper..interface';
+import { IReview } from '@core/entities/interfaces/booking.entity.interface';
 
 @Injectable()
 export class ProviderServices implements IProviderServices {
@@ -32,6 +35,8 @@ export class ProviderServices implements IProviderServices {
     private readonly loggerFactory: ILoggerFactory,
     @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
     private readonly _providerRepository: IProviderRepository,
+    @Inject(CUSTOMER_REPOSITORY_INTERFACE_NAME)
+    private readonly _customerRepository: ICustomerRepository,
     @Inject(SERVICE_OFFERED_REPOSITORY_NAME)
     private readonly _serviceOfferedRepository: IServiceOfferedRepository,
     @Inject(BOOKING_REPOSITORY_NAME)
@@ -39,7 +44,9 @@ export class ProviderServices implements IProviderServices {
     @Inject(UPLOAD_UTILITY_NAME)
     private readonly _uploadsUtility: IUploadsUtility,
     @Inject(PROVIDER_MAPPER)
-    private readonly _providerMapper: IProviderMapper
+    private readonly _providerMapper: IProviderMapper,
+    @Inject(CUSTOMER_MAPPER)
+    private readonly _customerMapper: ICustomerMapper
 
   ) {
     this.logger = this.loggerFactory.createLogger(ProviderServices.name);
@@ -123,7 +130,7 @@ export class ProviderServices implements IProviderServices {
   }
 
   async fetchOneProvider(id: string): Promise<IProvider> {
-    const providerDoc = await this._providerRepository.findOne({ _id: id });
+    const providerDoc = await this._providerRepository.findById(id);
 
     if (!providerDoc) {
       throw new NotFoundException(`No provider found for user ID: ${id}`);
@@ -337,6 +344,56 @@ export class ProviderServices implements IProviderServices {
       success: true,
       message: 'Image uploaded successfully.',
       data: signedUrl
+    }
+  }
+
+  async getReviews(providerId: string, count: number = 0): Promise<IResponse<IDisplayReviews>> {
+    const [bookingDocs, stats] = await Promise.all([
+      this._bookingRepository.findBookingsByProviderId(providerId),
+      this._bookingRepository.getAvgRatingAndTotalReviews(providerId)
+    ]);
+
+    const customerIds = bookingDocs
+      .filter(b => b.review)
+      .map(b => b.customerId.toString());
+
+    const uniqueCustomerIds = [...new Set(customerIds)];
+
+    const customerDocs = await this._customerRepository.findByIds(uniqueCustomerIds);
+    const customers = (customerDocs ?? []).map(c => this._customerMapper.toEntity(c));
+
+    const customerMap = customers.reduce((acc, c) => {
+      acc[c.id] = { username: c.username, avatar: c.avatar, email: c.email };
+      return acc;
+    }, {} as Record<string, { username: string; avatar: string, email: string }>);
+
+    const statsForProvider = stats[0] ?? { avgRating: 0, totalReviews: 0 };
+
+    const allReviews = bookingDocs.flatMap(b =>
+      b.review && b.review.isActive
+        ? [{
+          ...b.review,
+          name: customerMap[b.customerId.toString()]?.username,
+          avatar: customerMap[b.customerId.toString()]?.avatar ?? '',
+          email: customerMap[b.customerId.toString()]?.email,
+          writtenAt: new Date(b.review.writtenAt ?? b.createdAt)
+        }]
+        : []
+    ).sort((a, b) => b.writtenAt.getTime() - a.writtenAt.getTime());
+
+    const limitedReviews = allReviews.slice(0, count + 10);
+
+    const displayReviews: IDisplayReviews = {
+      reviews: limitedReviews,
+      avgRating: statsForProvider.avgRating,
+      totalReviews: statsForProvider.totalReviews,
+      allFetched: allReviews.length <= count
+    };
+
+    return {
+      success: true,
+      message: 'Reviews fetched successfully.',
+      data: displayReviews
     }
   }
 }
