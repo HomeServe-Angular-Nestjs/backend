@@ -22,6 +22,7 @@ export class ProviderController {
         private readonly _loggerFactory: ILoggerFactory,
         @Inject(PROVIDER_SERVICE_NAME)
         private readonly _providerServices: IProviderServices,
+        
     ) {
         this.logger = this._loggerFactory.createLogger(ProviderController.name);
     }
@@ -106,21 +107,11 @@ export class ProviderController {
     @Patch('cert_remove') //!TODO
     @UseInterceptors(FileInterceptor('doc'))
     async removeCertificate(@Req() req: Request, @Body() { docId }: RemoveCertificateDto) {
-        try {
-            const user = req.user as IPayload;
-            if (!user.sub) {
-                throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
-            }
-
-            if (!docId) {
-                throw new BadRequestException(ErrorMessage.MISSING_FIELDS);
-            }
-
-            // return await this._providerServices.uploadCertificate(user.sub, label, file);
-        } catch (err) {
-            this.logger.error(`Error uploading provider certificate: ${err.message}`, err.stack);
-            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+        const user = req.user as IPayload;
+        if (!docId) {
+            throw new BadRequestException(ErrorMessage.MISSING_FIELDS);
         }
+        // return await this._providerServices.uploadCertificate(user.sub, label, file);
     }
 
     @Get('work_images')
@@ -136,4 +127,5 @@ export class ProviderController {
         const user = req.user as IPayload;
         return await this._providerServices.uploadWorkImage(user.sub, user.type, dto.type, file);
     }
+
 }
