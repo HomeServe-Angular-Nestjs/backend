@@ -335,7 +335,9 @@ export class ProviderBookingService implements IProviderBookingService {
             throw new InternalServerErrorException(`Provider with ID ${booking.customerId} not found.`);
         }
 
-        const transaction = await this._transactionRepository.findById(booking.transactionId ?? '');
+        const transaction = booking.transactionId
+            ? await this._transactionRepository.findById(booking.transactionId)
+            : null;
 
         const orderedServices = (
             await Promise.all(
