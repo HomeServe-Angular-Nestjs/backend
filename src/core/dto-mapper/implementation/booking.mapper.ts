@@ -27,6 +27,7 @@ export class BookingMapper implements IBookingMapper {
             createdAt: doc.createdAt,
             updatedAt: doc.updatedAt,
             review: doc.review ? this.toReviewEntities(doc.review) : null,
+            respondedAt: doc.respondedAt ?? null,
         });
     }
 
@@ -75,6 +76,7 @@ export class BookingMapper implements IBookingMapper {
             cancelledAt: entity.cancelledAt ? new Date(entity.cancelledAt) : null,
             actualArrivalTime: entity?.actualArrivalTime ? new Date(entity.actualArrivalTime) : null,
             review: null,
+            respondedAt: entity.respondedAt
         }
     }
 }

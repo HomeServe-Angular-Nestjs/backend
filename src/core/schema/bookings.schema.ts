@@ -129,6 +129,9 @@ export class BookingDocument extends Document {
     @Prop({ type: ReviewDocument, default: null })
     review: ReviewDocument | null;
 
+    @Prop({ type: Date, default: null })
+    respondedAt: Date | null;
+
     @Prop({ type: Date })
     createdAt: Date;
 

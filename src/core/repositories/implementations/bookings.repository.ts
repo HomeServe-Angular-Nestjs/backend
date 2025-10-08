@@ -379,9 +379,15 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
     }
 
     async updateBookingStatus(bookingId: string, status: BookingStatus): Promise<BookingDocument | null> {
+        const updateData: Record<string, string | Date> = { bookingStatus: status };
+
+        if (status === BookingStatus.IN_PROGRESS) {
+            updateData.respondedAt = new Date();
+        }
+
         return await this._bookingModel.findOneAndUpdate(
             { _id: bookingId },
-            { $set: { bookingStatus: status } },
+            { $set: updateData },
             { new: true }
         );
     }
@@ -405,20 +411,20 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
         return result.modifiedCount > 0;
     }
 
-    // async getAvgRating(providerId: string): Promise<number> {
-    //     const result = await this._bookingModel.aggregate([
-    //         { $match: { providerId: this._toObjectId(providerId) } },
-    //         {
-    //             $group: {
-    //                 _id: null,
-    //                 avg: { $avg: "$review.rating" }
-    //             },
-    //             $project: { avg: 1 }
-    //         },
-    //     ]);
+    async getAvgRating(providerId: string): Promise<number> {
+        const result = await this._bookingModel.aggregate([
+            { $match: { providerId: this._toObjectId(providerId) } },
+            {
+                $group: {
+                    _id: null,
+                    avg: { $avg: "$review.rating" }
+                },
+                $project: { avg: 1 }
+            },
+        ]);
 
-    //     return result[0].avg ?? 0
-    // }
+        return result[0].avg ?? 0
+    }
 
     // async getTotalReviews(providerId: string): Promise<number> {
     //     return await this._bookingModel.countDocuments({
@@ -459,5 +465,100 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
         ]);
 
         return result.length > 0 ? result : [];
+    }
+
+    async getPerformanceSummary(providerId: string): Promise<any> {
+        const result = await this._bookingModel.aggregate([
+            {
+                $match: { providerId: this._toObjectId(providerId) }
+            },
+            {
+                $facet: {
+                    responseTime: [
+                        { $match: { respondedAt: { $exists: true, $ne: null } } },
+                        {
+                            $group: {
+                                _id: null,
+                                avgResponseTime: {
+                                    $avg: {
+                                        $divide: [
+                                            { $subtract: ["$respondedAt", "$createdAt"] },
+                                            1000 * 60
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    ],
+                    onTimeArrival: [
+                        { $match: { actualArrivalTime: { $exists: true, $ne: null } } },
+                        {
+                            $addFields: {
+                                arrivalDelayMins: {
+                                    $divide: [
+                                        { $subtract: ["$actualArrivalTime", "$expectedArrivalTime"] },
+                                        1000 * 60
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            $group: {
+                                _id: null,
+                                onTimePercent: {
+                                    $avg: {
+                                        $cond: [{ $lte: ["$arrivalDelayMins", 5] }, 100, 0]
+                                    }
+                                }
+                            }
+                        }
+                    ],
+                    avgRating: [
+                        { $match: { 'review.rating': { $exists: true, $ne: null } } },
+                        { $group: { _id: null, avgRating: { $avg: "$review.rating" } } }
+                    ],
+                    completionRate: [
+                        {
+                            $group: {
+                                _id: null,
+                                completionRate: {
+                                    $avg: {
+                                        $cond: [{ $eq: ["$bookingStatus", BookingStatus.COMPLETED] }, 100, 0]
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                $project: {
+                    avgResponseTime: {
+                        $floor: {
+                            $ifNull: [{ $arrayElemAt: ["$responseTime.avgResponseTime", 0] }, 0]
+                        }
+                    },
+                    onTimePercent: {
+                        $floor: {
+                            $ifNull: [{ $arrayElemAt: ["$onTimeArrival.onTimePercent", 0] }, 0]
+                        }
+                    },
+                    avgRating: {
+                        $round: [
+                            { $ifNull: [{ $arrayElemAt: ["$avgRating.avgRating", 0] }, 0] },
+                            2
+                        ]
+                    },
+                    completionRate: {
+                        $floor: {
+                            $ifNull: [{ $arrayElemAt: ["$completionRate.completionRate", 0] }, 0]
+                        }
+                    }
+                }
+            }
+
+        ]);
+
+        return result[0];
     }
 } 

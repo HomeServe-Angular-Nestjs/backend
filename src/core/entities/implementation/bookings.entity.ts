@@ -25,6 +25,7 @@ export class Booking extends BaseEntity implements IBooking {
     cancelStatus: CancelStatus | null;
     transactionId: string | null;
     review: IReview | null;
+    respondedAt: Date | null;
 
     constructor(partial: Partial<Booking>) {
         super(partial)

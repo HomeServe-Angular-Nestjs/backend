@@ -183,3 +183,10 @@ export interface IDisplayReviews {
   totalReviews: number;
   allFetched: boolean;
 }
+
+export interface IProviderPerformanceOverview {
+  avgResponseTime: number;
+  onTimePercent: number;
+  avgRating: number;
+  completionRate: number;
+}

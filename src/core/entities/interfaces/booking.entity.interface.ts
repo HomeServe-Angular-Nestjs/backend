@@ -109,6 +109,7 @@ export interface IBooking extends IEntity {
     transactionId: string | null;
     paymentStatus: PaymentStatus;
     review: IReview | null;
+    respondedAt: Date | null;
 }
 
 export interface IBookingOverviewChanges {

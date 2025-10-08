@@ -134,7 +134,8 @@ export class BookingService implements IBookingService {
             cancelledAt: null,
             transactionId: data.transactionId,
             paymentStatus: data.transactionId ? PaymentStatus.PAID : PaymentStatus.UNPAID,
-            review: null
+            review: null,
+            respondedAt: null
         }));
 
         if (!bookingDoc) {
@@ -326,6 +327,7 @@ export class BookingService implements IBookingService {
         }
     }
 
+    // !TODO
     async updateBooking(dto: UpdateBookingDto): Promise<IResponse<IBookingResponse>> {
         const updatedBooking = await this._bookingRepository.findOneAndUpdate(
             { _id: dto.bookingId },

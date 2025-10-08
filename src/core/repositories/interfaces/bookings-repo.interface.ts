@@ -25,7 +25,8 @@ export interface IBookingRepository extends IBaseRepository<BookingDocument> {
     updatePaymentStatus(bookingId: string, status: PaymentStatus, transactionId: string): Promise<BookingDocument | null>;
     updateBookingStatus(bookingId: string, status: BookingStatus): Promise<BookingDocument | null>;
     addReview(bookingId: string, desc: string, rating: number): Promise<boolean>;
-    // getAvgRating(providerId:string):Promise<number>;
+    getAvgRating(providerId: string): Promise<number>;
+    getPerformanceSummary(providerId: string): Promise<any>;
     // getTotalReviews(providerId:string):Promise<number>;
     getAvgRatingAndTotalReviews(providerId?: string): Promise<ITotalReviewAndAvgRating[]>;
 } 

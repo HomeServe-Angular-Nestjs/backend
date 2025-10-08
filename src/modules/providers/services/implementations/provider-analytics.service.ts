@@ -1,4 +1,5 @@
 import { BOOKING_REPOSITORY_NAME } from "@core/constants/repository.constant";
+import { IProviderPerformanceOverview } from "@core/entities/interfaces/user.entity.interface";
 import { IResponse } from "@core/misc/response.util";
 import { IBookingRepository } from "@core/repositories/interfaces/bookings-repo.interface";
 import { IProviderAnalyticsService } from "@modules/providers/services/interfaces/provider-analytics-service.interface";
@@ -12,13 +13,12 @@ export class ProviderAnalyticsService implements IProviderAnalyticsService {
         private readonly _bookingRepository: IBookingRepository,
     ) { }
 
-    async getPerformanceAnalytics(): Promise<IResponse> {
-        const bookingCompletionRate = await this._bookingRepository.getCompletionRate();
-
-    console.log(bookingCompletionRate)
+    async getPerformanceAnalytics(providerId: string): Promise<IResponse<IProviderPerformanceOverview>> {
+        const performanceStats = await this._bookingRepository.getPerformanceSummary(providerId);
         return {
             success: true,
-            message: 'Performance analytic data fetched successfully.'
+            message: 'Performance analytic data fetched successfully.',
+            data: performanceStats
         }
     }
 }  
