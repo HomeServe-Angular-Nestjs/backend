@@ -4,7 +4,7 @@ import { PROVIDER_ANALYTICS_SERVICE_NAME } from "@core/constants/service.constan
 import { IResponse } from "@core/misc/response.util";
 import { Request } from "express";
 import { IPayload } from "@core/misc/payload.interface";
-import { IProviderPerformanceOverview } from "@core/entities/interfaces/user.entity.interface";
+import { IBookingPerformanceData, IProviderPerformanceOverview } from "@core/entities/interfaces/user.entity.interface";
 
 @Controller('analytics')
 export class AnalyticsController {
@@ -17,5 +17,11 @@ export class AnalyticsController {
     async getPerformanceSummary(@Req() req: Request): Promise<IResponse<IProviderPerformanceOverview>> {
         const user = req.user as IPayload;
         return await this._analyticService.getPerformanceAnalytics(user.sub);
+    }
+    
+    @Get('booking_overview')
+    async getPerformanceBookingOverview(@Req() req: Request): Promise<IResponse<IBookingPerformanceData[]>> {
+        const user = req.user as IPayload;
+        return await this._analyticService.getPerformanceBookingOverview(user.sub);
     }
 }

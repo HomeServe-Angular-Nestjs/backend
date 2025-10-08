@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { BOOKINGS_MODEL_NAME } from '@core/constants/model.constant';
 import { IBookingStats } from '@core/entities/interfaces/booking.entity.interface';
-import { ITopProviders, ITotalReviewAndAvgRating } from '@core/entities/interfaces/user.entity.interface';
+import { IBookingPerformanceData, ITopProviders, ITotalReviewAndAvgRating } from '@core/entities/interfaces/user.entity.interface';
 import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
 import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
 import { IBookingRepository } from '@core/repositories/interfaces/bookings-repo.interface';
@@ -560,5 +560,51 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
         ]);
 
         return result[0];
+    }
+
+    async getBookingPerformanceData(providerId: string): Promise<IBookingPerformanceData[]> {
+        const result = await this._bookingModel.aggregate([
+            { $match: { providerId: this._toObjectId(providerId) } },
+            {
+                $addFields: {
+                    year: { $year: "$createdAt" },
+                    month: { $month: "$createdAt" }
+                }
+            },
+            { $match: { year: new Date().getFullYear() } },
+            {
+                $group: {
+                    _id: "$month",
+                    completed: {
+                        $sum: { $cond: [{ $eq: ["$bookingStatus", BookingStatus.COMPLETED] }, 1, 0] }
+                    },
+                    cancelled: {
+                        $sum: { $cond: [{ $eq: ["$bookingStatus", BookingStatus.CANCELLED] }, 1, 0] }
+                    },
+                    total: { $sum: 1 }
+                }
+            },
+            { $sort: { _id: 1 } },
+            {
+                $project: {
+                    _id: 0,
+                    month: {
+                        $arrayElemAt: [
+                            [
+                                "",
+                                "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                                "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"
+                            ],
+                            "$_id"
+                        ]
+                    },
+                    completed: 1,
+                    cancelled: 1,
+                    total: 1
+                }
+            }
+        ]);
+
+        return result;
     }
 } 
