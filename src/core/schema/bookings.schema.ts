@@ -2,6 +2,7 @@ import { Document, Types } from 'mongoose';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { BookingStatus, CancelStatus, PaymentStatus } from '../enum/bookings.enum';
 import { SlotStatusEnum } from '@core/enum/slot.enum';
+import { CUSTOMER_MODEL_NAME } from '@core/constants/model.constant';
 
 @Schema({ _id: false })
 export class ReviewDocument {
@@ -58,7 +59,7 @@ export class SlotDocument {
 
 @Schema({ timestamps: true })
 export class BookingDocument extends Document {
-    @Prop({ type: Types.ObjectId, required: true })
+    @Prop({ type: Types.ObjectId, ref: CUSTOMER_MODEL_NAME, required: true })
     customerId: Types.ObjectId;
 
     @Prop({ type: Types.ObjectId, required: true })
