@@ -1,5 +1,5 @@
 import { BOOKING_REPOSITORY_NAME } from "@core/constants/repository.constant";
-import { IBookingPerformanceData, IProviderPerformanceOverview, IResponseTimeChartData, IReviewChartData } from "@core/entities/interfaces/user.entity.interface";
+import { IBookingPerformanceData, IOnTimeArrivalChartData, IProviderPerformanceOverview, IResponseTimeChartData, IReviewChartData } from "@core/entities/interfaces/user.entity.interface";
 import { IResponse } from "@core/misc/response.util";
 import { IBookingRepository } from "@core/repositories/interfaces/bookings-repo.interface";
 import { IProviderAnalyticsService } from "@modules/providers/services/interfaces/provider-analytics-service.interface";
@@ -65,6 +65,31 @@ export class ProviderAnalyticsService implements IProviderAnalyticsService {
             success: true,
             message: 'Response distribution time data fetched successfully.',
             data: chartData
+        }
+    }
+
+    async getOnTimeArrivalData(providerId: string): Promise<IResponse<IOnTimeArrivalChartData[]>> {
+        const onTimeArrivalData = await this._bookingRepository.getOnTimeArrivalData(providerId);
+
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+        const formattedResult = onTimeArrivalData.map(r => ({
+            month: monthNames[r.monthNumber! - 1],
+            percentage: Math.round(r.percentage)
+        }));
+
+        const fullMonths = monthNames.map(m => ({ month: m, percentage: 0 }));
+
+        const finalResult = fullMonths.map((m) => {
+            const data = formattedResult.find(r => r.month === m.month);
+            return data ? data : m;
+        });
+
+        return {
+            success: true,
+            message: 'On time arrival data fetched successfully.',
+            data: finalResult
         }
     }
 }  

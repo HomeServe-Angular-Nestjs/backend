@@ -1,4 +1,4 @@
-import { IBookingPerformanceData, IProviderPerformanceOverview, IResponseTimeChartData, IReviewChartData } from "@core/entities/interfaces/user.entity.interface";
+import { IBookingPerformanceData, IOnTimeArrivalChartData, IProviderPerformanceOverview, IResponseTimeChartData, IReviewChartData } from "@core/entities/interfaces/user.entity.interface";
 import { IResponse } from "@core/misc/response.util";
 
 export interface IProviderAnalyticsService {
@@ -6,5 +6,5 @@ export interface IProviderAnalyticsService {
     getPerformanceBookingOverview(providerId: string): Promise<IResponse<IBookingPerformanceData[]>>;
     getPerformanceTrends(providerId: string): Promise<IResponse<IReviewChartData>>;
     getResponseTimeDistributionData(providerId: string): Promise<IResponse<IResponseTimeChartData[]>>;
-
+    getOnTimeArrivalData(providerId: string): Promise<IResponse<IOnTimeArrivalChartData[]>>;
 }

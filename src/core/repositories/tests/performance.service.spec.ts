@@ -2,6 +2,7 @@ import mongoose, { Model } from "mongoose";
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { Schema } from "mongoose";
 import { BookingRepository } from "@core/repositories/implementations/bookings.repository";
+import { IOnTimeArrivalChartData } from "@core/entities/interfaces/user.entity.interface";
 
 const BookingSchema = new Schema({
     providerId: mongoose.Types.ObjectId,

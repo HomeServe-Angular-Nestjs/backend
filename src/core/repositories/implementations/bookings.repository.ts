@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { BOOKINGS_MODEL_NAME } from '@core/constants/model.constant';
 import { IBookingStats, IRatingDistribution, IRecentReviews } from '@core/entities/interfaces/booking.entity.interface';
-import { IBookingPerformanceData, IResponseTimeChartData, ITopProviders, ITotalReviewAndAvgRating } from '@core/entities/interfaces/user.entity.interface';
+import { IBookingPerformanceData, IOnTimeArrivalChartData, IResponseTimeChartData, ITopProviders, ITotalReviewAndAvgRating } from '@core/entities/interfaces/user.entity.interface';
 import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
 import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
 import { IBookingRepository } from '@core/repositories/interfaces/bookings-repo.interface';
@@ -670,6 +670,50 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                     output: { count: { $sum: 1 } },
                 }
             }
+        ]);
+    }
+
+    async getOnTimeArrivalData(providerId: string): Promise<IOnTimeArrivalChartData[]> {
+        return await this._bookingModel.aggregate([
+            {
+                $match: {
+                    providerId: this._toObjectId(providerId),
+                    actualArrivalTime: { $exists: true, $ne: null },
+                    expectedArrivalTime: { $exists: true, $ne: null },
+                    bookingStatus: BookingStatus.COMPLETED
+                }
+            },
+            {
+                $addFields: {
+                    monthNumber: { $month: "$actualArrivalTime" },
+                    arrivalDelayInSeconds: {
+                        $divide: [
+                            { $subtract: ["$actualArrivalTime", "$expectedArrivalTime"] }, 1000]
+                    }
+                }
+            },
+            {
+                $group: {
+                    _id: "$monthNumber",
+                    totalDeliveries: { $sum: 1 },
+                    onTimeDeliveries: {
+                        $sum: { $cond: [{ $lte: ["$arrivalDelayInSeconds", 600] }, 1, 0] }
+                    }
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    monthNumber: "$_id",
+                    percentage: {
+                        $multiply: [
+                            { $divide: ["$onTimeDeliveries", "$totalDeliveries"] },
+                            100
+                        ]
+                    }
+                }
+            },
+            { $sort: { monthNumber: 1 } }
         ]);
     }
 } 

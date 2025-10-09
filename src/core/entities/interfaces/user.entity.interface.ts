@@ -204,6 +204,12 @@ export interface IReviewChartData {
 }
 
 export interface IResponseTimeChartData {
-    name: string;
-    count: number;
+  name: string;
+  count: number;
+}
+
+export interface IOnTimeArrivalChartData {
+  month: string;
+  monthNumber?: number;
+  percentage: number;
 }
