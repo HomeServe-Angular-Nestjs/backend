@@ -4,7 +4,7 @@ import { PROVIDER_ANALYTICS_SERVICE_NAME } from "@core/constants/service.constan
 import { IResponse } from "@core/misc/response.util";
 import { Request } from "express";
 import { IPayload } from "@core/misc/payload.interface";
-import { IBookingPerformanceData, IProviderPerformanceOverview, IReviewChartData } from "@core/entities/interfaces/user.entity.interface";
+import { IBookingPerformanceData, IProviderPerformanceOverview, IResponseTimeChartData, IReviewChartData } from "@core/entities/interfaces/user.entity.interface";
 
 @Controller('analytics')
 export class AnalyticsController {
@@ -29,5 +29,11 @@ export class AnalyticsController {
     async getPerformanceTrends(@Req() req: Request): Promise<IResponse<IReviewChartData>> {
         const user = req.user as IPayload;
         return await this._analyticService.getPerformanceTrends(user.sub);
+    }
+
+    @Get('response_time')
+    async getResponseTimeDistributionData(@Req() req: Request): Promise<IResponse<IResponseTimeChartData[]>> {
+        const user = req.user as IPayload;
+        return await this._analyticService.getResponseTimeDistributionData(user.sub);
     }
 }

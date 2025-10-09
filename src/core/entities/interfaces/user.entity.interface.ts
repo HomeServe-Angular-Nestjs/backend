@@ -202,3 +202,8 @@ export interface IReviewChartData {
   distributions: IRatingDistribution[];
   reviews: IRecentReviews[];
 }
+
+export interface IResponseTimeChartData {
+    name: string;
+    count: number;
+}

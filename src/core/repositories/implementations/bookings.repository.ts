@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { BOOKINGS_MODEL_NAME } from '@core/constants/model.constant';
 import { IBookingStats, IRatingDistribution, IRecentReviews } from '@core/entities/interfaces/booking.entity.interface';
-import { IBookingPerformanceData, ITopProviders, ITotalReviewAndAvgRating } from '@core/entities/interfaces/user.entity.interface';
+import { IBookingPerformanceData, IResponseTimeChartData, ITopProviders, ITotalReviewAndAvgRating } from '@core/entities/interfaces/user.entity.interface';
 import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
 import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
 import { IBookingRepository } from '@core/repositories/interfaces/bookings-repo.interface';
@@ -563,7 +563,7 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
     }
 
     async getBookingPerformanceData(providerId: string): Promise<IBookingPerformanceData[]> {
-        const result = await this._bookingModel.aggregate([
+        return await this._bookingModel.aggregate([
             { $match: { providerId: this._toObjectId(providerId) } },
             {
                 $addFields: {
@@ -604,12 +604,10 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                 }
             }
         ]);
-
-        return result;
     }
 
     async getRatingDistributionsByProviderId(providerId: string): Promise<IRatingDistribution[]> {
-        const result = await this._bookingModel.aggregate([
+        return await this._bookingModel.aggregate([
             {
                 $match: {
                     providerId: this._toObjectId(providerId),
@@ -630,12 +628,10 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                 }
             }
         ]);
-
-        return result;
     }
 
     async getRecentReviews(providerId: string, limit: number = 10): Promise<BookingDocument[]> {
-        const result = await this._bookingModel
+        return await this._bookingModel
             .find(
                 { providerId: this._toObjectId(providerId), review: { $exists: true, $ne: null } },
                 'review customerId'
@@ -646,8 +642,34 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
             })
             .sort({ createdAt: -1 })
             .limit(limit)
-            .lean()
+            .lean();
+    }
 
-        return result;
+    async getResponseDistributionTime(providerId: string): Promise<IResponseTimeChartData[]> {
+        return await this._bookingModel.aggregate([
+            {
+                $match: {
+                    providerId: this._toObjectId(providerId),
+                    respondedAt: { $exists: true, $ne: null }
+                }
+            },
+            {
+                $addFields: {
+                    responseTimeInSeconds: {
+                        $round: {
+                            $divide: [{ $subtract: ["$respondedAt", "$createdAt"] }, 1000]
+                        }
+                    }
+                }
+            },
+            {
+                $bucket: {
+                    groupBy: "$responseTimeInSeconds",
+                    boundaries: [0, 60, 600, 3600, 86400, Number.MAX_SAFE_INTEGER],
+                    default: "> 1 day",
+                    output: { count: { $sum: 1 } },
+                }
+            }
+        ]);
     }
 } 

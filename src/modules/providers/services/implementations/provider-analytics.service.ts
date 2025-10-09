@@ -1,5 +1,5 @@
 import { BOOKING_REPOSITORY_NAME } from "@core/constants/repository.constant";
-import { IBookingPerformanceData, IProviderPerformanceOverview, IReviewChartData } from "@core/entities/interfaces/user.entity.interface";
+import { IBookingPerformanceData, IProviderPerformanceOverview, IResponseTimeChartData, IReviewChartData } from "@core/entities/interfaces/user.entity.interface";
 import { IResponse } from "@core/misc/response.util";
 import { IBookingRepository } from "@core/repositories/interfaces/bookings-repo.interface";
 import { IProviderAnalyticsService } from "@modules/providers/services/interfaces/provider-analytics-service.interface";
@@ -49,6 +49,22 @@ export class ProviderAnalyticsService implements IProviderAnalyticsService {
                     rating: r.review?.rating || 0,
                 }))
             }
+        }
+    }
+
+    async getResponseTimeDistributionData(providerId: string): Promise<IResponse<IResponseTimeChartData[]>> {
+        const responseTimeStats = await this._bookingRepository.getResponseDistributionTime(providerId);
+        const labels = ["< 1 min", "1–10 min", "10–60 min", "1–24 hrs", "> 1 day"];
+
+        const chartData = responseTimeStats.map((r, i) => ({
+            name: labels[i],
+            count: r.count
+        }));
+
+        return {
+            success: true,
+            message: 'Response distribution time data fetched successfully.',
+            data: chartData
         }
     }
 }  
