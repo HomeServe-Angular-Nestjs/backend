@@ -249,3 +249,14 @@ export interface IBookingInvoice {
         signature: string;
     } | null;
 }
+
+export interface IRatingDistribution {
+    rating: string;
+    count: number;
+}
+
+export interface IRecentReviews {
+    name: string;
+    desc: string;
+    rating: number;
+}

@@ -1,5 +1,5 @@
 import { FilterQuery, Types } from 'mongoose';
-import { IBookingStats } from '@core/entities/interfaces/booking.entity.interface';
+import { IBookingStats, IRatingDistribution } from '@core/entities/interfaces/booking.entity.interface';
 import { IBookingPerformanceData, ITopProviders, ITotalReviewAndAvgRating } from '@core/entities/interfaces/user.entity.interface';
 import { IBaseRepository } from '@core/repositories/base/interfaces/base-repo.interface';
 import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
@@ -30,4 +30,6 @@ export interface IBookingRepository extends IBaseRepository<BookingDocument> {
     // getTotalReviews(providerId:string):Promise<number>;
     getAvgRatingAndTotalReviews(providerId?: string): Promise<ITotalReviewAndAvgRating[]>;
     getBookingPerformanceData(providerId: string): Promise<IBookingPerformanceData[]>;
+    getRatingDistributionsByProviderId(providerId: string): Promise<IRatingDistribution[]>;
+    getRecentReviews(providerId: string, limit?: number): Promise<BookingDocument[]>;
 } 

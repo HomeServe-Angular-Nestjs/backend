@@ -1,5 +1,5 @@
 import { BOOKING_REPOSITORY_NAME } from "@core/constants/repository.constant";
-import { IBookingPerformanceData, IProviderPerformanceOverview } from "@core/entities/interfaces/user.entity.interface";
+import { IBookingPerformanceData, IProviderPerformanceOverview, IReviewChartData } from "@core/entities/interfaces/user.entity.interface";
 import { IResponse } from "@core/misc/response.util";
 import { IBookingRepository } from "@core/repositories/interfaces/bookings-repo.interface";
 import { IProviderAnalyticsService } from "@modules/providers/services/interfaces/provider-analytics-service.interface";
@@ -29,6 +29,26 @@ export class ProviderAnalyticsService implements IProviderAnalyticsService {
             success: true,
             message: 'Booking performance stats fetched successfully',
             data: bookingPerformanceData
+        }
+    }
+
+    async getPerformanceTrends(providerId: string): Promise<IResponse<IReviewChartData>> {
+        const distributions = await this._bookingRepository.getRatingDistributionsByProviderId(providerId);
+        const recentReviews = await this._bookingRepository.getRecentReviews(providerId)
+
+        return {
+            success: true,
+            message: 'Rating distributions and trends stats fetched successfully',
+            data: {
+                distributions,
+                reviews: recentReviews.map(r => ({
+                    name: r.customerId && typeof r.customerId === 'object' && 'username' in r.customerId
+                        ? (r.customerId as any).username
+                        : 'Unknown',
+                    desc: r.review?.desc || '',
+                    rating: r.review?.rating || 0,
+                }))
+            }
         }
     }
 }  

@@ -1,7 +1,7 @@
 import { SlotType } from '../../../modules/bookings/dtos/booking.dto';
 import { IBaseUserEntity } from '../base/interfaces/base-user.entity.interface';
 import { IAdmin } from './admin.entity.interface';
-import { IPagination, IReview } from './booking.entity.interface';
+import { IPagination, IRatingDistribution, IRecentReviews, IReview } from './booking.entity.interface';
 
 export type VerificationStatusType = 'pending' | 'verified' | 'rejected';
 export type IUser = ICustomer | IProvider | IAdmin;
@@ -196,4 +196,9 @@ export interface IBookingPerformanceData {
   completed: number;
   cancelled: number;
   total: number;
+}
+
+export interface IReviewChartData {
+  distributions: IRatingDistribution[];
+  reviews: IRecentReviews[];
 }

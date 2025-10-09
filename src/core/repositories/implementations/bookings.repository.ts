@@ -2,7 +2,7 @@ import { FilterQuery, Model, PipelineStage, Types } from 'mongoose';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { BOOKINGS_MODEL_NAME } from '@core/constants/model.constant';
-import { IBookingStats } from '@core/entities/interfaces/booking.entity.interface';
+import { IBookingStats, IRatingDistribution, IRecentReviews } from '@core/entities/interfaces/booking.entity.interface';
 import { IBookingPerformanceData, ITopProviders, ITotalReviewAndAvgRating } from '@core/entities/interfaces/user.entity.interface';
 import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
 import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
@@ -604,6 +604,49 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                 }
             }
         ]);
+
+        return result;
+    }
+
+    async getRatingDistributionsByProviderId(providerId: string): Promise<IRatingDistribution[]> {
+        const result = await this._bookingModel.aggregate([
+            {
+                $match: {
+                    providerId: this._toObjectId(providerId),
+                    review: { $exists: true, $ne: null }
+                }
+            },
+            {
+                $group: {
+                    _id: "$review.rating",
+                    count: { $sum: 1 }
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    rating: "$_id",
+                    count: 1
+                }
+            }
+        ]);
+
+        return result;
+    }
+
+    async getRecentReviews(providerId: string, limit: number = 10): Promise<BookingDocument[]> {
+        const result = await this._bookingModel
+            .find(
+                { providerId: this._toObjectId(providerId), review: { $exists: true, $ne: null } },
+                'review customerId'
+            )
+            .populate({
+                path: 'customerId',
+                select: 'username',
+            })
+            .sort({ createdAt: -1 })
+            .limit(limit)
+            .lean()
 
         return result;
     }
