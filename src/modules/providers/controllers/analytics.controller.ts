@@ -5,6 +5,7 @@ import { IResponse } from "@core/misc/response.util";
 import { Request } from "express";
 import { IPayload } from "@core/misc/payload.interface";
 import { IBookingPerformanceData, IOnTimeArrivalChartData, IProviderPerformanceOverview, IResponseTimeChartData, IReviewChartData } from "@core/entities/interfaces/user.entity.interface";
+import { IDisputeAnalytics } from "@core/entities/interfaces/report.entity.interface";
 
 @Controller('analytics')
 export class AnalyticsController {
@@ -41,5 +42,11 @@ export class AnalyticsController {
     async getOnTimeArrivalData(@Req() req: Request): Promise<IResponse<IOnTimeArrivalChartData[]>> {
         const user = req.user as IPayload;
         return await this._analyticService.getOnTimeArrivalData(user.sub);
+    }
+
+    @Get('performance/monthly_disputes')
+    async getMonthlyDisputeStats(@Req() req: Request): Promise<IResponse<IDisputeAnalytics[]>> {
+        const user = req.user as IPayload;
+        return await this._analyticService.getMonthlyDisputeStats(user.sub);
     }
 }

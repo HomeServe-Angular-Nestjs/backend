@@ -1,7 +1,9 @@
-import { BOOKING_REPOSITORY_NAME } from "@core/constants/repository.constant";
+import { BOOKING_REPOSITORY_NAME, REPORT_REPOSITORY_NAME } from "@core/constants/repository.constant";
+import { IDisputeAnalytics } from "@core/entities/interfaces/report.entity.interface";
 import { IBookingPerformanceData, IOnTimeArrivalChartData, IProviderPerformanceOverview, IResponseTimeChartData, IReviewChartData } from "@core/entities/interfaces/user.entity.interface";
 import { IResponse } from "@core/misc/response.util";
 import { IBookingRepository } from "@core/repositories/interfaces/bookings-repo.interface";
+import { IReportRepository } from "@core/repositories/interfaces/report-repo.interface";
 import { IProviderAnalyticsService } from "@modules/providers/services/interfaces/provider-analytics-service.interface";
 import { Inject, Injectable } from "@nestjs/common";
 
@@ -11,6 +13,8 @@ export class ProviderAnalyticsService implements IProviderAnalyticsService {
     constructor(
         @Inject(BOOKING_REPOSITORY_NAME)
         private readonly _bookingRepository: IBookingRepository,
+        @Inject(REPORT_REPOSITORY_NAME)
+        private readonly _reportRepository: IReportRepository
     ) { }
 
     async getPerformanceAnalytics(providerId: string): Promise<IResponse<IProviderPerformanceOverview>> {
@@ -90,6 +94,26 @@ export class ProviderAnalyticsService implements IProviderAnalyticsService {
             success: true,
             message: 'On time arrival data fetched successfully.',
             data: finalResult
+        }
+    }
+
+    async getMonthlyDisputeStats(providerId: string): Promise<IResponse<IDisputeAnalytics[]>> {
+        const disputeStats = await this._reportRepository.getMonthlyDisputeStats(providerId);
+
+        const monthNames = [
+            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+            "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"
+        ];
+
+        const finalData = disputeStats.map(s => ({
+            ...s,
+            month: monthNames[s.month - 1]
+        }));
+
+        return {
+            success: true,
+            message: 'Monthly disputes fetched successfully.',
+            data: finalData
         }
     }
 }  

@@ -5,9 +5,9 @@ import { REPORT_MODEL_NAME } from "@core/constants/model.constant";
 import { BaseRepository } from "@core/repositories/base/implementations/base.repository";
 import { IReportRepository } from "@core/repositories/interfaces/report-repo.interface";
 import { ReportDocument } from "@core/schema/report.schema";
-import { IReportFilter, IReportOverViewMatrix } from "@core/entities/interfaces/report.entity.interface";
+import { IDisputeAnalyticsRaw, IReportFilter, IReportOverViewMatrix } from "@core/entities/interfaces/report.entity.interface";
 import { PipelineStage } from "mongoose";
-import { ReportStatus } from "@core/enum/report.enum";
+import { ComplaintReason, ReportStatus } from "@core/enum/report.enum";
 import { stringify } from "node:querystring";
 
 @Injectable()
@@ -107,5 +107,54 @@ export class ReportRepository extends BaseRepository<ReportDocument> implements 
             ...statusOverviewResult[0],
             flagged: flaggedResult[0]?.flagged || 0
         };
+    }
+
+    async getMonthlyDisputeStats(providerId: string): Promise<IDisputeAnalyticsRaw[]> {
+        return await this._reportModel.aggregate([
+            { $match: { targetId: this._toObjectId(providerId) } },
+            {
+                $addFields: {
+                    month: { $month: "$createdAt" },
+                    year: { $year: "$createdAt" }
+                }
+            },
+            { $match: { year: new Date().getFullYear() } },
+            {
+                $group: {
+                    _id: "$month",
+                    other: {
+                        $sum: {
+                            $cond: [{ $eq: ["$reason", ComplaintReason.OTHER] }, 1, 0]
+                        }
+                    },
+                    harassment: {
+                        $sum: {
+                            $cond: [{ $eq: ["$reason", ComplaintReason.HARASSMENT] }, 1, 0]
+                        }
+                    },
+                    spam: {
+                        $sum: {
+                            $cond: [{ $eq: ["$reason", ComplaintReason.SPAM] }, 1, 0]
+                        }
+                    },
+                    inappropriate: {
+                        $sum: {
+                            $cond: [{ $eq: ["$reason", ComplaintReason.INAPPROPRIATE] }, 1, 0]
+                        }
+                    },
+                }
+            },
+            { $sort: { _id: 1 } },
+            {
+                $project: {
+                    _id: 0,
+                    month: "$_id",
+                    other: 1,
+                    harassment: 1,
+                    spam: 1,
+                    inappropriate: 1
+                }
+            }
+        ]);
     }
 }
