@@ -1,12 +1,12 @@
 import { BaseEntity } from "@core/entities/base/implementation/base.entity";
 import { IReport, ReportedType } from "@core/entities/interfaces/report.entity.interface";
-import { ReportStatus } from "@core/enum/report.enum";
+import { ComplaintReason, ReportStatus } from "@core/enum/report.enum";
 
 export class Report extends BaseEntity implements IReport {
     reportedId: string;
     targetId: string;
     type: ReportedType;
-    reason: string;
+    reason: ComplaintReason;
     description: string;
     status: ReportStatus;
 

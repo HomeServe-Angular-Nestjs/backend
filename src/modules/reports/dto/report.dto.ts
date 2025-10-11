@@ -1,11 +1,12 @@
 import { ReportedType } from "@core/entities/interfaces/report.entity.interface";
-import { ReportStatus } from "@core/enum/report.enum";
+import { ComplaintReason, ReportStatus } from "@core/enum/report.enum";
 import { IsIn, IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
 
 export class ReportSubmitDto {
     @IsNotEmpty()
     @IsString()
-    reason: string;
+    @IsIn(Object.values(ComplaintReason))
+    reason: ComplaintReason;
 
     @IsNotEmpty()
     @IsString()
