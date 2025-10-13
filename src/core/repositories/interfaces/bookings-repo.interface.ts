@@ -1,6 +1,6 @@
 import { FilterQuery, Types } from 'mongoose';
 import { IBookingStats, IRatingDistribution } from '@core/entities/interfaces/booking.entity.interface';
-import { IBookingPerformanceData, IOnTimeArrivalChartData, IResponseTimeChartData, ITopProviders, ITotalReviewAndAvgRating } from '@core/entities/interfaces/user.entity.interface';
+import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IResponseTimeChartData, ITopProviders, ITotalReviewAndAvgRating } from '@core/entities/interfaces/user.entity.interface';
 import { IBaseRepository } from '@core/repositories/base/interfaces/base-repo.interface';
 import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
 import { IBookingReportData, IReportCustomerMatrix, IReportDownloadBookingData, IReportProviderMatrix } from '@core/entities/interfaces/admin.entity.interface';
@@ -27,11 +27,12 @@ export interface IBookingRepository extends IBaseRepository<BookingDocument> {
     addReview(bookingId: string, desc: string, rating: number): Promise<boolean>;
     getAvgRating(providerId: string): Promise<number>;
     getPerformanceSummary(providerId: string): Promise<any>;
-    // getTotalReviews(providerId:string):Promise<number>;
     getAvgRatingAndTotalReviews(providerId?: string): Promise<ITotalReviewAndAvgRating[]>;
     getBookingPerformanceData(providerId: string): Promise<IBookingPerformanceData[]>;
     getRatingDistributionsByProviderId(providerId: string): Promise<IRatingDistribution[]>;
     getRecentReviews(providerId: string, limit?: number): Promise<BookingDocument[]>;
     getResponseDistributionTime(providerId: string): Promise<IResponseTimeChartData[]>
     getOnTimeArrivalData(providerId: string): Promise<IOnTimeArrivalChartData[]>;
+    getComparisonOverviewData(providerId: string): Promise<IComparisonOverviewData>;
+    getComparisonData(providerId: string): Promise<IComparisonChartData[]>;
 } 

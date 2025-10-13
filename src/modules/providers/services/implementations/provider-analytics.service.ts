@@ -1,6 +1,6 @@
 import { BOOKING_REPOSITORY_NAME, REPORT_REPOSITORY_NAME } from "@core/constants/repository.constant";
 import { IDisputeAnalytics } from "@core/entities/interfaces/report.entity.interface";
-import { IBookingPerformanceData, IOnTimeArrivalChartData, IProviderPerformanceOverview, IResponseTimeChartData, IReviewChartData } from "@core/entities/interfaces/user.entity.interface";
+import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderPerformanceOverview, IResponseTimeChartData, IReviewChartData } from "@core/entities/interfaces/user.entity.interface";
 import { IResponse } from "@core/misc/response.util";
 import { IBookingRepository } from "@core/repositories/interfaces/bookings-repo.interface";
 import { IReportRepository } from "@core/repositories/interfaces/report-repo.interface";
@@ -114,6 +114,39 @@ export class ProviderAnalyticsService implements IProviderAnalyticsService {
             success: true,
             message: 'Monthly disputes fetched successfully.',
             data: finalData
+        }
+    }
+
+    async getComparisonOverviewData(providerId: string): Promise<IResponse<IComparisonOverviewData>> {
+        const result = await this._bookingRepository.getComparisonOverviewData(providerId);
+        return {
+            success: true,
+            message: "Comparison overview data fetched successfully.",
+            data: result
+        }
+    }
+
+    async getComparisonStats(providerId: string): Promise<IResponse<IComparisonChartData[]>> {
+        const rawData = await this._bookingRepository.getComparisonData(providerId);
+
+        const monthNames = [
+            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+        ];
+
+        const fullYearData: IComparisonChartData[] =
+            Array.from({ length: 12 }, (_, i) => {
+                const month = monthNames[i];
+                const existing = rawData.find(d => d.month === i + 1);
+                return existing
+                    ? { month, performance: existing.performance, platformAvg: existing.platformAvg }
+                    : { month, performance: 0, platformAvg: 0 };
+            });
+
+        return {
+            success: true,
+            message: "Comparison stats data fetched successfully.",
+            data: fullYearData
         }
     }
 }  

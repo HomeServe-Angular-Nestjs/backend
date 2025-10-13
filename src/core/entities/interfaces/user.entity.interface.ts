@@ -213,3 +213,21 @@ export interface IOnTimeArrivalChartData {
   monthNumber?: number;
   percentage: number;
 }
+
+export interface IComparisonOverviewData {
+  growthRate: number;
+  monthlyTrend: {
+    previousMonth: number;
+    currentMonth: number;
+    previousRevenue: number;
+    currentRevenue: number;
+    growthPercentage: number;
+  };
+  providerRank: number;
+}
+
+export interface IComparisonChartData {
+  month: string | number;
+  performance: number;
+  platformAvg: number;
+}

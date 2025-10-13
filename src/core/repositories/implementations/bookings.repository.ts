@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { BOOKINGS_MODEL_NAME } from '@core/constants/model.constant';
 import { IBookingStats, IRatingDistribution, IRecentReviews } from '@core/entities/interfaces/booking.entity.interface';
-import { IBookingPerformanceData, IOnTimeArrivalChartData, IResponseTimeChartData, ITopProviders, ITotalReviewAndAvgRating } from '@core/entities/interfaces/user.entity.interface';
+import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IResponseTimeChartData, ITopProviders, ITotalReviewAndAvgRating } from '@core/entities/interfaces/user.entity.interface';
 import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
 import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
 import { IBookingRepository } from '@core/repositories/interfaces/bookings-repo.interface';
@@ -426,13 +426,6 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
         return result[0].avg ?? 0
     }
 
-    // async getTotalReviews(providerId: string): Promise<number> {
-    //     return await this._bookingModel.countDocuments({
-    //         providerId: this._toObjectId(providerId),
-    //         review: { $exists: true, $ne: null }
-    //     })
-    // }
-
     async getAvgRatingAndTotalReviews(providerId?: string): Promise<ITotalReviewAndAvgRating[]> {
         let matchQuery: Record<string, any> = {
             review: { $exists: true, $ne: null },
@@ -716,4 +709,288 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
             { $sort: { monthNumber: 1 } }
         ]);
     }
+
+    async getComparisonOverviewData(providerId: string): Promise<IComparisonOverviewData> {
+        const providerObjId = this._toObjectId(providerId);
+
+        const result = await this._bookingModel.aggregate([
+            {
+                $match: {
+                    bookingStatus: BookingStatus.COMPLETED,
+                    $expr: {
+                        $eq: [{ $year: "$createdAt" }, new Date().getFullYear()]
+                    }
+                }
+            },
+            {
+                $facet: {
+                    // ----------------- Growth Rate -----------------
+                    growthRate: [
+                        {
+                            $project: {
+                                totalAmount: 1,
+                                rating: { $ifNull: ["$review.rating", 0] },
+                                month: { $month: "$createdAt" },
+                            }
+                        },
+                        {
+                            $group: {
+                                _id: { providerId: "$providerId", month: "$month" },
+                                totalCompleted: { $sum: 1 },
+                                avgRating: { $avg: "$rating" },
+                                revenue: { $sum: "$totalAmount" }
+                            }
+                        },
+                        { $sort: { "_id.providerId": 1, "_id.month": 1 } },
+                        {
+                            $setWindowFields: {
+                                partitionBy: "$_id.providerId",
+                                sortBy: { "_id.month": 1 },
+                                output: {
+                                    prevTotal: {
+                                        $shift: {
+                                            by: -1,
+                                            output: { $add: ["$totalCompleted", "$avgRating", "$revenue"] }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            $project: {
+                                growthRate: {
+                                    $cond: [
+                                        { $eq: ["$prevTotal", 0] },
+                                        0,
+                                        {
+                                            $multiply: [
+                                                {
+                                                    $divide: [
+                                                        { $subtract: [{ $add: ["$totalCompleted", "$avgRating", "$revenue"] }, "$prevTotal"] },
+                                                        "$prevTotal"
+                                                    ]
+                                                },
+                                                100
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            $group: {
+                                _id: null,
+                                overallAvgGrowth: { $avg: "$growthRate" }
+                            }
+                        },
+                        {
+                            $project: { _id: 0, overallAvgGrowth: 1 }
+                        }
+                    ],
+
+                    // ----------------- Monthly Trend -----------------
+                    monthlyTrend: [
+                        {
+                            $match: {
+                                providerId: providerObjId
+                            }
+                        },
+                        {
+                            $group: {
+                                _id: { $month: "$createdAt" },
+                                totalRevenue: { $sum: "$totalAmount" }
+                            }
+                        },
+                        { $sort: { _id: -1 } },
+                        { $limit: 2 },
+                        { $sort: { _id: 1 } },
+                        {
+                            $group: {
+                                _id: null,
+                                months: { $push: "$_id" },
+                                revenues: { $push: "$totalRevenue" }
+                            }
+                        },
+                        {
+                            $project: {
+                                _id: 0,
+                                previousMonth: { $arrayElemAt: ["$months", 0] },
+                                currentMonth: { $arrayElemAt: ["$months", 1] },
+                                previousRevenue: { $arrayElemAt: ["$revenues", 0] },
+                                currentRevenue: { $arrayElemAt: ["$revenues", 1] },
+                                growthPercentage: {
+                                    $cond: [
+                                        { $eq: [{ $arrayElemAt: ["$revenues", 0] }, 0] },
+                                        null,
+                                        {
+                                            $multiply: [
+                                                {
+                                                    $divide: [
+                                                        { $subtract: [{ $arrayElemAt: ["$revenues", 1] }, { $arrayElemAt: ["$revenues", 0] }] },
+                                                        { $arrayElemAt: ["$revenues", 0] }
+                                                    ]
+                                                },
+                                                100
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    ],
+
+                    // ----------------- Provider Rank -----------------
+                    providerRank: [
+                        { $match: { "review.isActive": true } },
+                        {
+                            $group: {
+                                _id: "$providerId",
+                                avgRating: { $avg: "$review.rating" }
+                            }
+                        },
+                        { $sort: { avgRating: -1 } },
+                        {
+                            $group: {
+                                _id: null,
+                                providers: { $push: { providerId: "$_id", avgRating: "$avgRating" } },
+                                total: { $sum: 1 }
+                            }
+                        },
+                        {
+                            $project: {
+                                providerRank: {
+                                    $let: {
+                                        vars: {
+                                            index: {
+                                                $indexOfArray: ["$providers.providerId", providerObjId]
+                                            }
+                                        },
+                                        in: {
+                                            $cond: [
+                                                { $lte: ["$total", 1] },
+                                                100,
+                                                {
+                                                    $multiply: [
+                                                        {
+                                                            $divide: [
+                                                                { $subtract: ["$total", { $add: ["$$index", 1] }] },
+                                                                { $subtract: ["$total", 1] }
+                                                            ]
+                                                        },
+                                                        100
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                $project: {
+                    growthRate: { $arrayElemAt: ["$growthRate.overallAvgGrowth", 0] },
+                    monthlyTrend: { $arrayElemAt: ["$monthlyTrend", 0] },
+                    providerRank: { $arrayElemAt: ["$providerRank.providerRank", 0] }
+                }
+            }
+        ]);
+
+        return result[0] || null;
+    }
+
+
+    async getComparisonData(providerId: string): Promise<IComparisonChartData[]> {
+        console.log(providerId);
+
+        const objectProviderId = this._toObjectId(providerId);
+        const currentYear = new Date().getFullYear();
+
+        return await this._bookingModel.aggregate([
+            {
+                $match: {
+                    bookingStatus: BookingStatus.COMPLETED,
+                    "review.isActive": true,
+                    createdAt: {
+                        $gte: new Date(`${currentYear}-01-01T00:00:00.000Z`),
+                        $lt: new Date(`${currentYear + 1}-01-01T00:00:00.000Z`)
+                    }
+                }
+            },
+            {
+                $addFields: {
+                    score: {
+                        $cond: [
+                            {
+                                $and: [
+                                    { $eq: ["$bookingStatus", BookingStatus.COMPLETED] },
+                                    { $ne: ["$actualArrivalTime", null] },
+                                    { $lte: ["$actualArrivalTime", "$expectedArrivalTime"] }
+                                ]
+                            },
+                            "$review.rating",
+                            0
+                        ]
+                    }
+                }
+            },
+            {
+                $group: {
+                    _id: { month: { $month: "$createdAt" }, providerId: "$providerId" },
+                    totalScore: { $sum: "$score" },
+                    completedBookings: { $sum: 1 }
+                }
+            },
+            {
+                $group: {
+                    _id: "$_id.month",
+                    providerData: {
+                        $push: {
+                            providerId: "$_id.providerId",
+                            totalScore: "$totalScore",
+                            completedBookings: "$completedBookings"
+                        }
+                    },
+                    totalPlatformScore: { $sum: "$totalScore" },
+                    totalProviders: { $sum: 1 }
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    month: "$_id",
+                    performance: {
+                        $let: {
+                            vars: {
+                                your: {
+                                    $arrayElemAt: [
+                                        {
+                                            $filter: {
+                                                input: "$providerData",
+                                                as: "p",
+                                                cond: { $eq: ["$$p.providerId", objectProviderId] }
+                                            }
+                                        },
+                                        0
+                                    ]
+                                }
+                            },
+                            in: { $ifNull: ["$$your.totalScore", 0] }
+                        }
+                    },
+                    platformAvg: {
+                        $cond: [
+                            { $gt: ["$totalProviders", 0] },
+                            { $divide: ["$totalPlatformScore", "$totalProviders"] },
+                            0
+                        ]
+                    }
+                }
+            },
+            { $sort: { month: 1 } }
+        ]);
+    }
+
 } 

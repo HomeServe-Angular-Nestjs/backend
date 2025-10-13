@@ -4,7 +4,7 @@ import { PROVIDER_ANALYTICS_SERVICE_NAME } from "@core/constants/service.constan
 import { IResponse } from "@core/misc/response.util";
 import { Request } from "express";
 import { IPayload } from "@core/misc/payload.interface";
-import { IBookingPerformanceData, IOnTimeArrivalChartData, IProviderPerformanceOverview, IResponseTimeChartData, IReviewChartData } from "@core/entities/interfaces/user.entity.interface";
+import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderPerformanceOverview, IResponseTimeChartData, IReviewChartData } from "@core/entities/interfaces/user.entity.interface";
 import { IDisputeAnalytics } from "@core/entities/interfaces/report.entity.interface";
 
 @Controller('analytics')
@@ -48,5 +48,17 @@ export class AnalyticsController {
     async getMonthlyDisputeStats(@Req() req: Request): Promise<IResponse<IDisputeAnalytics[]>> {
         const user = req.user as IPayload;
         return await this._analyticService.getMonthlyDisputeStats(user.sub);
+    }
+    
+    @Get('performance/comparison_overview')
+    async getComparisonOverviewData(@Req() req: Request): Promise<IResponse<IComparisonOverviewData>> {
+        const user = req.user as IPayload;
+        return await this._analyticService.getComparisonOverviewData(user.sub);
+    }
+    
+    @Get('performance/comparison_stats')
+    async getComparisonStats(@Req() req: Request): Promise<IResponse<IComparisonChartData[]>> {
+        const user = req.user as IPayload;
+        return await this._analyticService.getComparisonStats(user.sub);
     }
 }
