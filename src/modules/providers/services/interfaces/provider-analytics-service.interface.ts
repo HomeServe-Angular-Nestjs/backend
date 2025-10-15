@@ -1,8 +1,9 @@
 import { IDisputeAnalytics } from "@core/entities/interfaces/report.entity.interface";
-import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderPerformanceOverview, IResponseTimeChartData, IReviewChartData } from "@core/entities/interfaces/user.entity.interface";
+import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderPerformanceOverview, IProviderRevenueOverview, IResponseTimeChartData, IReviewChartData } from "@core/entities/interfaces/user.entity.interface";
 import { IResponse } from "@core/misc/response.util";
 
 export interface IProviderAnalyticsService {
+    // ------------ Performance Analytics APIs ------------
     getPerformanceAnalytics(providerId: string): Promise<IResponse<IProviderPerformanceOverview>>;
     getPerformanceBookingOverview(providerId: string): Promise<IResponse<IBookingPerformanceData[]>>;
     getPerformanceTrends(providerId: string): Promise<IResponse<IReviewChartData>>;
@@ -12,4 +13,6 @@ export interface IProviderAnalyticsService {
     getComparisonOverviewData(providerId: string): Promise<IResponse<IComparisonOverviewData>>;
     getComparisonStats(providerId: string): Promise<IResponse<IComparisonChartData[]>>;
 
+    // ------------ Revenue Analytics APIs ------------
+    getRevenueOverview(providerId: string): Promise<IResponse<IProviderRevenueOverview>>
 }

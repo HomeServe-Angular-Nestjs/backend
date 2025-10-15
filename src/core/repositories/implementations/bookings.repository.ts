@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { BOOKINGS_MODEL_NAME } from '@core/constants/model.constant';
 import { IBookingStats, IRatingDistribution, IRecentReviews } from '@core/entities/interfaces/booking.entity.interface';
-import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IResponseTimeChartData, ITopProviders, ITotalReviewAndAvgRating } from '@core/entities/interfaces/user.entity.interface';
+import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderRevenueOverview, IResponseTimeChartData, ITopProviders, ITotalReviewAndAvgRating } from '@core/entities/interfaces/user.entity.interface';
 import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
 import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
 import { IBookingRepository } from '@core/repositories/interfaces/bookings-repo.interface';
@@ -993,4 +993,70 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
         ]);
     }
 
-} 
+    async getRevenueOverview(providerId: string): Promise<IProviderRevenueOverview> {
+        const result = await this._bookingModel.aggregate([
+            {
+                $match: {
+                    providerId: this._toObjectId(providerId),
+                    bookingStatus: BookingStatus.COMPLETED
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    totalRevenue: { $sum: "$totalAmount" },
+                    currentPeriodRevenue: {
+                        $sum: {
+                            $cond: [{ $eq: [{ $month: "$createdAt" }, new Date().getMonth() + 1] }, "$totalAmount", 0]
+                        }
+                    },
+                    previousPeriodRevenue: {
+                        $sum: {
+                            $cond: [
+                                { $eq: [{ $month: "$createdAt" }, new Date().getMonth() === 0 ? 12 : new Date().getMonth()] },
+                                "$totalAmount", 0
+                            ]
+                        }
+                    },
+                    completedTransactions: {
+                        $sum: {
+                            $cond: [{ $eq: ["$transactionId", null] }, 0, 1]
+                        }
+                    }
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    totalRevenue: { $round: { $cond: [{ $eq: ["$totalRevenue", 0] }, 0, "$totalRevenue"] } },
+                    revenueGrowth: {
+                        $round: {
+                            $multiply: [
+                                {
+                                    $divide: [
+                                        { $subtract: ["$currentPeriodRevenue", "$previousPeriodRevenue"] },
+                                        { $round: "$previousPeriodRevenue" }
+                                    ]
+                                },
+                                100
+                            ]
+                        }
+                    },
+                    completedTransactions: { $cond: [{ $eq: ["$completedTransactions", 0] }, 0, "$completedTransactions"] },
+                    avgTransactionValue: {
+                        $round: {
+                            $cond: [
+                                { $gt: ["$completedTransactions", 0] },
+                                {
+                                    $divide:
+                                        ["$totalRevenue", "$completedTransactions"]
+                                }, 0]
+                        }
+                    }
+                }
+            }
+        ]);
+
+        return result[0];
+    }
+}

@@ -1,6 +1,6 @@
 import { BOOKING_REPOSITORY_NAME, REPORT_REPOSITORY_NAME } from "@core/constants/repository.constant";
 import { IDisputeAnalytics } from "@core/entities/interfaces/report.entity.interface";
-import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderPerformanceOverview, IResponseTimeChartData, IReviewChartData } from "@core/entities/interfaces/user.entity.interface";
+import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderPerformanceOverview, IProviderRevenueOverview, IResponseTimeChartData, IReviewChartData } from "@core/entities/interfaces/user.entity.interface";
 import { IResponse } from "@core/misc/response.util";
 import { IBookingRepository } from "@core/repositories/interfaces/bookings-repo.interface";
 import { IReportRepository } from "@core/repositories/interfaces/report-repo.interface";
@@ -17,22 +17,21 @@ export class ProviderAnalyticsService implements IProviderAnalyticsService {
         private readonly _reportRepository: IReportRepository
     ) { }
 
+    // ------------ Performance Analytics Services ------------
+
     async getPerformanceAnalytics(providerId: string): Promise<IResponse<IProviderPerformanceOverview>> {
-        const performanceStats = await this._bookingRepository.getPerformanceSummary(providerId);
         return {
             success: true,
             message: 'Performance analytic data fetched successfully.',
-            data: performanceStats
+            data: await this._bookingRepository.getPerformanceSummary(providerId)
         }
     }
 
     async getPerformanceBookingOverview(providerId: string): Promise<IResponse<IBookingPerformanceData[]>> {
-        const bookingPerformanceData = await this._bookingRepository.getBookingPerformanceData(providerId);
-
         return {
             success: true,
             message: 'Booking performance stats fetched successfully',
-            data: bookingPerformanceData
+            data: await this._bookingRepository.getBookingPerformanceData(providerId)
         }
     }
 
@@ -118,11 +117,10 @@ export class ProviderAnalyticsService implements IProviderAnalyticsService {
     }
 
     async getComparisonOverviewData(providerId: string): Promise<IResponse<IComparisonOverviewData>> {
-        const result = await this._bookingRepository.getComparisonOverviewData(providerId);
         return {
             success: true,
             message: "Comparison overview data fetched successfully.",
-            data: result
+            data: await this._bookingRepository.getComparisonOverviewData(providerId)
         }
     }
 
@@ -147,6 +145,16 @@ export class ProviderAnalyticsService implements IProviderAnalyticsService {
             success: true,
             message: "Comparison stats data fetched successfully.",
             data: fullYearData
+        }
+    }
+
+    // ------------ Revenue Analytics Services ------------
+
+    async getRevenueOverview(providerId: string): Promise<IResponse<IProviderRevenueOverview>> {
+        return {
+            success: true,
+            message: 'Revenue overview data fetched successfully.',
+            data: await this._bookingRepository.getRevenueOverview(providerId)
         }
     }
 }  

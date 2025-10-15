@@ -184,6 +184,8 @@ export interface IDisplayReviews {
   allFetched: boolean;
 }
 
+// ----------- Performance Analytics Models ------------
+
 export interface IProviderPerformanceOverview {
   avgResponseTime: number;
   onTimePercent: number;
@@ -230,4 +232,12 @@ export interface IComparisonChartData {
   month: string | number;
   performance: number;
   platformAvg: number;
+}
+
+// ----------- Revenue Analytics Models ------------
+export interface IProviderRevenueOverview {
+    totalRevenue: number;
+    revenueGrowth: number;
+    completedTransactions: number;
+    avgTransactionValue: number;
 }
