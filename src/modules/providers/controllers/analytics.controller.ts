@@ -97,4 +97,10 @@ export class AnalyticsController {
         const user = req.user as IPayload;
         return await this._analyticService.getTopServicesByRevenue(user.sub);
     }
+
+    @Get('revenue/new_returning_clients')
+    async getNewAndReturningClientData(@Req() req: Request): Promise<IResponse<INewOrReturningClientData[]>> {
+        const user = req.user as IPayload;
+        return await this._analyticService.getNewAndReturningClientData(user.sub);
+    }
 }

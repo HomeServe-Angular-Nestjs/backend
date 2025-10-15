@@ -297,3 +297,8 @@ export interface ITopServicesByRevenue {
     avgRevenue: number;
 }
 
+export interface INewOrReturningClientData {
+    month: string;
+    newClients: number;
+    returningClients: number;
+}

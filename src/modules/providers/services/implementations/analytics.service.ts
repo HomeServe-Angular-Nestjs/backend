@@ -1,5 +1,5 @@
 import { BOOKING_REPOSITORY_NAME, REPORT_REPOSITORY_NAME } from "@core/constants/repository.constant";
-import { RevenueChartView, IRevenueTrendData, IRevenueMonthlyGrowthRateData,IRevenueCompositionData, ITopServicesByRevenue } from "@core/entities/interfaces/booking.entity.interface";
+import { RevenueChartView, IRevenueTrendData, IRevenueMonthlyGrowthRateData,IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData } from "@core/entities/interfaces/booking.entity.interface";
 import { IDisputeAnalytics } from "@core/entities/interfaces/report.entity.interface";
 import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderPerformanceOverview, IProviderRevenueOverview, IResponseTimeChartData, IReviewChartData } from "@core/entities/interfaces/user.entity.interface";
 import { IResponse } from "@core/misc/response.util";
@@ -225,6 +225,14 @@ export class ProviderAnalyticsService implements IProviderAnalyticsService {
             success: true,
             message: 'Top service data fetched successfully.',
             data: await this._bookingRepository.getTopTenServicesByRevenue(providerId)
+        }
+    }
+   
+    async getNewAndReturningClientData(providerId: string): Promise<IResponse<INewOrReturningClientData[]>> {
+        return {
+            success: true,
+            message: 'Top service data fetched successfully.',
+            data: await this._bookingRepository.getNewAndReturningClientData(providerId)
         }
     }
 }  

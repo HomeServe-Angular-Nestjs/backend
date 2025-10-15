@@ -2,7 +2,7 @@ import { FilterQuery, Model, PipelineStage, Types } from 'mongoose';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { BOOKINGS_MODEL_NAME } from '@core/constants/model.constant';
-import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView, IRevenueCompositionData, ITopServicesByRevenue } from '@core/entities/interfaces/booking.entity.interface';
+import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData } from '@core/entities/interfaces/booking.entity.interface';
 import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderRevenueOverview, IResponseTimeChartData, ITopProviders, ITotalReviewAndAvgRating } from '@core/entities/interfaces/user.entity.interface';
 import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
 import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
@@ -1282,6 +1282,96 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
             },
             { $sort: { revenue: 1 } },
             { $limit: 10 }
+        ]);
+    }
+
+    async getNewAndReturningClientData(providerId: string): Promise<INewOrReturningClientData[]> {
+        const currentYear = new Date().getFullYear();
+
+        return await this._bookingModel.aggregate([
+            {
+                $match: {
+                    providerId: this._toObjectId(providerId),
+                    bookingStatus: "completed",
+                    createdAt: {
+                        $gte: new Date(`${currentYear}-01-01T00:00:00.000Z`),
+                        $lte: new Date(`${currentYear}-12-31T23:59:59.999Z`)
+                    }
+                }
+            },
+
+            // Lookup the customer's first completed booking
+            {
+                $lookup: {
+                    from: "bookings",
+                    let: { custId: "$customerId" },
+                    pipeline: [
+                        {
+                            $match: {
+                                $expr: { $eq: ["$customerId", "$$custId"] },
+                                bookingStatus: "completed"
+                            }
+                        },
+                        { $sort: { createdAt: 1 } },
+                        { $limit: 1 }
+                    ],
+                    as: "firstBooking"
+                }
+            },
+
+            { $unwind: "$firstBooking" },
+
+            // Extract month and check if booking is first for this customer
+            {
+                $addFields: {
+                    month: { $month: "$createdAt" },
+                    isNewClient: {
+                        $eq: [
+                            { $month: "$firstBooking.createdAt" },
+                            { $month: "$createdAt" }
+                        ]
+                    }
+                }
+            },
+
+            // Group by month and new/returning
+            {
+                $group: {
+                    _id: { month: "$month", isNewClient: "$isNewClient" },
+                    count: { $sum: 1 }
+                }
+            },
+
+            // Reshape data: merge new vs returning per month
+            {
+                $group: {
+                    _id: "$_id.month",
+                    newClients: {
+                        $sum: { $cond: [{ $eq: ["$_id.isNewClient", true] }, "$count", 0] }
+                    },
+                    returningClients: {
+                        $sum: { $cond: [{ $eq: ["$_id.isNewClient", false] }, "$count", 0] }
+                    }
+                }
+            },
+
+            // Sort by month
+            { $sort: { "_id": 1 } },
+
+            // Converting month number to readable month name
+            {
+                $project: {
+                    _id: 0,
+                    month: {
+                        $arrayElemAt: [
+                            ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+                            { $subtract: ["$_id", 1] }
+                        ]
+                    },
+                    newClients: 1,
+                    returningClients: 1
+                }
+            }
         ]);
     }
 }
