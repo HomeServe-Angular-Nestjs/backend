@@ -285,3 +285,8 @@ export interface IRevenueMonthlyGrowthRateData {
     growthRate: number;
 }
 
+export interface IRevenueCompositionData {
+    totalRevenue:number;
+    category:string;
+}
+

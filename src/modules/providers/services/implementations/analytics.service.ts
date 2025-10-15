@@ -1,5 +1,5 @@
 import { BOOKING_REPOSITORY_NAME, REPORT_REPOSITORY_NAME } from "@core/constants/repository.constant";
-import { RevenueChartView, IRevenueTrendData, IRevenueMonthlyGrowthRateData } from "@core/entities/interfaces/booking.entity.interface";
+import { RevenueChartView, IRevenueTrendData, IRevenueMonthlyGrowthRateData,IRevenueCompositionData } from "@core/entities/interfaces/booking.entity.interface";
 import { IDisputeAnalytics } from "@core/entities/interfaces/report.entity.interface";
 import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderPerformanceOverview, IProviderRevenueOverview, IResponseTimeChartData, IReviewChartData } from "@core/entities/interfaces/user.entity.interface";
 import { IResponse } from "@core/misc/response.util";
@@ -197,8 +197,6 @@ export class ProviderAnalyticsService implements IProviderAnalyticsService {
 
     async getRevenueGrowthByMonth(providerId: string): Promise<IResponse<IRevenueMonthlyGrowthRateData[]>> {
         const result = await this._bookingRepository.getRevenueGrowthByMonth(providerId);
-        console.log(JSON.stringify(result, null, 3))
-
         const monthNames = this._getMonths();
 
         const final = Array.from({ length: 12 }, (_, i) => {
@@ -211,6 +209,14 @@ export class ProviderAnalyticsService implements IProviderAnalyticsService {
             success: true,
             message: 'Monthly revenue growth rate data fetched successfully.',
             data: final
+        }
+    }
+
+    async getRevenueCompositionData(providerId: string): Promise<IResponse<IRevenueCompositionData[]>> {
+        return {
+            success: true,
+            message: 'Revenue composition data fetched successfully.',
+            data: await this._bookingRepository.getRevenueCompositionByServiceCategory(providerId)
         }
     }
 }  

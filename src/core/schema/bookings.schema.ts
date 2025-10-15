@@ -2,7 +2,7 @@ import { Document, Types } from 'mongoose';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { BookingStatus, CancelStatus, PaymentStatus } from '../enum/bookings.enum';
 import { SlotStatusEnum } from '@core/enum/slot.enum';
-import { CUSTOMER_MODEL_NAME } from '@core/constants/model.constant';
+import { CUSTOMER_MODEL_NAME, SERVICE_OFFERED_MODEL_NAME } from '@core/constants/model.constant';
 
 @Schema({ _id: false })
 export class ReviewDocument {
@@ -110,7 +110,7 @@ export class BookingDocument extends Document {
     @Prop({
         type: [
             {
-                serviceId: { type: String },
+                serviceId: { type: String, ref: SERVICE_OFFERED_MODEL_NAME },
                 subserviceIds: { type: [String] },
             }
         ],

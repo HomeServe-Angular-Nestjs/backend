@@ -7,7 +7,7 @@ import { IPayload } from "@core/misc/payload.interface";
 import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderPerformanceOverview, IProviderRevenueOverview, IResponseTimeChartData, IReviewChartData } from "@core/entities/interfaces/user.entity.interface";
 import { IDisputeAnalytics } from "@core/entities/interfaces/report.entity.interface";
 import { RevenueChartViewDto } from "@modules/providers/dtos/analytics.dto";
-import { IRevenueMonthlyGrowthRateData, IRevenueTrendData } from "@core/entities/interfaces/booking.entity.interface";
+import { IRevenueMonthlyGrowthRateData, IRevenueTrendData, IRevenueCompositionData } from "@core/entities/interfaces/booking.entity.interface";
 
 @Controller('analytics')
 export class AnalyticsController {
@@ -84,5 +84,11 @@ export class AnalyticsController {
     async getMonthlyRevenueGrowthRate(@Req() req: Request): Promise<IResponse<IRevenueMonthlyGrowthRateData[]>> {
         const user = req.user as IPayload;
         return await this._analyticService.getRevenueGrowthByMonth(user.sub);
+    }
+
+    @Get('revenue/composition')
+    async getRevenueCompositionData(@Req() req: Request): Promise<IResponse<IRevenueCompositionData[]>> {
+        const user = req.user as IPayload;
+        return await this._analyticService.getRevenueCompositionData(user.sub);
     }
 }

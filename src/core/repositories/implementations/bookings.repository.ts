@@ -2,7 +2,7 @@ import { FilterQuery, Model, PipelineStage, Types } from 'mongoose';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { BOOKINGS_MODEL_NAME } from '@core/constants/model.constant';
-import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView } from '@core/entities/interfaces/booking.entity.interface';
+import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView, IRevenueCompositionData } from '@core/entities/interfaces/booking.entity.interface';
 import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderRevenueOverview, IResponseTimeChartData, ITopProviders, ITotalReviewAndAvgRating } from '@core/entities/interfaces/user.entity.interface';
 import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
 import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
@@ -1135,7 +1135,7 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
         return { providerRevenue: cleanProvider, platformAvg: cleanPlatform };
     }
 
-    async getRevenueGrowthByMonth(providerId: string):Promise<IRevenueMonthlyGrowthRateData[]>{
+    async getRevenueGrowthByMonth(providerId: string): Promise<IRevenueMonthlyGrowthRateData[]> {
         return await this._bookingModel.aggregate([
             {
                 $match: {
@@ -1188,6 +1188,47 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                     month: "$_id.month",
                     totalRevenue: 1,
                     growthRate: { $round: ["$growthRate", 2] }
+                }
+            }
+        ]);
+    }
+
+    async getRevenueCompositionByServiceCategory(providerId: string): Promise<IRevenueCompositionData[]> {
+        return await this._bookingModel.aggregate([
+            {
+                $match: { providerId: this._toObjectId(providerId) }
+            },
+            { $unwind: "$services" },
+            {
+                $addFields: {
+                    "services.serviceId": { $toObjectId: "$services.serviceId" },
+                }
+            },
+            {
+                $lookup: {
+                    from: 'services',
+                    localField: "services.serviceId",
+                    foreignField: "_id",
+                    as: "serviceDetails"
+                }
+            },
+            {
+                $unwind: {
+                    path: "$serviceDetails",
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+            {
+                $group: {
+                    _id: "$serviceDetails.title",
+                    totalRevenue: { $sum: "$totalAmount" }
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    category: "$_id",
+                    totalRevenue: 1
                 }
             }
         ]);
