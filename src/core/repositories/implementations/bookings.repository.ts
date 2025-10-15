@@ -2,7 +2,7 @@ import { FilterQuery, Model, PipelineStage, Types } from 'mongoose';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { BOOKINGS_MODEL_NAME } from '@core/constants/model.constant';
-import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView, IRevenueCompositionData } from '@core/entities/interfaces/booking.entity.interface';
+import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView, IRevenueCompositionData, ITopServicesByRevenue } from '@core/entities/interfaces/booking.entity.interface';
 import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderRevenueOverview, IResponseTimeChartData, ITopProviders, ITotalReviewAndAvgRating } from '@core/entities/interfaces/user.entity.interface';
 import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
 import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
@@ -1231,6 +1231,57 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                     totalRevenue: 1
                 }
             }
+        ]);
+    }
+
+    async getTopTenServicesByRevenue(providerId: string): Promise<ITopServicesByRevenue[]> {
+        return await this._bookingModel.aggregate([
+            { $match: { providerId: this._toObjectId(providerId) } },
+            { $unwind: "$services" },
+            {
+                $addFields: {
+                    "services.serviceId": { $toObjectId: "$services.serviceId" },
+                }
+            },
+            {
+                $lookup: {
+                    from: 'services',
+                    localField: 'services.serviceId',
+                    foreignField: "_id",
+                    as: 'serviceDetails'
+                }
+            },
+            { $unwind: "$serviceDetails" },
+            { $unwind: "$serviceDetails.subService" },
+            {
+                $group: {
+                    _id: "$serviceDetails.subService.title",
+                    revenue: { $sum: "$totalAmount" },
+                    totalBookings: { $sum: 1 },
+                }
+            },
+            {
+                $addFields: {
+                    avgRevenue: {
+                        $cond: {
+                            if: { $eq: ["$totalBookings", 0] },
+                            then: 0,
+                            else: { $divide: ["$revenue", "$totalBookings"] },
+                        },
+                    },
+                },
+            },
+            {
+                $project: {
+                    _id: 0,
+                    service: "$_id",
+                    revenue: 1,
+                    totalBookings: 1,
+                    avgRevenue: 1
+                }
+            },
+            { $sort: { revenue: 1 } },
+            { $limit: 10 }
         ]);
     }
 }

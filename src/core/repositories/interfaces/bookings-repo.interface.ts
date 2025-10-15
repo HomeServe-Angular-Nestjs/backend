@@ -1,5 +1,5 @@
 import { FilterQuery, Types } from 'mongoose';
-import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView, IRevenueCompositionData } from '@core/entities/interfaces/booking.entity.interface';
+import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView, IRevenueCompositionData, ITopServicesByRevenue } from '@core/entities/interfaces/booking.entity.interface';
 import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderRevenueOverview, IResponseTimeChartData, ITopProviders, ITotalReviewAndAvgRating } from '@core/entities/interfaces/user.entity.interface';
 import { IBaseRepository } from '@core/repositories/base/interfaces/base-repo.interface';
 import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
@@ -39,6 +39,7 @@ export interface IBookingRepository extends IBaseRepository<BookingDocument> {
 
     getRevenueOverview(providerId: string): Promise<IProviderRevenueOverview>;
     getRevenueTrendOverTime(providerId: string, view: RevenueChartView): Promise<IRevenueTrendRawData>;
-    getRevenueGrowthByMonth(providerId: string): Promise<IRevenueMonthlyGrowthRateData[]>
-    getRevenueCompositionByServiceCategory(providerId: string): Promise<IRevenueCompositionData[]>
+    getRevenueGrowthByMonth(providerId: string): Promise<IRevenueMonthlyGrowthRateData[]>;
+    getRevenueCompositionByServiceCategory(providerId: string): Promise<IRevenueCompositionData[]>;
+    getTopTenServicesByRevenue(providerId: string): Promise<ITopServicesByRevenue[]>;
 } 
