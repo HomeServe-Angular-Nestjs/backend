@@ -1,4 +1,4 @@
-import { Controller, Get, Inject, Req } from "@nestjs/common";
+import { Controller, Get, Inject, Query, Req } from "@nestjs/common";
 import { IProviderAnalyticsService } from '@modules/providers/services/interfaces/provider-analytics-service.interface';
 import { PROVIDER_ANALYTICS_SERVICE_NAME } from "@core/constants/service.constant";
 import { IResponse } from "@core/misc/response.util";
@@ -6,6 +6,8 @@ import { Request } from "express";
 import { IPayload } from "@core/misc/payload.interface";
 import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderPerformanceOverview, IProviderRevenueOverview, IResponseTimeChartData, IReviewChartData } from "@core/entities/interfaces/user.entity.interface";
 import { IDisputeAnalytics } from "@core/entities/interfaces/report.entity.interface";
+import { RevenueChartViewDto } from "@modules/providers/dtos/analytics.dto";
+import { IRevenueMonthlyGrowthRateData, IRevenueTrendData } from "@core/entities/interfaces/booking.entity.interface";
 
 @Controller('analytics')
 export class AnalyticsController {
@@ -70,5 +72,17 @@ export class AnalyticsController {
     async getRevenueOverview(@Req() req: Request): Promise<IResponse<IProviderRevenueOverview>> {
         const user = req.user as IPayload;
         return await this._analyticService.getRevenueOverview(user.sub);
+    }
+
+    @Get('revenue/trends')
+    async getRevenueTrendOverTime(@Req() req: Request, @Query() { view }: RevenueChartViewDto): Promise<IResponse<IRevenueTrendData>> {
+        const user = req.user as IPayload;
+        return await this._analyticService.getRevenueTrendOverTime(user.sub, view);
+    }
+
+    @Get('revenue/growth_rate')
+    async getMonthlyRevenueGrowthRate(@Req() req: Request): Promise<IResponse<IRevenueMonthlyGrowthRateData[]>> {
+        const user = req.user as IPayload;
+        return await this._analyticService.getRevenueGrowthByMonth(user.sub);
     }
 }

@@ -3,6 +3,8 @@ import { IEntity } from '../base/interfaces/base-entity.entity.interface';
 import { SlotStatusEnum } from '@core/enum/slot.enum';
 import { PaymentSource, TransactionType } from '@core/enum/transaction.enum';
 
+export type RevenueChartView = 'monthly' | 'quarterly' | 'yearly';
+
 export interface IBookingResponse {
     bookingId: string;
     provider: {
@@ -259,5 +261,27 @@ export interface IRecentReviews {
     name: string;
     desc: string;
     rating: number;
+}
+
+export interface IRevenueTrendData {
+    providerRevenue: number[];
+    platformAvg: number[];
+    labels: string[];
+}
+
+interface IRevenueTrendPoint {
+    label: string;
+    totalRevenue: number;
+}
+
+export interface IRevenueTrendRawData {
+    providerRevenue: IRevenueTrendPoint[];
+    platformAvg: IRevenueTrendPoint[];
+}
+
+export interface IRevenueMonthlyGrowthRateData {
+    totalRevenue: number;
+    month: string | number;
+    growthRate: number;
 }
 

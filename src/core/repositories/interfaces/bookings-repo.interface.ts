@@ -1,5 +1,5 @@
 import { FilterQuery, Types } from 'mongoose';
-import { IBookingStats, IRatingDistribution } from '@core/entities/interfaces/booking.entity.interface';
+import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView } from '@core/entities/interfaces/booking.entity.interface';
 import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderRevenueOverview, IResponseTimeChartData, ITopProviders, ITotalReviewAndAvgRating } from '@core/entities/interfaces/user.entity.interface';
 import { IBaseRepository } from '@core/repositories/base/interfaces/base-repo.interface';
 import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
@@ -26,6 +26,7 @@ export interface IBookingRepository extends IBaseRepository<BookingDocument> {
     updateBookingStatus(bookingId: string, status: BookingStatus): Promise<BookingDocument | null>;
     addReview(bookingId: string, desc: string, rating: number): Promise<boolean>;
     getAvgRating(providerId: string): Promise<number>;
+    
     getPerformanceSummary(providerId: string): Promise<any>;
     getAvgRatingAndTotalReviews(providerId?: string): Promise<ITotalReviewAndAvgRating[]>;
     getBookingPerformanceData(providerId: string): Promise<IBookingPerformanceData[]>;
@@ -35,5 +36,8 @@ export interface IBookingRepository extends IBaseRepository<BookingDocument> {
     getOnTimeArrivalData(providerId: string): Promise<IOnTimeArrivalChartData[]>;
     getComparisonOverviewData(providerId: string): Promise<IComparisonOverviewData>;
     getComparisonData(providerId: string): Promise<IComparisonChartData[]>;
+    
     getRevenueOverview(providerId: string): Promise<IProviderRevenueOverview>;
+    getRevenueTrendOverTime(providerId: string, view: RevenueChartView): Promise<IRevenueTrendRawData>;
+    getRevenueGrowthByMonth(providerId: string):Promise<IRevenueMonthlyGrowthRateData[]>
 } 

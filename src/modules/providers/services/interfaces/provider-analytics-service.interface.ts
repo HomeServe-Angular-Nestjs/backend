@@ -1,3 +1,4 @@
+import { RevenueChartView, IRevenueTrendData, IRevenueMonthlyGrowthRateData } from "@core/entities/interfaces/booking.entity.interface";
 import { IDisputeAnalytics } from "@core/entities/interfaces/report.entity.interface";
 import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderPerformanceOverview, IProviderRevenueOverview, IResponseTimeChartData, IReviewChartData } from "@core/entities/interfaces/user.entity.interface";
 import { IResponse } from "@core/misc/response.util";
@@ -14,5 +15,7 @@ export interface IProviderAnalyticsService {
     getComparisonStats(providerId: string): Promise<IResponse<IComparisonChartData[]>>;
 
     // ------------ Revenue Analytics APIs ------------
-    getRevenueOverview(providerId: string): Promise<IResponse<IProviderRevenueOverview>>
+    getRevenueOverview(providerId: string): Promise<IResponse<IProviderRevenueOverview>>;
+    getRevenueTrendOverTime(providerId: string, view: RevenueChartView): Promise<IResponse<IRevenueTrendData>>;
+    getRevenueGrowthByMonth(providerId: string): Promise<IResponse<IRevenueMonthlyGrowthRateData[]>>;
 }

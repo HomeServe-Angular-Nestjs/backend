@@ -1,4 +1,5 @@
 import { BOOKING_REPOSITORY_NAME, REPORT_REPOSITORY_NAME } from "@core/constants/repository.constant";
+import { RevenueChartView, IRevenueTrendData, IRevenueMonthlyGrowthRateData } from "@core/entities/interfaces/booking.entity.interface";
 import { IDisputeAnalytics } from "@core/entities/interfaces/report.entity.interface";
 import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderPerformanceOverview, IProviderRevenueOverview, IResponseTimeChartData, IReviewChartData } from "@core/entities/interfaces/user.entity.interface";
 import { IResponse } from "@core/misc/response.util";
@@ -16,6 +17,10 @@ export class ProviderAnalyticsService implements IProviderAnalyticsService {
         @Inject(REPORT_REPOSITORY_NAME)
         private readonly _reportRepository: IReportRepository
     ) { }
+
+    private _getMonths(): string[] {
+        return ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    }
 
     // ------------ Performance Analytics Services ------------
 
@@ -74,8 +79,7 @@ export class ProviderAnalyticsService implements IProviderAnalyticsService {
     async getOnTimeArrivalData(providerId: string): Promise<IResponse<IOnTimeArrivalChartData[]>> {
         const onTimeArrivalData = await this._bookingRepository.getOnTimeArrivalData(providerId);
 
-        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
-            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const monthNames = this._getMonths();
 
         const formattedResult = onTimeArrivalData.map(r => ({
             month: monthNames[r.monthNumber! - 1],
@@ -99,10 +103,7 @@ export class ProviderAnalyticsService implements IProviderAnalyticsService {
     async getMonthlyDisputeStats(providerId: string): Promise<IResponse<IDisputeAnalytics[]>> {
         const disputeStats = await this._reportRepository.getMonthlyDisputeStats(providerId);
 
-        const monthNames = [
-            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-            "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"
-        ];
+        const monthNames = this._getMonths();
 
         const finalData = disputeStats.map(s => ({
             ...s,
@@ -127,10 +128,7 @@ export class ProviderAnalyticsService implements IProviderAnalyticsService {
     async getComparisonStats(providerId: string): Promise<IResponse<IComparisonChartData[]>> {
         const rawData = await this._bookingRepository.getComparisonData(providerId);
 
-        const monthNames = [
-            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-        ];
+        const monthNames = this._getMonths();
 
         const fullYearData: IComparisonChartData[] =
             Array.from({ length: 12 }, (_, i) => {
@@ -155,6 +153,64 @@ export class ProviderAnalyticsService implements IProviderAnalyticsService {
             success: true,
             message: 'Revenue overview data fetched successfully.',
             data: await this._bookingRepository.getRevenueOverview(providerId)
+        }
+    }
+
+    async getRevenueTrendOverTime(providerId: string, view: RevenueChartView): Promise<IResponse<IRevenueTrendData>> {
+        const raw = await this._bookingRepository.getRevenueTrendOverTime(providerId, view);
+
+        const { providerRevenue, platformAvg } = raw;
+
+        const monthLabels = this._getMonths();
+        const quarterLabels = ["Q1", "Q2", "Q3", "Q4"];
+
+        let labels: string[] = [];
+        if (view === 'monthly') labels = monthLabels;
+        else if (view === 'quarterly') labels = quarterLabels;
+        else if (view === 'yearly') {
+            const allYears = [...providerRevenue, ...platformAvg].map(d => Number(d.label));
+            let labelsSet = new Set(allYears);
+
+            // If only one year exists, add the previous year with zero
+            if (labelsSet.size === 1) {
+                const year = [...labelsSet][0];
+                labelsSet.add(year - 1);
+            }
+
+            labels = Array.from(labelsSet).sort((a, b) => a - b).map(String);
+        }
+
+        const mapValue = (arr, label) => {
+            const item = arr.find(d => d.label === label);
+            return item?.totalRevenue || 0;
+        }
+
+        const userRevenue = labels.map(l => mapValue(providerRevenue, l));
+        const platformAverage = labels.map(l => mapValue(platformAvg, l));
+
+        return {
+            success: true,
+            message: 'Revenue overview data fetched successfully.',
+            data: { labels, providerRevenue: userRevenue, platformAvg: platformAverage }
+        }
+    }
+
+    async getRevenueGrowthByMonth(providerId: string): Promise<IResponse<IRevenueMonthlyGrowthRateData[]>> {
+        const result = await this._bookingRepository.getRevenueGrowthByMonth(providerId);
+        console.log(JSON.stringify(result, null, 3))
+
+        const monthNames = this._getMonths();
+
+        const final = Array.from({ length: 12 }, (_, i) => {
+            const month = monthNames[i];
+            const existing = result.find(r => r.month === i + 1);
+            return existing ? { ...existing, month } : { month, totalRevenue: 0, growthRate: 0 };
+        });
+
+        return {
+            success: true,
+            message: 'Monthly revenue growth rate data fetched successfully.',
+            data: final
         }
     }
 }  

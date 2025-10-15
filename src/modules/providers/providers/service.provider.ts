@@ -7,7 +7,7 @@ import {
 import { TokenService } from '../../auth/services/implementations/token.service';
 import { ProviderServices } from '../services/implementations/provider.service';
 import { ServiceFeatureService } from '../services/implementations/service.service';
-import { ProviderAnalyticsService } from '@modules/providers/services/implementations/provider-analytics.service';
+import { ProviderAnalyticsService } from '@modules/providers/services/implementations/analytics.service';
 
 export const serviceProviders: Provider[] = [
   {

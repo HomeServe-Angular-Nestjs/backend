@@ -2,7 +2,7 @@ import { FilterQuery, Model, PipelineStage, Types } from 'mongoose';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { BOOKINGS_MODEL_NAME } from '@core/constants/model.constant';
-import { IBookingStats, IRatingDistribution, IRecentReviews } from '@core/entities/interfaces/booking.entity.interface';
+import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView } from '@core/entities/interfaces/booking.entity.interface';
 import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderRevenueOverview, IResponseTimeChartData, ITopProviders, ITotalReviewAndAvgRating } from '@core/entities/interfaces/user.entity.interface';
 import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
 import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
@@ -903,8 +903,6 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
 
 
     async getComparisonData(providerId: string): Promise<IComparisonChartData[]> {
-        console.log(providerId);
-
         const objectProviderId = this._toObjectId(providerId);
         const currentYear = new Date().getFullYear();
 
@@ -1058,5 +1056,140 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
         ]);
 
         return result[0];
+    }
+
+    async getRevenueTrendOverTime(providerId: string, view: RevenueChartView): Promise<IRevenueTrendRawData> {
+        const matchStage: FilterQuery<BookingDocument> = {
+            bookingStatus: BookingStatus.COMPLETED,
+        };
+
+        if (view === 'monthly' || view === 'quarterly') {
+            const currentYear = new Date().getFullYear();
+            matchStage.createdAt = {
+                $gte: new Date(currentYear, 0, 1),
+                $lt: new Date(currentYear + 1, 0, 1)
+            };
+        }
+
+        const getGroupId = () => {
+            switch (view) {
+                case 'monthly':
+                    return { month: { $month: "$createdAt" } };
+                case 'quarterly':
+                    return { quarter: { $ceil: { $divide: [{ $month: "$createdAt" }, 3] } } };
+                case 'yearly':
+                    return { year: { $year: "$createdAt" } };
+            }
+        };
+
+        const aggregation: PipelineStage[] = [
+            {
+                $facet: {
+                    providerRevenue: [
+                        { $match: { ...matchStage, providerId: this._toObjectId(providerId) } },
+                        { $group: { _id: getGroupId(), totalRevenue: { $sum: "$totalAmount" } } },
+                        {
+                            $sort: view === 'monthly' ? { "_id.month": 1 } :
+                                view === 'quarterly' ? { "_id.quarter": 1 } :
+                                    { "_id.year": 1 }
+                        }
+                    ],
+                    platformAverage: [
+                        {
+                            $match: {
+                                ...matchStage,
+                                providerId: { $ne: this._toObjectId(providerId) }
+                            }
+                        },
+                        { $group: { _id: getGroupId(), totalRevenue: { $avg: "$totalAmount" } } },
+                        {
+                            $sort: view === 'monthly' ? { "_id.month": 1 } :
+                                view === 'quarterly' ? { "_id.quarter": 1 } :
+                                    { "_id.year": 1 }
+                        }
+                    ]
+                }
+            }
+        ];
+
+        const rawResult = await this._bookingModel.aggregate(aggregation);
+        const providerRevenue = rawResult[0].providerRevenue;
+        const platformAverage = rawResult[0].platformAverage;
+
+        const mapLabel = (item) => {
+            if (view === 'monthly') return new Date(0, item._id.month - 1).toLocaleString('en-US', { month: 'short' });
+            if (view === 'quarterly') return `Q${item._id.quarter}`;
+            return item._id.year.toString();
+        }
+
+        const cleanProvider = providerRevenue.map(item => ({
+            label: mapLabel(item),
+            totalRevenue: item.totalRevenue
+        }));
+
+        const cleanPlatform = platformAverage.map(item => ({
+            label: mapLabel(item),
+            totalRevenue: item.totalRevenue
+        }));
+
+        return { providerRevenue: cleanProvider, platformAvg: cleanPlatform };
+    }
+
+    async getRevenueGrowthByMonth(providerId: string):Promise<IRevenueMonthlyGrowthRateData[]>{
+        return await this._bookingModel.aggregate([
+            {
+                $match: {
+                    providerId: this._toObjectId(providerId),
+                    $expr: {
+                        $eq: [{ $year: "$createdAt" }, new Date().getFullYear()]
+                    }
+                }
+            },
+            {
+                $group: {
+                    _id: { month: { $month: "$createdAt" } },
+                    totalRevenue: { $sum: "$totalAmount" }
+                }
+            },
+            { $sort: { "_id.month": 1 } },
+            {
+                $setWindowFields: {
+                    sortBy: { "_id.month": 1 },
+                    output: {
+                        prevMonthRevenue: { $shift: { output: "$totalRevenue", by: -1 } }
+                    }
+                }
+            },
+            {
+                $addFields: {
+                    prevMonthRevenue: { $ifNull: ["$prevMonthRevenue", 0] },
+                    growthRate: {
+                        $cond: [
+                            { $eq: [{ $ifNull: ["$prevMonthRevenue", 0] }, 0] },
+                            0,
+                            {
+                                $multiply: [
+                                    {
+                                        $divide: [
+                                            { $subtract: ["$totalRevenue", "$prevMonthRevenue"] },
+                                            "$prevMonthRevenue"
+                                        ]
+                                    },
+                                    100
+                                ]
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    month: "$_id.month",
+                    totalRevenue: 1,
+                    growthRate: { $round: ["$growthRate", 2] }
+                }
+            }
+        ]);
     }
 }
