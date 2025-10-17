@@ -2,7 +2,7 @@ import { FilterQuery, Model, PipelineStage, Types } from 'mongoose';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { BOOKINGS_MODEL_NAME } from '@core/constants/model.constant';
-import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData } from '@core/entities/interfaces/booking.entity.interface';
+import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary } from '@core/entities/interfaces/booking.entity.interface';
 import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderRevenueOverview, IResponseTimeChartData, ITopProviders, ITotalReviewAndAvgRating } from '@core/entities/interfaces/user.entity.interface';
 import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
 import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
@@ -1373,5 +1373,93 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                 }
             }
         ]);
+    }
+
+    async getAreaSummaryData(providerId: string): Promise<IAreaSummary> {
+        const result = await this._bookingModel.aggregate([
+            {
+                $match: {
+                    providerId: this._toObjectId(providerId),
+                    bookingStatus: BookingStatus.COMPLETED
+                }
+            },
+            {
+                $addFields: {
+                    areaName: {
+                        $trim: {
+                            input: {
+                                $ifNull: [
+                                    { $arrayElemAt: [{ $split: ["$location.address", ","] }, 3] },
+                                    "Unknown"
+                                ]
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                $group: {
+                    _id: "$areaName",
+                    totalBooking: { $sum: 1 },
+                    totalRevenue: { $sum: "$totalAmount" }
+                }
+            },
+            {
+                $sort: { totalRevenue: -1 }
+            },
+            // collecting all areas with their revenue in an array for easy extraction
+            {
+                $group: {
+                    _id: null,
+                    totalBookings: { $sum: "$totalBooking" },
+                    areas: {
+                        $push: {
+                            area: "$_id",
+                            revenue: "$totalRevenue"
+                        },
+                    }
+                }
+            },
+            // add top and bottom performing areas
+            {
+                $addFields: {
+                    topPerformingArea: { $arrayElemAt: ["$areas.area", 0] },
+                    underperformingArea: {
+                        $arrayElemAt: ["$areas.area", { $subtract: [{ $size: "$areas" }, 1] }]
+                    }
+                }
+            },
+            // get peak booking hour from the main collection
+            {
+                $lookup: {
+                    from: "bookings",
+                    pipeline: [
+                        { $match: { bookingStatus: "completed" } },
+                        {
+                            $group: {
+                                _id: "$slot.from",
+                                count: { $sum: 1 }
+                            }
+                        },
+                        { $sort: { count: -1 } },
+                        {
+                            $limit: 1
+                        }
+                    ],
+                    as: "peakHour"
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    totalBookings: 1,
+                    topPerformingArea: 1,
+                    underperformingArea: 1,
+                    peakBookingHour: { $arrayElemAt: ["$peakHour._id", 0] }
+                }
+            }
+        ]);
+
+        return result[0];
     }
 }

@@ -302,3 +302,10 @@ export interface INewOrReturningClientData {
     newClients: number;
     returningClients: number;
 }
+
+export interface IAreaSummary {
+    totalBookings: number;
+    topPerformingArea: string;
+    underperformingArea: string;
+    peakBookingHour: string;
+}

@@ -1,5 +1,5 @@
 import { FilterQuery, Types } from 'mongoose';
-import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData } from '@core/entities/interfaces/booking.entity.interface';
+import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary } from '@core/entities/interfaces/booking.entity.interface';
 import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderRevenueOverview, IResponseTimeChartData, ITopProviders, ITotalReviewAndAvgRating } from '@core/entities/interfaces/user.entity.interface';
 import { IBaseRepository } from '@core/repositories/base/interfaces/base-repo.interface';
 import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
@@ -43,4 +43,6 @@ export interface IBookingRepository extends IBaseRepository<BookingDocument> {
     getRevenueCompositionByServiceCategory(providerId: string): Promise<IRevenueCompositionData[]>;
     getTopTenServicesByRevenue(providerId: string): Promise<ITopServicesByRevenue[]>;
     getNewAndReturningClientData(providerId: string): Promise<INewOrReturningClientData[]>;
+
+    getAreaSummaryData(providerId: string): Promise<IAreaSummary>;
 } 

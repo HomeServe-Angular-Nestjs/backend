@@ -1,4 +1,4 @@
-import { Controller, Get, Inject, Query, Req } from "@nestjs/common";
+import { Controller, Get, Inject, Query, Req, UseGuards } from "@nestjs/common";
 import { IProviderAnalyticsService } from '@modules/providers/services/interfaces/provider-analytics-service.interface';
 import { PROVIDER_ANALYTICS_SERVICE_NAME } from "@core/constants/service.constant";
 import { IResponse } from "@core/misc/response.util";
@@ -7,8 +7,10 @@ import { IPayload } from "@core/misc/payload.interface";
 import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderPerformanceOverview, IProviderRevenueOverview, IResponseTimeChartData, IReviewChartData } from "@core/entities/interfaces/user.entity.interface";
 import { IDisputeAnalytics } from "@core/entities/interfaces/report.entity.interface";
 import { RevenueChartViewDto } from "@modules/providers/dtos/analytics.dto";
-import { IRevenueMonthlyGrowthRateData, IRevenueTrendData, IRevenueCompositionData, ITopServicesByRevenue } from "@core/entities/interfaces/booking.entity.interface";
+import { IRevenueMonthlyGrowthRateData, IRevenueTrendData, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary } from "@core/entities/interfaces/booking.entity.interface";
+import { SubscriptionGuard } from "@core/guards/subscription.guard";
 
+@UseGuards(SubscriptionGuard)
 @Controller('analytics')
 export class AnalyticsController {
     constructor(
@@ -103,4 +105,13 @@ export class AnalyticsController {
         const user = req.user as IPayload;
         return await this._analyticService.getNewAndReturningClientData(user.sub);
     }
+
+    // ------------ Area Analytics APIs ------------
+
+    @Get('area/summary')
+    async getAreaSummaryData(@Req() req: Request): Promise<IResponse<IAreaSummary>> {
+        const user = req.user as IPayload;
+        return await this._analyticService.getAreaSummaryData(user.sub);
+    }
+
 }

@@ -1,5 +1,5 @@
 import { BOOKING_REPOSITORY_NAME, REPORT_REPOSITORY_NAME } from "@core/constants/repository.constant";
-import { RevenueChartView, IRevenueTrendData, IRevenueMonthlyGrowthRateData,IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData } from "@core/entities/interfaces/booking.entity.interface";
+import { RevenueChartView, IRevenueTrendData, IRevenueMonthlyGrowthRateData, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary } from "@core/entities/interfaces/booking.entity.interface";
 import { IDisputeAnalytics } from "@core/entities/interfaces/report.entity.interface";
 import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderPerformanceOverview, IProviderRevenueOverview, IResponseTimeChartData, IReviewChartData } from "@core/entities/interfaces/user.entity.interface";
 import { IResponse } from "@core/misc/response.util";
@@ -219,7 +219,7 @@ export class ProviderAnalyticsService implements IProviderAnalyticsService {
             data: await this._bookingRepository.getRevenueCompositionByServiceCategory(providerId)
         }
     }
-   
+
     async getTopServicesByRevenue(providerId: string): Promise<IResponse<ITopServicesByRevenue[]>> {
         return {
             success: true,
@@ -227,12 +227,22 @@ export class ProviderAnalyticsService implements IProviderAnalyticsService {
             data: await this._bookingRepository.getTopTenServicesByRevenue(providerId)
         }
     }
-   
+
     async getNewAndReturningClientData(providerId: string): Promise<IResponse<INewOrReturningClientData[]>> {
         return {
             success: true,
             message: 'Top service data fetched successfully.',
             data: await this._bookingRepository.getNewAndReturningClientData(providerId)
+        }
+    }
+
+    // ------------ Area Analytics Services ------------
+
+    async getAreaSummaryData(providerId: string): Promise<IResponse<IAreaSummary>> {
+        return {
+            success: true,
+            message: 'Area analytical summary data fetched successfully.',
+            data: await this._bookingRepository.getAreaSummaryData(providerId)
         }
     }
 }  
