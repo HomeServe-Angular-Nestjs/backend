@@ -2,7 +2,7 @@ import { FilterQuery, Model, PipelineStage, Types } from 'mongoose';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { BOOKINGS_MODEL_NAME } from '@core/constants/model.constant';
-import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData, ILocationRevenue, ITopAreaRevenue, IUnderperformingArea } from '@core/entities/interfaces/booking.entity.interface';
+import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData, ILocationRevenue, ITopAreaRevenue, IUnderperformingArea, IPeakServiceTime } from '@core/entities/interfaces/booking.entity.interface';
 import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderRevenueOverview, IResponseTimeChartData, ITopProviders, ITotalReviewAndAvgRating } from '@core/entities/interfaces/user.entity.interface';
 import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
 import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
@@ -1845,4 +1845,45 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
         ]);
     }
 
+    async getPeakServiceTime(providerId: string): Promise<IPeakServiceTime[]> {
+        return await this._bookingModel.aggregate([
+            {
+                $match: {
+                    providerId: this._toObjectId(providerId),
+                    bookingStatus: BookingStatus.COMPLETED,
+                    "expectedArrivalTime": { $exists: true }
+                }
+            },
+            {
+                $addFields: {
+                    hour: { $hour: "$expectedArrivalTime" },
+                    dayOfWeek: { $isoDayOfWeek: "$expectedArrivalTime" }
+                }
+            },
+            {
+                $group: {
+                    _id: "$hour",
+                    weekdayBookings: {
+                        $sum: {
+                            $cond: [{ $lte: ["$dayOfWeek", 5] }, 1, 0]
+                        }
+                    },
+                    weekendBookings: {
+                        $sum: {
+                            $cond: [{ $gte: ["$dayOfWeek", 6] }, 1, 0]
+                        }
+                    }
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    hour: '$_id',
+                    weekdayBookings: 1,
+                    weekendBookings: 1
+                }
+            },
+            { $sort: { hour: 1 } }
+        ]);
+    }
 }

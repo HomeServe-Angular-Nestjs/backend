@@ -335,3 +335,9 @@ export interface IUnderperformingArea {
     currentMonthRevenue: number;
     changePct: number;
 }
+
+export interface IPeakServiceTime {
+    hour: number;
+    weekdayBookings: number;
+    weekendBookings: number;
+}
