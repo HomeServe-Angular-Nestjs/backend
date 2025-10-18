@@ -7,7 +7,7 @@ import { IPayload } from "@core/misc/payload.interface";
 import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderPerformanceOverview, IProviderRevenueOverview, IResponseTimeChartData, IReviewChartData } from "@core/entities/interfaces/user.entity.interface";
 import { IDisputeAnalytics } from "@core/entities/interfaces/report.entity.interface";
 import { RevenueChartViewDto } from "@modules/providers/dtos/analytics.dto";
-import { IRevenueMonthlyGrowthRateData, IRevenueTrendData, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary } from "@core/entities/interfaces/booking.entity.interface";
+import { IRevenueMonthlyGrowthRateData, IRevenueTrendData, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData } from "@core/entities/interfaces/booking.entity.interface";
 import { SubscriptionGuard } from "@core/guards/subscription.guard";
 
 @UseGuards(SubscriptionGuard)
@@ -112,6 +112,12 @@ export class AnalyticsController {
     async getAreaSummaryData(@Req() req: Request): Promise<IResponse<IAreaSummary>> {
         const user = req.user as IPayload;
         return await this._analyticService.getAreaSummaryData(user.sub);
+    }
+
+    @Get('area/service_demand')
+    async getServiceDemandData(@Req() req: Request): Promise<IResponse<IServiceDemandData[]>> {
+        const user = req.user as IPayload;
+        return await this._analyticService.getServiceDemandData(user.sub);
     }
 
 }

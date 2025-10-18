@@ -309,3 +309,9 @@ export interface IAreaSummary {
     underperformingArea: string;
     peakBookingHour: string;
 }
+
+export interface IServiceDemandData {
+    day: 'Mon' | 'Tue' | 'Wed' | 'Thu' | 'Fri' | 'Sat' | 'Sun';
+    hour: string;
+    count: number;
+}

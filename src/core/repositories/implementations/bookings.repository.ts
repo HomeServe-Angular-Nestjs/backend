@@ -2,7 +2,7 @@ import { FilterQuery, Model, PipelineStage, Types } from 'mongoose';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { BOOKINGS_MODEL_NAME } from '@core/constants/model.constant';
-import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary } from '@core/entities/interfaces/booking.entity.interface';
+import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData } from '@core/entities/interfaces/booking.entity.interface';
 import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderRevenueOverview, IResponseTimeChartData, ITopProviders, ITotalReviewAndAvgRating } from '@core/entities/interfaces/user.entity.interface';
 import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
 import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
@@ -1461,5 +1461,39 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
         ]);
 
         return result[0];
+    }
+
+    async getServiceDemandData(providerId: string): Promise<IServiceDemandData[]> {
+        return await this._bookingModel.aggregate([
+            { $match: { providerId: this._toObjectId(providerId) } },
+            {
+                $group: {
+                    _id: {
+                        day: { $dayOfWeek: "$createdAt" }, // 1 (Sunday) to 7 (Saturday)
+                        hour: { $hour: "$createdAt" }
+                    },
+                    count: { $sum: 1 }
+                }
+            },
+            {
+                $project: {
+                    day: {
+                        $arrayElemAt: [
+                            ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+                            { $subtract: ["$_id.day", 1] }
+                        ]
+                    },
+                    hour: {
+                        $concat: [
+                            { $toString: "$_id.hour" },
+                            ":00"
+                        ]
+                    },
+                    count: 1,
+                    _id: 0
+                }
+            },
+            { $sort: { day: 1, hour: 1 } }
+        ]);
     }
 }
