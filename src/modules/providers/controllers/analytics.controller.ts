@@ -7,7 +7,7 @@ import { IPayload } from "@core/misc/payload.interface";
 import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderPerformanceOverview, IProviderRevenueOverview, IResponseTimeChartData, IReviewChartData } from "@core/entities/interfaces/user.entity.interface";
 import { IDisputeAnalytics } from "@core/entities/interfaces/report.entity.interface";
 import { RevenueChartViewDto } from "@modules/providers/dtos/analytics.dto";
-import { IRevenueMonthlyGrowthRateData, IRevenueTrendData, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData, ITopAreaRevenueResponse } from "@core/entities/interfaces/booking.entity.interface";
+import { IRevenueMonthlyGrowthRateData, IRevenueTrendData, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData, ILocationRevenue, ITopAreaRevenue } from "@core/entities/interfaces/booking.entity.interface";
 import { SubscriptionGuard } from "@core/guards/subscription.guard";
 
 @UseGuards(SubscriptionGuard)
@@ -120,10 +120,16 @@ export class AnalyticsController {
         return await this._analyticService.getServiceDemandData(user.sub);
     }
 
-    @Get('area/top_service_by_revenue')
-    async getServiceDemandByLocation(@Req() req: Request): Promise<IResponse<ITopAreaRevenueResponse[]>> {
+    @Get('area/location_by_revenue')
+    async getServiceDemandByLocation(@Req() req: Request): Promise<IResponse<ILocationRevenue[]>> {
         const user = req.user as IPayload;
         return await this._analyticService.getServiceDemandByLocation(user.sub);
+    }
+
+    @Get('area/top_location_by_revenue')
+    async getTopAreasRevenue(@Req() req: Request): Promise<IResponse<ITopAreaRevenue[]>> {
+        const user = req.user as IPayload;
+        return await this._analyticService.getTopAreasRevenue(user.sub);
     }
 
 }

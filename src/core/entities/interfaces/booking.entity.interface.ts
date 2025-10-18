@@ -316,9 +316,15 @@ export interface IServiceDemandData {
     count: number;
 }
 
-export interface ITopAreaRevenueResponse {
+export interface ILocationRevenue {
     locationName: string;
     totalRevenue: number;
     previousRevenue: number;
+    changePct: number;
+}
+
+export interface ITopAreaRevenue {
+    locationName: string;
+    totalRevenue: number;
     changePct: number;
 }

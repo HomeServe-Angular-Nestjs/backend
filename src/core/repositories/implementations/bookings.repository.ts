@@ -2,7 +2,7 @@ import { FilterQuery, Model, PipelineStage, Types } from 'mongoose';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { BOOKINGS_MODEL_NAME } from '@core/constants/model.constant';
-import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData, ITopAreaRevenueResponse } from '@core/entities/interfaces/booking.entity.interface';
+import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData, ILocationRevenue, ITopAreaRevenue } from '@core/entities/interfaces/booking.entity.interface';
 import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderRevenueOverview, IResponseTimeChartData, ITopProviders, ITotalReviewAndAvgRating } from '@core/entities/interfaces/user.entity.interface';
 import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
 import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
@@ -1497,7 +1497,7 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
         ]);
     }
 
-    async getServiceDemandByLocation(providerId: string): Promise<ITopAreaRevenueResponse[]> {
+    async getServiceDemandByLocation(providerId: string): Promise<ILocationRevenue[]> {
         const now = new Date();
         const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
@@ -1600,6 +1600,135 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                 }
             },
             { $sort: { totalRevenue: -1 } }
+        ]);
+    }
+
+    async getTopAreasRevenue(providerId: string): Promise<ITopAreaRevenue[]> {
+        const now = new Date();
+        const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+
+        return await this._bookingModel.aggregate([
+            {
+                $match: {
+                    providerId: this._toObjectId(providerId),
+                    bookingStatus: BookingStatus.COMPLETED,
+                    createdAt: { $gte: startOfLastMonth, $lte: now }
+                }
+            },
+            {
+                $addFields: {
+                    month: { $month: '$createdAt' },
+                    year: { $year: '$createdAt' }
+                }
+            },
+            {
+                $group: {
+                    _id: { locationName: '$location.address', month: '$month', year: '$year' },
+                    totalRevenue: { $sum: '$totalAmount' }
+                }
+            },
+            {
+                $group: {
+                    _id: '$_id.locationName',
+                    monthlyData: {
+                        $push: {
+                            month: '$_id.month',
+                            year: '$_id.year',
+                            totalRevenue: '$totalRevenue'
+                        }
+                    }
+                }
+            },
+            {
+                $project: {
+                    locationName: '$_id',
+                    _id: 0,
+                    totalRevenue: {
+                        $let: {
+                            vars: {
+                                currentMonth: {
+                                    $first: {
+                                        $filter: {
+                                            input: '$monthlyData',
+                                            as: 'm',
+                                            cond: {
+                                                $and: [
+                                                    { $eq: ['$$m.month', now.getMonth() + 1] },
+                                                    { $eq: ['$$m.year', now.getFullYear()] }
+                                                ]
+                                            }
+                                        }
+                                    }
+                                },
+                                lastMonth: {
+                                    $first: {
+                                        $filter: {
+                                            input: '$monthlyData',
+                                            as: 'm',
+                                            cond: {
+                                                $and: [
+                                                    { $eq: ['$$m.month', now.getMonth()] },
+                                                    { $eq: ['$$m.year', now.getFullYear()] }
+                                                ]
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            in: '$$currentMonth.totalRevenue'
+                        }
+                    },
+                    prevRevenue: {
+                        $let: {
+                            vars: {
+                                lastMonth: {
+                                    $first: {
+                                        $filter: {
+                                            input: '$monthlyData',
+                                            as: 'm',
+                                            cond: {
+                                                $and: [
+                                                    { $eq: ['$$m.month', now.getMonth()] },
+                                                    { $eq: ['$$m.year', now.getFullYear()] }
+                                                ]
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            in: '$$lastMonth.totalRevenue'
+                        }
+                    }
+                }
+            },
+            {
+                $addFields: {
+                    changePct: {
+                        $cond: [
+                            { $or: [{ $eq: ['$prevRevenue', 0] }, { $not: ['$prevRevenue'] }] },
+                            0,
+                            {
+                                $multiply: [
+                                    { $divide: [{ $subtract: ['$totalRevenue', '$prevRevenue'] }, '$prevRevenue'] },
+                                    100
+                                ]
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                $sort: { totalRevenue: -1 }
+            },
+            {
+                $project: {
+                    locationName: 1,
+                    totalRevenue: 1,
+                    changePct: { $round: ['$changePct', 2] }
+                }
+            }
         ]);
     }
 }
