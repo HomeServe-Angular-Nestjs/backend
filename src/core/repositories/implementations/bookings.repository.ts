@@ -2,7 +2,7 @@ import { FilterQuery, Model, PipelineStage, Types } from 'mongoose';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { BOOKINGS_MODEL_NAME } from '@core/constants/model.constant';
-import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData } from '@core/entities/interfaces/booking.entity.interface';
+import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData, ITopAreaRevenueResponse } from '@core/entities/interfaces/booking.entity.interface';
 import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderRevenueOverview, IResponseTimeChartData, ITopProviders, ITotalReviewAndAvgRating } from '@core/entities/interfaces/user.entity.interface';
 import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
 import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
@@ -52,27 +52,27 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                     total: { $sum: 1 },
                     completed: {
                         $sum: {
-                            $cond: [{ $eq: ["$bookingStatus", "completed"] }, 1, 0]
+                            $cond: [{ $eq: ["$bookingStatus", BookingStatus.COMPLETED] }, 1, 0]
                         }
                     },
                     pending: {
                         $sum: {
-                            $cond: [{ $eq: ["$bookingStatus", "pending"] }, 1, 0]
+                            $cond: [{ $eq: ["$bookingStatus", BookingStatus.PENDING] }, 1, 0]
                         }
                     },
                     cancelled: {
                         $sum: {
-                            $cond: [{ $eq: ["$bookingStatus", "cancelled"] }, 1, 0]
+                            $cond: [{ $eq: ["$bookingStatus", BookingStatus.CANCELLED] }, 1, 0]
                         }
                     },
                     unpaid: {
                         $sum: {
-                            $cond: [{ $eq: ["$paymentStatus", "unpaid"] }, 1, 0]
+                            $cond: [{ $eq: ["$paymentStatus", PaymentStatus.UNPAID] }, 1, 0]
                         }
                     },
                     refunded: {
                         $sum: {
-                            $cond: [{ $eq: ["$paymentStatus", "refunded"] }, 1, 0]
+                            $cond: [{ $eq: ["$paymentStatus", PaymentStatus.REFUNDED] }, 1, 0]
                         }
                     }
                 }
@@ -1494,6 +1494,112 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                 }
             },
             { $sort: { day: 1, hour: 1 } }
+        ]);
+    }
+
+    async getServiceDemandByLocation(providerId: string): Promise<ITopAreaRevenueResponse[]> {
+        const now = new Date();
+        const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+        return await this._bookingModel.aggregate([
+            {
+                $match: {
+                    providerId: this._toObjectId(providerId),
+                    bookingStatus: BookingStatus.COMPLETED,
+                    createdAt: { $gte: previousMonthStart }
+                }
+            },
+            {
+                $addFields: {
+                    month: { $month: "$createdAt" },
+                    year: { $year: "$createdAt" }
+                }
+            },
+            {
+                $group: {
+                    _id: {
+                        locationName: "$location.address",
+                        year: "$year",
+                        month: "$month"
+                    },
+                    totalRevenue: { $sum: "$totalAmount" }
+                }
+            },
+            {
+                $group: {
+                    _id: "$_id.locationName",
+                    monthlyData: {
+                        $push: {
+                            month: "$_id.month",
+                            year: "$_id.year",
+                            totalRevenue: "$totalRevenue"
+                        }
+                    }
+                }
+            },
+            {
+                $project: {
+                    locationName: "$_id",
+                    monthlyData: 1,
+                    _id: 0
+                }
+            },
+            {
+                $addFields: {
+                    current: {
+                        $arrayElemAt: [
+                            {
+                                $filter: {
+                                    input: "$monthlyData",
+                                    cond: { $eq: ["$$this.month", now.getMonth() + 1] }
+                                }
+                            },
+                            0
+                        ]
+                    },
+                    previous: {
+                        $arrayElemAt: [
+                            {
+                                $filter: {
+                                    input: "$monthlyData",
+                                    cond: { $eq: ["$$this.month", now.getMonth()] }
+                                }
+                            },
+                            0
+                        ]
+                    }
+                }
+            },
+            {
+                $project: {
+                    locationName: 1,
+                    totalRevenue: "$current.totalRevenue",
+                    previousRevenue: "$previous.totalRevenue",
+                    changePct: {
+                        $cond: [
+                            { $and: [{ $ifNull: ["$previous.totalRevenue", false] }, { $ne: ["$previous.totalRevenue", 0] }] },
+                            {
+                                $round: [
+                                    {
+                                        $multiply: [
+                                            {
+                                                $divide: [
+                                                    { $subtract: ["$current.totalRevenue", "$previous.totalRevenue"] },
+                                                    "$previous.totalRevenue"
+                                                ]
+                                            },
+                                            100
+                                        ]
+                                    },
+                                    2
+                                ]
+                            },
+                            0
+                        ]
+                    }
+                }
+            },
+            { $sort: { totalRevenue: -1 } }
         ]);
     }
 }

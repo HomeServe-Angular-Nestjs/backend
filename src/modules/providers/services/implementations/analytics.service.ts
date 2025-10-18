@@ -1,5 +1,5 @@
 import { BOOKING_REPOSITORY_NAME, REPORT_REPOSITORY_NAME } from "@core/constants/repository.constant";
-import { RevenueChartView, IRevenueTrendData, IRevenueMonthlyGrowthRateData, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData } from "@core/entities/interfaces/booking.entity.interface";
+import { RevenueChartView, IRevenueTrendData, IRevenueMonthlyGrowthRateData, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData, ITopAreaRevenueResponse } from "@core/entities/interfaces/booking.entity.interface";
 import { IDisputeAnalytics } from "@core/entities/interfaces/report.entity.interface";
 import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderPerformanceOverview, IProviderRevenueOverview, IResponseTimeChartData, IReviewChartData } from "@core/entities/interfaces/user.entity.interface";
 import { IResponse } from "@core/misc/response.util";
@@ -249,8 +249,16 @@ export class ProviderAnalyticsService implements IProviderAnalyticsService {
     async getServiceDemandData(providerId: string): Promise<IResponse<IServiceDemandData[]>> {
         return {
             success: true,
-            message: 'Area analytical summary data fetched successfully.',
+            message: 'Service demand by week data fetched successfully.',
             data: await this._bookingRepository.getServiceDemandData(providerId)
+        }
+    }
+
+    async getServiceDemandByLocation(providerId: string): Promise<IResponse<ITopAreaRevenueResponse[]>> {
+        return {
+            success: true,
+            message: 'Service demand by revenue data fetched successfully.',
+            data: await this._bookingRepository.getServiceDemandByLocation(providerId)
         }
     }
 }  
