@@ -34,7 +34,7 @@ export class LoginController {
     if (!user) {
       throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
     }
-
+ 
     const accessToken = this._tokenService.generateAccessToken(user.id, user.email, dto.type);
     if (!accessToken) {
       throw new UnauthorizedException('Access token is missing');

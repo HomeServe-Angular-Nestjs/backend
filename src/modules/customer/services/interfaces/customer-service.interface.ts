@@ -13,6 +13,6 @@ export interface ICustomerService {
     updateProfile(customerId: string, updateData: UpdateProfileDto): Promise<IResponse<ICustomer>>;
     changePassword(customerId: string, data: ChangePasswordDto): Promise<IResponse<ICustomer>>;
     changeAvatar(customerId: string, file: Express.Multer.File): Promise<IResponse<ICustomer>>;
-    submitReview(customerId: string, dto: SubmitReviewDto): Promise<IResponse<IFetchReviews>>;
+    // submitReview(customerId: string, dto: SubmitReviewDto): Promise<IResponse<IFetchReviews>>;
     getProviderGalleryImages(providerId: string): Promise<IResponse<string[]>>;
 }

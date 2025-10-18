@@ -21,49 +21,21 @@ export class ProviderBookingsController {
 
     @Get('')
     async fetchBookings(@Req() req: Request, @Query() paginationDto: BookingPaginationFilterDto): Promise<IResponseProviderBookingLists> {
-        try {
-            const user = req.user as IPayload;
-            if (!user.sub) {
-                throw new UnauthorizedException('User not found');
-            }
+        const user = req.user as IPayload;
+        const { page, ...filters } = paginationDto;
 
-            const { page, ...filters } = paginationDto;
-
-            return this._providerBookingService.fetchBookingsList(user.sub, page, filters);
-        } catch (err) {
-            this.logger.error(`Error fetching bookings for the provider: ${err}`);
-            throw new InternalServerErrorException('Something happened while fetching bookings for the provider');
-        }
+        return this._providerBookingService.fetchBookingsList(user.sub, page, filters);
     }
 
     @Get('overview_data')
     async getOverviewData(@Req() req: Request) {
-        try {
-            const user = req.user as IPayload;
-            if (!user.sub) {
-                throw new UnauthorizedException('User not found');
-            }
-
-            return this._providerBookingService.fetchOverviewData(user.sub);
-        } catch (err) {
-            this.logger.error(`Error fetching overview data for the provider: ${err}`);
-            throw new InternalServerErrorException('Something happened while fetching overview data for the provider');
-        }
+        const user = req.user as IPayload;
+        return this._providerBookingService.fetchOverviewData(user.sub);
     }
 
     @Get('fetch_details')
     async getBookingDetails(@Query() dto: BookingIdDto) {
-        try {
-            const { bookingId } = dto
-            if (!bookingId) {
-                throw new BadRequestException('Booking Id not found');
-            }
-
-            return await this._providerBookingService.fetchBookingDetails(bookingId);
-        } catch (err) {
-            this.logger.error(`Error fetching booking details for the provider: ${err}`);
-            throw new InternalServerErrorException('Something happened while fetching booking details for the provider');
-        }
+        return await this._providerBookingService.fetchBookingDetails(dto.bookingId);
     }
 
     @Patch('b_status')

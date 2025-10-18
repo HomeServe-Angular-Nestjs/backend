@@ -125,7 +125,7 @@ export class LoginService implements ILoginService {
         ? await this._customerRepository.updateLastLogin(dto.email)
         : await this._providerRepository.updateLastLogin(dto.email);
 
-      this._createWallet(user.id, user.type as UserType)
+      this._createWallet(user.id, dto.type as UserType)
     }
 
     return user;

@@ -1,6 +1,6 @@
 import { FilterQuery, Types } from 'mongoose';
-import { IBookingStats } from '@core/entities/interfaces/booking.entity.interface';
-import { ITopProviders } from '@core/entities/interfaces/user.entity.interface';
+import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData, ILocationRevenue, ITopAreaRevenue, IUnderperformingArea, IPeakServiceTime } from '@core/entities/interfaces/booking.entity.interface';
+import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderRevenueOverview, IResponseTimeChartData, ITopProviders, ITotalReviewAndAvgRating } from '@core/entities/interfaces/user.entity.interface';
 import { IBaseRepository } from '@core/repositories/base/interfaces/base-repo.interface';
 import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
 import { IBookingReportData, IReportCustomerMatrix, IReportDownloadBookingData, IReportProviderMatrix } from '@core/entities/interfaces/admin.entity.interface';
@@ -24,4 +24,30 @@ export interface IBookingRepository extends IBaseRepository<BookingDocument> {
     cancelBooking(bookingId: string, reason: string): Promise<BookingDocument | null>;
     updatePaymentStatus(bookingId: string, status: PaymentStatus, transactionId: string): Promise<BookingDocument | null>;
     updateBookingStatus(bookingId: string, status: BookingStatus): Promise<BookingDocument | null>;
-}
+    addReview(bookingId: string, desc: string, rating: number): Promise<boolean>;
+    getAvgRating(providerId: string): Promise<number>;
+
+    getPerformanceSummary(providerId: string): Promise<any>;
+    getAvgRatingAndTotalReviews(providerId?: string): Promise<ITotalReviewAndAvgRating[]>;
+    getBookingPerformanceData(providerId: string): Promise<IBookingPerformanceData[]>;
+    getRatingDistributionsByProviderId(providerId: string): Promise<IRatingDistribution[]>;
+    getRecentReviews(providerId: string, limit?: number): Promise<BookingDocument[]>;
+    getResponseDistributionTime(providerId: string): Promise<IResponseTimeChartData[]>
+    getOnTimeArrivalData(providerId: string): Promise<IOnTimeArrivalChartData[]>;
+    getComparisonOverviewData(providerId: string): Promise<IComparisonOverviewData>;
+    getComparisonData(providerId: string): Promise<IComparisonChartData[]>;
+
+    getRevenueOverview(providerId: string): Promise<IProviderRevenueOverview>;
+    getRevenueTrendOverTime(providerId: string, view: RevenueChartView): Promise<IRevenueTrendRawData>;
+    getRevenueGrowthByMonth(providerId: string): Promise<IRevenueMonthlyGrowthRateData[]>;
+    getRevenueCompositionByServiceCategory(providerId: string): Promise<IRevenueCompositionData[]>;
+    getTopTenServicesByRevenue(providerId: string): Promise<ITopServicesByRevenue[]>;
+    getNewAndReturningClientData(providerId: string): Promise<INewOrReturningClientData[]>;
+
+    getAreaSummaryData(providerId: string): Promise<IAreaSummary>;
+    getServiceDemandData(providerId: string): Promise<IServiceDemandData[]>;
+    getServiceDemandByLocation(providerId: string): Promise<ILocationRevenue[]>;
+    getTopAreasRevenue(providerId: string): Promise<ITopAreaRevenue[]>;
+    getUnderperformingAreas(providerId: string): Promise<IUnderperformingArea[]>;
+    getPeakServiceTime(providerId: string): Promise<IPeakServiceTime[]>;
+} 

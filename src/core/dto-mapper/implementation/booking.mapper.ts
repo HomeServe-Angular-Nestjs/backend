@@ -1,9 +1,8 @@
 import { Types } from 'mongoose';
-
 import { IBookingMapper } from '@core/dto-mapper/interface/bookings.mapper.interface';
-import { BookedSlot, Booking } from '@core/entities/implementation/bookings.entity';
-import { IBookedSlot, IBooking } from '@core/entities/interfaces/booking.entity.interface';
-import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
+import { BookedSlot, Booking, Review } from '@core/entities/implementation/bookings.entity';
+import { IBookedSlot, IBooking, IReview } from '@core/entities/interfaces/booking.entity.interface';
+import { BookingDocument, ReviewDocument, SlotDocument } from '@core/schema/bookings.schema';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
@@ -27,6 +26,8 @@ export class BookingMapper implements IBookingMapper {
             transactionId: doc.transactionId?.toString(),
             createdAt: doc.createdAt,
             updatedAt: doc.updatedAt,
+            review: doc.review ? this.toReviewEntities(doc.review) : null,
+            respondedAt: doc.respondedAt ?? null,
         });
     }
 
@@ -37,6 +38,16 @@ export class BookingMapper implements IBookingMapper {
             from: doc.from,
             to: doc.to,
             status: doc.status
+        });
+    }
+
+    toReviewEntities(reviewDoc: ReviewDocument): IReview {
+        return new Review({
+            desc: reviewDoc.desc,
+            writtenAt: new Date(reviewDoc.writtenAt),
+            isReported: reviewDoc.isReported,
+            rating: reviewDoc.rating,
+            isActive: reviewDoc.isActive,
         });
     }
 
@@ -64,6 +75,8 @@ export class BookingMapper implements IBookingMapper {
             cancelStatus: entity.cancelStatus,
             cancelledAt: entity.cancelledAt ? new Date(entity.cancelledAt) : null,
             actualArrivalTime: entity?.actualArrivalTime ? new Date(entity.actualArrivalTime) : null,
+            review: null,
+            respondedAt: entity.respondedAt
         }
     }
 }

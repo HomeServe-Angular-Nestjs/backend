@@ -55,10 +55,10 @@ export class ProviderRepository extends BaseRepository<ProviderDocument> impleme
     return result !== null;
   }
 
-  async getCurrentRatingCountAndAverage(providerId: string): Promise<{ currentRatingCount: number, currentRatingAvg: number } | null> {
-    const result = await this._providerModel.findOne({ _id: providerId }, { _id: -1, ratingCount: 1, avgRating: 1 });
-    return result ? { currentRatingAvg: result.avgRating, currentRatingCount: result.ratingCount } : null
-  }
+  // async getCurrentRatingCountAndAverage(providerId: string): Promise<{ currentRatingCount: number, currentRatingAvg: number } | null> {
+  //   const result = await this._providerModel.findOne({ _id: providerId }, { _id: -1, ratingCount: 1, avgRating: 1 });
+  //   return result ? { currentRatingAvg: result.avgRating, currentRatingCount: result.ratingCount } : null
+  // }
 
   async getProvidersBasedOnLocation(lng: number, lat: number): Promise<ProviderDocument[]> {
     const result = await this._providerModel.find({

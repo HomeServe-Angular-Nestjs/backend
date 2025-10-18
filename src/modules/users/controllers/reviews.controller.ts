@@ -21,16 +21,16 @@ export class ReviewController {
     ) { }
 
 
-    @Get('')
-    async getReviews(@Query() dto: FilterWithPaginationDto): Promise<IResponse<PaginatedReviewResponse>> {
-        try {
-            return await this._reviewService.getReviewData(dto);
-        } catch (err) {
-            this.logger.error('Error caught while fetching the reviews: ', err.message, err.stack);
-            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+    // @Get('')
+    // async getReviews(@Query() dto: FilterWithPaginationDto): Promise<IResponse<PaginatedReviewResponse>> {
+    //     try {
+    //         return await this._reviewService.getReviewData(dto);
+    //     } catch (err) {
+    //         this.logger.error('Error caught while fetching the reviews: ', err.message, err.stack);
+    //         throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
 
-        }
-    }
+    //     }
+    // }
 
     @Patch('status')
     async updateStatus(@Body() dto: UpdateReviewStatus) {

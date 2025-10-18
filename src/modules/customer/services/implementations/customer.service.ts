@@ -6,7 +6,7 @@ import { Inject, Injectable, InternalServerErrorException, NotFoundException } f
 import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SERVICE_OFFERED_REPOSITORY_NAME } from '@core/constants/repository.constant';
 import { ARGON_UTILITY_NAME, UPLOAD_UTILITY_NAME } from '@core/constants/utility.constant';
 import { ICustomerSearchServices } from '@core/entities/interfaces/service.entity.interface';
-import { ICustomer, IFetchReviews, IReview, ISearchedProviders } from '@core/entities/interfaces/user.entity.interface';
+import { ICustomer, ISearchedProviders } from '@core/entities/interfaces/user.entity.interface';
 import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
@@ -18,7 +18,7 @@ import { IArgonUtility } from '@core/utilities/interface/argon.utility.interface
 import { IUploadsUtility } from '@core/utilities/interface/upload.utility.interface';
 import { ChangePasswordDto } from '@modules/customer/dtos/customer.dto';
 import { ICustomerService } from '@modules/customer/services/interfaces/customer-service.interface';
-import { SubmitReviewDto, UpdateProfileDto, UpdateSavedProvidersDto } from '@modules/customer/dtos/customer.dto';
+import { UpdateProfileDto, UpdateSavedProvidersDto } from '@modules/customer/dtos/customer.dto';
 import { CUSTOMER_MAPPER } from '@core/constants/mappers.constant';
 import { ICustomerMapper } from '@core/dto-mapper/interface/customer.mapper..interface';
 import { UploadsType } from '@core/enum/uploads.enum';
@@ -269,69 +269,69 @@ export class CustomerService implements ICustomerService {
         }
     }
 
-    async submitReview(customerId: string, dto: SubmitReviewDto): Promise<IResponse<IFetchReviews>> {
-        const review: IReview = {
-            desc: dto.desc,
-            isReported: false,
-            reviewedBy: customerId,
-            writtenAt: new Date(),
-            rating: dto.ratings,
-            isActive: true,
-        };
+    // async submitReview(customerId: string, dto: SubmitReviewDto): Promise<IResponse<IFetchReviews>> {
+    //     const review: IReview = {
+    //         desc: dto.desc,
+    //         isReported: false,
+    //         reviewedBy: customerId,
+    //         writtenAt: new Date(),
+    //         rating: dto.ratings,
+    //         isActive: true,
+    //     };
 
-        const currentRating = await this._providerRepository.getCurrentRatingCountAndAverage(dto.providerId);
+    //     const currentRating = await this._providerRepository.getCurrentRatingCountAndAverage(dto.providerId);
 
-        if (!currentRating) {
-            throw new NotFoundException('Current rating not found.');
-        }
+    //     if (!currentRating) {
+    //         throw new NotFoundException('Current rating not found.');
+    //     }
 
-        const newRatingCount = currentRating.currentRatingCount + 1;
-        const newAverageRating = (currentRating.currentRatingAvg * currentRating.currentRatingCount + dto.ratings) / newRatingCount;
+    //     const newRatingCount = currentRating.currentRatingCount + 1;
+    //     const newAverageRating = (currentRating.currentRatingAvg * currentRating.currentRatingCount + dto.ratings) / newRatingCount;
 
-        const [updatedProvider, updatedCustomer] = await Promise.all([
-            this._providerRepository.findOneAndUpdate(
-                { _id: dto.providerId },
-                {
-                    $set: {
-                        ratingCount: newRatingCount,
-                        avgRating: newAverageRating
-                    },
-                    $push: {
-                        reviews: { $each: [review] }
-                    }
-                },
-                { new: true }
-            ),
+    //     const [updatedProvider, updatedCustomer] = await Promise.all([
+    //         this._providerRepository.findOneAndUpdate(
+    //             { _id: dto.providerId },
+    //             {
+    //                 $set: {
+    //                     ratingCount: newRatingCount,
+    //                     avgRating: newAverageRating
+    //                 },
+    //                 $push: {
+    //                     reviews: { $each: [review] }
+    //                 }
+    //             },
+    //             { new: true }
+    //         ),
 
-            this._customerRepository.findOneAndUpdate(
-                { _id: customerId },
-                { $set: { isReviewed: true } },
-                { new: true }
-            )
-        ]);
+    //         this._customerRepository.findOneAndUpdate(
+    //             { _id: customerId },
+    //             { $set: { isReviewed: true } },
+    //             { new: true }
+    //         )
+    //     ]);
 
-        if (!updatedProvider) {
-            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
-        }
+    //     if (!updatedProvider) {
+    //         throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+    //     }
 
-        if (!updatedCustomer) {
-            throw new NotFoundException(ErrorMessage.CUSTOMER_NOT_FOUND_WITH_ID, customerId);
-        }
+    //     if (!updatedCustomer) {
+    //         throw new NotFoundException(ErrorMessage.CUSTOMER_NOT_FOUND_WITH_ID, customerId);
+    //     }
 
-        const enrichedReview: IFetchReviews = {
-            avatar: updatedCustomer.avatar,
-            name: updatedCustomer.fullname ?? updatedCustomer.username,
-            avgRating: newAverageRating,
-            desc: review.desc,
-            writtenAt: review.writtenAt,
-        }
+    //     const enrichedReview: IFetchReviews = {
+    //         avatar: updatedCustomer.avatar,
+    //         name: updatedCustomer.fullname ?? updatedCustomer.username,
+    //         avgRating: newAverageRating,
+    //         desc: review.desc,
+    //         writtenAt: review.writtenAt,
+    //     }
 
-        return {
-            success: true,
-            message: 'Review Submitted successfully.',
-            data: enrichedReview
-        }
-    }
+    //     return {
+    //         success: true,
+    //         message: 'Review Submitted successfully.',
+    //         data: enrichedReview
+    //     }
+    // }
 
     async getProviderGalleryImages(providerId: string): Promise<IResponse<string[]>> {
         const workImages = await this._providerRepository.getWorkImages(providerId);

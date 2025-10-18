@@ -10,7 +10,7 @@ import { ICustomerRepository } from '@core/repositories/interfaces/customer-repo
 import { IProviderRepository } from '@core/repositories/interfaces/provider-repo.interface';
 import { IServiceOfferedRepository } from '@core/repositories/interfaces/serviceOffered-repo.interface';
 import { ITransactionRepository } from '@core/repositories/interfaces/transaction-repo.interface';
-import { BookingDto, CancelBookingDto, SelectedServiceDto, UpdateBookingDto, UpdateBookingPaymentStatusDto } from '@modules/bookings/dtos/booking.dto';
+import { AddReviewDto, BookingDto, CancelBookingDto, SelectedServiceDto, UpdateBookingDto, UpdateBookingPaymentStatusDto } from '@modules/bookings/dtos/booking.dto';
 import { IBookingService } from '@modules/bookings/services/interfaces/booking-service.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { SlotStatusEnum } from '@core/enum/slot.enum';
@@ -134,6 +134,8 @@ export class BookingService implements IBookingService {
             cancelledAt: null,
             transactionId: data.transactionId,
             paymentStatus: data.transactionId ? PaymentStatus.PAID : PaymentStatus.UNPAID,
+            review: null,
+            respondedAt: null
         }));
 
         if (!bookingDoc) {
@@ -204,7 +206,8 @@ export class BookingService implements IBookingService {
                     transaction: transaction ? {
                         transactionId: transaction.id,
                         paymentSource: transaction.source
-                    } : null
+                    } : null,
+                    review: booking.review
                 };
             })
         );
@@ -324,6 +327,7 @@ export class BookingService implements IBookingService {
         }
     }
 
+    // !TODO
     async updateBooking(dto: UpdateBookingDto): Promise<IResponse<IBookingResponse>> {
         const updatedBooking = await this._bookingRepository.findOneAndUpdate(
             { _id: dto.bookingId },
@@ -379,7 +383,8 @@ export class BookingService implements IBookingService {
             transaction: transaction ? {
                 transactionId: transaction.id,
                 paymentSource: transaction.source
-            } : null
+            } : null,
+            review: updatedBooking.review,
         }
 
         return {
@@ -403,4 +408,16 @@ export class BookingService implements IBookingService {
         }
     }
 
+    async addReview(dto: AddReviewDto): Promise<IResponse> {
+        const isAdded = await this._bookingRepository.addReview(
+            dto.bookingId,
+            dto.description,
+            dto.ratings
+        );
+
+        return {
+            success: isAdded,
+            message: isAdded ? 'Review added successfully.' : 'Failed to add review.'
+        }
+    }
 }

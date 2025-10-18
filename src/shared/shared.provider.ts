@@ -110,4 +110,5 @@ export const sharedProviders: Provider[] = [
         provide: SUBSCRIPTION_REPOSITORY_NAME,
         useClass: SubscriptionRepository
     },
+   
 ];

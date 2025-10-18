@@ -1,6 +1,6 @@
 import { IEntity } from "@core/entities/base/interfaces/base-entity.entity.interface";
 import { IPagination } from "@core/entities/interfaces/booking.entity.interface";
-import { ReportStatus } from "@core/enum/report.enum";
+import { ComplaintReason, ReportStatus } from "@core/enum/report.enum";
 
 export type ReportedType = 'customer' | 'provider';
 
@@ -8,7 +8,7 @@ export interface IReport extends IEntity {
     reportedId: string;
     targetId: string;
     type: ReportedType;
-    reason: string;
+    reason: ComplaintReason;
     description: string;
     status: ReportStatus;
 }
@@ -54,4 +54,19 @@ export interface IReportOverViewMatrix {
     rejected: number;
     flagged: number;
     in_progress: number;
+}
+
+interface IDisputeAnalysisData {
+    other: number;
+    harassment: number;
+    spam: number;
+    inappropriate: number;
+}
+
+export interface IDisputeAnalyticsRaw extends IDisputeAnalysisData {
+    month: number;
+}
+
+export interface IDisputeAnalytics extends IDisputeAnalysisData {
+    month: string;
 }

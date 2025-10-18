@@ -1,7 +1,12 @@
 import { SlotType } from '../../../modules/bookings/dtos/booking.dto';
 import { IBaseUserEntity } from '../base/interfaces/base-user.entity.interface';
 import { IAdmin } from './admin.entity.interface';
-import { IPagination } from './booking.entity.interface';
+import { IPagination, IRatingDistribution, IRecentReviews, IReview } from './booking.entity.interface';
+
+export type VerificationStatusType = 'pending' | 'verified' | 'rejected';
+export type IUser = ICustomer | IProvider | IAdmin;
+export type SortByRatingType = 'latest' | 'oldest' | 'highest' | 'lowest';
+export type SearchByReviewType = 'review id' | 'customer' | 'provider' | 'content';
 
 export type Availability = {
   day: {
@@ -21,7 +26,6 @@ export interface ILocation {
 
 export interface ICustomer extends IBaseUserEntity {
   savedProviders?: string[] | null;
-  isReviewed: boolean;
 }
 
 export interface IExpertise {
@@ -44,18 +48,6 @@ export interface IDoc {
   isDeleted: boolean
 };
 
-export interface IReview {
-  id?: string;
-  reviewedBy: string;
-  desc: string;
-  writtenAt: Date;
-  isReported: boolean;
-  rating: number;
-  isActive: boolean;
-}
-
-export type VerificationStatusType = 'pending' | 'verified' | 'rejected';
-
 export interface IProvider extends IBaseUserEntity {
   verificationStatus: VerificationStatusType;
   bio: string;
@@ -77,12 +69,7 @@ export interface IProvider extends IBaseUserEntity {
   bookingLimit: number | null;
   bufferTime: number | null;
   enableSR: boolean;
-  ratingCount: number;
-  avgRating: number;
-  reviews: IReview[];
 }
-
-export type IUser = ICustomer | IProvider | IAdmin;
 
 export interface ISearchedProviders {
   id: string;
@@ -95,7 +82,6 @@ export interface IVerificationStatusMetrics {
   count: number;
   percentage: string;
 }
-
 export interface IApprovalOverviewData {
   pending: IVerificationStatusMetrics;
   verified: IVerificationStatusMetrics;
@@ -150,10 +136,6 @@ export interface PaginatedReviewResponse {
   reviews: IAdminReviewData[];
   pagination: IPagination
 }
-
-export type SortByRatingType = 'latest' | 'oldest' | 'highest' | 'lowest';
-export type SearchByReviewType = 'review id' | 'customer' | 'provider' | 'content';
-
 export interface IReviewFilters {
   minRating?: string;
   sortBy?: SortByRatingType;
@@ -167,4 +149,95 @@ export interface ITopProviders {
   providerId: string;
   username: string;
   email: string;
+}
+
+export interface IProviderCardView {
+  id: string;
+  fullname: string;
+  username: string;
+  isCertified: boolean;
+  avgRating: number;
+  totalReviews: number;
+  experience: number;
+  profession: string;
+  address: string;
+  isActive: boolean;
+  avatar: string;
+}
+
+export interface ITotalReviewAndAvgRating {
+  providerId: string;
+  avgRating: number;
+  totalReviews: number;
+}
+
+interface IDisplayReviewItem extends IReview {
+  name: string;
+  avatar: string;
+  email: string;
+}
+
+export interface IDisplayReviews {
+  reviews: IDisplayReviewItem[];
+  avgRating: number;
+  totalReviews: number;
+  allFetched: boolean;
+}
+
+// ----------- Performance Analytics Models ------------
+
+export interface IProviderPerformanceOverview {
+  avgResponseTime: number;
+  onTimePercent: number;
+  avgRating: number;
+  completionRate: number;
+}
+
+export interface IBookingPerformanceData {
+  month: string;
+  completed: number;
+  cancelled: number;
+  total: number;
+}
+
+export interface IReviewChartData {
+  distributions: IRatingDistribution[];
+  reviews: IRecentReviews[];
+}
+
+export interface IResponseTimeChartData {
+  name: string;
+  count: number;
+}
+
+export interface IOnTimeArrivalChartData {
+  month: string;
+  monthNumber?: number;
+  percentage: number;
+}
+
+export interface IComparisonOverviewData {
+  growthRate: number;
+  monthlyTrend: {
+    previousMonth: number;
+    currentMonth: number;
+    previousRevenue: number;
+    currentRevenue: number;
+    growthPercentage: number;
+  };
+  providerRank: number;
+}
+
+export interface IComparisonChartData {
+  month: string | number;
+  performance: number;
+  platformAvg: number;
+}
+
+// ----------- Revenue Analytics Models ------------
+export interface IProviderRevenueOverview {
+    totalRevenue: number;
+    revenueGrowth: number;
+    completedTransactions: number;
+    avgTransactionValue: number;
 }

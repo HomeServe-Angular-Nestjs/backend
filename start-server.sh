@@ -8,6 +8,9 @@ if [ "$MODE" == "dev" ]; then
     elif [ "$MODE" == "prod" ]; then
     echo "🏭 Starting in production mode..."
     # pnpm run start:prod
+    elif [ "$MODE" == "tsc" ]; then
+    echo "🏭 Checking types..."
+    pnpm run tsc:watch
 else
-    echo "❌ Invalid mode. Use dev or prod"
+    echo "❌ Invalid mode. Use dev, prod or tsc"
 fi

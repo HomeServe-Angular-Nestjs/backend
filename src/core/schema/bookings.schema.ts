@@ -1,9 +1,26 @@
 import { Document, Types } from 'mongoose';
-
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-
 import { BookingStatus, CancelStatus, PaymentStatus } from '../enum/bookings.enum';
 import { SlotStatusEnum } from '@core/enum/slot.enum';
+import { CUSTOMER_MODEL_NAME, SERVICE_OFFERED_MODEL_NAME } from '@core/constants/model.constant';
+
+@Schema({ _id: false })
+export class ReviewDocument {
+    @Prop({ type: String, required: true })
+    desc: string;
+
+    @Prop({ type: Number, required: true })
+    rating: number;
+
+    @Prop({ type: Date })
+    writtenAt: Date;
+
+    @Prop({ type: Boolean })
+    isReported: boolean;
+
+    @Prop({ type: Boolean })
+    isActive: boolean;
+}
 
 @Schema({ _id: false })
 export class SlotDocument {
@@ -42,7 +59,7 @@ export class SlotDocument {
 
 @Schema({ timestamps: true })
 export class BookingDocument extends Document {
-    @Prop({ type: Types.ObjectId, required: true })
+    @Prop({ type: Types.ObjectId, ref: CUSTOMER_MODEL_NAME, required: true })
     customerId: Types.ObjectId;
 
     @Prop({ type: Types.ObjectId, required: true })
@@ -93,7 +110,7 @@ export class BookingDocument extends Document {
     @Prop({
         type: [
             {
-                serviceId: { type: String },
+                serviceId: { type: String, ref: SERVICE_OFFERED_MODEL_NAME },
                 subserviceIds: { type: [String] },
             }
         ],
@@ -109,6 +126,12 @@ export class BookingDocument extends Document {
 
     @Prop({ type: String, enum: PaymentStatus, default: PaymentStatus.UNPAID })
     paymentStatus: PaymentStatus;
+
+    @Prop({ type: ReviewDocument, default: null })
+    review: ReviewDocument | null;
+
+    @Prop({ type: Date, default: null })
+    respondedAt: Date | null;
 
     @Prop({ type: Date })
     createdAt: Date;

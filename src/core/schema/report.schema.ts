@@ -1,5 +1,5 @@
 import { ReportedType } from "@core/entities/interfaces/report.entity.interface";
-import { ReportStatus } from "@core/enum/report.enum";
+import { ComplaintReason, ReportStatus } from "@core/enum/report.enum";
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Document, Types } from "mongoose";
 
@@ -28,7 +28,7 @@ export class ReportDocument extends Document {
         type: String,
         required: true
     })
-    reason: string;
+    reason: ComplaintReason;
 
     @Prop({
         type: String,

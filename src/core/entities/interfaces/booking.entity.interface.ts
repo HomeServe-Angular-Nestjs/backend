@@ -1,9 +1,9 @@
-import { Types } from 'mongoose';
 import { BookingStatus, CancelStatus, PaymentStatus } from '../../enum/bookings.enum';
 import { IEntity } from '../base/interfaces/base-entity.entity.interface';
 import { SlotStatusEnum } from '@core/enum/slot.enum';
-import { ITransaction } from '@core/entities/interfaces/transaction.entity.interface';
 import { PaymentSource, TransactionType } from '@core/enum/transaction.enum';
+
+export type RevenueChartView = 'monthly' | 'quarterly' | 'yearly';
 
 export interface IBookingResponse {
     bookingId: string;
@@ -27,6 +27,7 @@ export interface IBookingResponse {
         transactionId: string,
         paymentSource: PaymentSource
     } | null;
+    review: IReview | null;
 }
 
 export interface IPagination {
@@ -80,6 +81,14 @@ export interface IBookedSlot {
     status: SlotStatusEnum;
 }
 
+export interface IReview {
+    desc: string;
+    rating: number;
+    writtenAt: Date | string;
+    isActive: boolean;
+    isReported: boolean;
+}
+
 export interface IBooking extends IEntity {
     customerId: string;
     providerId: string;
@@ -101,6 +110,8 @@ export interface IBooking extends IEntity {
     }[];
     transactionId: string | null;
     paymentStatus: PaymentStatus;
+    review: IReview | null;
+    respondedAt: Date | null;
 }
 
 export interface IBookingOverviewChanges {
@@ -239,4 +250,94 @@ export interface IBookingInvoice {
         receipt: string;
         signature: string;
     } | null;
+}
+
+export interface IRatingDistribution {
+    rating: string;
+    count: number;
+}
+
+export interface IRecentReviews {
+    name: string;
+    desc: string;
+    rating: number;
+}
+
+export interface IRevenueTrendData {
+    providerRevenue: number[];
+    platformAvg: number[];
+    labels: string[];
+}
+
+interface IRevenueTrendPoint {
+    label: string;
+    totalRevenue: number;
+}
+
+export interface IRevenueTrendRawData {
+    providerRevenue: IRevenueTrendPoint[];
+    platformAvg: IRevenueTrendPoint[];
+}
+
+export interface IRevenueMonthlyGrowthRateData {
+    totalRevenue: number;
+    month: string | number;
+    growthRate: number;
+}
+
+export interface IRevenueCompositionData {
+    totalRevenue: number;
+    category: string;
+}
+
+export interface ITopServicesByRevenue {
+    service: string;
+    revenue: number;
+    totalBookings: number;
+    avgRevenue: number;
+}
+
+export interface INewOrReturningClientData {
+    month: string;
+    newClients: number;
+    returningClients: number;
+}
+
+export interface IAreaSummary {
+    totalBookings: number;
+    topPerformingArea: string;
+    underperformingArea: string;
+    peakBookingHour: string;
+}
+
+export interface IServiceDemandData {
+    day: 'Mon' | 'Tue' | 'Wed' | 'Thu' | 'Fri' | 'Sat' | 'Sun';
+    hour: string;
+    count: number;
+}
+
+export interface ILocationRevenue {
+    locationName: string;
+    totalRevenue: number;
+    previousRevenue: number;
+    changePct: number;
+}
+
+export interface ITopAreaRevenue {
+    locationName: string;
+    totalRevenue: number;
+    changePct: number;
+}
+
+export interface IUnderperformingArea {
+    locationName: string;
+    lastMonthRevenue: number;
+    currentMonthRevenue: number;
+    changePct: number;
+}
+
+export interface IPeakServiceTime {
+    hour: number;
+    weekdayBookings: number;
+    weekendBookings: number;
 }
