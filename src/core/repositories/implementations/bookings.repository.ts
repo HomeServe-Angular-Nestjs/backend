@@ -2,7 +2,7 @@ import { FilterQuery, Model, PipelineStage, Types } from 'mongoose';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { BOOKINGS_MODEL_NAME } from '@core/constants/model.constant';
-import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData, ILocationRevenue, ITopAreaRevenue } from '@core/entities/interfaces/booking.entity.interface';
+import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData, ILocationRevenue, ITopAreaRevenue, IUnderperformingArea } from '@core/entities/interfaces/booking.entity.interface';
 import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderRevenueOverview, IResponseTimeChartData, ITopProviders, ITotalReviewAndAvgRating } from '@core/entities/interfaces/user.entity.interface';
 import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
 import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
@@ -1731,4 +1731,118 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
             }
         ]);
     }
+
+    async getUnderperformingAreas(providerId: string): Promise<IUnderperformingArea[]> {
+        const now = new Date();
+        const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+        return await this._bookingModel.aggregate([
+            {
+                $match: {
+                    providerId: this._toObjectId(providerId),
+                    bookingStatus: BookingStatus.COMPLETED,
+                    createdAt: { $gte: lastMonthStart }
+                }
+            },
+            {
+                // Group by location address and month/year
+                $group: {
+                    _id: {
+                        locationName: '$location.address',
+                        month: { $month: '$createdAt' },
+                        year: { $year: '$createdAt' }
+                    },
+                    totalRevenue: { $sum: '$totalAmount' }
+                }
+            },
+            {
+                // Reshape data per location
+                $group: {
+                    _id: '$_id.locationName',
+                    revenues: {
+                        $push: {
+                            month: '$_id.month',
+                            year: '$_id.year',
+                            totalRevenue: '$totalRevenue'
+                        }
+                    }
+                }
+            },
+            {
+                // Project last month, current month, and change
+                $project: {
+                    locationName: '$_id',
+                    lastMonthRevenue: {
+                        $let: {
+                            vars: {
+                                lm: {
+                                    $arrayElemAt: [
+                                        {
+                                            $filter: {
+                                                input: '$revenues',
+                                                as: 'r',
+                                                cond: {
+                                                    $and: [
+                                                        { $eq: ['$$r.year', lastMonthStart.getFullYear()] },
+                                                        { $eq: ['$$r.month', lastMonthStart.getMonth() + 1] }
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        0
+                                    ]
+                                }
+                            },
+                            in: { $ifNull: ['$$lm.totalRevenue', 0] }
+                        }
+                    },
+                    currentMonthRevenue: {
+                        $let: {
+                            vars: {
+                                cm: {
+                                    $arrayElemAt: [
+                                        {
+                                            $filter: {
+                                                input: '$revenues',
+                                                as: 'r',
+                                                cond: {
+                                                    $and: [
+                                                        { $eq: ['$$r.year', currentMonthStart.getFullYear()] },
+                                                        { $eq: ['$$r.month', currentMonthStart.getMonth() + 1] }
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        0
+                                    ]
+                                }
+                            },
+                            in: { $ifNull: ['$$cm.totalRevenue', 0] }
+                        }
+                    }
+                }
+            },
+            {
+                $addFields: {
+                    changePct: {
+                        $round: {
+                            $cond: [
+                                { $eq: ['$lastMonthRevenue', 0] },
+                                0,
+                                {
+                                    $multiply: [
+                                        { $divide: [{ $subtract: ['$currentMonthRevenue', '$lastMonthRevenue'] }, '$lastMonthRevenue'] },
+                                        100
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            { $sort: { changePct: 1 } }
+        ]);
+    }
+
 }

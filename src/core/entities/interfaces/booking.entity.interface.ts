@@ -328,3 +328,10 @@ export interface ITopAreaRevenue {
     totalRevenue: number;
     changePct: number;
 }
+
+export interface IUnderperformingArea {
+    locationName: string;
+    lastMonthRevenue: number;
+    currentMonthRevenue: number;
+    changePct: number;
+}

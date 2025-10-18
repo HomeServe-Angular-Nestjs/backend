@@ -1,4 +1,4 @@
-import { RevenueChartView, IRevenueTrendData, IRevenueMonthlyGrowthRateData, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData, ILocationRevenue, ITopAreaRevenue } from "@core/entities/interfaces/booking.entity.interface";
+import { RevenueChartView, IRevenueTrendData, IRevenueMonthlyGrowthRateData, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData, ILocationRevenue, ITopAreaRevenue, IUnderperformingArea } from "@core/entities/interfaces/booking.entity.interface";
 import { IDisputeAnalytics } from "@core/entities/interfaces/report.entity.interface";
 import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderPerformanceOverview, IProviderRevenueOverview, IResponseTimeChartData, IReviewChartData } from "@core/entities/interfaces/user.entity.interface";
 import { IResponse } from "@core/misc/response.util";
@@ -29,4 +29,5 @@ export interface IProviderAnalyticsService {
     getServiceDemandData(providerId: string): Promise<IResponse<IServiceDemandData[]>>;
     getServiceDemandByLocation(providerId: string): Promise<IResponse<ILocationRevenue[]>>;
     getTopAreasRevenue(providerId: string): Promise<IResponse<ITopAreaRevenue[]>>;
+    getUnderperformingAreas(providerId: string): Promise<IResponse<IUnderperformingArea[]>>;
 }

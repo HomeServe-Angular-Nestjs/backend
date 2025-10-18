@@ -1,5 +1,5 @@
 import { BOOKING_REPOSITORY_NAME, REPORT_REPOSITORY_NAME } from "@core/constants/repository.constant";
-import { RevenueChartView, IRevenueTrendData, IRevenueMonthlyGrowthRateData, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData, ILocationRevenue, ITopAreaRevenue } from "@core/entities/interfaces/booking.entity.interface";
+import { RevenueChartView, IRevenueTrendData, IRevenueMonthlyGrowthRateData, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData, ILocationRevenue, ITopAreaRevenue, IUnderperformingArea } from "@core/entities/interfaces/booking.entity.interface";
 import { IDisputeAnalytics } from "@core/entities/interfaces/report.entity.interface";
 import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderPerformanceOverview, IProviderRevenueOverview, IResponseTimeChartData, IReviewChartData } from "@core/entities/interfaces/user.entity.interface";
 import { IResponse } from "@core/misc/response.util";
@@ -249,7 +249,7 @@ export class ProviderAnalyticsService implements IProviderAnalyticsService {
     async getServiceDemandData(providerId: string): Promise<IResponse<IServiceDemandData[]>> {
         return {
             success: true,
-            message: 'Service demand by week data fetched successfully.',
+            message: 'Area demand by week data fetched successfully.',
             data: await this._bookingRepository.getServiceDemandData(providerId)
         }
     }
@@ -257,7 +257,7 @@ export class ProviderAnalyticsService implements IProviderAnalyticsService {
     async getServiceDemandByLocation(providerId: string): Promise<IResponse<ILocationRevenue[]>> {
         return {
             success: true,
-            message: 'Service demand by revenue data fetched successfully.',
+            message: 'Area by revenue data fetched successfully.',
             data: await this._bookingRepository.getServiceDemandByLocation(providerId)
         }
     }
@@ -265,8 +265,16 @@ export class ProviderAnalyticsService implements IProviderAnalyticsService {
     async getTopAreasRevenue(providerId: string): Promise<IResponse<ITopAreaRevenue[]>> {
         return {
             success: true,
-            message: 'Service demand by revenue data fetched successfully.',
+            message: 'Top areas by revenue data fetched successfully.',
             data: await this._bookingRepository.getTopAreasRevenue(providerId)
+        }
+    }
+
+    async getUnderperformingAreas(providerId: string): Promise<IResponse<IUnderperformingArea[]>> {
+        return {
+            success: true,
+            message: 'Underperforming area data fetched successfully.',
+            data: await this._bookingRepository.getUnderperformingAreas(providerId)
         }
     }
 }  
