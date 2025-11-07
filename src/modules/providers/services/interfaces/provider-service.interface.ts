@@ -20,4 +20,5 @@ export interface IProviderServices {
   deleteDefaultSlot(id: string): Promise<void>;
   getWorkImages(providerId: string): Promise<IResponse<string[]>>;
   uploadWorkImage(providerId: string, userType: UserType, uploadType: UploadsType, file: Express.Multer.File): Promise<IResponse<string>>;
+  updatePassword(providerId: string, currentPassword: string, newPassword: string): Promise<IResponse>;
 }

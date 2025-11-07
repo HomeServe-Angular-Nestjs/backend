@@ -1,13 +1,13 @@
 import { Types } from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
 
-import { Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 
 import { BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SERVICE_OFFERED_REPOSITORY_NAME } from '@core/constants/repository.constant';
-import { UPLOAD_UTILITY_NAME } from '@core/constants/utility.constant';
+import { ARGON_UTILITY_NAME, UPLOAD_UTILITY_NAME } from '@core/constants/utility.constant';
 import { CloudinaryService } from '@configs/cloudinary/cloudinary.service';
 import { IDisplayReviews, IProvider, IProviderCardView } from '@core/entities/interfaces/user.entity.interface';
-import { ErrorMessage } from '@core/enum/error.enum';
+import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
 import { UploadsType } from '@core/enum/uploads.enum';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
@@ -24,6 +24,7 @@ import { IBookingRepository } from '@core/repositories/interfaces/bookings-repo.
 import { ICustomerRepository } from '@core/repositories/interfaces/customer-repo.interface';
 import { ICustomerMapper } from '@core/dto-mapper/interface/customer.mapper..interface';
 import { IReview } from '@core/entities/interfaces/booking.entity.interface';
+import { IArgonUtility } from '@core/utilities/interface/argon.utility.interface';
 
 @Injectable()
 export class ProviderServices implements IProviderServices {
@@ -46,7 +47,9 @@ export class ProviderServices implements IProviderServices {
     @Inject(PROVIDER_MAPPER)
     private readonly _providerMapper: IProviderMapper,
     @Inject(CUSTOMER_MAPPER)
-    private readonly _customerMapper: ICustomerMapper
+    private readonly _customerMapper: ICustomerMapper,
+    @Inject(ARGON_UTILITY_NAME)
+    private readonly _argon: IArgonUtility
 
   ) {
     this.logger = this.loggerFactory.createLogger(ProviderServices.name);
@@ -394,6 +397,34 @@ export class ProviderServices implements IProviderServices {
       success: true,
       message: 'Reviews fetched successfully.',
       data: displayReviews
+    }
+  }
+
+  async updatePassword(providerId: string, currentPassword: string, newPassword: string): Promise<IResponse> {
+    const providerDoc = await this._providerRepository.findById(providerId);
+    if (!providerDoc) throw new NotFoundException({
+      code: ErrorCodes.NOT_FOUND,
+      message: 'Provider not found.'
+    });
+
+    if (!providerDoc.password) throw new BadRequestException({
+      code: ErrorCodes.BAD_REQUEST,
+      message: 'This account is signed in using google.'
+    });
+
+    const isValidPassword = await this._argon.verify(providerDoc.password, currentPassword);
+
+    if (!isValidPassword) throw new BadRequestException({
+      code: ErrorCodes.BAD_REQUEST,
+      message: 'Invalid current password.'
+    });
+
+    const hashedPassword = await this._argon.hash(newPassword);
+    const isPasswordUpdated = await this._providerRepository.updatePasswordById(providerId, hashedPassword);
+
+    return {
+      success: isPasswordUpdated,
+      message: isPasswordUpdated ? 'Password updated successfully.' : 'Failed to update password.',
     }
   }
 }

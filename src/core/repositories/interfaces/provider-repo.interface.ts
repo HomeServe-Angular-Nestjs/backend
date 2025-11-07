@@ -12,11 +12,11 @@ export interface IProviderRepository extends IBaseRepository<ProviderDocument> {
   count(filter?: FilterQuery<ProviderDocument>): Promise<number>;
   isExists(filter: FilterQuery<ProviderDocument>): Promise<boolean>;
   updateLastLogin(email: string): Promise<void>;
-  // getCurrentRatingCountAndAverage(providerId: string): Promise<{ currentRatingCount: number, currentRatingAvg: number } | null>
   getProvidersBasedOnLocation(lng: number, lat: number): Promise<ProviderDocument[]>;
   addWorkImage(providerId: string, publicId: string): Promise<ProviderDocument | null>;
   getWorkImages(providerId: string): Promise<string[]>;
   getProviderStatistics(): Promise<IStats>;
   generateProviderReport(data: Partial<IReportDownloadUserData>): Promise<IReportProviderData[]>;
   updateSubscriptionId(providerId: string, subscriptionId: string): Promise<boolean>;
+  updatePasswordById(providerId: string, password: string): Promise<boolean>;
 }

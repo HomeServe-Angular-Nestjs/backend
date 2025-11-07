@@ -144,3 +144,13 @@ export class GetReviewsDto {
     @IsNumber()
     count: number;
 }
+
+export class UpdatePasswordDto {
+    @IsNotEmpty()
+    @IsString()
+    newPassword: string;
+
+    @IsNotEmpty()
+    @IsString()
+    currentPassword: string;
+}
