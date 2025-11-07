@@ -5,13 +5,14 @@ import { ErrorMessage } from '@core/enum/error.enum';
 import { IPayload } from '@core/misc/payload.interface';
 import { BadRequestException, Body, Controller, Delete, Get, Inject, InternalServerErrorException, Param, Patch, Put, Query, Req, UnauthorizedException, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { FilterDto, GetProvidersFromLocationSearch, GetReviewsDto, RemoveCertificateDto, SlotDto, UpdateBioDto, UploadCertificateDto, UploadGalleryImageDto } from '../dtos/provider.dto';
+import { FilterDto, GetProvidersFromLocationSearch, GetReviewsDto, RemoveCertificateDto, SlotDto, UpdateBioDto, UpdatePasswordDto, UploadCertificateDto, UploadGalleryImageDto } from '../dtos/provider.dto';
 import { IProviderServices } from '../services/interfaces/provider-service.interface';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { SubscriptionGuard } from '@core/guards/subscription.guard';
 import { IResponse } from '@core/misc/response.util';
 import { isValidIdPipe } from '@core/pipes/is-valid-id.pipe';
+import { ChangePasswordDto } from '@modules/auth/dtos/login.dto';
 
 @Controller('provider')
 export class ProviderController {
@@ -22,7 +23,7 @@ export class ProviderController {
         private readonly _loggerFactory: ILoggerFactory,
         @Inject(PROVIDER_SERVICE_NAME)
         private readonly _providerServices: IProviderServices,
-        
+
     ) {
         this.logger = this._loggerFactory.createLogger(ProviderController.name);
     }
@@ -128,4 +129,9 @@ export class ProviderController {
         return await this._providerServices.uploadWorkImage(user.sub, user.type, dto.type, file);
     }
 
+    @Patch('update_password')
+    async updatePassword(@Req() req: Request, @Body() { currentPassword, newPassword }: UpdatePasswordDto): Promise<IResponse> {
+        const user = req.user as IPayload;
+        return await this._providerServices.updatePassword(user.sub, currentPassword, newPassword);
+    }
 }

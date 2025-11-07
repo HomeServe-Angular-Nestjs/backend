@@ -233,7 +233,7 @@ export class LoginService implements ILoginService {
       message: 'Not found Exception'
     });
 
-    return { success: true, message: 'Otp verified.' }
+    return { success: true, message: 'Password updated successfully.' }
   }
 
 }
