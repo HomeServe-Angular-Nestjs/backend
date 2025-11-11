@@ -67,7 +67,6 @@ export class ChatController {
 
     @Get('all')
     async getAllChats(@Req() req: Request): Promise<IResponse<IChatData[]>> {
-        console.log('Fetching all chats for user...');
         const user = req.user as IPayload;
         const sender: IParticipant = {
             id: new Types.ObjectId(user.sub),

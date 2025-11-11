@@ -14,6 +14,10 @@ export class UserSocketStoreService implements IUserSocketStoreService {
         return `user_socket:${namespace}:${userId}`;
     }
 
+    private _getVideoRoomKey(namespace: string, userId: string) {
+        return `room:${namespace}:${userId}`;
+    }
+
     private _getProviderRoomKey(providerId: string): string {
         return `provider_room:${providerId}`;
     }
@@ -55,5 +59,15 @@ export class UserSocketStoreService implements IUserSocketStoreService {
     async removeFromProviderRoom(providerId: string, customerId: string): Promise<void> {
         const key = this._getProviderRoomKey(providerId);
         await this._redis.srem(key, customerId);
+    }
+
+    async addToVideoCallRoom(namespace: string, userId: string) {
+        const key = this._getVideoRoomKey(namespace, userId);
+        await this._redis.sadd(key, userId);
+    }
+
+    async removeFromVideoCallRoom(namespace: string, userId: string): Promise<void> {
+        const key = this._getVideoRoomKey(namespace, userId);
+        await this._redis.srem(key, userId);
     }
 }

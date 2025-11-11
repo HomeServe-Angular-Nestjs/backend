@@ -14,6 +14,8 @@ import { ICustomerRepository } from '@core/repositories/interfaces/customer-repo
 import { IProviderRepository } from '@core/repositories/interfaces/provider-repo.interface';
 import { BlockGuard } from '@modules/auth/guards/block.guard';
 import morgan from 'morgan';
+import { ConfigService } from '@nestjs/config';
+import { RedisIoAdapter } from '@configs/redis/redis-io-adaptor';
 
 async function bootstrap() {
   if (process.argv.includes('seed:admin')) {
@@ -35,6 +37,10 @@ async function bootstrap() {
   }
 
   const app = await NestFactory.create(AppModule);
+  const configService = app.get(ConfigService);
+
+  const loggerFactory = app.get<ILoggerFactory>(LOGGER_FACTORY);
+  // app.useWebSocketAdapter(new RedisIoAdapter(loggerFactory, app, configService));
 
   app.use(cookieParser());
 
@@ -60,7 +66,6 @@ async function bootstrap() {
 
   const customerRepository = app.get<ICustomerRepository>(CUSTOMER_REPOSITORY_INTERFACE_NAME);
   const providerRepository = app.get<IProviderRepository>(PROVIDER_REPOSITORY_INTERFACE_NAME);
-  const loggerFactory = app.get<ILoggerFactory>(LOGGER_FACTORY);
   app.useGlobalGuards(new BlockGuard(loggerFactory, customerRepository, providerRepository));
 
   app.useGlobalPipes(new ValidationPipe({

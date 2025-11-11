@@ -1,6 +1,7 @@
 import {
     AUTH_SOCKET_SERVICE_NAME, CHAT_SOCKET_SERVICE_NAME, MESSAGE_SERVICE_NAME, NOTIFICATION_SERVICE_NAME, RESERVATION_SERVICE_NAME, TOKEN_SERVICE_NAME,
-    USER_SOCKET_STORE_SERVICE_NAME
+    USER_SOCKET_STORE_SERVICE_NAME,
+    VIDEO_CALL_SERVICE_NAME
 } from '@/core/constants/service.constant';
 import { TokenService } from '@/modules/auth/services/implementations/token.service';
 import { AuthSocketService } from '@modules/websockets/services/implementation/auth-socket.service';
@@ -11,6 +12,7 @@ import { ReservationService } from '@modules/websockets/services/implementation/
 import {
     UserSocketStoreService
 } from '@modules/websockets/services/implementation/user-socket-store.service';
+import { VideoCallService } from '@modules/websockets/services/implementation/video-call.service';
 import { Provider } from '@nestjs/common';
 
 export const socketServiceProviders: Provider[] = [
@@ -41,5 +43,9 @@ export const socketServiceProviders: Provider[] = [
     {
         provide: RESERVATION_SERVICE_NAME,
         useClass: ReservationService
-    }
+    },
+    {
+        provide: VIDEO_CALL_SERVICE_NAME,
+        useClass: VideoCallService
+    },
 ]

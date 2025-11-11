@@ -1,6 +1,6 @@
 import { AUTH_SOCKET_SERVICE_NAME, RESERVATION_SERVICE_NAME, USER_SOCKET_STORE_SERVICE_NAME } from "@core/constants/service.constant";
 import { CUSTOM_DTO_VALIDATOR_NAME } from "@core/constants/utility.constant";
-import { ErrorCodes, ErrorMessage } from "@core/enum/error.enum";
+import { ErrorMessage } from "@core/enum/error.enum";
 import { GlobalWsExceptionFilter } from "@core/exception-filters/ws-exception.filters";
 import { ILoggerFactory, LOGGER_FACTORY } from "@core/logger/interface/logger-factory.interface";
 import { ICustomDtoValidator } from "@core/utilities/interface/custom-dto-validator.utility.interface";
@@ -9,7 +9,7 @@ import { BaseSocketGateway, corsOption } from "@modules/websockets/namespaces/ba
 import { IAuthSocketService } from "@modules/websockets/services/interface/auth-socket-service.interface";
 import { IReservationService } from "@modules/websockets/services/interface/reservation-service.interface";
 import { IUserSocketStoreService } from "@modules/websockets/services/interface/user-socket-store-service.interface";
-import { ConflictException, Inject, InternalServerErrorException, UseFilters } from "@nestjs/common";
+import { Inject, InternalServerErrorException, UseFilters } from "@nestjs/common";
 import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer } from "@nestjs/websockets";
 import { Server, Socket } from "socket.io";
 
@@ -70,7 +70,7 @@ export class ReservationGateway extends BaseSocketGateway {
     @SubscribeMessage(CHECK_RESERVATION)
     async handleNewReservation(@ConnectedSocket() client: Socket, @MessageBody() body: SendReservationDto) {
         await this._customDtoValidatorUtility.validateDto(SendReservationDto, body);
-        const user = this._getClient(client);
+        // const user = this._getClient(client);
 
         const isReserved = await this._reservationService.isReserved(body.providerId, body.from, body.to, body.date); if (isReserved) {
             client.emit(IS_RESERVED, {
