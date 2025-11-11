@@ -57,7 +57,7 @@ import { ReportModule } from '@modules/reports/report.module';
   controllers: [AppController],
   providers: [
     AppService,
-    ...appProviders
+    ...appProviders,
   ],
 })
 export class AppModule implements NestModule {

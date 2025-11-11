@@ -55,6 +55,7 @@ export class ChatGateway extends BaseSocketGateway {
 
             await this._userSocketService.addSocket(userId, client.id, 'chat');
             client.join(this._roomKey(userId));
+
             this.logger.log(`User ${userId} connected with socket ID: ${client.id}`);
         } catch (error) {
             this.logger.error(ErrorMessage.TOKEN_VERIFICATION_FAILED);
