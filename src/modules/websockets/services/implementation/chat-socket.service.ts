@@ -1,7 +1,7 @@
 import { Types } from 'mongoose';
 
 import {
-    ADMIN_REPOSITORY_INTERFACE_NAME, CHAT_REPOSITORY_INTERFACE_NAME,
+    ADMIN_REPOSITORY_NAME, CHAT_REPOSITORY_INTERFACE_NAME,
     CUSTOMER_REPOSITORY_INTERFACE_NAME, MESSAGE_REPOSITORY_INTERFACE_NAME,
     PROVIDER_REPOSITORY_INTERFACE_NAME
 } from '@core/constants/repository.constant';
@@ -34,7 +34,7 @@ export class ChatSocketService implements IChatSocketService {
         private readonly _customerRepository: ICustomerRepository,
         @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
         private readonly _providerRepository: IProviderRepository,
-        @Inject(ADMIN_REPOSITORY_INTERFACE_NAME)
+        @Inject(ADMIN_REPOSITORY_NAME)
         private readonly _adminRepository: IAdminRepository, //!Todo remove 
         @Inject(MESSAGE_REPOSITORY_INTERFACE_NAME)
         private readonly _messageRepository: IMessagesRepository,

@@ -21,6 +21,7 @@ export class SubService {
 }
 
 export class ServiceOffered extends BaseEntity implements IService {
+  providerId: string;
   title: string;
   desc: string;
   image: string;

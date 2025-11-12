@@ -12,7 +12,7 @@ import { ADMIN_SEED_SERVICE_NAME, PLAN_SEED_SERVICE_NAME } from '@core/constants
 import { ArgonUtility } from '@core/utilities/implementations/argon.utility';
 import { ARGON_UTILITY_NAME } from '@core/constants/utility.constant';
 import { AdminRepository } from '@core/repositories/implementations/admin.repository';
-import { ADMIN_REPOSITORY_INTERFACE_NAME, PLAN_REPOSITORY_INTERFACE_NAME, WALLET_REPOSITORY_NAME } from '@core/constants/repository.constant';
+import { ADMIN_REPOSITORY_NAME, PLAN_REPOSITORY_INTERFACE_NAME, WALLET_REPOSITORY_NAME } from '@core/constants/repository.constant';
 import { ADMIN_MAPPER, WALLET_MAPPER } from '@core/constants/mappers.constant';
 import { AdminMapper } from '@core/dto-mapper/implementation/admin.mapper';
 import { LoggerFactory } from '@core/logger/implementation/logger.factory';
@@ -42,7 +42,7 @@ import { PlanRepository } from '@core/repositories/implementations/plan.reposito
     SeedCommand,
 
     {
-      provide: ADMIN_REPOSITORY_INTERFACE_NAME,
+      provide: ADMIN_REPOSITORY_NAME,
       useFactory: (adminModel: Model<AdminDocument>) =>
         new AdminRepository(adminModel, new LoggerFactory()),
       inject: [getModelToken(ADMIN_MODEL_NAME)],

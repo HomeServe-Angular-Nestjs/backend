@@ -2,13 +2,15 @@ import { Model } from 'mongoose';
 
 import {
   BOOKINGS_MODEL_NAME,
-  CUSTOMER_MODEL_NAME, PROVIDER_MODEL_NAME, REPORT_MODEL_NAME, SERVICE_OFFERED_MODEL_NAME
+  CUSTOMER_MODEL_NAME, PROVIDER_MODEL_NAME, REPORT_MODEL_NAME, SERVICE_OFFERED_MODEL_NAME,
+  SLOT_RULE_MODEL_NAME
 } from '@core/constants/model.constant';
 import {
   BOOKING_REPOSITORY_NAME,
   CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME,
   REPORT_REPOSITORY_NAME,
-  SERVICE_OFFERED_REPOSITORY_NAME
+  SERVICE_OFFERED_REPOSITORY_NAME,
+  SLOT_RULE_REPOSITORY_NAME
 } from '@core/constants/repository.constant';
 import { CustomerRepository } from '@core/repositories/implementations/customer.repository';
 import { ProviderRepository } from '@core/repositories/implementations/provider.repository';
@@ -24,6 +26,8 @@ import { BookingDocument } from '@core/schema/bookings.schema';
 import { BookingRepository } from '@core/repositories/implementations/bookings.repository';
 import { ReportDocument } from '@core/schema/report.schema';
 import { ReportRepository } from '@core/repositories/implementations/report.repository';
+import { SlotRuleDocument } from '@core/schema/slot-rule.schema';
+import { SlotRuleRepository } from '@core/repositories/implementations/slot-rule.repository';
 
 export const repositoryProviders: Provider[] = [
   {
@@ -56,4 +60,10 @@ export const repositoryProviders: Provider[] = [
       new ReportRepository(reportModel),
     inject: [getModelToken(REPORT_MODEL_NAME)]
   },
+  {
+    provide: SLOT_RULE_REPOSITORY_NAME,
+    useFactory: (ruleModel: Model<SlotRuleDocument>) =>
+      new SlotRuleRepository(ruleModel),
+    inject: [getModelToken(SLOT_RULE_MODEL_NAME)]
+  }
 ];

@@ -59,12 +59,13 @@ export class ServiceFeatureService implements IServiceFeatureService {
         ? await this._handleSubServices(dto.subService)
         : [];
 
-      const newOfferedService = await this._serviceOfferedRepository.create({
+      const newOfferedService = await this._serviceOfferedRepository.create(this._serviceOfferedMapper.toDocument({
+        providerId,
         title: dto.title,
         desc: dto.desc,
         image: serviceImageUrl,
-        subService: subServicesWithImages as SubServiceDocument[],
-      });
+        subService: subServicesWithImages as ISubService[],
+      }));
 
       const updatedProvider = await this._providerRepository.findOneAndUpdate(
         { _id: provider.id },

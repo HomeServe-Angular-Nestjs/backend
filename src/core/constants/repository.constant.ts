@@ -1,4 +1,4 @@
-export const ADMIN_REPOSITORY_INTERFACE_NAME = 'IAdminRepository';
+export const ADMIN_REPOSITORY_NAME = 'IAdminRepository';
 export const ADMIN_SETTINGS_REPOSITORY_NAME = Symbol('ADMIN_SETTINGS_REPOSITORY_NAME');
 export const CUSTOMER_REPOSITORY_INTERFACE_NAME = 'ICustomerRepository';
 export const OTP_REPOSITORY_INTERFACE_NAME = 'IOtpRepository';

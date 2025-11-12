@@ -1,6 +1,6 @@
 import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { ADMIN_MAPPER, CUSTOMER_MAPPER, PROVIDER_MAPPER, WALLET_MAPPER } from '@core/constants/mappers.constant';
-import { ADMIN_REPOSITORY_INTERFACE_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, WALLET_REPOSITORY_NAME } from '@core/constants/repository.constant';
+import { ADMIN_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, WALLET_REPOSITORY_NAME } from '@core/constants/repository.constant';
 import { OTP_SERVICE_INTERFACE_NAME } from '@core/constants/service.constant';
 import { ARGON_UTILITY_NAME } from '@core/constants/utility.constant';
 import { IAdminMapper } from '@core/dto-mapper/interface/admin.mapper.interface';
@@ -37,7 +37,7 @@ export class LoginService implements ILoginService {
     private _customerRepository: ICustomerRepository,
     @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
     private _providerRepository: IProviderRepository,
-    @Inject(ADMIN_REPOSITORY_INTERFACE_NAME)
+    @Inject(ADMIN_REPOSITORY_NAME)
     private _adminRepository: IAdminRepository,
     @Inject(WALLET_REPOSITORY_NAME)
     private readonly _walletRepository: IWalletRepository,

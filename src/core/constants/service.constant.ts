@@ -38,3 +38,4 @@ export const CHAT_SOCKET_SERVICE_NAME = 'IChatSocketService';
 export const USER_SOCKET_STORE_SERVICE_NAME = 'IUserSocketStoreService';
 
 export const PDF_SERVICE = 'IPdfService';
+export const PROVIDER_DASHBOARD_SERVICE_NAME = Symbol('IProviderDashboardService');

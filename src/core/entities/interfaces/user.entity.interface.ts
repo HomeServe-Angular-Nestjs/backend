@@ -1,7 +1,7 @@
 import { SlotType } from '../../../modules/bookings/dtos/booking.dto';
 import { IBaseUserEntity } from '../base/interfaces/base-user.entity.interface';
 import { IAdmin } from './admin.entity.interface';
-import { IPagination, IRatingDistribution, IRecentReviews, IReview } from './booking.entity.interface';
+import { IBookingsBreakdown, IPagination, IRatingDistribution, IRecentReviews, IRevenueBreakdown, IReview } from './booking.entity.interface';
 
 export type VerificationStatusType = 'pending' | 'verified' | 'rejected';
 export type IUser = ICustomer | IProvider | IAdmin;
@@ -234,10 +234,19 @@ export interface IComparisonChartData {
   platformAvg: number;
 }
 
-// ----------- Revenue Analytics Models ------------
 export interface IProviderRevenueOverview {
-    totalRevenue: number;
-    revenueGrowth: number;
-    completedTransactions: number;
-    avgTransactionValue: number;
+  totalRevenue: number;
+  revenueGrowth: number;
+  completedTransactions: number;
+  avgTransactionValue: number;
+}
+
+export interface IProviderDashboardOverview {
+  revenue: IRevenueBreakdown;
+  bookings: IBookingsBreakdown;
+  avgRating: number;
+  completionRate: number;
+  availability: Availability | null;
+  nextAvailableSlot: { from: string | Date, to: String | Date } | null;
+  activeServiceCount: number;
 }

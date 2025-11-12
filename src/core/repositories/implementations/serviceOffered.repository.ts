@@ -20,18 +20,6 @@ export class ServiceOfferedRepository extends BaseRepository<ServiceDocument> im
     super(_serviceModel);
   }
 
-  // async findServicesByIds(ids: string[]): Promise<ServiceDocument[]> {
-  //   const results = await Promise.all(
-  //     ids.flatMap(id =>
-  //       this._serviceModel
-  //         .findById(id)
-  //         .lean()
-  //     )
-  //   );
-
-  //   return results.filter(service => service !== null);
-  // }
-
   async findSubServicesByIds(ids: string[]): Promise<SubServiceDocument[]> {
     const services = await this._serviceModel
       .find({ 'subService._id': { $in: ids } })
@@ -60,5 +48,12 @@ export class ServiceOfferedRepository extends BaseRepository<ServiceDocument> im
       id: doc.id,
       title: doc.title
     }));
+  }
+
+  async getActiveServiceCount(providerId: string): Promise<number> {
+    return await this._serviceModel.countDocuments({
+      providerId: this._toObjectId(providerId),
+      isActive: true
+    });
   }
 }

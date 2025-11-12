@@ -70,7 +70,18 @@ export class SlotRuleRepository extends BaseRepository<SlotRuleDocument> impleme
         return await this._slotRuleModel.countDocuments();
     }
 
-    async findRules(providerId: string, filter: IRuleFilter = {}, skip: number = 0, limit: number = 10): Promise<SlotRuleDocument[]> {
+    async findActiveRulesByProviderId(providerId: string): Promise<SlotRuleDocument[]> {
+        return await this._slotRuleModel
+            .find({
+                providerId: this._toObjectId(providerId),
+                isActive: true,
+                endDate: { $gte: new Date() }
+            })
+            .sort({ priority: 1 })
+            .lean();
+    }
+
+    async findRulesWithFilter(providerId: string, filter: IRuleFilter = {}, skip: number = 0, limit: number = 10): Promise<SlotRuleDocument[]> {
         const query = this.__buildFilterQuery(providerId, filter);
         const sort = this._buildSortQuery(filter);
         return await this._slotRuleModel

@@ -341,3 +341,16 @@ export interface IPeakServiceTime {
     weekdayBookings: number;
     weekendBookings: number;
 }
+
+export interface IRevenueBreakdown {
+    totalEarnings: number;
+    completedCount: number;
+    pendingCount: number;
+}
+
+export interface IBookingsBreakdown {
+    totalBookings: number;
+    upcomingBookings: number;
+    cancelledBookings: number;
+    averageBookingValue: number;
+}
