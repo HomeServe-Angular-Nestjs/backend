@@ -1,7 +1,7 @@
 import { Inject, Injectable, InternalServerErrorException, } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ISeedAdminService } from '../interface/seed-service.interface';
-import { ADMIN_REPOSITORY_INTERFACE_NAME, WALLET_REPOSITORY_NAME } from '@core/constants/repository.constant';
+import { ADMIN_REPOSITORY_NAME, WALLET_REPOSITORY_NAME } from '@core/constants/repository.constant';
 import { IAdminRepository } from '@core/repositories/interfaces/admin-repo.interface';
 import { ARGON_UTILITY_NAME } from '@core/constants/utility.constant';
 import { IArgonUtility } from '@core/utilities/interface/argon.utility.interface';
@@ -22,7 +22,7 @@ export class SeedAdminService implements ISeedAdminService {
     private readonly _config: ConfigService,
     @Inject(LOGGER_FACTORY)
     private readonly _loggerFactory: ILoggerFactory,
-    @Inject(ADMIN_REPOSITORY_INTERFACE_NAME)
+    @Inject(ADMIN_REPOSITORY_NAME)
     private readonly _adminRepository: IAdminRepository,
     @Inject(ARGON_UTILITY_NAME)
     private readonly _argon: IArgonUtility,

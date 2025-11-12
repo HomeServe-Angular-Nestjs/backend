@@ -10,10 +10,11 @@ import { repositoryProviders } from './providers/repository.provider';
 import { serviceProviders } from './providers/service.provider';
 import { utilityProviders } from './providers/utility.provider';
 import { AnalyticsController } from '@modules/providers/controllers/analytics.controller';
+import { ProviderDashboardController } from '@modules/providers/controllers/dashboard.controller';
 
 @Module({
   imports: [CloudinaryModule.registerAsync(), JwtConfigModule, HttpModule, SharedModule],
   providers: [...serviceProviders, ...repositoryProviders, ...utilityProviders],
-  controllers: [ServiceController, ProviderController, AnalyticsController],
+  controllers: [ServiceController, ProviderController, AnalyticsController, ProviderDashboardController],
 })
 export class ProviderModule { }

@@ -16,6 +16,7 @@ export interface ISubService {
 }
 
 export interface IService extends IEntity {
+  providerId: string;
   title: string;
   desc: string;
   image: string;

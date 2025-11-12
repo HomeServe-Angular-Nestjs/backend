@@ -1,4 +1,4 @@
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
 
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 
@@ -6,6 +6,10 @@ import { SubServiceDocument, SubServiceSchema } from './subservice.schema';
 
 @Schema({ timestamps: true })
 export class ServiceDocument extends Document {
+
+  @Prop({ type: Types.ObjectId, required: true })
+  providerId: Types.ObjectId;
+
   @Prop({ required: true })
   title: string;
 

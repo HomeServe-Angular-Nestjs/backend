@@ -7,6 +7,7 @@ import { IProviderRepository } from '@core/repositories/interfaces/provider-repo
 import { ProviderDocument } from '@core/schema/provider.schema';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
+import { Availability } from '@core/entities/interfaces/user.entity.interface';
 
 @Injectable()
 export class ProviderRepository extends BaseRepository<ProviderDocument> implements IProviderRepository {
@@ -217,6 +218,11 @@ export class ProviderRepository extends BaseRepository<ProviderDocument> impleme
     );
 
     return result.modifiedCount === 1;
+  }
+
+  async getWorkingHours(providerId: string): Promise<Availability | null> {
+    const provider = await this._providerModel.findById(providerId).lean();
+    return provider?.availability ?? null;
   }
 
 }

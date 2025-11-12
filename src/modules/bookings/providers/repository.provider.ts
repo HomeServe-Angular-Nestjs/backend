@@ -11,7 +11,7 @@ import {
     WALLET_MODEL_NAME
 } from '@core/constants/model.constant';
 import {
-    ADMIN_REPOSITORY_INTERFACE_NAME,
+    ADMIN_REPOSITORY_NAME,
     ADMIN_SETTINGS_REPOSITORY_NAME,
     BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME,
     SERVICE_OFFERED_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME,
@@ -83,7 +83,7 @@ export const repositoryProviders: Provider[] = [
         inject: [getModelToken(WALLET_MODEL_NAME)]
     },
     {
-        provide: ADMIN_REPOSITORY_INTERFACE_NAME,
+        provide: ADMIN_REPOSITORY_NAME,
         useFactory: (adminModel: Model<AdminDocument>) =>
             new AdminRepository(adminModel, new LoggerFactory()),
         inject: [getModelToken(ADMIN_MODEL_NAME)]

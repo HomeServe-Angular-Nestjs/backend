@@ -1,5 +1,5 @@
 import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException, } from '@nestjs/common';
-import { ADMIN_REPOSITORY_INTERFACE_NAME, ADMIN_SETTINGS_REPOSITORY_NAME, BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SERVICE_OFFERED_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME, WALLET_REPOSITORY_NAME } from '../../../../core/constants/repository.constant';
+import { ADMIN_REPOSITORY_NAME, ADMIN_SETTINGS_REPOSITORY_NAME, BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SERVICE_OFFERED_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME, WALLET_REPOSITORY_NAME } from '../../../../core/constants/repository.constant';
 import { IBookedService, IBookingDetailProvider, IBookingInvoice, IBookingOverviewChanges, IBookingOverviewData, IResponseProviderBookingLists } from '../../../../core/entities/interfaces/booking.entity.interface';
 import { BookingStatus, DateRange, PaymentStatus } from '../../../../core/enum/bookings.enum';
 import { ICustomLogger } from '../../../../core/logger/interface/custom-logger.interface';
@@ -49,7 +49,7 @@ export class ProviderBookingService implements IProviderBookingService {
         private readonly _bookingMapper: IBookingMapper,
         @Inject(TRANSACTION_MAPPER)
         private readonly _transactionMapper: ITransactionMapper,
-        @Inject(ADMIN_REPOSITORY_INTERFACE_NAME)
+        @Inject(ADMIN_REPOSITORY_NAME)
         private readonly _adminRepository: IAdminRepository,
         @Inject(ADMIN_SETTINGS_REPOSITORY_NAME)
         private readonly _adminSettings: IAdminSettingsRepository,

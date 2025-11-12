@@ -2,7 +2,7 @@ import { FilterQuery, Model, PipelineStage, Types } from 'mongoose';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { BOOKINGS_MODEL_NAME } from '@core/constants/model.constant';
-import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData, ILocationRevenue, ITopAreaRevenue, IUnderperformingArea, IPeakServiceTime } from '@core/entities/interfaces/booking.entity.interface';
+import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData, ILocationRevenue, ITopAreaRevenue, IUnderperformingArea, IPeakServiceTime, IRevenueBreakdown, IBookingsBreakdown } from '@core/entities/interfaces/booking.entity.interface';
 import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderRevenueOverview, IResponseTimeChartData, ITopProviders, ITotalReviewAndAvgRating } from '@core/entities/interfaces/user.entity.interface';
 import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
 import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
@@ -413,17 +413,22 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
 
     async getAvgRating(providerId: string): Promise<number> {
         const result = await this._bookingModel.aggregate([
-            { $match: { providerId: this._toObjectId(providerId) } },
+            {
+                $match: {
+                    providerId: this._toObjectId(providerId),
+                    'review.rating': { $exists: true, $ne: null }
+                }
+            },
             {
                 $group: {
                     _id: null,
                     avg: { $avg: "$review.rating" }
                 },
-                $project: { avg: 1 }
             },
+            { $project: { avg: 1 } }
         ]);
 
-        return result[0].avg ?? 0
+        return result[0].avg ?? 0;
     }
 
     async getAvgRatingAndTotalReviews(providerId?: string): Promise<ITotalReviewAndAvgRating[]> {
@@ -1851,7 +1856,7 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                 $match: {
                     providerId: this._toObjectId(providerId),
                     bookingStatus: BookingStatus.COMPLETED,
-                    "expectedArrivalTime": { $exists: true }
+                    "expectedArrivalTime": { $exists: true, $ne: null }
                 }
             },
             {
@@ -1885,5 +1890,177 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
             },
             { $sort: { hour: 1 } }
         ]);
+    }
+
+    async getRevenueBreakdown(providerId: string): Promise<IRevenueBreakdown> {
+        const providerIdObj = this._toObjectId(providerId);
+
+        const result = await this._bookingModel.aggregate([
+            {
+                $facet: {
+                    bookings: [
+                        { $match: { providerId: providerIdObj } },
+                        {
+                            $group: {
+                                _id: null,
+                                completedCount: {
+                                    $sum: { $cond: [{ $eq: ['$paymentStatus', PaymentStatus.PAID] }, 1, 0] }
+                                },
+                                pendingCount: {
+                                    $sum: {
+                                        $cond: [
+                                            {
+                                                $and: [
+                                                    { $ne: ['$bookingStatus', BookingStatus.COMPLETED] },
+                                                    { $ne: ['$bookingStatus', BookingStatus.CANCELLED] }
+                                                ]
+                                            },
+                                            1,
+                                            0
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    ],
+                    earnings: [
+                        {
+                            $lookup: {
+                                from: 'transactions',
+                                localField: 'providerId',
+                                foreignField: 'userId',
+                                as: 'transactions'
+                            }
+                        },
+                        { $unwind: '$transactions' },
+                        {
+                            $match: {
+                                'transactions.transactionType': 'booking_release',
+                                'transactions.direction': 'credit',
+                                'transactions.userId': providerIdObj
+                            }
+                        },
+                        {
+                            $group: {
+                                _id: null,
+                                totalEarnings: { $sum: { $divide: ['$transactions.amount', 100] } }
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                $project: {
+                    totalEarnings: { $ifNull: [{ $arrayElemAt: ['$earnings.totalEarnings', 0] }, 0] },
+                    completedCount: { $ifNull: [{ $arrayElemAt: ['$bookings.completedCount', 0] }, 0] },
+                    pendingCount: { $ifNull: [{ $arrayElemAt: ['$bookings.pendingCount', 0] }, 0] }
+                }
+            }
+        ]);
+
+        return result[0];
+    }
+
+    async getBookingsBreakdown(providerId: string): Promise<IBookingsBreakdown> {
+        const result = await this._bookingModel.aggregate([
+            {
+                $match: {
+                    providerId: this._toObjectId(providerId),
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    totalBookings: { $sum: 1 },
+                    upcomingBookings: {
+                        $sum: {
+                            $cond: [
+                                {
+                                    $and: [
+                                        { $ne: ['$bookingStatus', BookingStatus.COMPLETED] },
+                                        { $ne: ['$bookingStatus', BookingStatus.CANCELLED] }
+                                    ]
+                                },
+                                1,
+                                0
+                            ]
+                        }
+                    },
+                    cancelledBookings: {
+                        $sum: {
+                            $cond: [{ $eq: ['$bookingStatus', BookingStatus.CANCELLED] }, 1, 0]
+                        }
+                    },
+                    totalAmount: { $sum: '$totalAmount' }
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    totalBookings: 1,
+                    upcomingBookings: 1,
+                    cancelledBookings: 1,
+                    averageBookingValue: {
+                        $cond: [
+                            { $eq: ['$totalBookings', 0] },
+                            0,
+                            { $divide: ['$totalAmount', '$totalBookings'] }
+                        ]
+                    }
+                }
+            }
+        ]);
+
+        return result[0]
+    }
+
+    async getBookingsCompletionRate(providerId: string): Promise<number> {
+        const result = await this._bookingModel.aggregate([
+            {
+                $match: {
+                    providerId: this._toObjectId(providerId),
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    totalBookings: { $sum: 1 },
+                    completedCount: {
+                        $sum: {
+                            $cond: [{ $eq: ['$bookingStatus', BookingStatus.COMPLETED] }, 1, 0]
+                        }
+                    },
+                    cancelledCount: {
+                        $sum: {
+                            $cond: [{ $eq: ['$bookingStatus', BookingStatus.CANCELLED] }, 1, 0]
+                        }
+                    }
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    completionRate: {
+                        $multiply: [
+                            {
+                                $cond: [
+                                    { $lte: [{ $subtract: ['$totalBookings', '$cancelledCount'] }, 0] },
+                                    0,
+                                    {
+                                        $divide: [
+                                            '$completedCount',
+                                            { $subtract: ['$totalBookings', '$cancelledCount'] }
+                                        ]
+                                    }
+                                ]
+                            },
+                            100
+                        ]
+                    }
+                }
+            }
+        ]);
+
+        return result[0].completionRate;
     }
 }

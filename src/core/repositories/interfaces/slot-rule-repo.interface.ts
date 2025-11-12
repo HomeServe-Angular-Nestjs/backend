@@ -3,8 +3,9 @@ import { IBaseRepository } from "@core/repositories/base/interfaces/base-repo.in
 import { SlotRuleDocument } from "@core/schema/slot-rule.schema";
 
 export interface ISlotRuleRepository extends IBaseRepository<SlotRuleDocument> {
-    findRules(providerId: string, filters?: IRuleFilter, skip?: number, limit?: number): Promise<SlotRuleDocument[]>;
+    findActiveRulesByProviderId(providerId: string): Promise<SlotRuleDocument[]>
+    findRulesWithFilter(providerId: string, filters?: IRuleFilter, skip?: number, limit?: number): Promise<SlotRuleDocument[]>;
     findRuleAndUpdate(providerId: string, ruleId: string, updateData: Partial<ISlotRule>): Promise<SlotRuleDocument | null>;
     count(): Promise<number>;
-    updateRuleStatus(providerId: string, ruleId: string, status: boolean): Promise<SlotRuleDocument | null>
+    updateRuleStatus(providerId: string, ruleId: string, status: boolean): Promise<SlotRuleDocument | null>;
 }

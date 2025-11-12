@@ -8,4 +8,5 @@ export interface IServiceOfferedRepository extends BaseRepository<ServiceDocumen
   findSubServicesByIds(ids: string[]): Promise<SubServiceDocument[]>;
   count(filter: FilterQuery<ServiceDocument>): Promise<number>;
   getServiceTitles(): Promise<IGetServiceTitle[]>;
+  getActiveServiceCount(providerId: string): Promise<number>;
 }

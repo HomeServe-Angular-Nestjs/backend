@@ -96,6 +96,7 @@ export class ProviderDocument extends BaseUserDocument {
         to: { type: String },
       },
     },
+    _id: false
   })
   availability: {
     day: { from: string; to: string };

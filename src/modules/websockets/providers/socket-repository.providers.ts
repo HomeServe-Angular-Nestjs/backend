@@ -1,6 +1,6 @@
 import { Model } from 'mongoose';
 import { ADMIN_MODEL_NAME, CHAT_MODEL_NAME, CUSTOMER_MODEL_NAME, MESSAGE_MODEL_NAME, NOTIFICATION_MODEL_NAME, PROVIDER_MODEL_NAME, RESERVATION_MODEL_NAME } from '@/core/constants/model.constant';
-import { ADMIN_REPOSITORY_INTERFACE_NAME, CHAT_REPOSITORY_INTERFACE_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, MESSAGE_REPOSITORY_INTERFACE_NAME, NOTIFICATION_REPOSITORY_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, RESERVATION_REPOSITORY_NAME } from '@/core/constants/repository.constant';
+import { ADMIN_REPOSITORY_NAME, CHAT_REPOSITORY_INTERFACE_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, MESSAGE_REPOSITORY_INTERFACE_NAME, NOTIFICATION_REPOSITORY_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, RESERVATION_REPOSITORY_NAME } from '@/core/constants/repository.constant';
 import { AdminRepository } from '@/core/repositories/implementations/admin.repository';
 import { ChatRepository } from '@/core/repositories/implementations/chat.repository';
 import { CustomerRepository } from '@/core/repositories/implementations/customer.repository';
@@ -33,7 +33,7 @@ export const socketRepositoryProviders: Provider[] = [
         inject: [getModelToken(PROVIDER_MODEL_NAME)]
     },
     {
-        provide: ADMIN_REPOSITORY_INTERFACE_NAME,
+        provide: ADMIN_REPOSITORY_NAME,
         useFactory: (adminModel: Model<AdminDocument>) =>
             new AdminRepository(adminModel, new LoggerFactory()),
         inject: [getModelToken(ADMIN_MODEL_NAME)]

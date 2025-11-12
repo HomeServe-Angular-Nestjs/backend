@@ -178,7 +178,7 @@ export class SlotRuleService implements ISlotRuleService {
         const skip = (page - 1) * limit;
         const total = await this._slotRuleRepository.count();
 
-        const ruleDocuments = await this._slotRuleRepository.findRules(
+        const ruleDocuments = await this._slotRuleRepository.findRulesWithFilter(
             providerId,
             filter as IRuleFilter,
             skip,
@@ -252,7 +252,7 @@ export class SlotRuleService implements ISlotRuleService {
     }
 
     async getAvailableSlots(providerId: string, date: string): Promise<IResponse> {
-        const ruleDocument = await this._slotRuleRepository.findRules(
+        const ruleDocument = await this._slotRuleRepository.findRulesWithFilter(
             providerId,
             {
                 startDate: date,
