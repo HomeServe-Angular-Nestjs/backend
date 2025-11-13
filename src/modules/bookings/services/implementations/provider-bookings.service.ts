@@ -1,6 +1,6 @@
 import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException, } from '@nestjs/common';
 import { ADMIN_REPOSITORY_NAME, ADMIN_SETTINGS_REPOSITORY_NAME, BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SERVICE_OFFERED_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME, WALLET_REPOSITORY_NAME } from '../../../../core/constants/repository.constant';
-import { IBookedService, IBookingDetailProvider, IBookingInvoice, IBookingOverviewChanges, IBookingOverviewData, IResponseProviderBookingLists } from '../../../../core/entities/interfaces/booking.entity.interface';
+import { IBookedService, IBookingDetailProvider, IBookingInvoice, IBookingOverviewChanges, IBookingOverviewData, IResponseProviderBookingLists, IReviewDetails, IReviewFilter, IReviewWithPagination } from '../../../../core/entities/interfaces/booking.entity.interface';
 import { BookingStatus, DateRange, PaymentStatus } from '../../../../core/enum/bookings.enum';
 import { ICustomLogger } from '../../../../core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '../../../../core/logger/interface/logger-factory.interface';
@@ -9,9 +9,9 @@ import { IBookingRepository } from '../../../../core/repositories/interfaces/boo
 import { ICustomerRepository } from '../../../../core/repositories/interfaces/customer-repo.interface';
 import { IServiceOfferedRepository } from '../../../../core/repositories/interfaces/serviceOffered-repo.interface';
 import { ITransactionRepository } from '../../../../core/repositories/interfaces/transaction-repo.interface';
-import { FilterFields, UpdateBookingStatusDto } from '../../dtos/booking.dto';
+import { FilterFields, ReviewFilterDto, UpdateBookingStatusDto } from '../../dtos/booking.dto';
 import { IProviderBookingService } from '../interfaces/provider-booking-service.interface';
-import { BOOKING_MAPPER, CUSTOMER_MAPPER, PROVIDER_MAPPER, TRANSACTION_MAPPER } from '@core/constants/mappers.constant';
+import { BOOKING_MAPPER, CUSTOMER_MAPPER, PROVIDER_MAPPER, SERVICE_OFFERED_MAPPER, TRANSACTION_MAPPER } from '@core/constants/mappers.constant';
 import { IBookingMapper } from '@core/dto-mapper/interface/bookings.mapper.interface';
 import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
 import { ITransaction, ITransactionMetadata } from '@core/entities/interfaces/transaction.entity.interface';
@@ -27,6 +27,9 @@ import { ICustomerMapper } from '@core/dto-mapper/interface/customer.mapper..int
 import { IProviderMapper } from '@core/dto-mapper/interface/provider.mapper.interface';
 import { IProviderRepository } from '@core/repositories/interfaces/provider-repo.interface';
 import { UserType } from '@modules/auth/dtos/login.dto';
+import { UPLOAD_UTILITY_NAME } from '@core/constants/utility.constant';
+import { IUploadsUtility } from '@core/utilities/interface/upload.utility.interface';
+import { IServiceOfferedMapper } from '@core/dto-mapper/interface/serviceOffered.mapper.interface';
 
 @Injectable()
 export class ProviderBookingService implements IProviderBookingService {
@@ -55,12 +58,16 @@ export class ProviderBookingService implements IProviderBookingService {
         private readonly _adminSettings: IAdminSettingsRepository,
         @Inject(WALLET_REPOSITORY_NAME)
         private readonly _walletRepository: IWalletRepository,
+        @Inject(SERVICE_OFFERED_MAPPER)
+        private readonly _serviceMapper: IServiceOfferedMapper,
         @Inject(PDF_SERVICE)
         private readonly _pdfService: IPdfService,
         @Inject(CUSTOMER_MAPPER)
         private readonly _customerMapper: ICustomerMapper,
         @Inject(PROVIDER_MAPPER)
         private readonly _providerMapper: IProviderMapper,
+        @Inject(UPLOAD_UTILITY_NAME)
+        private readonly _uploadUtility: IUploadsUtility,
     ) {
         this.logger = this._loggerFactory.createLogger(ProviderBookingService.name);
     }
@@ -392,12 +399,12 @@ export class ProviderBookingService implements IProviderBookingService {
             });
         }
 
-        const updatedBooking = await this._bookingRepository.updateBookingStatus(dto.bookingId, dto.newStatus);
+        const updatedBookingDoc = await this._bookingRepository.updateBookingStatus(dto.bookingId, dto.newStatus);
 
-        if (!updatedBooking) {
+        if (!updatedBookingDoc) {
             throw new NotFoundException(`Booking with ID ${dto.bookingId} not found.`);
         }
-
+        const updatedBooking = this._bookingMapper.toEntity(updatedBookingDoc);
         const customer = await this._customerRepository.findById(updatedBooking.customerId);
         if (!customer) {
             throw new InternalServerErrorException(`Customer with ID ${updatedBooking.customerId} not found.`);
@@ -556,6 +563,76 @@ export class ProviderBookingService implements IProviderBookingService {
         return {
             success: true,
             message: ''
+        }
+    }
+
+    async getReviewData(providerId: string, filter: ReviewFilterDto): Promise<IResponse<IReviewWithPagination>> {
+        const limit = 10;
+        const { page, ...filters } = filter;
+        const filterFinal: IReviewFilter = {};
+
+        if (filters?.search) {
+            filterFinal.search = filters.search;
+        }
+
+        if (filters?.rating && filters.rating !== 'all') {
+            filterFinal.rating = filters.rating;
+        }
+
+        if (filters?.time && filters.time !== 'all') {
+            filterFinal.time = filters.time;
+        }
+
+        if (filter?.sort) {
+            filterFinal.sort = filter.sort;
+        }
+
+        const [reviewCount, result] = await Promise.all([
+            this._bookingRepository.countReviews(providerId),
+            this._bookingRepository.getReviews(providerId, filterFinal, { page, limit })
+        ]);
+
+        const response: IReviewDetails[] = result.map(review => {
+            const subServiceIds = review.services.flatMap(s => s.subserviceIds.map(id => id.toString()));
+            const subServiceTitles: string[] = [];
+
+            for (const serviceDetailDoc of review.serviceDetails || []) {
+                const serviceDetail = this._serviceMapper.toEntity(serviceDetailDoc);
+
+                const matchedSubs =
+                    (serviceDetail.subService ?? []).filter((sub) => {
+                        if (sub.id) {
+                            return subServiceIds.includes(sub.id.toString())
+                        }
+                        return false;
+                    }) || [];
+
+                matchedSubs.forEach((sub) => {
+                    if (sub.title) {
+                        return subServiceTitles.push(sub.title)
+                    }
+                });
+            }
+
+            return {
+                id: review.id,
+                avatar: this._uploadUtility.getSignedImageUrl(review.avatar),
+                username: review.username,
+                email: review.email,
+                rating: review.rating,
+                desc: review.desc,
+                writtenAt: review.writtenAt,
+                serviceTitles: subServiceTitles
+            }
+        });
+
+        return {
+            success: true,
+            message: "Fetched review data successfully.",
+            data: {
+                reviewDetails: response,
+                pagination: { page, limit, total: reviewCount }
+            }
         }
     }
 }

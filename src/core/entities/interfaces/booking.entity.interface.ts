@@ -2,6 +2,7 @@ import { BookingStatus, CancelStatus, PaymentStatus } from '../../enum/bookings.
 import { IEntity } from '../base/interfaces/base-entity.entity.interface';
 import { SlotStatusEnum } from '@core/enum/slot.enum';
 import { PaymentSource, TransactionType } from '@core/enum/transaction.enum';
+import { ServiceDocument } from '@core/schema/service.schema';
 
 export type RevenueChartView = 'monthly' | 'quarterly' | 'yearly';
 
@@ -353,4 +354,36 @@ export interface IBookingsBreakdown {
     upcomingBookings: number;
     cancelledBookings: number;
     averageBookingValue: number;
+}
+
+export interface IReviewDetailsRaw extends IReview {
+    id: string;
+    avatar: string;
+    email: string;
+    username: string;
+    services: {
+        serviceId: string;
+        subserviceIds: string[];
+    }[];
+    serviceDetails: ServiceDocument[];
+}
+
+export interface IReviewDetails extends Omit<IReview, 'isActive' | 'isReported'> {
+    id: string;
+    avatar: string;
+    email: string;
+    username: string;
+    serviceTitles: string[];
+}
+
+export interface IReviewWithPagination {
+    reviewDetails: IReviewDetails[];
+    pagination: IPagination;
+}
+
+export interface IReviewFilter {
+    search?: string;
+    rating?: 'all' | 1 | 2 | 3 | 4 | 5;
+    sort?: 'asc' | 'desc';
+    time?: 'all' | 'last_6_months' | 'last_year';
 }

@@ -7,9 +7,10 @@ import { repositoryProviders } from './providers/repository.provider';
 import { serviceProviders } from './providers/service.provider';
 import { bookingsUtilityProviders } from './providers/utility.provider';
 import { PdfModule } from '@core/services/pdf/pdf.module';
+import { CloudinaryModule } from '@configs/cloudinary/cloudinary.module';
 
 @Module({
-    imports: [JwtConfigModule, SharedModule, PdfModule],
+    imports: [CloudinaryModule.registerAsync(), JwtConfigModule, SharedModule, PdfModule,],
     controllers: [BookingsController, ProviderBookingsController],
     providers: [
         ...repositoryProviders,

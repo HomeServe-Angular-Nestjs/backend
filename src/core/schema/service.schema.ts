@@ -3,11 +3,12 @@ import { Document, Types } from 'mongoose';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 
 import { SubServiceDocument, SubServiceSchema } from './subservice.schema';
+import { PROVIDER_MODEL_NAME } from '@core/constants/model.constant';
 
 @Schema({ timestamps: true })
 export class ServiceDocument extends Document {
 
-  @Prop({ type: Types.ObjectId, required: true })
+  @Prop({ type: Types.ObjectId, ref: PROVIDER_MODEL_NAME, required: true })
   providerId: Types.ObjectId;
 
   @Prop({ required: true })

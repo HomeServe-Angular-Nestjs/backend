@@ -4,7 +4,7 @@ import { BookingStatus, CancelStatus, PaymentStatus } from '../enum/bookings.enu
 import { SlotStatusEnum } from '@core/enum/slot.enum';
 import { CUSTOMER_MODEL_NAME, SERVICE_OFFERED_MODEL_NAME } from '@core/constants/model.constant';
 
-@Schema({ _id: false })
+@Schema()
 export class ReviewDocument {
     @Prop({ type: String, required: true })
     desc: string;
@@ -110,15 +110,15 @@ export class BookingDocument extends Document {
     @Prop({
         type: [
             {
-                serviceId: { type: String, ref: SERVICE_OFFERED_MODEL_NAME },
-                subserviceIds: { type: [String] },
+                serviceId: { type: Types.ObjectId, ref: SERVICE_OFFERED_MODEL_NAME },
+                subserviceIds: { type: [Types.ObjectId] },
             }
         ],
         required: true,
     })
     services: {
-        serviceId: string;
-        subserviceIds: string[];
+        serviceId: Types.ObjectId;
+        subserviceIds: Types.ObjectId[];
     }[];
 
     @Prop({ type: Types.ObjectId, default: null })

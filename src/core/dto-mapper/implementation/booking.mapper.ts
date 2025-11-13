@@ -14,7 +14,10 @@ export class BookingMapper implements IBookingMapper {
             providerId: doc.providerId.toString(),
             totalAmount: doc.totalAmount,
             slot: this.toSlotEntity(doc.slot),
-            services: doc.services,
+            services: (doc.services ?? []).map(service => ({
+                serviceId: service.serviceId.toString(),
+                subserviceIds: service.subserviceIds.map(id => String(id)),
+            })),
             bookingStatus: doc.bookingStatus,
             paymentStatus: doc.paymentStatus,
             location: doc.location,
@@ -58,7 +61,10 @@ export class BookingMapper implements IBookingMapper {
             totalAmount: entity.totalAmount,
             expectedArrivalTime: new Date(entity.expectedArrivalTime),
             location: entity.location,
-            services: entity.services,
+            services: entity.services.map(service => ({
+                serviceId: new Types.ObjectId(service.serviceId),
+                subserviceIds: service.subserviceIds.map(id => new Types.ObjectId(id)),
+            })),
             slot: {
                 ruleId: new Types.ObjectId(entity.slot.ruleId),
                 date: new Date(entity.slot.date),

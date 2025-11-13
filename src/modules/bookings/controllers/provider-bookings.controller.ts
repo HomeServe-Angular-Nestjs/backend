@@ -6,7 +6,7 @@ import { PROVIDER_BOOKING_SERVICE_NAME } from '../../../core/constants/service.c
 import { IResponseProviderBookingLists } from '../../../core/entities/interfaces/booking.entity.interface';
 import { CUSTOM_LOGGER, ICustomLogger } from '../../../core/logger/interface/custom-logger.interface';
 import { IPayload } from '../../../core/misc/payload.interface';
-import { BookingIdDto, BookingPaginationFilterDto, UpdateBookingStatusDto } from '../dtos/booking.dto';
+import { BookingIdDto, BookingPaginationFilterDto, ReviewFilterDto, UpdateBookingStatusDto } from '../dtos/booking.dto';
 import { IProviderBookingService } from '../services/interfaces/provider-booking-service.interface';
 import { IResponse } from '@core/misc/response.util';
 
@@ -65,5 +65,11 @@ export class ProviderBookingsController {
         });
 
         res.send(pdfBuffer);
+    }
+
+    @Get('review_data')
+    async getReviewData(@Req() req: Request, @Query() dto: ReviewFilterDto): Promise<IResponse> {
+        const user = req.user as IPayload;
+        return this._providerBookingService.getReviewData(user.sub, dto);
     }
 }
