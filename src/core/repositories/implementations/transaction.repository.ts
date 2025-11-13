@@ -1,4 +1,4 @@
-import { FilterQuery, Model, PipelineStage } from 'mongoose';
+import { FilterQuery, Model, PipelineStage, SortOrder } from 'mongoose';
 
 import { TRANSACTION_MODEL_NAME } from '@core/constants/model.constant';
 import { PaymentStatus } from '@core/enum/bookings.enum';
@@ -7,7 +7,7 @@ import { ITransactionRepository } from '@core/repositories/interfaces/transactio
 import { TransactionDocument } from '@core/schema/transaction.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import { IReportDownloadTransactionData, IReportTransactionData } from '@core/entities/interfaces/admin.entity.interface';
-import { ITransactionStats } from '@core/entities/interfaces/transaction.entity.interface';
+import { ITransactionFilter, ITransactionStats } from '@core/entities/interfaces/transaction.entity.interface';
 import { Injectable } from '@nestjs/common';
 import { PaymentDirection, TransactionStatus } from '@core/enum/transaction.enum';
 
@@ -28,6 +28,10 @@ export class TransactionRepository extends BaseRepository<TransactionDocument> i
 
     async count(): Promise<number> {
         return await this._transactionModel.countDocuments();
+    }
+
+    async countByUserId(userId: string): Promise<number> {
+        return await this._transactionModel.countDocuments({ userId: this._toObjectId(userId) });
     }
 
     async getTotalRevenue(date: Date): Promise<number> {
@@ -157,5 +161,87 @@ export class TransactionRepository extends BaseRepository<TransactionDocument> i
             { $set: { status } },
             { new: true }
         ));
+    }
+
+    async getFilteredTransactionByUserIdWithPagination(userId: string, filters: ITransactionFilter, options?: { page?: number, limit?: number }): Promise<TransactionDocument[]> {
+        const page = options?.page || 1;
+        const limit = options?.limit || 10;
+        const skip = (page - 1) * limit;
+
+        const match: Record<string, any> = {
+            userId: this._toObjectId(userId),
+        };
+
+        if (filters.search) {
+            const searchRegex = new RegExp(filters.search, 'i');
+
+            match.$or = [
+                { _id: this._toObjectId(filters.search) },
+                { 'gateWayDetails.paymentId': searchRegex },
+                { 'userDetails.email': searchRegex },
+            ];
+        }
+
+        if (filters.date && filters.date !== 'all') {
+            const now = new Date();
+            let start: Date;
+
+            switch (filters.date) {
+                case 'last_six_months':
+                    start = new Date();
+                    start.setMonth(start.getMonth() - 6);
+                    break;
+
+                case 'last_year':
+                    start = new Date();
+                    start.setFullYear(start.getFullYear() - 1);
+                    break;
+            }
+
+            match.createdAt = { $gte: start, $lte: now };
+        }
+
+        if (filters.method && filters.method !== 'all') {
+            match.direction = filters.method;
+        }
+
+        if (filters.type && filters.type !== 'all') {
+            match.transactionType = filters.type;
+        }
+
+        const sort: Record<string, SortOrder> = {};
+
+        switch (filters.sort) {
+            case 'newest':
+                sort.createdAt = -1;
+                break;
+
+            case 'oldest':
+                sort.createdAt = 1;
+                break;
+
+            case 'high':
+                sort.amount = -1;
+                break;
+
+            case 'low':
+                console.log(filters.sort)
+                sort.amount = 1;
+                break;
+
+            default:
+                sort.createdAt = -1;
+                break;
+        }
+
+        const result = await this._transactionModel
+            .find(match)
+            .select('_id amount source transactionType createdAt direction userDetails.email gateWayDetails.paymentId')
+            .sort(sort)
+            .skip(skip)
+            .limit(limit)
+            .lean();
+
+        return result;
     }
 }

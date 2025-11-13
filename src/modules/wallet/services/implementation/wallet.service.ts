@@ -1,9 +1,13 @@
-import { WALLET_MAPPER } from "@core/constants/mappers.constant";
-import { WALLET_REPOSITORY_NAME } from "@core/constants/repository.constant";
+import { TRANSACTION_MAPPER, WALLET_MAPPER } from "@core/constants/mappers.constant";
+import { TRANSACTION_REPOSITORY_NAME, WALLET_REPOSITORY_NAME } from "@core/constants/repository.constant";
+import { ITransactionMapper } from "@core/dto-mapper/interface/transaction.mapper.interface";
 import { IWalletMapper } from "@core/dto-mapper/interface/wallet.mapper.interface";
+import { ITransactionFilter, ITransactionTableData, ITransactionUserTableData } from "@core/entities/interfaces/transaction.entity.interface";
 import { IWallet } from "@core/entities/interfaces/wallet.entity.interface";
 import { IResponse } from "@core/misc/response.util";
+import { ITransactionRepository } from "@core/repositories/interfaces/transaction-repo.interface";
 import { IWalletRepository } from "@core/repositories/interfaces/wallet-repo.interface";
+import { ProviderWalletFilterDto } from "@modules/wallet/dto/provider-wallet.dto";
 import { IWalletService } from "@modules/wallet/services/interfaces/wallet.service.interface";
 import { Inject, Injectable } from "@nestjs/common";
 
@@ -14,7 +18,10 @@ export class WalletService implements IWalletService {
         private readonly _walletRepository: IWalletRepository,
         @Inject(WALLET_MAPPER)
         private readonly _walletMapper: IWalletMapper,
-
+        @Inject(TRANSACTION_REPOSITORY_NAME)
+        private readonly _transactionRepository: ITransactionRepository,
+        @Inject(TRANSACTION_MAPPER)
+        private readonly _transactionMapper: ITransactionMapper,
     ) { }
 
     async getWallet(userId: string): Promise<IResponse<IWallet | null>> {
@@ -29,12 +36,38 @@ export class WalletService implements IWalletService {
         }
     }
 
-    // async getAdminWalletBalance(adminId: string): Promise<IResponse<number>> {
-    //     const balance = await this._walletRepository.getAdminAmount(adminId);
-    //     return {
-    //         success: true,
-    //         message: 'Wallet amount fetched',
-    //         data: balance
-    //     }
-    // }
+    async getTransactions(userId: string, filter: ProviderWalletFilterDto): Promise<IResponse<ITransactionUserTableData>> {
+        const limit = 10;
+        const { page = 1, ...filters } = filter as unknown as {
+            page: number;
+        } & ITransactionFilter;
+
+        const [total, transactionDocs] = await Promise.all([
+            this._transactionRepository.countByUserId(userId),
+            this._transactionRepository.getFilteredTransactionByUserIdWithPagination(userId, filters, { page, limit })
+        ]);
+        const transactions: (ITransactionTableData & { email: string })[] = (transactionDocs ?? [])
+            .map(txn => this._transactionMapper.toEntity(txn))
+            .map(tnx => {
+                return {
+                    transactionId: tnx.id,
+                    amount: tnx.amount / 100,
+                    createdAt: tnx.createdAt as Date,
+                    email: tnx.userDetails?.email ?? '',
+                    method: tnx.direction,
+                    paymentId: tnx.gateWayDetails?.paymentId ?? '',
+                    source: tnx.source,
+                    transactionType: tnx.transactionType
+                }
+            });
+
+        return {
+            success: true,
+            message: 'Transaction details fetched successfully.',
+            data: {
+                transactions,
+                pagination: { page, total, limit }
+            }
+        }
+    }
 }
