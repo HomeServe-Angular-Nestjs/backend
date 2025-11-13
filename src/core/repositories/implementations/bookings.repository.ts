@@ -2,7 +2,7 @@ import { FilterQuery, Model, PipelineStage, Types } from 'mongoose';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { BOOKINGS_MODEL_NAME } from '@core/constants/model.constant';
-import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData, ILocationRevenue, ITopAreaRevenue, IUnderperformingArea, IPeakServiceTime, IRevenueBreakdown, IBookingsBreakdown } from '@core/entities/interfaces/booking.entity.interface';
+import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData, ILocationRevenue, ITopAreaRevenue, IUnderperformingArea, IPeakServiceTime, IRevenueBreakdown, IBookingsBreakdown, IReviewDetails, IReviewDetailsRaw, IReviewFilter } from '@core/entities/interfaces/booking.entity.interface';
 import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderRevenueOverview, IResponseTimeChartData, ITopProviders, ITotalReviewAndAvgRating } from '@core/entities/interfaces/user.entity.interface';
 import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
 import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
@@ -669,6 +669,100 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                 }
             }
         ]);
+    }
+
+    async getReviews(providerId: string, filters: IReviewFilter, options?: { page?: number; limit?: number }): Promise<IReviewDetailsRaw[]> {
+        const page = options?.page ?? 1;
+        const limit = options?.limit ?? 10;
+        const skip = (page - 1) * limit;
+
+        const baseMatch: any = {
+            providerId: this._toObjectId(providerId),
+            review: { $exists: true, $ne: null }
+        };
+
+        const pipeline: PipelineStage[] = [
+            { $match: baseMatch },
+
+            {
+                $lookup: {
+                    from: 'customers',
+                    localField: 'customerId',
+                    foreignField: '_id',
+                    as: 'customer',
+                },
+            },
+            { $unwind: '$customer' }
+        ];
+
+        if (filters.search) {
+            pipeline.push({
+                $match: {
+                    $or: [
+                        { 'customer.email': { $regex: filters.search, $options: 'i' } },
+                        { 'review.desc': { $regex: filters.search, $options: 'i' } }
+                    ]
+                }
+            });
+        }
+
+        if (filters.rating) {
+            pipeline.push({
+                $match: { 'review.rating': filters.rating }
+            });
+        }
+
+        if (filters.time) {
+            const now = new Date();
+            let pastDate: Date | null = null;
+
+            if (filters.time === 'last_6_months') pastDate = new Date(now.setMonth(now.getMonth() - 6));
+            if (filters.time === 'last_year') pastDate = new Date(now.setFullYear(now.getFullYear() - 1));
+
+            if (pastDate) {
+                pipeline.push({
+                    $match: { 'review.writtenAt': { $gte: pastDate } }
+                });
+            }
+        }
+
+        pipeline.push(
+            {
+                $lookup: {
+                    from: 'services',
+                    localField: 'services.serviceId',
+                    foreignField: '_id',
+                    as: 'serviceDetails',
+                },
+            },
+            {
+                $project: {
+                    _id: 0,
+                    id: '$_id',
+                    desc: '$review.desc',
+                    rating: '$review.rating',
+                    writtenAt: '$review.writtenAt',
+                    avatar: '$customer.avatar',
+                    email: '$customer.email',
+                    username: '$customer.username',
+                    services: '$services',
+                    serviceDetails: '$serviceDetails',
+                },
+            },
+            { $sort: { writtenAt: filters.sort === 'asc' ? 1 : -1 } },
+            { $skip: skip },
+            { $limit: limit }
+        );
+
+        return await this._bookingModel.aggregate(pipeline);
+    }
+
+
+    async countReviews(providerId: string): Promise<number> {
+        return await this._bookingModel.countDocuments({
+            providerId: this._toObjectId(providerId),
+            review: { $exists: true, $ne: null }
+        });
     }
 
     async getOnTimeArrivalData(providerId: string): Promise<IOnTimeArrivalChartData[]> {

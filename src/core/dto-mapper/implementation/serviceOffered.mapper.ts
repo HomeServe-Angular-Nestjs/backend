@@ -15,7 +15,7 @@ export class ServiceOfferedMapper implements IServiceOfferedMapper {
             desc: doc.desc,
             image: doc.image,
             subService: doc.subService.map(service => new SubService({
-                id: service.id,
+                id: (service._id as Types.ObjectId).toString(),
                 title: service.title,
                 desc: service.desc,
                 price: service.price,

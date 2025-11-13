@@ -1,8 +1,8 @@
 import { FilterQuery, Types } from 'mongoose';
-import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData, ILocationRevenue, ITopAreaRevenue, IUnderperformingArea, IPeakServiceTime, IRevenueBreakdown, IBookingsBreakdown } from '@core/entities/interfaces/booking.entity.interface';
+import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData, ILocationRevenue, ITopAreaRevenue, IUnderperformingArea, IPeakServiceTime, IRevenueBreakdown, IBookingsBreakdown, IReviewDetails, IReviewDetailsRaw, IReviewFilter } from '@core/entities/interfaces/booking.entity.interface';
 import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderRevenueOverview, IResponseTimeChartData, ITopProviders, ITotalReviewAndAvgRating } from '@core/entities/interfaces/user.entity.interface';
 import { IBaseRepository } from '@core/repositories/base/interfaces/base-repo.interface';
-import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
+import { BookingDocument, ReviewDocument, SlotDocument } from '@core/schema/bookings.schema';
 import { IBookingReportData, IReportCustomerMatrix, IReportDownloadBookingData, IReportProviderMatrix } from '@core/entities/interfaces/admin.entity.interface';
 import { SlotStatusEnum } from '@core/enum/slot.enum';
 import { BookingStatus, PaymentStatus } from '@core/enum/bookings.enum';
@@ -26,6 +26,8 @@ export interface IBookingRepository extends IBaseRepository<BookingDocument> {
     updateBookingStatus(bookingId: string, status: BookingStatus): Promise<BookingDocument | null>;
     addReview(bookingId: string, desc: string, rating: number): Promise<boolean>;
     getAvgRating(providerId: string): Promise<number>;
+    getReviews(providerId: string, filter: IReviewFilter, options?: { page?: number, limit?: number }): Promise<IReviewDetailsRaw[]>;
+    countReviews(providerId: string): Promise<number>;
 
     getPerformanceSummary(providerId: string): Promise<any>;
     getAvgRatingAndTotalReviews(providerId?: string): Promise<ITotalReviewAndAvgRating[]>;

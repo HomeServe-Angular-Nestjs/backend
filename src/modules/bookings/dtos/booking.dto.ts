@@ -211,3 +211,28 @@ export class AddReviewDto {
     @IsNumber()
     ratings: number;
 }
+
+export class ReviewFilterDto {
+    @Transform(({ value }) => Number(value) || 1)
+    @IsNumber()
+    page: number;
+
+    @IsOptional()
+    @IsString()
+    search?: string;
+
+    @IsOptional()
+    @IsIn(['all', 1, 2, 3, 4, 5], {
+        message: 'rating must be all or 1–5'
+    })
+    @Transform(({ value }) => value === 'all' ? 'all' : Number(value))
+    rating?: 'all' | 1 | 2 | 3 | 4 | 5;
+
+    @IsOptional()
+    @IsIn(['asc', 'desc'])
+    sort?: 'asc' | 'desc';
+
+    @IsOptional()
+    @IsIn(['all', 'last_6_months', 'last_year'])
+    time?: 'all' | 'last_6_months' | 'last_year';
+}
