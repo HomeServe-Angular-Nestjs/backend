@@ -76,11 +76,7 @@ export class ProviderController {
     // Performs a bulk update of provider data, including optional avatar upload.
     @Patch('update_provider')
     @UseInterceptors(FileInterceptor('providerAvatar'))
-    async bulkUpdateProvider(
-        @Req() req: Request,
-        @Body('providerData') dto: string,
-        @UploadedFile() file: Express.Multer.File,
-    ): Promise<IProvider> {
+    async bulkUpdateProvider(@Req() req: Request, @Body('providerData') dto: string, @UploadedFile() file: Express.Multer.File,): Promise<IProvider> {
         const user = req.user as IPayload;
         const updateData = JSON.parse(dto);
 
@@ -114,7 +110,7 @@ export class ProviderController {
     }
 
     @Get('work_images')
-    @UseGuards(SubscriptionGuard)
+    // @UseGuards(SubscriptionGuard)
     async getWorkImage(@Req() req: Request) {
         const user = req.user as IPayload;
         return await this._providerServices.getWorkImages(user.sub);

@@ -10,7 +10,7 @@ export class TransactionMapper implements ITransactionMapper {
     toEntity(doc: TransactionDocument): ITransaction {
         return new Transaction({
             id: (doc._id as Types.ObjectId).toString(),
-            userId: (doc.userId).toString(),
+            userId: (doc.userId)?.toString(),
             transactionType: doc.transactionType,
             direction: doc.direction,
             source: doc.source,

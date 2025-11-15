@@ -41,7 +41,11 @@ export abstract class BaseRepository<TDocument extends Document> implements IBas
   }
 
   protected _toObjectId(id: string | Types.ObjectId): Types.ObjectId {
-    if (id instanceof Types.ObjectId) return id;
-    return new Types.ObjectId(id);
+    try {
+      if (id instanceof Types.ObjectId) return id;
+      return new Types.ObjectId(id);
+    } catch {
+      throw new Error('Failed to convert id to objectId. Not a valid input.');
+    }
   }
 }

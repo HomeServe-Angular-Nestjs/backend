@@ -676,14 +676,13 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
         const limit = options?.limit ?? 10;
         const skip = (page - 1) * limit;
 
-        const baseMatch: any = {
+        const baseMatch: Record<string, any> = {
             providerId: this._toObjectId(providerId),
             review: { $exists: true, $ne: null }
         };
 
         const pipeline: PipelineStage[] = [
             { $match: baseMatch },
-
             {
                 $lookup: {
                     from: 'customers',
