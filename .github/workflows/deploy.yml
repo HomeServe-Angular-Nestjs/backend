@@ -1,0 +1,48 @@
+name: Deploy NestJS Backend to EC2 (PNPM)
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 20
+
+    - name: Install pnpm
+      run: npm install -g pnpm
+
+    - name: Install Dependencies
+      run: pnpm install
+
+    - name: Build Project
+      run: pnpm build
+
+    - name: Upload Code to EC2
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_KEY }}
+        source: "./"
+        target: "${{ secrets.EC2_PROJECT_PATH }}"
+
+    - name: Run Deployment Commands on EC2
+      uses: appleboy/ssh-action@v0.1.7
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_KEY }}
+        script: |
+          cd ${{ secrets.EC2_PROJECT_PATH }}
+          pnpm install --prod
+          pnpm build
+          pm2 restart backend || pm2 start dist/main.js --name backend
