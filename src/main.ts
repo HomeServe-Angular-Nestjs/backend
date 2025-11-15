@@ -39,6 +39,9 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
 
+  console.log(configService.get('NODE_ENV'));
+  console.log(configService.get('CLOUDINARY_NAME'));
+
   const loggerFactory = app.get<ILoggerFactory>(LOGGER_FACTORY);
   // app.useWebSocketAdapter(new RedisIoAdapter(loggerFactory, app, configService));
 
