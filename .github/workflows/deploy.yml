@@ -32,8 +32,8 @@ jobs:
         host: ${{ secrets.EC2_HOST }}
         username: ${{ secrets.EC2_USER }}
         key: ${{ secrets.EC2_KEY }}
-        source: "./"
-        target: "${{ secrets.EC2_PROJECT_PATH }}"
+        source: "dist/"
+        target: "${{ secrets.EC2_PROJECT_PATH }}/dist"
 
     - name: Run Deployment Commands on EC2
       uses: appleboy/ssh-action@v0.1.7
