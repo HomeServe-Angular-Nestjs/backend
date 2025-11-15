@@ -45,4 +45,4 @@ jobs:
           cd ${{ secrets.EC2_PROJECT_PATH }}
           pnpm install --prod
           pnpm build
-          pm2 restart backend || pm2 start dist/main.js --name backend
+          pm2 restart backend || pm2 start dist/src/main.js --name homeserve_backend
