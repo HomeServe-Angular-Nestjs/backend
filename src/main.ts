@@ -51,6 +51,8 @@ async function bootstrap() {
     credentials: true,
   });
 
+  console.log(FRONTEND_URL);
+
   // Configure the session.
   app.use(
     session({
