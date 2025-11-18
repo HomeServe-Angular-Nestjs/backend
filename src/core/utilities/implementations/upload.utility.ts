@@ -54,6 +54,45 @@ export class UploadsUtility implements IUploadsUtility {
   }
 
   getSignedImageUrl(publicId: string, expiresIn: number = 300): string {
-    return this._cloudinaryService.generateSignedUrl(publicId, expiresIn)
+    if (!publicId || !publicId.trim()) return '';
+
+    const googleDomains = [
+      'lh3.googleusercontent.com',
+      'lh4.googleusercontent.com',
+      'lh5.googleusercontent.com',
+      'lh6.googleusercontent.com',
+      'googleusercontent.com',
+      'www.googleapis.com'
+    ];
+
+    const cloudinaryDomains = [
+      'res.cloudinary.com'
+    ];
+
+    let isGoogleImage = false;
+    let isCloudinaryUrl = false;
+
+    try {
+      const url = new URL(publicId);
+      const host = url.hostname.toLowerCase();
+
+      isGoogleImage = googleDomains.includes(host);
+      isCloudinaryUrl = cloudinaryDomains.includes(host);
+
+      if (!isGoogleImage) {
+        isGoogleImage = googleDomains.some(domain => host.endsWith(domain));
+      }
+
+      if (!isCloudinaryUrl) {
+        isCloudinaryUrl = cloudinaryDomains.some(domain => host.endsWith(domain));
+      }
+
+    } catch {
+      isGoogleImage = false;
+      isCloudinaryUrl = false;
+    }
+
+    if (isGoogleImage || isCloudinaryUrl) return publicId;
+    return this._cloudinaryService.generateSignedUrl(publicId, expiresIn);
   }
 }

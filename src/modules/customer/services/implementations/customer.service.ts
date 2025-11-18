@@ -50,8 +50,7 @@ export class CustomerService implements ICustomerService {
         const customerDocument = await this._customerRepository.findOne({ _id: id });
         if (!customerDocument) return null;
         const customer = this._customerMapper.toEntity(customerDocument);
-        customer.avatar = customer?.avatar ? this._uploadsUtility.getSignedImageUrl(customer.avatar) : ''; //!Todo handle google image
-        console.log(customer);
+        customer.avatar = this._uploadsUtility.getSignedImageUrl(customer.avatar);
         return customer;
     }
 
