@@ -46,7 +46,11 @@ async function bootstrap() {
 
   // Configure cors options
   app.enableCors({
-    origin: FRONTEND_URL,
+    origin: [
+      'https://homeservenow.online',
+      'https://www.homeservenow.online',
+      'http://localhost:4200'
+    ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });
