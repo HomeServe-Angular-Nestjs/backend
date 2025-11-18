@@ -28,8 +28,8 @@ import { PlanRepository } from '@core/repositories/implementations/plan.reposito
 
 @Module({
   imports: [
-    ConfigModule,
-    DatabaseModule, 
+    ConfigModule.forRoot({ isGlobal: true }),
+    DatabaseModule,
     ConsoleModule,
     MongooseModule.forFeature([
       { name: ADMIN_MODEL_NAME, schema: AdminSchema },
@@ -70,7 +70,7 @@ import { PlanRepository } from '@core/repositories/implementations/plan.reposito
     },
 
     {
-      provide: ARGON_UTILITY_NAME, 
+      provide: ARGON_UTILITY_NAME,
       useClass: ArgonUtility,
     },
 
