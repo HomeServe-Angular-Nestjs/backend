@@ -95,7 +95,7 @@ export class AuthMiddleware implements NestMiddleware {
                         httpOnly: true,
                         secure: false,
                         sameSite: 'strict',
-                        path: '/',
+                        path: '/'
                     });
 
                     res.clearCookie('refresh_token', {

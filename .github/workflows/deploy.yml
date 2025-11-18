@@ -1,0 +1,52 @@
+# name: Deploy NestJS Backend to EC2 (Fast + Stable)
+
+# on:
+#   push:
+#     branches: ["main"]
+
+# jobs:
+#   deploy:
+#     runs-on: ubuntu-latest
+
+#     steps:
+#       - name: Checkout Code
+#         uses: actions/checkout@v3
+
+#       - name: Setup Node
+#         uses: actions/setup-node@v3
+#         with:
+#           node-version: 20
+
+#       - name: Install PNPM
+#         run: npm install -g pnpm
+
+#       # Fix for PNPM TTY error in CI
+#       - name: Set CI variable
+#         run: echo "CI=true" >> $GITHUB_ENV
+
+#       - name: Install dependencies
+#         run: pnpm install
+
+#       - name: Build NestJS
+#         run: pnpm build
+
+#       - name: Upload dist to EC2
+#         uses: appleboy/scp-action@v0.1.7
+#         with:
+#           host: ${{ secrets.EC2_HOST }}
+#           username: ${{ secrets.EC2_USER }}
+#           key: ${{ secrets.EC2_KEY }}
+#           source: "dist/"
+#           target: "${{ secrets.EC2_PROJECT_PATH }}/dist"
+
+#       - name: Run commands on EC2
+#         uses: appleboy/ssh-action@v0.1.7
+#         with:
+#           host: ${{ secrets.EC2_HOST }}
+#           username: ${{ secrets.EC2_USER }}
+#           key: ${{ secrets.EC2_KEY }}
+#           script: |
+#             export CI=true
+#             cd ${{ secrets.EC2_PROJECT_PATH }}
+#             pnpm install --prod
+#             pm2 restart homeserve_backend || pm2 start dist/src/main.js --name homeserve_backend

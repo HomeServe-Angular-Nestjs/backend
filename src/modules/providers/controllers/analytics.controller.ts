@@ -10,7 +10,6 @@ import { RevenueChartViewDto } from "@modules/providers/dtos/analytics.dto";
 import { IRevenueMonthlyGrowthRateData, IRevenueTrendData, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData, ILocationRevenue, ITopAreaRevenue, IUnderperformingArea, IPeakServiceTime } from "@core/entities/interfaces/booking.entity.interface";
 import { SubscriptionGuard } from "@core/guards/subscription.guard";
 
-@UseGuards(SubscriptionGuard)
 @Controller('analytics')
 export class AnalyticsController {
     constructor(
@@ -19,7 +18,7 @@ export class AnalyticsController {
     ) { }
 
     // ------------ Performance Analytics APIs ------------
-
+    @UseGuards(SubscriptionGuard)
     @Get('performance/summary')
     async getPerformanceSummary(@Req() req: Request): Promise<IResponse<IProviderPerformanceOverview>> {
         const user = req.user as IPayload;
@@ -70,6 +69,7 @@ export class AnalyticsController {
 
     // ------------ Revenue Analytics APIs ------------
 
+    @UseGuards(SubscriptionGuard)
     @Get('revenue/overview')
     async getRevenueOverview(@Req() req: Request): Promise<IResponse<IProviderRevenueOverview>> {
         const user = req.user as IPayload;
@@ -108,6 +108,7 @@ export class AnalyticsController {
 
     // ------------ Area Analytics APIs ------------
 
+    @UseGuards(SubscriptionGuard)
     @Get('area/summary')
     async getAreaSummaryData(@Req() req: Request): Promise<IResponse<IAreaSummary>> {
         const user = req.user as IPayload;
