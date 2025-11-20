@@ -45,10 +45,11 @@ async function bootstrap() {
 
   // Configure cors options
   app.enableCors({
-    origin: ['*'
-      // 'https://homeservenow.online',
-      // 'https://www.homeservenow.online',
-      // 'http://localhost:4200'
+    origin: [
+      'https://homeservenow.online',
+      'https://www.homeservenow.online',
+      'http://localhost:4200',
+      'https://jamarion-uncondolatory-olimpia.ngrok-free.dev'
     ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
