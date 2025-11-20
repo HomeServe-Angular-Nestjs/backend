@@ -5,5 +5,5 @@ export const FRONTEND_URL = isProd
     : 'http://localhost:4200';
 
 export const BACKEND_URL = isProd
-    ? 'https://api.homeservenow.online'
+    ? 'https://jamarion-uncondolatory-olimpia.ngrok-free.dev'
     : 'http://localhost:5000';
