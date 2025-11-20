@@ -45,15 +45,25 @@ async function bootstrap() {
 
   // Configure cors options
   app.enableCors({
-    origin: [
-      'https://homeservenow.online',
-      'https://www.homeservenow.online',
-      'http://localhost:4200',
-      'https://jamarion-uncondolatory-olimpia.ngrok-free.dev'
-    ],
+    origin: (origin, callback) => {
+      const allowed = [
+        'http://localhost:4200',
+        'https://jamarion-uncondolatory-olimpia.ngrok-free.dev'
+      ];
+
+      // Allow all vercel app URLs
+      const vercelRegex = /^https:\/\/.*\.vercel\.app$/;
+
+      if (!origin || allowed.includes(origin) || vercelRegex.test(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS: ' + origin));
+      }
+    },
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
-    allowedHeaders: 'Content-Type, Authorization',
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    optionsSuccessStatus: 204,
   });
 
   // Configure the session.
