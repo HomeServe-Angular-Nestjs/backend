@@ -45,25 +45,10 @@ async function bootstrap() {
 
   // Configure cors options
   app.enableCors({
-    origin: (origin, callback) => {
-      const allowed = [
-        'http://localhost:4200',
-        'https://jamarion-uncondolatory-olimpia.ngrok-free.dev'
-      ];
-
-      // Allow all vercel app URLs
-      const vercelRegex = /^https:\/\/.*\.vercel\.app$/;
-
-      if (!origin || allowed.includes(origin) || vercelRegex.test(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS: ' + origin));
-      }
-    },
+    origin: true, // ← allows all origins dynamically
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    optionsSuccessStatus: 204,
+    allowedHeaders: '*',
   });
 
   // Configure the session.
