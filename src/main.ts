@@ -45,10 +45,10 @@ async function bootstrap() {
 
   // Configure cors options
   app.enableCors({
-    origin: true, // ← allows all origins dynamically
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    origin: true,
     credentials: true,
-    allowedHeaders: '*',
+    allowedHeaders: ['*'],
+    methods: ['*'],
   });
 
   // Configure the session.
