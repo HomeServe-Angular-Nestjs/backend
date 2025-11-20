@@ -51,8 +51,9 @@ async function bootstrap() {
       'http://localhost:4200',
       'https://jamarion-uncondolatory-olimpia.ngrok-free.dev'
     ],
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
+    allowedHeaders: 'Content-Type, Authorization',
   });
 
   // Configure the session.
