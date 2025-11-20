@@ -6,4 +6,4 @@ export const FRONTEND_URL = isProd
 
 export const BACKEND_URL = isProd
     ? 'https://jamarion-uncondolatory-olimpia.ngrok-free.dev'
-    : 'http://localhost:5000';
+    : 'https://jamarion-uncondolatory-olimpia.ngrok-free.dev';
