@@ -8,6 +8,7 @@ import { SeedCommand } from '../seed/commands/seed.command';
 import { SeedsModule } from '../seed/seed.module';
 import { AppModule } from './app.module';
 import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME } from '@core/constants/repository.constant';
+import { FRONTEND_URL } from '@core/environments/environments';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { ICustomerRepository } from '@core/repositories/interfaces/customer-repo.interface';
 import { IProviderRepository } from '@core/repositories/interfaces/provider-repo.interface';
@@ -43,25 +44,18 @@ async function bootstrap() {
 
   app.use(cookieParser());
 
-
-  app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-user-type, *');
-    if (req.method === 'OPTIONS') {
-      return res.sendStatus(200);
-    }
-    next();
-  });
-
   // Configure cors options
   app.enableCors({
-    origin: true,
+    origin: [
+      'https://homeservenow.online',
+      'https://www.homeservenow.online',
+      'http://localhost:4200'
+    ],
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
-    allowedHeaders: ['*'],
-    methods: ['*'],
   });
+
+  console.log(FRONTEND_URL);
 
   // Configure the session.
   app.use(

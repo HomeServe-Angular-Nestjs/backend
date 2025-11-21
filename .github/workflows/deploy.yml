@@ -38,7 +38,7 @@
 #           key: ${{ secrets.EC2_KEY }}
 #           source: "dist/"
 #           target: "${{ secrets.EC2_PROJECT_PATH }}/dist"
-
+`
 #       - name: Run commands on EC2
 #         uses: appleboy/ssh-action@v0.1.7
 #         with:
