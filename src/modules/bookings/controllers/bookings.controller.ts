@@ -72,12 +72,7 @@ export class BookingsController {
 
     @Patch('cancel')
     async cancelBooking(@Body() dto: CancelBookingDto): Promise<IResponse> {
-        try {
-            return await this._bookingService.cancelBooking(dto);
-        } catch (err) {
-            this.logger.error(`Error cancelling a booking: ${err}`);
-            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
-        }
+        return await this._bookingService.markBookingCancelledByCustomer(dto.bookingId, dto.reason);
     }
 
     @Patch('update')
@@ -103,5 +98,5 @@ export class BookingsController {
     @Patch('add_review')
     async addReview(@Body() body: AddReviewDto): Promise<IResponse> {
         return this._bookingService.addReview(body);
-    } 
+    }
 }

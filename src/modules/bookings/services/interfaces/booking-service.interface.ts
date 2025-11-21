@@ -1,5 +1,5 @@
 import { IBookingDetailCustomer, IBookingResponse, IBookingWithPagination } from '@core/entities/interfaces/booking.entity.interface';
-import { AddReviewDto, BookingDto, CancelBookingDto, IPriceBreakupDto, SelectedServiceDto, UpdateBookingDto, UpdateBookingPaymentStatusDto } from '@modules/bookings/dtos/booking.dto';
+import { AddReviewDto, BookingDto, IPriceBreakupDto, SelectedServiceDto, UpdateBookingDto, UpdateBookingPaymentStatusDto } from '@modules/bookings/dtos/booking.dto';
 import { IResponse } from '@core/misc/response.util';
 
 export interface IBookingService {
@@ -7,7 +7,7 @@ export interface IBookingService {
     createBooking(customerId: string, bookingData: BookingDto): Promise<IResponse>;
     fetchBookings(id: string, page: number): Promise<IBookingWithPagination>;
     fetchBookingDetails(bookingId: string): Promise<IBookingDetailCustomer>;
-    cancelBooking(dto: CancelBookingDto): Promise<IResponse>;
+    markBookingCancelledByCustomer(bookingId: string, reason: string): Promise<IResponse>;
     updateBooking(dto: UpdateBookingDto): Promise<IResponse<IBookingResponse>>;
     updateBookingPaymentStatus(dto: UpdateBookingPaymentStatusDto): Promise<IResponse<boolean>>;
     addReview(dto: AddReviewDto): Promise<IResponse>;
