@@ -22,6 +22,8 @@ import { getModelToken } from '@nestjs/mongoose';
 import { WalletDocument } from '@core/schema/wallet.schema';
 import { WalletRepository } from '@core/repositories/implementations/wallet.repository';
 import { LoggerFactory } from '@core/logger/implementation/logger.factory';
+import Redis from 'ioredis';
+import { REDIS_CLIENT } from '@configs/redis/redis.module';
 
 export const repositoryProvider: Provider[] = [
   {
@@ -32,8 +34,8 @@ export const repositoryProvider: Provider[] = [
   },
   {
     provide: OTP_REPOSITORY_INTERFACE_NAME,
-    useFactory: (otpModel: Model<OtpDocument>) => new OtpRepository(otpModel),
-    inject: [getModelToken(OTP_MODEL_NAME)],
+    useFactory: (redis: Redis) => new OtpRepository(redis),
+    inject: [REDIS_CLIENT],
   },
   {
     provide: PROVIDER_REPOSITORY_INTERFACE_NAME,
