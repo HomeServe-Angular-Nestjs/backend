@@ -1,7 +1,7 @@
 import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException, } from '@nestjs/common';
 import { ADMIN_REPOSITORY_NAME, ADMIN_SETTINGS_REPOSITORY_NAME, BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SERVICE_OFFERED_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME, WALLET_REPOSITORY_NAME } from '../../../../core/constants/repository.constant';
 import { IBookedService, IBookingDetailProvider, IBookingInvoice, IBookingOverviewChanges, IBookingOverviewData, IResponseProviderBookingLists, IReviewDetails, IReviewFilter, IReviewWithPagination } from '../../../../core/entities/interfaces/booking.entity.interface';
-import { BookingStatus, DateRange, PaymentStatus } from '../../../../core/enum/bookings.enum';
+import { BookingStatus, CancelStatus, DateRange, PaymentStatus } from '../../../../core/enum/bookings.enum';
 import { ICustomLogger } from '../../../../core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '../../../../core/logger/interface/logger-factory.interface';
 import { IResponse } from '../../../../core/misc/response.util';
@@ -9,7 +9,7 @@ import { IBookingRepository } from '../../../../core/repositories/interfaces/boo
 import { ICustomerRepository } from '../../../../core/repositories/interfaces/customer-repo.interface';
 import { IServiceOfferedRepository } from '../../../../core/repositories/interfaces/serviceOffered-repo.interface';
 import { ITransactionRepository } from '../../../../core/repositories/interfaces/transaction-repo.interface';
-import { FilterFields, ReviewFilterDto, UpdateBookingStatusDto } from '../../dtos/booking.dto';
+import { FilterFields, ReviewFilterDto } from '../../dtos/booking.dto';
 import { IProviderBookingService } from '../interfaces/provider-booking-service.interface';
 import { BOOKING_MAPPER, CUSTOMER_MAPPER, PROVIDER_MAPPER, SERVICE_OFFERED_MAPPER, TRANSACTION_MAPPER } from '@core/constants/mappers.constant';
 import { IBookingMapper } from '@core/dto-mapper/interface/bookings.mapper.interface';
@@ -391,19 +391,19 @@ export class ProviderBookingService implements IProviderBookingService {
         }
     }
 
-    async updateBookingStatus(dto: UpdateBookingStatusDto): Promise<IResponse<IBookingDetailProvider>> {
-        if (dto.newStatus === BookingStatus.CANCELLED) {
-            throw new BadRequestException({
-                code: ErrorCodes.BAD_REQUEST,
-                message: 'Invalid status type'
-            });
-        }
+    async markBookingCancelledByProvider(bookingId: string, reason?: string): Promise<IResponse<IBookingDetailProvider>> {
+        const updatedBookingDoc = await this._bookingRepository.markBookingCancelledByProvider(
+            bookingId,
+            BookingStatus.CANCELLED,
+            CancelStatus.CANCELLED,
+            reason
+        );
 
-        const updatedBookingDoc = await this._bookingRepository.updateBookingStatus(dto.bookingId, dto.newStatus);
+        if (!updatedBookingDoc) throw new BadRequestException({
+            code: ErrorCodes.BAD_REQUEST,
+            message: 'Unable to cancel booking. Try reloading the page.'
+        });
 
-        if (!updatedBookingDoc) {
-            throw new NotFoundException(`Booking with ID ${dto.bookingId} not found.`);
-        }
         const updatedBooking = this._bookingMapper.toEntity(updatedBookingDoc);
         const customer = await this._customerRepository.findById(updatedBooking.customerId);
         if (!customer) {
@@ -412,8 +412,21 @@ export class ProviderBookingService implements IProviderBookingService {
 
         const orderedServices = await this._getBookedServices(updatedBooking.services);
 
-        const transaction = updatedBooking.transactionId
+        let transaction = updatedBooking.transactionId
             ? await this._transactionRepository.findById(updatedBooking.transactionId) : null;
+
+        if (updatedBooking.paymentStatus === PaymentStatus.PAID) {
+            const providerAmount = await this._createCompleteBookingTransaction(
+                String(updatedBooking.providerId),
+                transaction?.metadata as ITransactionMetadata
+            );
+
+            await Promise.all([
+                this._walletRepository.updateAdminAmount(-providerAmount),
+                this._walletRepository.updateProviderBalance(String(updatedBooking.providerId), providerAmount),
+                this._bookingRepository.updatePaymentStatus(bookingId, PaymentStatus.REFUNDED, transaction?.id ?? null), //!todo
+            ]);
+        }
 
         const bookingData: IBookingDetailProvider = {
             bookingId: updatedBooking.id,
@@ -439,19 +452,6 @@ export class ProviderBookingService implements IProviderBookingService {
                 paymentMethod: transaction.direction as string
             } : null
         }
-
-        if (dto.newStatus === BookingStatus.COMPLETED && transaction) {
-            const providerAmount = await this._createCompleteBookingTransaction(
-                String(updatedBooking.providerId),
-                transaction?.metadata as ITransactionMetadata
-            );
-
-            await Promise.all([
-                this._walletRepository.updateAdminAmount(-providerAmount),
-                this._walletRepository.updateProviderBalance(String(updatedBooking.providerId), providerAmount),
-            ]);
-        }
-
         return {
             success: true,
             message: 'Status updated successfully',
@@ -633,6 +633,25 @@ export class ProviderBookingService implements IProviderBookingService {
                 reviewDetails: response,
                 pagination: { page, limit, total: reviewCount }
             }
+        }
+    }
+
+    async updateBookingStatus(bookingId: string, newStatus: BookingStatus): Promise<IResponse<IBookingDetailProvider>> {
+        const isCancelled = await this._bookingRepository.isAlreadyRequestedForCancellation(bookingId);
+        if (isCancelled) throw new BadRequestException({
+            code: ErrorCodes.BAD_REQUEST,
+            message: 'This booking is already cancelled'
+        });
+
+        const updated = await this._bookingRepository.updateBookingStatus(bookingId, newStatus);
+        if (!updated) throw new BadRequestException({
+            code: ErrorCodes.BAD_REQUEST,
+            message: 'Booking is already cancelled.'
+        });
+
+        return {
+            success: updated,
+            message: 'Status updated successfully.',
         }
     }
 }

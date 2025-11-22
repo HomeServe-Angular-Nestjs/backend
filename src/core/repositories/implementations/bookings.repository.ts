@@ -347,18 +347,31 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
         ));
     }
 
-    async cancelBooking(bookingId: string, reason: string): Promise<BookingDocument | null> {
+    async isAlreadyRequestedForCancellation(bookingId: string): Promise<boolean> {
+        return await this._bookingModel.exists({
+            _id: bookingId,
+            cancelStatus: { $exists: true, $ne: null }
+        }).then(Boolean);
+    }
+
+    async markBookingCancelledByCustomer(bookingId: string, reason: string, cancelStatus: CancelStatus, bookingStatus: BookingStatus): Promise<BookingDocument | null> {
+        const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+        const now = new Date();
+
         return await this._bookingModel.findOneAndUpdate(
             {
                 _id: bookingId,
-                bookingStatus: { $ne: BookingStatus.CANCELLED }
+                bookingStatus: { $nin: [BookingStatus.CANCELLED, BookingStatus.COMPLETED] },
+                createdAt: {
+                    $gte: new Date(now.getTime() - TWENTY_FOUR_HOURS)
+                }
             },
             {
                 $set: {
-                    cancelStatus: CancelStatus.IN_PROGRESS,
+                    bookingStatus,
                     cancellationReason: reason,
-                    cancelledAt: new Date(),
-                    'slot.status': SlotStatusEnum.AVAILABLE
+                    cancelStatus,
+                    cancelledAt: now,
                 }
             },
             { new: true }
@@ -378,15 +391,39 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
         );
     }
 
-    async updateBookingStatus(bookingId: string, status: BookingStatus): Promise<BookingDocument | null> {
-        const updateData: Record<string, string | Date> = { bookingStatus: status };
+    async updateBookingStatus(bookingId: string, newStatus: BookingStatus): Promise<boolean> {
+        const update = await this._bookingModel.updateOne(
+            { _id: bookingId },
+            { $set: { bookingStatus: newStatus } }
+        );
 
-        if (status === BookingStatus.IN_PROGRESS) {
-            updateData.respondedAt = new Date();
+        return update.modifiedCount > 0;
+    }
+
+
+    async markBookingCancelledByProvider(bookingId: string, bookingStatus: BookingStatus, cancelStatus: CancelStatus, reason?: string): Promise<BookingDocument | null> {
+        const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+        const now = new Date();
+        const updateData: Record<string, string | Date> = {
+            bookingStatus,
+            cancelStatus,
+            cancelledAt: now,
+            'slot.status': SlotStatusEnum.AVAILABLE
+        };
+
+        if (reason) {
+            updateData.cancellationReason = reason;
         }
 
         return await this._bookingModel.findOneAndUpdate(
-            { _id: bookingId },
+            {
+                _id: bookingId,
+                bookingStatus: { $nin: [BookingStatus.CANCELLED, BookingStatus.COMPLETED] },
+                cancelStatus: { $exists: true, $ne: CancelStatus.CANCELLED },
+                createdAt: {
+                    $gte: new Date(now.getTime() - TWENTY_FOUR_HOURS)
+                }
+            },
             { $set: updateData },
             { new: true }
         );

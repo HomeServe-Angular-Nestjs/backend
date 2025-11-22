@@ -5,7 +5,7 @@ import { IBaseRepository } from '@core/repositories/base/interfaces/base-repo.in
 import { BookingDocument, ReviewDocument, SlotDocument } from '@core/schema/bookings.schema';
 import { IBookingReportData, IReportCustomerMatrix, IReportDownloadBookingData, IReportProviderMatrix } from '@core/entities/interfaces/admin.entity.interface';
 import { SlotStatusEnum } from '@core/enum/slot.enum';
-import { BookingStatus, PaymentStatus } from '@core/enum/bookings.enum';
+import { BookingStatus, CancelStatus, PaymentStatus } from '@core/enum/bookings.enum';
 
 export interface IBookingRepository extends IBaseRepository<BookingDocument> {
     findBookingsByCustomerIdWithPagination(customerId: string | Types.ObjectId, skip: number, limit: number): Promise<BookingDocument[]>;
@@ -20,14 +20,16 @@ export interface IBookingRepository extends IBaseRepository<BookingDocument> {
     findSlotsByDate(date: Date): Promise<SlotDocument[]>;
     findBookedSlots(ruleId: string): Promise<SlotDocument[]>;
     isAlreadyBooked(ruleId: string, from: string, to: string, dateISO: string): Promise<boolean>;
+    updateBookingStatus(bookingId: string, newStatus: BookingStatus): Promise<boolean>;
     updateSlotStatus(ruleId: string, from: string, to: string, dateISO: string, status: SlotStatusEnum): Promise<boolean>;
-    cancelBooking(bookingId: string, reason: string): Promise<BookingDocument | null>;
+    markBookingCancelledByCustomer(bookingId: string, reason: string, cancelStatus: CancelStatus, bookingStatus: BookingStatus): Promise<BookingDocument | null>;
     updatePaymentStatus(bookingId: string, status: PaymentStatus, transactionId: string): Promise<BookingDocument | null>;
-    updateBookingStatus(bookingId: string, status: BookingStatus): Promise<BookingDocument | null>;
+    markBookingCancelledByProvider(bookingId: string, bookingStatus: BookingStatus, cancelStatus: CancelStatus, reason?: string): Promise<BookingDocument | null>;
     addReview(bookingId: string, desc: string, rating: number): Promise<boolean>;
     getAvgRating(providerId: string): Promise<number>;
     getReviews(providerId: string, filter: IReviewFilter, options?: { page?: number, limit?: number }): Promise<IReviewDetailsRaw[]>;
     countReviews(providerId: string): Promise<number>;
+    isAlreadyRequestedForCancellation(bookingId: string): Promise<boolean>;
 
     getPerformanceSummary(providerId: string): Promise<any>;
     getAvgRatingAndTotalReviews(providerId?: string): Promise<ITotalReviewAndAvgRating[]>;

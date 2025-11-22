@@ -1,7 +1,7 @@
 import { BadRequestException, ConflictException, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SERVICE_OFFERED_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME, WALLET_REPOSITORY_NAME } from '@core/constants/repository.constant';
 import { IBooking, IBookingDetailCustomer, IBookingResponse, IBookingWithPagination } from '@core/entities/interfaces/booking.entity.interface';
-import { BookingStatus, PaymentStatus } from '@core/enum/bookings.enum';
+import { BookingStatus, CancelStatus, PaymentStatus } from '@core/enum/bookings.enum';
 import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { IResponse } from '@core/misc/response.util';
@@ -10,7 +10,7 @@ import { ICustomerRepository } from '@core/repositories/interfaces/customer-repo
 import { IProviderRepository } from '@core/repositories/interfaces/provider-repo.interface';
 import { IServiceOfferedRepository } from '@core/repositories/interfaces/serviceOffered-repo.interface';
 import { ITransactionRepository } from '@core/repositories/interfaces/transaction-repo.interface';
-import { AddReviewDto, BookingDto, CancelBookingDto, SelectedServiceDto, UpdateBookingDto, UpdateBookingPaymentStatusDto } from '@modules/bookings/dtos/booking.dto';
+import { AddReviewDto, BookingDto, SelectedServiceDto, UpdateBookingDto, UpdateBookingPaymentStatusDto } from '@modules/bookings/dtos/booking.dto';
 import { IBookingService } from '@modules/bookings/services/interfaces/booking-service.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { SlotStatusEnum } from '@core/enum/slot.enum';
@@ -278,53 +278,43 @@ export class BookingService implements IBookingService {
         }
     }
 
-    async cancelBooking(dto: CancelBookingDto): Promise<IResponse> {
-        const bookingDoc = await this._bookingRepository.findById(dto.bookingId);
-        if (!bookingDoc) throw new NotFoundException({
-            code: ErrorCodes.NOT_FOUND,
-            message: ErrorMessage.DOCUMENT_NOT_FOUND
-        });
+    async markBookingCancelledByCustomer(bookingId: string, reason: string): Promise<IResponse> {
+        const updatedBooking = await this._bookingRepository.markBookingCancelledByCustomer(
+            bookingId,
+            reason,
+            CancelStatus.IN_PROGRESS,
+            BookingStatus.IN_PROGRESS
+        );
 
-        const booking = this._bookingMapper.toEntity(bookingDoc);
-
-        if (booking.bookingStatus === BookingStatus.CANCELLED || booking.bookingStatus === BookingStatus.COMPLETED) {
+        if (!updatedBooking) {
             throw new ConflictException({
                 code: ErrorCodes.CONFLICT,
-                message: `Cannot cancel ${booking.bookingStatus} booking.`
+                message: 'Unable to cancel this booking.',
             });
         }
 
-        const bookingDate = new Date(booking.createdAt ?? 0);
-        const now = new Date();
-        const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+        if (updatedBooking.transactionId) {
+            await this._transactionRepository.updateStatus(
+                updatedBooking.transactionId.toString(),
+                TransactionStatus.REFUNDED,
+            );
 
-        const isWithin24Hours = (now.getTime() - bookingDate.getTime()) <= TWENTY_FOUR_HOURS;
+            const refundedAmount = updatedBooking.totalAmount * 100;
 
-        if (!isWithin24Hours) throw new ConflictException({
-            code: ErrorCodes.CONFLICT,
-            message: 'Cancellation is allowed only within 24 hours of booking.'
-        });
-
-        const updatedBooking = await this._bookingRepository.cancelBooking(booking.id, dto.reason);
-
-        if (!updatedBooking) throw new NotFoundException({
-            code: ErrorCodes.NOT_FOUND,
-            message: ErrorMessage.DOCUMENT_NOT_FOUND
-        });
-
-        if (booking.transactionId) {
-            const isUpdated = await this._transactionRepository.updateStatus(booking.transactionId, TransactionStatus.REFUNDED);
-            const cancelledAmount = updatedBooking.totalAmount * 100;
             await Promise.all([
-                this._walletRepository.updateAdminAmount(-cancelledAmount),
-                this._walletRepository.updateUserAmount(booking.customerId, 'customer', cancelledAmount)
+                this._walletRepository.updateAdminAmount(-refundedAmount),
+                this._walletRepository.updateUserAmount(
+                    updatedBooking.customerId.toString(),
+                    'customer',
+                    refundedAmount,
+                ),
             ]);
         }
 
         return {
             success: true,
-            message: 'Booking cancelled successfully.'
-        }
+            message: 'Booking cancelled successfully.',
+        };
     }
 
     // !TODO
