@@ -38,6 +38,10 @@ export class GetUsersWithFilterDto extends PageDto {
     })
     @IsIn([true, false, 'all'])
     status: FilterStatusType
+
+    @IsOptional()
+    @IsString()
+    date: string;
 }
 
 export class StatusUpdateDto {
