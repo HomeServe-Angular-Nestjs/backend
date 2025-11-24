@@ -1,17 +1,5 @@
-import {
-    BOOKING_REPOSITORY_NAME,
-    CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME
-} from '@/core/constants/repository.constant';
-import {
-    IBookingReportData,
-    IReportUserData,
-    IReportCustomerMatrix,
-    IReportDownloadUserData,
-    IReportProviderData,
-    IReportProviderMatrix,
-    IUserData, IUserDataWithPagination,
-    ReportCategoryType
-} from '@/core/entities/interfaces/admin.entity.interface';
+import { BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME } from '@/core/constants/repository.constant';
+import { IReportUserData, IReportDownloadUserData, IReportProviderData, IUserData, IUserDataWithPagination, } from '@/core/entities/interfaces/admin.entity.interface';
 import { ICustomer, IProvider } from '@/core/entities/interfaces/user.entity.interface';
 import { ICustomerRepository } from '@/core/repositories/interfaces/customer-repo.interface';
 import { IProviderRepository } from '@/core/repositories/interfaces/provider-repo.interface';
@@ -24,13 +12,8 @@ import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-fa
 import { IBookingRepository } from '@core/repositories/interfaces/bookings-repo.interface';
 import { createUserReportTableTemplate, IUserTableTemplate } from '@core/services/pdf/mappers/users-report.mapper';
 import { IPdfService } from '@core/services/pdf/pdf.interface';
-import {
-    GetUsersWithFilterDto, RemoveUserDto, StatusUpdateDto,
-    UserReportDownloadDto
-} from '@modules/users/dtos/admin-user.dto';
-import {
-    IAdminUserManagementService
-} from '@modules/users/services/interfaces/admin-user-service.interface';
+import { GetUsersWithFilterDto, RemoveUserDto, StatusUpdateDto, UserReportDownloadDto } from '@modules/users/dtos/admin-user.dto';
+import { IAdminUserManagementService } from '@modules/users/services/interfaces/admin-user-service.interface';
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 
 @Injectable()
@@ -99,6 +82,16 @@ export class AdminUserManagementService implements IAdminUserManagementService {
 
         if (typeof dto.status === 'boolean') {
             query.isActive = dto.status
+        }
+
+        if (dto.date) {
+            const dayStart = new Date(dto.date);
+            dayStart.setHours(0, 0, 0, 0);
+
+            const dayEnd = new Date(dto.date);
+            dayEnd.setHours(23, 59, 59, 999);
+
+            query.createdAt = { $gte: dayStart, $lte: dayEnd };
         }
 
         const repo = dto.role === 'customer' ? this._customerRepository : this._providerRepository;
