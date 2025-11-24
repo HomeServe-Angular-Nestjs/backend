@@ -3,10 +3,13 @@ import { IBaseUserEntity } from '../base/interfaces/base-user.entity.interface';
 import { IAdmin } from './admin.entity.interface';
 import { IBookingsBreakdown, IPagination, IRatingDistribution, IRecentReviews, IRevenueBreakdown, IReview } from './booking.entity.interface';
 
+export type UserType = 'customer' | 'provider' | 'admin';
+export type ClientUserType = Exclude<UserType, 'admin'>;
 export type VerificationStatusType = 'pending' | 'verified' | 'rejected';
 export type IUser = ICustomer | IProvider | IAdmin;
 export type SortByRatingType = 'latest' | 'oldest' | 'highest' | 'lowest';
 export type SearchByReviewType = 'review id' | 'customer' | 'provider' | 'content';
+
 
 export type Availability = {
   day: {

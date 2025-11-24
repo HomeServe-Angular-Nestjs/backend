@@ -8,13 +8,13 @@ import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-fa
 import { IPayload } from '@core/misc/payload.interface';
 import { ICustomerRepository } from '@core/repositories/interfaces/customer-repo.interface';
 import { IProviderRepository } from '@core/repositories/interfaces/provider-repo.interface';
-import { UserType } from '@modules/auth/dtos/login.dto';
 import {
     BadRequestException, CanActivate, ExecutionContext, ForbiddenException, Inject, Injectable,
     Logger, UnauthorizedException
 } from '@nestjs/common';
 import { CustomerDocument } from '@core/schema/customer.schema';
 import { ProviderDocument } from '@core/schema/provider.schema';
+import { UserType } from '@core/entities/interfaces/user.entity.interface';
 
 @Injectable()
 export class BlockGuard implements CanActivate {

@@ -1,6 +1,6 @@
+import { UserType } from '@core/entities/interfaces/user.entity.interface';
 import { IsDefined, IsIn, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
-import { UserType } from '@/modules/auth/dtos/login.dto';
 
 export class GetMessagesDto {
     @IsNotEmpty()

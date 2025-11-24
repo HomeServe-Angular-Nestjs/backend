@@ -4,11 +4,11 @@ import { Profile, Strategy } from 'passport-google-oauth20';
 import { LOGIN_SERVICE_INTERFACE_NAME } from '@core/constants/service.constant';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
-import { UserType } from '@modules/auth/dtos/login.dto';
 import { ILoginService } from '@modules/auth/services/interfaces/login-service.interface';
 import { BadRequestException, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
+import { UserType } from '@core/entities/interfaces/user.entity.interface';
 
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy) {

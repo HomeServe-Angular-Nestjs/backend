@@ -1,4 +1,4 @@
-import { UserType } from '../../modules/auth/dtos/login.dto';
+import { UserType } from "@core/entities/interfaces/user.entity.interface";
 
 export interface IPayload {
   sub: string;

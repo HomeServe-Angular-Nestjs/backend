@@ -8,7 +8,7 @@ import { ICustomerMapper } from '@core/dto-mapper/interface/customer.mapper..int
 import { IProviderMapper } from '@core/dto-mapper/interface/provider.mapper.interface';
 import { IWalletMapper } from '@core/dto-mapper/interface/wallet.mapper.interface';
 import { IAdmin } from '@core/entities/interfaces/admin.entity.interface';
-import { ICustomer, IProvider, IUser } from '@core/entities/interfaces/user.entity.interface';
+import { ICustomer, IProvider, IUser, UserType } from '@core/entities/interfaces/user.entity.interface';
 import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
@@ -21,10 +21,10 @@ import { AdminDocument } from '@core/schema/admin.schema';
 import { CustomerDocument } from '@core/schema/customer.schema';
 import { ProviderDocument } from '@core/schema/provider.schema';
 import { IArgonUtility } from '@core/utilities/interface/argon.utility.interface';
-import { AuthLoginDto, ChangePasswordDto, EmailAndTypeDto, GoogleLoginDto, UserType } from '@modules/auth/dtos/login.dto';
 import { ILoginService } from '@modules/auth/services/interfaces/login-service.interface';
 import { IOtpService } from '@modules/auth/services/interfaces/otp-service.interface';
 import { IResponse } from '@core/misc/response.util';
+import { AuthLoginDto, ChangePasswordDto, EmailAndTypeDto, GoogleLoginDto } from '@modules/auth/dtos/login.dto';
 
 @Injectable()
 export class LoginService implements ILoginService {

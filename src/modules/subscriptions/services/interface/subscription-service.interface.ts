@@ -1,7 +1,7 @@
 import { ISubscription } from '@core/entities/interfaces/subscription.entity.interface';
+import { UserType } from '@core/entities/interfaces/user.entity.interface';
 import { PlanRoleEnum } from '@core/enum/subscription.enum';
 import { IResponse } from '@core/misc/response.util';
-import { UserType } from '@modules/auth/dtos/login.dto';
 import { CreateSubscriptionDto, IUpdatePaymentStatusDto } from '@modules/subscriptions/dto/subscription.dto';
 
 export interface ISubscriptionService {

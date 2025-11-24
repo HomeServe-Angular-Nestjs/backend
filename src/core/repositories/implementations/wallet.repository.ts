@@ -1,5 +1,6 @@
 import { WALLET_MODEL_NAME } from "@core/constants/model.constant";
 import { ITransaction } from "@core/entities/interfaces/transaction.entity.interface";
+import { UserType } from "@core/entities/interfaces/user.entity.interface";
 import { ErrorCodes, ErrorMessage } from "@core/enum/error.enum";
 import { TransactionStatus, TransactionType } from "@core/enum/transaction.enum";
 import { ICustomLogger } from "@core/logger/interface/custom-logger.interface";
@@ -7,7 +8,6 @@ import { ILoggerFactory, LOGGER_FACTORY } from "@core/logger/interface/logger-fa
 import { BaseRepository } from "@core/repositories/base/implementations/base.repository";
 import { IWalletRepository } from "@core/repositories/interfaces/wallet-repo.interface";
 import { WalletDocument } from "@core/schema/wallet.schema";
-import { UserType } from "@modules/auth/dtos/login.dto";
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { Model } from "mongoose";
 

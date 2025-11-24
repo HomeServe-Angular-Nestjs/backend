@@ -1,7 +1,7 @@
 import { ITransaction } from "@core/entities/interfaces/transaction.entity.interface";
+import { UserType } from "@core/entities/interfaces/user.entity.interface";
 import { IBaseRepository } from "@core/repositories/base/interfaces/base-repo.interface";
 import { WalletDocument } from "@core/schema/wallet.schema";
-import { UserType } from "@modules/auth/dtos/login.dto";
 
 export interface IWalletRepository extends IBaseRepository<WalletDocument> {
     findWallet(userId: string): Promise<WalletDocument | null>;

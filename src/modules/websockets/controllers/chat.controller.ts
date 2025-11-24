@@ -6,7 +6,6 @@ import { IChatData, IParticipant } from '@/core/entities/interfaces/chat.entity.
 import { ErrorCodes, ErrorMessage } from '@/core/enum/error.enum';
 import { IPayload } from '@/core/misc/payload.interface';
 import { IResponse } from '@/core/misc/response.util';
-import { UserType } from '@/modules/auth/dtos/login.dto';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { GetChatDto } from '@modules/websockets/dto/chat.dto';
@@ -17,6 +16,7 @@ import {
     Controller, Get, Inject, InternalServerErrorException, Post, Query, Req, Res, UnauthorizedException
 } from '@nestjs/common';
 import { ITokenService } from '@modules/auth/services/interfaces/token-service.interface';
+import { UserType } from '@core/entities/interfaces/user.entity.interface';
 
 @Controller('chat')
 export class ChatController {

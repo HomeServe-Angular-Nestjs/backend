@@ -2,11 +2,17 @@ import { PaymentDirection, TransactionType } from "@core/enum/transaction.enum";
 import { Transform } from "class-transformer";
 import { IsIn, IsNumber, IsOptional, IsString } from "class-validator";
 
-export class ProviderWalletFilterDto {
+export class PageDto {
     @Transform(({ value }) => Number(value) || 1)
     @IsNumber()
     page: number;
 
+    @Transform(({ value }) => Number(value) || 10)
+    @IsNumber()
+    limit: number;
+}
+
+export class ProviderWalletFilterDto extends PageDto {
     @IsOptional()
     @IsString()
     search?: string;
