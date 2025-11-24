@@ -1,5 +1,5 @@
+import { UserType } from "@core/entities/interfaces/user.entity.interface";
 import { UserMapperMapType } from "@core/misc/mapper.type";
-import { UserType } from "@modules/auth/dtos/login.dto";
 import { BadRequestException } from "@nestjs/common";
 
 export function getTypedMapperHelper<T extends UserType>(

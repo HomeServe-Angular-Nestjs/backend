@@ -22,11 +22,10 @@ import { IAdminSettingsRepository } from '@core/repositories/interfaces/admin-se
 import { IWalletRepository } from '@core/repositories/interfaces/wallet-repo.interface';
 import { PDF_SERVICE } from '@core/constants/service.constant';
 import { IPdfService } from '@core/services/pdf/pdf.interface';
-import { ICustomer, IProvider } from '@core/entities/interfaces/user.entity.interface';
+import { ICustomer, IProvider, UserType } from '@core/entities/interfaces/user.entity.interface';
 import { ICustomerMapper } from '@core/dto-mapper/interface/customer.mapper..interface';
 import { IProviderMapper } from '@core/dto-mapper/interface/provider.mapper.interface';
 import { IProviderRepository } from '@core/repositories/interfaces/provider-repo.interface';
-import { UserType } from '@modules/auth/dtos/login.dto';
 import { UPLOAD_UTILITY_NAME } from '@core/constants/utility.constant';
 import { IUploadsUtility } from '@core/utilities/interface/upload.utility.interface';
 import { IServiceOfferedMapper } from '@core/dto-mapper/interface/serviceOffered.mapper.interface';

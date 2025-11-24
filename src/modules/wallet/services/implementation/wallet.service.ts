@@ -3,11 +3,12 @@ import { TRANSACTION_REPOSITORY_NAME, WALLET_REPOSITORY_NAME } from "@core/const
 import { ITransactionMapper } from "@core/dto-mapper/interface/transaction.mapper.interface";
 import { IWalletMapper } from "@core/dto-mapper/interface/wallet.mapper.interface";
 import { ITransactionFilter, ITransactionTableData, ITransactionUserTableData } from "@core/entities/interfaces/transaction.entity.interface";
+import { ClientUserType } from "@core/entities/interfaces/user.entity.interface";
 import { IWallet } from "@core/entities/interfaces/wallet.entity.interface";
 import { IResponse } from "@core/misc/response.util";
 import { ITransactionRepository } from "@core/repositories/interfaces/transaction-repo.interface";
 import { IWalletRepository } from "@core/repositories/interfaces/wallet-repo.interface";
-import { ProviderWalletFilterDto } from "@modules/wallet/dto/provider-wallet.dto";
+import { ProviderWalletFilterDto } from "@modules/wallet/dto/wallet.dto";
 import { IWalletService } from "@modules/wallet/services/interfaces/wallet.service.interface";
 import { Inject, Injectable } from "@nestjs/common";
 
@@ -36,16 +37,17 @@ export class WalletService implements IWalletService {
         }
     }
 
-    async getTransactions(userId: string, filter: ProviderWalletFilterDto): Promise<IResponse<ITransactionUserTableData>> {
-        const limit = 10;
-        const { page = 1, ...filters } = filter as unknown as {
+    async getTransactions(userId: string, filter?: ProviderWalletFilterDto): Promise<IResponse<ITransactionUserTableData>> {
+        const { page = 1, limit = 10, ...filters } = filter as unknown as {
             page: number;
+            limit: number;
         } & ITransactionFilter;
 
         const [total, transactionDocs] = await Promise.all([
             this._transactionRepository.countByUserId(userId),
             this._transactionRepository.getFilteredTransactionByUserIdWithPagination(userId, filters, { page, limit })
         ]);
+
         const transactions: (ITransactionTableData & { email: string })[] = (transactionDocs ?? [])
             .map(txn => this._transactionMapper.toEntity(txn))
             .map(tnx => {

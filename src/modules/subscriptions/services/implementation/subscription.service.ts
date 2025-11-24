@@ -11,10 +11,10 @@ import { ISubscriptionService } from '@modules/subscriptions/services/interface/
 import { PLAN_MAPPER, SUBSCRIPTION_MAPPER } from '@core/constants/mappers.constant';
 import { ISubscriptionMapper } from '@core/dto-mapper/interface/subscription.mapper.interface';
 import { IPlanMapper } from '@core/dto-mapper/interface/plan.mapper.interface';
-import { UserType } from '@modules/auth/dtos/login.dto';
 import { PlanRoleEnum } from '@core/enum/subscription.enum';
 import { ICustomerRepository } from '@core/repositories/interfaces/customer-repo.interface';
 import { IProviderRepository } from '@core/repositories/interfaces/provider-repo.interface';
+import { UserType } from '@core/entities/interfaces/user.entity.interface';
 
 @Injectable()
 export class SubscriptionService implements ISubscriptionService {

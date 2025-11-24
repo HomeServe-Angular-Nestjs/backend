@@ -1,6 +1,5 @@
+import { UserType } from '@core/entities/interfaces/user.entity.interface';
 import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
-
-export type UserType = 'customer' | 'provider' | 'admin';
 
 export class EmailAndTypeDto {
   @IsNotEmpty()

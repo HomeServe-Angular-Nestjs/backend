@@ -5,6 +5,7 @@ import { ILoggerFactory, LOGGER_FACTORY } from "@core/logger/interface/logger-fa
 import { IResponse } from "@core/misc/response.util";
 import { PageDto, TransactionReportDownloadDto } from "@modules/users/dtos/admin-user.dto";
 import { IAdminTransactionService } from "@modules/users/services/interfaces/admin-transaction-service.interface";
+import { ProviderWalletFilterDto } from "@modules/wallet/dto/wallet.dto";
 import { Body, Controller, Get, Inject, Post, Query, Res } from "@nestjs/common";
 import { Response } from "express";
 
@@ -42,7 +43,7 @@ export class AdminTransactionController {
     }
 
     @Get('table_data')
-    async getTransactionTableData(@Query() { page }: PageDto): Promise<IResponse<ITransactionDataWithPagination>> {
-        return await this._adminTransactionService.getTransactionTableData(page);
+    async getTransactionTableData(@Query() filters: ProviderWalletFilterDto): Promise<IResponse<ITransactionDataWithPagination>> {
+        return await this._adminTransactionService.getTransactionTableData(filters);
     }
 }

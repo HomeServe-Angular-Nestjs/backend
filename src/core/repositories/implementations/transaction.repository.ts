@@ -10,6 +10,7 @@ import { IReportDownloadTransactionData, IReportTransactionData } from '@core/en
 import { ITransactionFilter, ITransactionStats } from '@core/entities/interfaces/transaction.entity.interface';
 import { Injectable } from '@nestjs/common';
 import { PaymentDirection, TransactionStatus } from '@core/enum/transaction.enum';
+import { SortQuery } from '@core/repositories/implementations/slot-rule.repository';
 
 @Injectable()
 export class TransactionRepository extends BaseRepository<TransactionDocument> implements ITransactionRepository {
@@ -18,6 +19,84 @@ export class TransactionRepository extends BaseRepository<TransactionDocument> i
         private readonly _transactionModel: Model<TransactionDocument>
     ) {
         super(_transactionModel);
+    }
+
+    private _buildTransactionFilterQuery(filters: ITransactionFilter, userId?: string): { match: FilterQuery<TransactionDocument>, sort: SortQuery<TransactionDocument> } {
+        const match: Record<string, any> = {};
+
+        if (userId) {
+            const searchRegex = new RegExp(userId, 'i');
+            match.$expr = {
+                $regexMatch: {
+                    input: { $toString: "$userId" },
+                    regex: searchRegex
+                }
+            };
+        }
+
+        if (filters.search) {
+            const searchRegex = new RegExp(filters.search, 'i');
+
+            match.$or = [
+                { $expr: { $regexMatch: { input: { $toString: "$_id" }, regex: searchRegex } } },
+                { 'gateWayDetails.paymentId': searchRegex },
+                { 'userDetails.email': searchRegex },
+            ];
+        }
+
+        if (filters.date && filters.date !== 'all') {
+            const now = new Date();
+            let start: Date;
+
+            switch (filters.date) {
+                case 'last_six_months':
+                    start = new Date();
+                    start.setMonth(start.getMonth() - 6);
+                    break;
+
+                case 'last_year':
+                    start = new Date();
+                    start.setFullYear(start.getFullYear() - 1);
+                    break;
+            }
+
+            match.createdAt = { $gte: start, $lte: now };
+        }
+
+        if (filters.method && filters.method !== 'all') {
+            match.direction = filters.method;
+        }
+
+        if (filters.type && filters.type !== 'all') {
+            match.transactionType = filters.type;
+        }
+
+        const sort: Record<string, SortOrder> = {};
+
+        switch (filters.sort) {
+            case 'newest':
+                sort.createdAt = -1;
+                break;
+
+            case 'oldest':
+                sort.createdAt = 1;
+                break;
+
+            case 'high':
+                sort.amount = -1;
+                break;
+
+            case 'low':
+                console.log(filters.sort)
+                sort.amount = 1;
+                break;
+
+            default:
+                sort.createdAt = -1;
+                break;
+        }
+
+        return { match, sort };
     }
 
     async findTransactionById(id: string): Promise<TransactionDocument | null> {
@@ -146,10 +225,16 @@ export class TransactionRepository extends BaseRepository<TransactionDocument> i
         };
     }
 
-    async fetchTransactionsWithPagination(page: number, limit = 1, skip = 1): Promise<TransactionDocument[]> {
+    async fetchTransactionsByAdminWithPagination(filters: ITransactionFilter, options?: { page?: number, limit?: number }): Promise<TransactionDocument[]> {
+        const page = options?.page || 1;
+        const limit = options?.limit || 10;
+        const skip = (page - 1) * limit;
+
+        const { match, sort } = this._buildTransactionFilterQuery(filters);
+
         return await this._transactionModel
-            .find({})
-            .sort({ createdAt: -1 })
+            .find(match)
+            .sort(sort)
             .skip(skip)
             .limit(limit)
             .lean();
@@ -168,71 +253,7 @@ export class TransactionRepository extends BaseRepository<TransactionDocument> i
         const limit = options?.limit || 10;
         const skip = (page - 1) * limit;
 
-        const match: Record<string, any> = {
-            userId: this._toObjectId(userId),
-        };
-
-        if (filters.search) {
-            const searchRegex = new RegExp(filters.search, 'i');
-
-            match.$or = [
-                { _id: this._toObjectId(filters.search) },
-                { 'gateWayDetails.paymentId': searchRegex },
-                { 'userDetails.email': searchRegex },
-            ];
-        }
-
-        if (filters.date && filters.date !== 'all') {
-            const now = new Date();
-            let start: Date;
-
-            switch (filters.date) {
-                case 'last_six_months':
-                    start = new Date();
-                    start.setMonth(start.getMonth() - 6);
-                    break;
-
-                case 'last_year':
-                    start = new Date();
-                    start.setFullYear(start.getFullYear() - 1);
-                    break;
-            }
-
-            match.createdAt = { $gte: start, $lte: now };
-        }
-
-        if (filters.method && filters.method !== 'all') {
-            match.direction = filters.method;
-        }
-
-        if (filters.type && filters.type !== 'all') {
-            match.transactionType = filters.type;
-        }
-
-        const sort: Record<string, SortOrder> = {};
-
-        switch (filters.sort) {
-            case 'newest':
-                sort.createdAt = -1;
-                break;
-
-            case 'oldest':
-                sort.createdAt = 1;
-                break;
-
-            case 'high':
-                sort.amount = -1;
-                break;
-
-            case 'low':
-                console.log(filters.sort)
-                sort.amount = 1;
-                break;
-
-            default:
-                sort.createdAt = -1;
-                break;
-        }
+        const { match, sort } = this._buildTransactionFilterQuery(filters, userId);
 
         const result = await this._transactionModel
             .find(match)

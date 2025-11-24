@@ -1,6 +1,6 @@
 import { IsEmail, IsNotEmpty, IsString, Length, MinLength } from 'class-validator';
 
-type UserType = 'customer' | 'provider';
+type UserType = 'customer' | 'provider'; //!todo
 
 export class InitiateSignupDto {
   @IsEmail()

@@ -15,13 +15,13 @@ import { IChatRepository } from '@core/repositories/interfaces/chat-repo.interfa
 import { ICustomerRepository } from '@core/repositories/interfaces/customer-repo.interface';
 import { IMessagesRepository } from '@core/repositories/interfaces/message-repo.interface';
 import { IProviderRepository } from '@core/repositories/interfaces/provider-repo.interface';
-import { UserType } from '@modules/auth/dtos/login.dto';
 import {
     IChatSocketService
 } from '@modules/websockets/services/interface/chat-socket-service.interface';
 import { BadGatewayException, Inject, Injectable } from '@nestjs/common';
 import { CHAT_MAPPER } from '@core/constants/mappers.constant';
 import { IChatMapper } from '@core/dto-mapper/interface/chat.mapper.interface';
+import { UserType } from '@core/entities/interfaces/user.entity.interface';
 
 @Injectable()
 export class ChatSocketService implements IChatSocketService {

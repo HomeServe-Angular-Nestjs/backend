@@ -1,7 +1,7 @@
 import { IBookingDetailProvider, IBookingOverviewData, IResponseProviderBookingLists, IReviewWithPagination } from '@core/entities/interfaces/booking.entity.interface';
+import { UserType } from '@core/entities/interfaces/user.entity.interface';
 import { BookingStatus } from '@core/enum/bookings.enum';
 import { IResponse } from '@core/misc/response.util';
-import { UserType } from '@modules/auth/dtos/login.dto';
 import { FilterFields, ReviewFilterDto } from '@modules/bookings/dtos/booking.dto';
 
 export interface IProviderBookingService {

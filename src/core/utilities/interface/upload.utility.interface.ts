@@ -1,5 +1,5 @@
+import { UserType } from '@core/entities/interfaces/user.entity.interface';
 import { UploadsType } from '@core/enum/uploads.enum';
-import { UserType } from '@modules/auth/dtos/login.dto';
 import { UploadApiResponse } from 'cloudinary';
 
 export interface IUploadsUtility {

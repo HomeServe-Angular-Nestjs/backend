@@ -1,6 +1,6 @@
 import { BaseEntity } from "@core/entities/base/implementation/base.entity";
+import { UserType } from "@core/entities/interfaces/user.entity.interface";
 import { IWallet } from "@core/entities/interfaces/wallet.entity.interface";
-import { UserType } from "@modules/auth/dtos/login.dto";
 
 export class Wallet extends BaseEntity implements IWallet {
     userId: string;

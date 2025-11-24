@@ -6,7 +6,7 @@ import { BadRequestException, Inject, Injectable, InternalServerErrorException, 
 import { BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SERVICE_OFFERED_REPOSITORY_NAME } from '@core/constants/repository.constant';
 import { ARGON_UTILITY_NAME, UPLOAD_UTILITY_NAME } from '@core/constants/utility.constant';
 import { CloudinaryService } from '@configs/cloudinary/cloudinary.service';
-import { IDisplayReviews, IProvider, IProviderCardView } from '@core/entities/interfaces/user.entity.interface';
+import { IDisplayReviews, IProvider, IProviderCardView, UserType } from '@core/entities/interfaces/user.entity.interface';
 import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
 import { UploadsType } from '@core/enum/uploads.enum';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
@@ -15,7 +15,6 @@ import { IResponse } from '@core/misc/response.util';
 import { IProviderRepository } from '@core/repositories/interfaces/provider-repo.interface';
 import { IServiceOfferedRepository } from '@core/repositories/interfaces/serviceOffered-repo.interface';
 import { IUploadsUtility } from '@core/utilities/interface/upload.utility.interface';
-import { UserType } from '@modules/auth/dtos/login.dto';
 import { FilterDto, GetProvidersFromLocationSearch, SlotDto, UpdateBioDto } from '@modules/providers/dtos/provider.dto';
 import { IProviderServices } from '@modules/providers/services/interfaces/provider-service.interface';
 import { CUSTOMER_MAPPER, PROVIDER_MAPPER } from '@core/constants/mappers.constant';

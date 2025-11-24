@@ -7,7 +7,7 @@ import { ICustomLogger } from '../../logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '../../logger/interface/logger-factory.interface';
 import { IUploadsUtility } from '../interface/upload.utility.interface';
 import { UploadsType } from '@core/enum/uploads.enum';
-import { UserType } from '@modules/auth/dtos/login.dto';
+import { UserType } from '@core/entities/interfaces/user.entity.interface';
 
 @Injectable()
 export class UploadsUtility implements IUploadsUtility {

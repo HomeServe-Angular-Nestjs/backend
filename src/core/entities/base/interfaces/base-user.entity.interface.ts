@@ -1,5 +1,4 @@
-import { UserType } from '../../../../modules/auth/dtos/login.dto';
-import { ILocation } from '../../interfaces/user.entity.interface';
+import { ILocation, UserType } from '../../interfaces/user.entity.interface';
 import { IEntity } from './base-entity.entity.interface';
 
 export interface IBaseUserEntity extends IEntity {
