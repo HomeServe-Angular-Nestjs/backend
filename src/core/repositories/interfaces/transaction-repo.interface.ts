@@ -11,7 +11,7 @@ export interface ITransactionRepository extends BaseRepository<TransactionDocume
     getTotalRevenue(date: Date): Promise<number>;
     getReportDetails(filter: IReportDownloadTransactionData): Promise<IReportTransactionData[]>;
     getTransactionStats(): Promise<ITransactionStats>;
-    fetchTransactionsWithPagination(page: number, limit?: number, skip?: number): Promise<TransactionDocument[]>;
+    fetchTransactionsByAdminWithPagination(filters: ITransactionFilter, options?: { page?: number, limit?: number }): Promise<TransactionDocument[]>;
     updateStatus(txId: string, status: TransactionStatus): Promise<boolean>;
     getFilteredTransactionByUserIdWithPagination(userId: string, filters: ITransactionFilter, options?: { page?: number, limit?: number }): Promise<TransactionDocument[]>;
 }

@@ -9,6 +9,7 @@ import { createTransactionReportTableTemplate, ITransactionTableTemplate } from 
 import { IPdfService } from "@core/services/pdf/pdf.interface";
 import { TransactionReportDownloadDto } from "@modules/users/dtos/admin-user.dto";
 import { IAdminTransactionService } from "@modules/users/services/interfaces/admin-transaction-service.interface";
+import { ProviderWalletFilterDto } from "@modules/wallet/dto/wallet.dto";
 import { Inject, Injectable } from "@nestjs/common";
 
 @Injectable()
@@ -50,13 +51,11 @@ export class AdminTransactionService implements IAdminTransactionService {
         }
     }
 
-    async getTransactionTableData(page: number): Promise<IResponse<ITransactionDataWithPagination>> {
-        page = page || 1;
-        const limit = 10;
-        const skip = (page - 1) * limit;
+    async getTransactionTableData(filters: ProviderWalletFilterDto): Promise<IResponse<ITransactionDataWithPagination>> {
+        const { page = 1, limit = 10, ...filter } = filters;
 
         const [transactionDocument, totalTransactions] = await Promise.all([
-            this._transactionRepository.fetchTransactionsWithPagination(page, limit, skip),
+            this._transactionRepository.fetchTransactionsByAdminWithPagination(filter, { page, limit }),
             this._transactionRepository.count()
         ]);
 
