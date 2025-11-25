@@ -27,19 +27,24 @@ export class SeedCommand {
       },
     ],
   })
-  async seedAdmin(options?: { email: string, password: string }) {
+  async seedAdmin() {
     try {
       console.log('Starting admin seeding process...');
 
-      if (options?.email) {
-        process.env.ADMIN_EMAIL = options.email;
+      const args = process.argv;
+
+      const emailIndex = args.indexOf('-e') + 1;
+      const passwordIndex = args.indexOf('-p') + 1;
+
+      const email = args[emailIndex];
+      const password = args[passwordIndex];
+
+      if (!email || !password) {
+        console.log('Admin email or password is missing');
+        process.exit(1);
       }
 
-      if (options?.password) {
-        process.env.ADMIN_PASSWORD = options.password;
-      }
-
-      const admin = await this.seedService.seedAdmin();
+      const admin = await this.seedService.seedAdmin(email, password);
       if (!admin) throw new Error('Failed to create admin.');
 
       console.log('Admin seeded successfully');

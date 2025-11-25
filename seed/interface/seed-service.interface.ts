@@ -1,5 +1,5 @@
-import { IAdmin } from "@core/entities/interfaces/admin.entity.interface"; 
+import { IAdmin } from "@core/entities/interfaces/admin.entity.interface";
 
 export interface ISeedAdminService {
-  seedAdmin(): Promise<IAdmin | null>;
+  seedAdmin(email: string, password: string): Promise<IAdmin | null>;
 }
