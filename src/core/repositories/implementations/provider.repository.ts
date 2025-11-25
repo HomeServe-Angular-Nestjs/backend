@@ -1,4 +1,4 @@
-import { FilterQuery, Model, PipelineStage, Types } from 'mongoose';
+import { FilterQuery, Model, PipelineStage, RootFilterQuery, Types } from 'mongoose';
 
 import { PROVIDER_MODEL_NAME } from '@core/constants/model.constant';
 import { IReportDownloadUserData, IReportProviderData, IStats } from '@core/entities/interfaces/admin.entity.interface';
@@ -7,7 +7,7 @@ import { IProviderRepository } from '@core/repositories/interfaces/provider-repo
 import { ProviderDocument } from '@core/schema/provider.schema';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Availability } from '@core/entities/interfaces/user.entity.interface';
+import { Availability, IFilterFetchProviders } from '@core/entities/interfaces/user.entity.interface';
 
 @Injectable()
 export class ProviderRepository extends BaseRepository<ProviderDocument> implements IProviderRepository {
@@ -56,21 +56,73 @@ export class ProviderRepository extends BaseRepository<ProviderDocument> impleme
     return result !== null;
   }
 
-  async getProvidersBasedOnLocation(lng: number, lat: number): Promise<ProviderDocument[]> {
-    const result = await this._providerModel.find({
-      location: {
-        $near: {
-          $geometry: {
-            type: 'Point',
-            coordinates: [lng, lat]
-          },
-          $maxDistance: 50000,
-          $minDistance: 0
-        },
-      },
-    }).exec();
+  async fetchProvidersByFilterWithPagination(filter: IFilterFetchProviders, options: { page: number; limit: number; }): Promise<ProviderDocument[]> {
+    const limit = options.limit || 10;
+    const skip = (options.page - 1) * limit;
 
-    return result ? result : [];
+    const query: any = {
+      isDeleted: false,
+      isActive: true,
+    };
+
+    if (filter.search) {
+      query.$or = [
+        { fullname: { $regex: filter.search, $options: 'i' } },
+        { username: { $regex: filter.search, $options: 'i' } },
+        { email: { $regex: filter.search, $options: 'i' } },
+        { phone: { $regex: filter.search, $options: 'i' } },
+      ];
+    }
+
+    if (filter.isCertified) {
+      query.isCertified = filter.isCertified;
+    }
+
+    if (filter.status && filter.status !== 'all') {
+      if (filter.status === 'best-rated') {
+        query.avgRating = { $gte: 3 };
+      } else if (filter.status === 'nearest' && filter.lng && filter.lat) {
+        query.location = {
+          $near: {
+            $geometry: {
+              type: 'Point',
+              coordinates: [filter.lng, filter.lat]
+            },
+            $maxDistance: 50000,
+            $minDistance: 0
+          },
+        };
+      }
+    }
+
+    return await this._providerModel
+      .find(query)
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+  }
+
+  async getProvidersBasedOnLocation(lng: number, lat: number, options: { page: number, limit: number }): Promise<ProviderDocument[]> {
+    const limit = options.limit || 10;
+    const skip = (options.page - 1) * limit;
+
+    return await this._providerModel
+      .find({
+        location: {
+          $near: {
+            $geometry: {
+              type: 'Point',
+              coordinates: [lng, lat]
+            },
+            $maxDistance: 50000,
+            $minDistance: 0
+          },
+        },
+      })
+      .skip(skip)
+      .limit(limit)
+      .lean();
   }
 
   async addWorkImage(providerId: string, publicId: string): Promise<ProviderDocument | null> {

@@ -1,6 +1,6 @@
 import { Request } from 'express';
 import { PROVIDER_SERVICE_NAME } from '@core/constants/service.constant';
-import { IProvider } from '@core/entities/interfaces/user.entity.interface';
+import { IProvider, IProviderCardWithPagination } from '@core/entities/interfaces/user.entity.interface';
 import { ErrorMessage } from '@core/enum/error.enum';
 import { IPayload } from '@core/misc/payload.interface';
 import { BadRequestException, Body, Controller, Get, Inject, Patch, Put, Query, Req, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
@@ -26,15 +26,22 @@ export class ProviderController {
         this.logger = this._loggerFactory.createLogger(ProviderController.name);
     }
 
+    private _getUSer(req: Request): IPayload {
+        return req.user as IPayload;
+    }
+
     @Get('fetch_providers')
-    async fetchProviders(@Query() dto: FilterDto & GetProvidersFromLocationSearch) {
-        const { lat, lng, title, ...filter } = dto;
+    async fetchProviders(@Req() req: Request, @Query() dto: FilterDto & GetProvidersFromLocationSearch) {
+        const user = this._getUSer(req);
+        const { lat, lng, title, page, ...filter } = dto;
+
+        console.log(dto)
 
         if (lat && lng && title) {
             const locationSearch = { lat, lng, title };
-            return await this._providerServices.getProvidersLocationBasedSearch(locationSearch);
+            return await this._providerServices.getProvidersLocationBasedSearch({ ...locationSearch, page: Number(page) });
         } else {
-            return await this._providerServices.getProviders(filter);
+            return await this._providerServices.getProviders(user.sub, { ...filter, page: Number(page) });
         }
     }
 

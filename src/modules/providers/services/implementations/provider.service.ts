@@ -6,7 +6,7 @@ import { BadRequestException, Inject, Injectable, InternalServerErrorException, 
 import { BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SERVICE_OFFERED_REPOSITORY_NAME } from '@core/constants/repository.constant';
 import { ARGON_UTILITY_NAME, UPLOAD_UTILITY_NAME } from '@core/constants/utility.constant';
 import { CloudinaryService } from '@configs/cloudinary/cloudinary.service';
-import { IDisplayReviews, IProvider, IProviderCardView, UserType } from '@core/entities/interfaces/user.entity.interface';
+import { IDisplayReviews, IFilterFetchProviders, IProvider, IProviderCardView, IProviderCardWithPagination, UserType } from '@core/entities/interfaces/user.entity.interface';
 import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
 import { UploadsType } from '@core/enum/uploads.enum';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
@@ -17,13 +17,14 @@ import { IServiceOfferedRepository } from '@core/repositories/interfaces/service
 import { IUploadsUtility } from '@core/utilities/interface/upload.utility.interface';
 import { FilterDto, GetProvidersFromLocationSearch, SlotDto, UpdateBioDto } from '@modules/providers/dtos/provider.dto';
 import { IProviderServices } from '@modules/providers/services/interfaces/provider-service.interface';
-import { CUSTOMER_MAPPER, PROVIDER_MAPPER } from '@core/constants/mappers.constant';
+import { CUSTOMER_MAPPER, PROVIDER_MAPPER, SERVICE_OFFERED_MAPPER } from '@core/constants/mappers.constant';
 import { IProviderMapper } from '@core/dto-mapper/interface/provider.mapper.interface';
 import { IBookingRepository } from '@core/repositories/interfaces/bookings-repo.interface';
 import { ICustomerRepository } from '@core/repositories/interfaces/customer-repo.interface';
 import { ICustomerMapper } from '@core/dto-mapper/interface/customer.mapper..interface';
 import { IReview } from '@core/entities/interfaces/booking.entity.interface';
 import { IArgonUtility } from '@core/utilities/interface/argon.utility.interface';
+import { IServiceOfferedMapper } from '@core/dto-mapper/interface/serviceOffered.mapper.interface';
 
 @Injectable()
 export class ProviderServices implements IProviderServices {
@@ -48,28 +49,55 @@ export class ProviderServices implements IProviderServices {
     @Inject(CUSTOMER_MAPPER)
     private readonly _customerMapper: ICustomerMapper,
     @Inject(ARGON_UTILITY_NAME)
-    private readonly _argon: IArgonUtility
+    private readonly _argon: IArgonUtility,
+    @Inject(SERVICE_OFFERED_MAPPER)
+    private readonly _serviceOfferedMapper: IServiceOfferedMapper,
 
   ) {
     this.logger = this.loggerFactory.createLogger(ProviderServices.name);
   }
 
-  async getProviders(filter?: FilterDto): Promise<IResponse<IProviderCardView[]>> {
-    const query: { [key: string]: any } = { isDeleted: false };
+  async getProviders(customerId: string, filters: FilterDto): Promise<IResponse<IProviderCardWithPagination>> {
+    const filter: IFilterFetchProviders = {
+      status: 'all',
+      isCertified: false,
+    };
 
-    if (filter?.search) {
-      query.email = new RegExp(filter.search, 'i');
+    const limit = 10;
+    const page = filters.page || 1;
+
+    if (filters.search) {
+      filter.search = filters.search;
     }
 
-    if (filter?.status && filter.status !== 'all') {
-      query.isActive = filter.status;
+    if (filters.status && filters.status !== 'all') {
+      filter.status = filters.status;
     }
 
-    if (filter?.isCertified) {
-      query.isCertified = filter.isCertified
+    if (filters.isCertified) {
+      filter.isCertified = filters.isCertified;
     }
 
-    const providerDocs = await this._providerRepository.find(query);
+    if (filters.status === 'nearest') {
+      const customer = await this._customerRepository.findById(customerId);
+
+      if (!customer) {
+        throw new NotFoundException({
+          code: ErrorCodes.UNAUTHORIZED_ACCESS,
+          message: 'Requestor not found'
+        });
+      }
+
+      const [lng, lat] = customer.location.coordinates;
+      filter.lng = lng;
+      filter.lat = lat;
+    }
+
+    const [providerDocs, totalProviders] = await Promise.all([
+      this._providerRepository.fetchProvidersByFilterWithPagination(filter, { page, limit }),
+      this._providerRepository.count()
+    ]);
+
     let providers = (providerDocs || []).map(provider => {
       const avatar = provider?.avatar ? this._uploadsUtility.getSignedImageUrl(provider.avatar) : '';
       provider.avatar = avatar;
@@ -99,24 +127,29 @@ export class ProviderServices implements IProviderServices {
     return {
       success: true,
       message: 'Providers fetched successfully.',
-      data: mappedProviders
+      data: {
+        providerCards: mappedProviders,
+        pagination: {
+          page,
+          limit,
+          total: totalProviders
+        }
+      }
     }
   }
 
-  async getProvidersLocationBasedSearch(searchData: GetProvidersFromLocationSearch): Promise<IResponse<IProvider[]>> {
-    const [providers, services] = await Promise.all([
-      this._providerRepository.getProvidersBasedOnLocation(searchData.lng, searchData.lat),
-      this._serviceOfferedRepository.find(
-        {
-          $or: [
-            { title: { $regex: searchData.title, $options: 'i' } },
-            { 'subService.title': { $regex: searchData.title, $options: 'i' } }
-          ],
-          isDeleted: false,
-          isActive: true
-        }
-      )
-    ])
+  async getProvidersLocationBasedSearch(searchData: GetProvidersFromLocationSearch): Promise<IResponse<IProviderCardWithPagination>> {
+    const { page = 1, lng, lat } = searchData;
+    const limit = 10;
+
+    const [providerDocs, serviceDocs, totalProviders] = await Promise.all([
+      this._providerRepository.getProvidersBasedOnLocation(lng, lat, { page, limit }),
+      this._serviceOfferedRepository.searchServiceByTitle(searchData.title),
+      this._providerRepository.count(),
+    ]);
+
+    const providers = (providerDocs ?? []).map(provider => this._providerMapper.toEntity(provider));
+    const services = (serviceDocs ?? []).map(service => this._serviceOfferedMapper.toEntity(service));
 
     const targetServiceIds = new Set(services.map(service => service.id));
 
@@ -124,26 +157,55 @@ export class ProviderServices implements IProviderServices {
       provider.servicesOffered.some(id => targetServiceIds.has(id))
     );
 
+
+    console.log(searchedProviders)
+    const stats = await this._bookingRepository.getAvgRatingAndTotalReviews();
+
+    const statsMap = stats.reduce((acc, s) => {
+      acc[s.providerId] = { avgRating: s.avgRating, totalReviews: s.totalReviews };
+      return acc;
+    }, {} as Record<string, { avgRating: number, totalReviews: number }>);
+
+    let mappedProviders: IProviderCardView[] = (searchedProviders ?? []).map(p => ({
+      id: p.id,
+      fullname: p.fullname,
+      username: p.username,
+      avatar: p.avatar,
+      address: p.address,
+      profession: p.profession,
+      experience: p.experience,
+      isActive: p.isActive,
+      isCertified: p.isCertified,
+      ...statsMap[p.id]
+    }));
+
     return {
       success: true,
       message: 'Providers successfully fetched.',
-      data: (searchedProviders || []).map(provider => this._providerMapper.toEntity(provider))
+      data: {
+        providerCards: mappedProviders,
+        pagination: {
+          page,
+          limit,
+          total: totalProviders
+        }
+      }
     }
   }
 
   async fetchOneProvider(id: string): Promise<IProvider> {
     const providerDoc = await this._providerRepository.findById(id);
 
-    if (!providerDoc) {
-      throw new NotFoundException(`No provider found for user ID: ${id}`);
-    }
+    if (!providerDoc) throw new NotFoundException({
+      code: ErrorCodes.NOT_FOUND,
+      message: 'Provider not found'
+    })
 
     const provider = this._providerMapper.toEntity(providerDoc);
     provider.avatar = provider?.avatar ? this._uploadsUtility.getSignedImageUrl(provider.avatar) : '';
     return provider;
   }
 
-  // Performs a full update on the provider's data including avatar upload if a file is provided.
   async bulkUpdateProvider(id: string, updateData: Partial<IProvider>, file?: Express.Multer.File,): Promise<IProvider> {
     if (file) {
       const publicId = this._uploadsUtility.getPublicId('provider', id, UploadsType.USER, uuidv4());
@@ -224,7 +286,7 @@ export class ProviderServices implements IProviderServices {
   async updateBio(providerId: string, dto: UpdateBioDto): Promise<IResponse<IProvider>> {
     const updateData: Partial<IProvider> = {
       additionalSkills: dto.additionalSkills,
-      expertise: dto.expertises,
+      expertise: dto.expertise,
       languages: dto.languages,
       bio: dto.providerBio,
     };
