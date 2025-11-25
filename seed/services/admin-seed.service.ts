@@ -13,6 +13,7 @@ import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { IAdmin } from '@core/entities/interfaces/admin.entity.interface';
 import { IWalletRepository } from '@core/repositories/interfaces/wallet-repo.interface';
 import { IWalletMapper } from '@core/dto-mapper/interface/wallet.mapper.interface';
+import { AdminDocument } from '@core/schema/admin.schema';
 
 @Injectable()
 export class SeedAdminService implements ISeedAdminService {
@@ -36,26 +37,51 @@ export class SeedAdminService implements ISeedAdminService {
     this.logger = this._loggerFactory.createLogger(SeedAdminService.name);
   }
 
-  async seedAdmin(): Promise<IAdmin> {
+  async seedAdmin(email: string, password: string): Promise<IAdmin> {
     try {
-      const email = this._config.get<string>('ADMIN_EMAIL');
-      const password = this._config.get<string>('ADMIN_PASSWORD');
-
       if (!email || !password) {
-        throw new Error('Failed to fetch admin credentials from env.');
+        throw new Error('Admin credentials are required.Missing email or password.');
+      }
+
+      const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-={}[\]|\\:;"'<>,.?/]).{8,}$/;
+      if (!passwordRegex.test(password)) {
+        throw new Error(
+          'Password must contain at least 8 characters, one uppercase letter, one number, and one special character.'
+        );
       }
 
       const hashedPassword = await this._argon.hash(password);
 
-      const newAdmin = await this._adminRepository.createAdmin(email, hashedPassword);
+      const existingAdmin = await this._adminRepository.findOne({ email });
 
-      if (!newAdmin) {
+      let savedAdmin: AdminDocument | null;
+
+      if (existingAdmin) {
+        savedAdmin = await this._adminRepository.findOneAndUpdate(
+          { email },
+          { password: hashedPassword }
+        );
+
+        this.logger.log('Admin updated successfully');
+      } else {
+        const newAdmin = await this._adminRepository.createAdmin(email, hashedPassword);
+
+        if (!newAdmin) {
+          this.logger.error('Failed to create admin');
+          throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+        }
+
+        savedAdmin = newAdmin;
+      }
+
+      if (!savedAdmin) {
+        this.logger.error('Failed to save admin');
         throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
       }
 
-      const admin = this._adminMapper.toEntity(newAdmin);
+      const admin = this._adminMapper.toEntity(savedAdmin);
       const wallet = await this._walletRepository.findOne({ type: 'admin' });
-      if(!wallet){
+      if (!wallet) {
         await this._walletRepository.create(this._walletMapper.toDocument({ userId: admin.id, type: 'admin' }));
       }
       return admin;
