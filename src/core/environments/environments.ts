@@ -1,9 +1,3 @@
-const isProd = process.env.NODE_ENV === 'production';
-
-export const FRONTEND_URL = isProd
-    ? 'https://homeservenow.online'
-    : 'http://localhost:4200';
-
-export const BACKEND_URL = isProd
-    ? 'https://api.homeservenow.online'
-    : 'http://localhost:5000';
+export const FRONTEND_URL = process.env.FRONTEND_URL;
+export const BACKEND_URL = process.env.BACKEND_URL;
+export const ALLOWED_URLS: string[] = JSON.parse(process.env.ALLOWED_URLS || '[]');
