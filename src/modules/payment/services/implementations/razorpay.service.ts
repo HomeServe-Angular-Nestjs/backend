@@ -1,7 +1,7 @@
-import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { ADMIN_SETTINGS_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SUBSCRIPTION_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME, WALLET_REPOSITORY_NAME } from '@core/constants/repository.constant';
 import { CUSTOMER_MAPPER, PROVIDER_MAPPER, SUBSCRIPTION_MAPPER, TRANSACTION_MAPPER } from '@core/constants/mappers.constant';
-import { PAYMENT_UTILITY_NAME } from '@core/constants/utility.constant';
+import { PAYMENT_LOCKING_UTILITY_NAME, PAYMENT_UTILITY_NAME } from '@core/constants/utility.constant';
 import { ITransactionMapper } from '@core/dto-mapper/interface/transaction.mapper.interface';
 import { IRazorpayOrder, ITransaction, ITxUserDetails, IVerifiedBookingsPayment, IVerifiedSubscriptionPayment } from '@core/entities/interfaces/transaction.entity.interface';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
@@ -16,7 +16,7 @@ import { PaymentDirection, TransactionStatus, TransactionType } from '@core/enum
 import { IWalletRepository } from '@core/repositories/interfaces/wallet-repo.interface';
 import { ErrorCodes } from '@core/enum/error.enum';
 import { IAdminSettingsRepository } from '@core/repositories/interfaces/admin-settings-repo.interface';
-import { ICustomer, IProvider } from '@core/entities/interfaces/user.entity.interface';
+import { ICustomer, IProvider, UserType } from '@core/entities/interfaces/user.entity.interface';
 import { ICustomerMapper } from '@core/dto-mapper/interface/customer.mapper..interface';
 import { IProviderMapper } from '@core/dto-mapper/interface/provider.mapper.interface';
 import { CustomerDocument } from '@core/schema/customer.schema';
@@ -24,6 +24,7 @@ import { ProviderDocument } from '@core/schema/provider.schema';
 import { ISubscriptionRepository } from '@core/repositories/interfaces/subscription-repo.interface';
 import { ISubscription } from '@core/entities/interfaces/subscription.entity.interface';
 import { ISubscriptionMapper } from '@core/dto-mapper/interface/subscription.mapper.interface';
+import { IPaymentLockingUtility } from '@core/utilities/interface/payment-locking.utility';
 
 @Injectable()
 export class RazorPaymentService implements IRazorPaymentService {
@@ -54,6 +55,8 @@ export class RazorPaymentService implements IRazorPaymentService {
         private readonly _subscriptionRepository: ISubscriptionRepository,
         @Inject(SUBSCRIPTION_MAPPER)
         private readonly _subscriptionMapper: ISubscriptionMapper,
+        @Inject(PAYMENT_LOCKING_UTILITY_NAME)
+        private readonly _paymentLockingUtility: IPaymentLockingUtility,
     ) {
         this.logger = this._loggerFactory.createLogger(RazorPaymentService.name);
     }
@@ -176,72 +179,95 @@ export class RazorPaymentService implements IRazorPaymentService {
         return this._transactionMapper.toEntity(subscriptionTnx);
     }
 
-    async createOrder(amount: number, currency: string = 'INR'): Promise<IRazorpayOrder> {
+    async createOrder(userId: string, role: UserType, amount: number, currency: string = 'INR'): Promise<IRazorpayOrder> {
+        const key = this._paymentLockingUtility.generatePaymentKey(userId, role);
+
+        const acquired = await this._paymentLockingUtility.acquireLock(key, 300);
+        if (!acquired) {
+            const ttl = await this._paymentLockingUtility.getTTL(key);
+
+            throw new ForbiddenException({
+                code: ErrorCodes.PAYMENT_IN_PROGRESS,
+                message: `We are still processing your previous payment. Please try again in ${ttl} seconds.`,
+                ttl
+            });
+        }
+
         return await this._paymentService.createOrder(amount, currency);
     }
 
-    async handleBookingPayment(userId: string, role: string, verifyData: RazorpayVerifyData, orderData: BookingOrderData): Promise<IVerifiedBookingsPayment> {
-        const user = await this._getUser(userId, role);
+    async handleBookingPayment(userId: string, role: UserType, verifyData: RazorpayVerifyData, orderData: BookingOrderData): Promise<IVerifiedBookingsPayment> {
+        const key = this._paymentLockingUtility.generatePaymentKey(userId, role);
+        try {
+            const user = await this._getUser(userId, role);
 
-        const verified = this._paymentService.verifySignature(
-            verifyData.razorpay_order_id,
-            verifyData.razorpay_payment_id,
-            verifyData.razorpay_signature
-        );
+            const verified = this._paymentService.verifySignature(
+                verifyData.razorpay_order_id,
+                verifyData.razorpay_payment_id,
+                verifyData.razorpay_signature
+            );
 
-        if (!verified) throw new BadRequestException({
-            code: ErrorCodes.BAD_REQUEST,
-            message: 'Payment verification failed'
-        });
+            if (!verified) throw new BadRequestException({
+                code: ErrorCodes.BAD_REQUEST,
+                message: 'Payment verification failed'
+            });
 
-        let transaction: ITransaction | null = null;
-        if (orderData.transactionType === TransactionType.BOOKING) {
-            transaction = await this._settleBookingPayment(orderData, {
-                contact: user.phone,
-                email: user.email,
-                id: user.id,
-                role
-            }, verifyData);
+            let transaction: ITransaction | null = null;
+            if (orderData.transactionType === TransactionType.BOOKING) {
+                transaction = await this._settleBookingPayment(orderData, {
+                    contact: user.phone,
+                    email: user.email,
+                    id: user.id,
+                    role
+                }, verifyData);
+            }
+
+            if (!transaction) {
+                throw new InternalServerErrorException('Transaction could not be created.');
+            }
+
+            await this._walletRepository.bulkUpdate(transaction);
+            return { verified, bookingId: orderData.bookingId, transaction };
+        } finally {
+            await this._paymentLockingUtility.releaseLock(key);
         }
-
-        if (!transaction) {
-            throw new InternalServerErrorException('Transaction could not be created.');
-        }
-
-        await this._walletRepository.bulkUpdate(transaction);
-        return { verified, bookingId: orderData.bookingId, transaction };
     }
 
-    async handleSubscriptionPayment(userId: string, role: string, verifyData: RazorpayVerifyData, orderData: SubscriptionOrderData): Promise<IVerifiedSubscriptionPayment> {
-        const verified = this._paymentService.verifySignature(
-            verifyData.razorpay_order_id,
-            verifyData.razorpay_payment_id,
-            verifyData.razorpay_signature
-        );
-
-        if (!verified) throw new BadRequestException({
-            code: ErrorCodes.BAD_REQUEST,
-            message: 'Payment verification failed'
-        });
-
-        const user = await this._getUser(userId, role);
-        const subscription = await this._getSubscription(orderData.subscriptionId);
-
-        let transaction: ITransaction | null = null;
-        if (orderData.transactionType === TransactionType.SUBSCRIPTION) {
-            transaction = await this._settleSubscriptionPayment(
-                { id: user.id, contact: user.phone, email: user.email, role },
-                subscription,
-                orderData,
-                verifyData
+    async handleSubscriptionPayment(userId: string, role: UserType, verifyData: RazorpayVerifyData, orderData: SubscriptionOrderData): Promise<IVerifiedSubscriptionPayment> {
+        const key = this._paymentLockingUtility.generatePaymentKey(userId, role);
+        try {
+            const verified = this._paymentService.verifySignature(
+                verifyData.razorpay_order_id,
+                verifyData.razorpay_payment_id,
+                verifyData.razorpay_signature
             );
-        }
 
-        if (!transaction) {
-            throw new InternalServerErrorException('Transaction could not be created.');
-        }
+            if (!verified) throw new BadRequestException({
+                code: ErrorCodes.BAD_REQUEST,
+                message: 'Payment verification failed'
+            });
 
-        await this._walletRepository.bulkUpdate(transaction);
-        return { verified, subscriptionId: subscription.id, transaction };
+            const user = await this._getUser(userId, role);
+            const subscription = await this._getSubscription(orderData.subscriptionId);
+
+            let transaction: ITransaction | null = null;
+            if (orderData.transactionType === TransactionType.SUBSCRIPTION) {
+                transaction = await this._settleSubscriptionPayment(
+                    { id: user.id, contact: user.phone, email: user.email, role },
+                    subscription,
+                    orderData,
+                    verifyData
+                );
+            }
+
+            if (!transaction) {
+                throw new InternalServerErrorException('Transaction could not be created.');
+            }
+
+            await this._walletRepository.bulkUpdate(transaction);
+            return { verified, subscriptionId: subscription.id, transaction };
+        } finally {
+            await this._paymentLockingUtility.releaseLock(key);
+        }
     }
 }

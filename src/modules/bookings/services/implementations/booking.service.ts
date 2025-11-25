@@ -100,11 +100,12 @@ export class BookingService implements IBookingService {
         );
 
         if (!isAvailable) {
-            return {
-                success: false,
+            throw new ConflictException({
+                code: ErrorCodes.CONFLICT,
                 message: 'Slot is already booked.'
-            };
+            });
         }
+
         const expectedArrivalTime = this._timeUtility.combineLocalDateAndTimeUTC(slotData.date, slotData.from);
 
         const bookingDoc = await this._bookingRepository.create(this._bookingMapper.toDocument({
@@ -137,6 +138,11 @@ export class BookingService implements IBookingService {
             review: null,
             respondedAt: null
         }));
+
+        await this._customerRepository.updateProfile(customerId, {
+            phone: data.phoneNumber,
+            location: data.location
+        });
 
         if (!bookingDoc) {
             this.logger.error('Failed to create new booking.');

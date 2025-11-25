@@ -83,6 +83,11 @@ export class BookingDto {
     @IsString()
     providerId: string;
 
+    @IsNotEmpty({ message: 'Phone number is required' })
+    @Matches(/^[0-9]{10}$/, { message: 'Phone number must be 10 digits' })
+    @IsString()
+    phoneNumber: string;
+
     @IsNotEmpty()
     @IsNumber()
     total: number;

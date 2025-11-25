@@ -8,8 +8,8 @@ import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-fa
 import { IPayload } from '@core/misc/payload.interface';
 import { CreateOrderDto, BookingPaymentVerifyDto, SubscriptionPaymentVerifyDto } from '@modules/payment/dtos/payment.dto';
 import { IRazorPaymentService } from '@modules/payment/services/interfaces/razorpay-service.interface';
-import { BadRequestException, Body, Controller, Inject, InternalServerErrorException, Post, Req, UnauthorizedException, } from '@nestjs/common';
-
+import { BadRequestException, Body, Controller, Inject, InternalServerErrorException, Post, Req, UnauthorizedException, UseGuards, } from '@nestjs/common';
+import { OngoingPaymentGuard } from '@core/guards/ongoing-payment.guard';
 
 @Controller('payment')
 export class RazorpayController {
@@ -24,16 +24,22 @@ export class RazorpayController {
         this.logger = this._loggerFactory.createLogger(RazorpayController.name);
     }
 
+    private _getUser(req: Request): IPayload {
+        return req.user as IPayload;
+    }
+
+    @UseGuards(OngoingPaymentGuard)
     @Post('create_order')
-    async createOrder(@Body() { amount }: CreateOrderDto): Promise<IRazorpayOrder> {
+    async createOrder(@Req() req: Request, @Body() { amount }: CreateOrderDto): Promise<IRazorpayOrder> {
         try {
+            const user = this._getUser(req);
             const numericAmount = Number(amount);
 
             if (isNaN(numericAmount) || numericAmount <= 0) {
                 throw new BadRequestException('Invalid amount: must be a positive number');
             }
 
-            return this._paymentService.createOrder(numericAmount);
+            return this._paymentService.createOrder(user.sub, user.type, numericAmount);
         } catch (err) {
             this.logger.error(`Error making the payment: ${err.message}`, err.stack);
             throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);

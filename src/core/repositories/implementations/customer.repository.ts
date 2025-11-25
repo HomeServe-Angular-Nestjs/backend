@@ -156,4 +156,27 @@ export class CustomerRepository extends BaseRepository<CustomerDocument> impleme
     return result.modifiedCount === 1;
   }
 
+  async updateProfile(customerId: string, data: { fullname?: string, username?: string, phone?: string, location?: { address: string, coordinates: [number, number] } }): Promise<CustomerDocument | null> {
+    const { fullname, username, phone } = data;
+    const update: Record<string, string | object> = {};
+
+    if (fullname) update.fullname = fullname;
+    if (username) update.username = username;
+    if (phone) update.phone = phone;
+    if (data.location && data.location.address && data.location.coordinates) {
+      update.address = data.location.address;
+      update.location = {
+        type: "Point",
+        coordinates: data.location.coordinates
+      };
+    }
+
+    if (Object.keys(update).length === 0) return null;
+
+    return await this._customerModel.findOneAndUpdate(
+      { _id: customerId },
+      { $set: update },
+      { new: true }
+    ).lean();
+  }
 }
