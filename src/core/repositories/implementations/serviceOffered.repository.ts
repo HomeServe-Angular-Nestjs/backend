@@ -56,4 +56,17 @@ export class ServiceOfferedRepository extends BaseRepository<ServiceDocument> im
       isActive: true
     });
   }
+
+  async searchServiceByTitle(title: string): Promise<ServiceDocument[]> {
+    const regex = new RegExp(title, 'i');
+
+    return await this._serviceModel.find({
+      $or: [
+        { title: { $regex: regex } },
+        { 'subService.title': { $regex: regex } }
+      ],
+      isDeleted: false,
+      isActive: true
+    });
+  }
 }

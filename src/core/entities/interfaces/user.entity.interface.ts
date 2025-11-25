@@ -9,6 +9,7 @@ export type VerificationStatusType = 'pending' | 'verified' | 'rejected';
 export type IUser = ICustomer | IProvider | IAdmin;
 export type SortByRatingType = 'latest' | 'oldest' | 'highest' | 'lowest';
 export type SearchByReviewType = 'review id' | 'customer' | 'provider' | 'content';
+export type FilterStatusType = 'nearest' | 'best-rated' | 'all';
 
 
 export type Availability = {
@@ -81,10 +82,19 @@ export interface ISearchedProviders {
   address: string;
 }
 
+export interface IFilterFetchProviders {
+  search?: string;
+  status: FilterStatusType;
+  isCertified: boolean;
+  lng?: number;
+  lat?: number;
+}
+
 export interface IVerificationStatusMetrics {
   count: number;
   percentage: string;
 }
+
 export interface IApprovalOverviewData {
   pending: IVerificationStatusMetrics;
   verified: IVerificationStatusMetrics;
@@ -166,6 +176,11 @@ export interface IProviderCardView {
   address: string;
   isActive: boolean;
   avatar: string;
+}
+
+export interface IProviderCardWithPagination {
+  providerCards: IProviderCardView[];
+  pagination: IPagination;
 }
 
 export interface ITotalReviewAndAvgRating {

@@ -1,11 +1,7 @@
 import { Transform, Type } from 'class-transformer';
-import {
-    IsBoolean, IsDefined, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested
-} from 'class-validator';
-
+import { IsBoolean, IsDefined, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator';
 import { UploadsType } from '@core/enum/uploads.enum';
-
-export type FilterStatusType = true | false | 'all';
+import { FilterStatusType } from '@core/entities/interfaces/user.entity.interface';
 
 export class SlotDto {
     @IsNotEmpty()
@@ -24,23 +20,25 @@ export class UpdateDefaultSlotsDto {
     slot: SlotDto;
 }
 
-export class FilterDto {
+export class PageDto {
+    @IsNotEmpty()
+    @Transform(({ value }) => Number(value))
+    @IsNumber()
+    page: number;
+}
+
+export class FilterDto extends PageDto {
     @IsOptional()
     @IsString()
-    search: string;
+    search?: string;
 
     @IsOptional()
-    @Transform(({ value }) => {
-        if (value === 'true') return true;
-        if (value === 'false') return false;
-        if (value === 'all') return 'all';
-        return value;
-    })
-    @IsIn([true, false, 'all'])
+    @IsString()
+    @IsIn(['nearest', 'all', 'best-rated'])
     status: FilterStatusType;
 
     @IsOptional()
-    @Transform(({ value }) => value === 'true')
+    @Transform(({ value }) => value === 'true' || value === true)
     @IsBoolean()
     isCertified: boolean;
 }
@@ -74,7 +72,7 @@ export class UpdateBioDto {
     @IsOptional()
     @ValidateNested({ each: true })
     @Type(() => ExpertiseDto)
-    expertises?: ExpertiseDto[];
+    expertise?: ExpertiseDto[];
 
     @IsOptional()
     @IsString({ each: true })
@@ -98,7 +96,7 @@ export class RemoveCertificateDto {
     docId: string;
 }
 
-export class GetProvidersFromLocationSearch {
+export class GetProvidersFromLocationSearch extends PageDto{
     @IsNotEmpty()
     @IsNumber()
     @Transform(({ value }) => {
