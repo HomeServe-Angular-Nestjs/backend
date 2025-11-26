@@ -3,7 +3,6 @@ import { GlobalWsExceptionFilter } from '@/core/exception-filters/ws-exception.f
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { UseFilters, UseInterceptors } from '@nestjs/common';
 import { OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets';
-import { FRONTEND_URL } from '@core/environments/environments';
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 
 export interface IClientData {
@@ -12,7 +11,7 @@ export interface IClientData {
 }
 
 export const corsOption: CorsOptions = {
-    origin: FRONTEND_URL,
+    origin: process.env.FRONTEND_URL,
     credentials: true
 }
 
