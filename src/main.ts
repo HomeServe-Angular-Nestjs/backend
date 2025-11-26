@@ -8,7 +8,6 @@ import { SeedCommand } from '../seed/commands/seed.command';
 import { SeedsModule } from '../seed/seed.module';
 import { AppModule } from './app.module';
 import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME } from '@core/constants/repository.constant';
-import { ALLOWED_URLS, FRONTEND_URL } from '@core/environments/environments';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { ICustomerRepository } from '@core/repositories/interfaces/customer-repo.interface';
 import { IProviderRepository } from '@core/repositories/interfaces/provider-repo.interface';
@@ -44,11 +43,16 @@ async function bootstrap() {
 
   app.use(cookieParser());
 
+  const ALLOWED_URLS: string[] = (process.env.ALLOWED_URLS || '')
+    .split(',')
+    .map(url => url.trim());
+
   app.enableCors({
     origin: ALLOWED_URLS,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });
+
 
   app.use(
     session({
