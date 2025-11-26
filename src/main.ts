@@ -47,6 +47,9 @@ async function bootstrap() {
     .split(',')
     .map(url => url.trim());
 
+  ALLOWED_URLS.push('https://linking-blog-supervisors-acrylic.trycloudflare.com');
+
+
   app.enableCors({
     origin: ALLOWED_URLS,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',

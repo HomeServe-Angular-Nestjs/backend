@@ -4,7 +4,6 @@ import { Request, Response } from 'express';
 import { LOGIN_SERVICE_INTERFACE_NAME, TOKEN_SERVICE_NAME } from '@core/constants/service.constant';
 import { IUser } from '@core/entities/interfaces/user.entity.interface';
 import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
-import { BACKEND_URL, FRONTEND_URL } from '@core/environments/environments';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { prepareResponse } from '@core/misc/response.util';
@@ -94,6 +93,8 @@ export class LoginController {
 
       req.session['userType'] = type;
 
+      const BACKEND_URL = process.env.BACKEND_URL;
+
       const googleAuthUrl = `${BACKEND_URL}/api/login/google`;
       return res.status(200).json({
         success: true,
@@ -148,6 +149,8 @@ export class LoginController {
         sameSite: 'strict',
         path: '/',
       });
+
+      const FRONTEND_URL = process.env.FRONTEND_URL;
 
       const frontendUrl =
         user.type === 'provider'
