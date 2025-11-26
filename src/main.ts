@@ -1,6 +1,9 @@
 import cookieParser from 'cookie-parser';
 import session from 'express-session';
 
+import { RedisStore } from 'connect-redis';
+import { REDIS_CLIENT } from '@configs/redis/redis.module';
+
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 
@@ -15,6 +18,7 @@ import { BlockGuard } from '@modules/auth/guards/block.guard';
 import morgan from 'morgan';
 import { ConfigService } from '@nestjs/config';
 import { RedisIoAdapter } from '@configs/redis/redis-io-adaptor';
+
 
 async function bootstrap() {
   if (process.argv.includes('seed:admin')) {
@@ -38,6 +42,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
 
+
   const loggerFactory = app.get<ILoggerFactory>(LOGGER_FACTORY);
   // app.useWebSocketAdapter(new RedisIoAdapter(loggerFactory, app, configService));
 
@@ -55,12 +60,23 @@ async function bootstrap() {
     credentials: true,
   });
 
+  const redisClient = app.get(REDIS_CLIENT);
+  const redisStore = new RedisStore({
+    client: redisClient,
+  });
 
   app.use(
     session({
+      store: redisStore,
       secret: process.env.SESSION_SECRET || 'your-secret-key',
       resave: false,
       saveUninitialized: false,
+      cookie: {
+        secure: true,
+        httpOnly: true,
+        sameSite: 'none',
+        maxAge: 1000 * 60 * 60 * 24 * 7,
+      },
     }),
   );
 
