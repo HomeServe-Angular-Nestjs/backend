@@ -2180,12 +2180,27 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                         $multiply: [
                             {
                                 $cond: [
-                                    { $lte: [{ $subtract: ['$totalBookings', '$cancelledCount'] }, 0] },
+                                    {
+                                        $lte: [
+                                            {
+                                                $subtract: [
+                                                    { $ifNull: ['$totalBookings', 0] },
+                                                    { $ifNull: ['$cancelledCount', 0] }
+                                                ]
+                                            },
+                                            0
+                                        ]
+                                    },
                                     0,
                                     {
                                         $divide: [
-                                            '$completedCount',
-                                            { $subtract: ['$totalBookings', '$cancelledCount'] }
+                                            { $ifNull: ['$completedCount', 0] },
+                                            {
+                                                $subtract: [
+                                                    { $ifNull: ['$totalBookings', 0] },
+                                                    { $ifNull: ['$cancelledCount', 0] }
+                                                ]
+                                            }
                                         ]
                                     }
                                 ]
@@ -2197,6 +2212,7 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
             }
         ]);
 
-        return result?.[0]?.completionRate ?? 0;
+        return result?.[0]?.completionRate ?? 0; 
     }
+
 }
