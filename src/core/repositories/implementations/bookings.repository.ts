@@ -453,19 +453,25 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
             {
                 $match: {
                     providerId: this._toObjectId(providerId),
-                    'review.rating': { $exists: true, $ne: null }
+                }
+            },
+            {
+                $unwind: "$review"
+            },
+            {
+                $match: {
+                    "review.rating": { $exists: true, $ne: null }
                 }
             },
             {
                 $group: {
                     _id: null,
                     avg: { $avg: "$review.rating" }
-                },
-            },
-            { $project: { avg: 1 } }
+                }
+            }
         ]);
 
-        return result[0].avg ?? 0;
+        return result?.[0]?.avg ?? 0;
     }
 
     async getAvgRatingAndTotalReviews(providerId?: string): Promise<ITotalReviewAndAvgRating[]> {

@@ -19,20 +19,25 @@ import { LoggerFactory } from '@core/logger/implementation/logger.factory';
 import { LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { CUSTOM_LOGGER } from '@core/logger/interface/custom-logger.interface';
 import { CustomLogger } from '@core/logger/implementation/custom-logger';
-import { WalletDocument } from '@core/schema/wallet.schema';
+import { WalletDocument, WalletSchema } from '@core/schema/wallet.schema';
 import { WalletRepository } from '@core/repositories/implementations/wallet.repository';
 import { WalletMapper } from '@core/dto-mapper/implementation/wallet.mapper';
 import { PlanSeedService } from './services/plans-seed.service';
-import { PlanDocument } from '@core/schema/plans.schema';
+import { PlanDocument, PlanSchema } from '@core/schema/plans.schema';
 import { PlanRepository } from '@core/repositories/implementations/plan.repository';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: `.env.${process.env.NODE_ENV || 'development'}`
+    }),
     DatabaseModule,
     ConsoleModule,
     MongooseModule.forFeature([
       { name: ADMIN_MODEL_NAME, schema: AdminSchema },
+      { name: WALLET_MODEL_NAME, schema: WalletSchema },
+      { name: PLAN_MODEL_NAME, schema: PlanSchema },
     ]),
   ],
   providers: [
