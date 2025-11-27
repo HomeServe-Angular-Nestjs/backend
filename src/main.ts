@@ -1,7 +1,7 @@
 import cookieParser from 'cookie-parser';
 import session from 'express-session';
 
-import { RedisStore } from 'connect-redis';
+import connectRedis from 'connect-redis';
 import { REDIS_CLIENT } from '@configs/redis/redis.module';
 
 import { ValidationPipe } from '@nestjs/common';
@@ -18,6 +18,7 @@ import { BlockGuard } from '@modules/auth/guards/block.guard';
 import morgan from 'morgan';
 import { ConfigService } from '@nestjs/config';
 import { RedisIoAdapter } from '@configs/redis/redis-io-adaptor';
+import passport from 'passport';
 
 
 async function bootstrap() {
@@ -59,24 +60,25 @@ async function bootstrap() {
   });
 
   const redisClient = app.get(REDIS_CLIENT);
-  const redisStore = new RedisStore({
-    client: redisClient,
-  });
+  const RedisStore = connectRedis(session);
 
   app.use(
     session({
-      store: redisStore,
+      store: new RedisStore({ client: redisClient }),
       secret: process.env.SESSION_SECRET || 'your-secret-key',
       resave: false,
       saveUninitialized: false,
       cookie: {
-        secure: true,
+        secure: false,
         httpOnly: true,
         sameSite: 'none',
         maxAge: 1000 * 60 * 60 * 24 * 7,
       },
     }),
   );
+
+  app.use(passport.initialize());
+  app.use(passport.session());
 
   app.use(morgan('dev'));
 

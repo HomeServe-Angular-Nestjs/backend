@@ -27,6 +27,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy) {
       callbackURL: _config.get('GOOGLE_CALLBACK_URL'),
       scope: ['profile', 'email'],
       passReqToCallback: true,
+      // state: true,
     });
 
     this.logger = this.loggerFactory.createLogger(GoogleStrategy.name);
@@ -34,7 +35,8 @@ export class GoogleStrategy extends PassportStrategy(Strategy) {
 
   async validate(req: Request, accessToken: string, refreshToken: string, profile: Profile,) {
     try {
-      const userType = req.session['userType'] as UserType;
+
+      const userType = req.query.state as UserType;
 
       if (!userType) {
         throw new BadRequestException('User type is missing.');
