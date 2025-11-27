@@ -82,9 +82,7 @@ async function bootstrap() {
 
   app.use(morgan('dev'));
 
-  if (process.env.NODE_ENV === 'development') {
-    app.setGlobalPrefix('api');
-  }
+  app.setGlobalPrefix('api');
 
   const customerRepository = app.get<ICustomerRepository>(CUSTOMER_REPOSITORY_INTERFACE_NAME);
   const providerRepository = app.get<IProviderRepository>(PROVIDER_REPOSITORY_INTERFACE_NAME);
