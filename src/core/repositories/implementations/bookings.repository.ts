@@ -465,7 +465,7 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
             { $project: { avg: 1 } }
         ]);
 
-        return result[0].avg ?? 0;
+        return result?.[0]?.avg ?? 0;
     }
 
     async getAvgRatingAndTotalReviews(providerId?: string): Promise<ITotalReviewAndAvgRating[]> {
