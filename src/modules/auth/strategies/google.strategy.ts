@@ -27,7 +27,6 @@ export class GoogleStrategy extends PassportStrategy(Strategy) {
       callbackURL: _config.get('GOOGLE_CALLBACK_URL'),
       scope: ['profile', 'email'],
       passReqToCallback: true,
-      // state: true,
     });
 
     this.logger = this.loggerFactory.createLogger(GoogleStrategy.name);
