@@ -1,3 +1,6 @@
+import * as dotenv from 'dotenv';
+dotenv.config();
+
 import cookieParser from 'cookie-parser';
 import session from 'express-session';
 
@@ -19,7 +22,6 @@ import morgan from 'morgan';
 import { ConfigService } from '@nestjs/config';
 import { RedisIoAdapter } from '@configs/redis/redis-io-adaptor';
 import passport from 'passport';
-
 
 async function bootstrap() {
   if (process.argv.includes('seed:admin')) {
