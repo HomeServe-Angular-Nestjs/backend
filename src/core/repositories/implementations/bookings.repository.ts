@@ -2197,6 +2197,6 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
             }
         ]);
 
-        return result[0].completionRate;
+        return result?.[0]?.completionRate ?? 0;
     }
 }
