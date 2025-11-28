@@ -5,7 +5,7 @@ import { ConsoleModule } from 'nestjs-console';
 import { Model } from 'mongoose';
 import { SeedAdminService } from './services/admin-seed.service';
 import { SeedCommand } from './commands/seed.command';
-import { ADMIN_MODEL_NAME, PLAN_MODEL_NAME, WALLET_MODEL_NAME } from '@core/constants/model.constant';
+import { ADMIN_MODEL_NAME, ADMIN_SETTINGS_MODEL_NAME, PLAN_MODEL_NAME, WALLET_MODEL_NAME } from '@core/constants/model.constant';
 import { AdminDocument, AdminSchema } from '@core/schema/admin.schema';
 import { DatabaseModule } from '@configs/database/database.module';
 import { ADMIN_SEED_SERVICE_NAME, PLAN_SEED_SERVICE_NAME } from '@core/constants/service.constant';
@@ -38,6 +38,7 @@ import { PlanRepository } from '@core/repositories/implementations/plan.reposito
       { name: ADMIN_MODEL_NAME, schema: AdminSchema },
       { name: WALLET_MODEL_NAME, schema: WalletSchema },
       { name: PLAN_MODEL_NAME, schema: PlanSchema },
+      { name: ADMIN_SETTINGS_MODEL_NAME, schema: ADMIN_SETTINGS_MODEL_NAME },
     ]),
   ],
   providers: [
