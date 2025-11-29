@@ -1,10 +1,8 @@
-import { PaginatedReviewResponse } from '@/core/entities/interfaces/user.entity.interface';
 import { IResponse } from '@/core/misc/response.util';
+import { UpdateReviewStatus } from '@modules/users/dtos/admin-user.dto';
 
-import { FilterWithPaginationDto, UpdateReviewStatus } from '../../dtos/admin-user.dto';
 
 export interface IAdminReviewService {
-    // getReviewData(dto: FilterWithPaginationDto): Promise<IResponse<PaginatedReviewResponse>>;
-    updateReviewStatus(dto: UpdateReviewStatus): Promise<IResponse>;
+    updateReviewStatus(updateReviewStatus: UpdateReviewStatus): Promise<IResponse>;
     reviewOverviews(): Promise<IResponse>;
 }

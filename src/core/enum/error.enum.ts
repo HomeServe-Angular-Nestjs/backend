@@ -4,7 +4,8 @@ export enum ErrorMessage {
     USER_NOT_FOUND = 'User not found.',
     UNAUTHORIZED_ACCESS = 'Unauthorized access, please login',
     INVALID_TYPE = 'Invalid type found.',
-
+    INVALID_OTP = 'Invalid OTP. Please try again.',
+    OTP_EXPIRED = 'OTP expired. Please try again.',
     DOCUMENT_NOT_FOUND = 'Document not found',
 
     PROVIDER_NOT_FOUND = 'Provider not found',
@@ -33,6 +34,7 @@ export enum ErrorMessage {
     SLOT_RESERVATION_FAILED = 'Slot already reserved. Please select another.',
     PAYMENT_IN_PROGRESS = 'Payment already in progress.',
     PAYMENT_VERIFICATION_FAILED = 'Payment verification failed.',
+    BOOKING_ALREADY_CANCELLED = 'Booking is already cancelled.'
 }
 
 export enum ErrorCodes {

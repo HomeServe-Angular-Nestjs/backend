@@ -18,7 +18,7 @@ import { IArgonUtility } from '@core/utilities/interface/argon.utility.interface
 import { IUploadsUtility } from '@core/utilities/interface/upload.utility.interface';
 import { ChangePasswordDto } from '@modules/customer/dtos/customer.dto';
 import { ICustomerService } from '@modules/customer/services/interfaces/customer-service.interface';
-import { UpdateProfileDto, UpdateSavedProvidersDto } from '@modules/customer/dtos/customer.dto';
+import { UpdateProfileDto, ProviderIdDto } from '@modules/customer/dtos/customer.dto';
 import { CUSTOMER_MAPPER } from '@core/constants/mappers.constant';
 import { ICustomerMapper } from '@core/dto-mapper/interface/customer.mapper..interface';
 import { UploadsType } from '@core/enum/uploads.enum';
@@ -68,7 +68,7 @@ export class CustomerService implements ICustomerService {
         return this._customerMapper.toEntity(updatedCustomerDocument);
     }
 
-    async updateSavedProviders(id: string, dto: UpdateSavedProvidersDto): Promise<ICustomer> {
+    async updateSavedProviders(id: string, dto: ProviderIdDto): Promise<ICustomer> {
         const customers = await this._customerRepository.findById(id);
         const alreadySaved = customers?.savedProviders?.includes(dto.providerId);
 

@@ -1,6 +1,7 @@
 import { Types } from 'mongoose';
 import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { PROVIDER_REPOSITORY_INTERFACE_NAME, SERVICE_OFFERED_REPOSITORY_NAME } from '@core/constants/repository.constant';
+import { CreateServiceDto, CreateSubServiceDto, FilterServiceDto, ProviderServiceFilterWithPaginationDto, RemoveSubServiceDto, ToggleServiceStatusDto, ToggleSubServiceStatusDto, UpdateServiceDto } from '@modules/providers/dtos/service.dto';
 import { UPLOAD_UTILITY_NAME } from '@core/constants/utility.constant';
 import { IService, IServicesWithPagination, ISubService } from '@core/entities/interfaces/service.entity.interface';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
@@ -9,11 +10,9 @@ import { IResponse } from '@core/misc/response.util';
 import { IProviderRepository } from '@core/repositories/interfaces/provider-repo.interface';
 import { IServiceOfferedRepository } from '@core/repositories/interfaces/serviceOffered-repo.interface';
 import { IUploadsUtility } from '@core/utilities/interface/upload.utility.interface';
-import { CreateServiceDto, CreateSubServiceDto, FilterServiceDto, ProviderServiceFilterWithPaginationDto, RemoveSubServiceDto, ToggleServiceStatusDto, ToggleSubServiceStatusDto, UpdateServiceDto } from '@modules/providers/dtos/service.dto';
 import { IServiceFeatureService } from '@modules/providers/services/interfaces/service-service.interface';
 import { PROVIDER_MAPPER, SERVICE_OFFERED_MAPPER } from '@core/constants/mappers.constant';
 import { IServiceOfferedMapper } from '@core/dto-mapper/interface/serviceOffered.mapper.interface';
-import { SubServiceDocument } from '@core/schema/subservice.schema';
 import { IProviderMapper } from '@core/dto-mapper/interface/provider.mapper.interface';
 
 @Injectable()
@@ -38,7 +37,7 @@ export class ServiceFeatureService implements IServiceFeatureService {
   }
 
 
-  async createService(providerId: string, dto: CreateServiceDto,): Promise<IResponse<string[]>> {
+  async createService(providerId: string, createServiceDto: CreateServiceDto,): Promise<IResponse<string[]>> {
     const provider = await this._providerRepository.findById(providerId);
 
     if (!provider) return {
@@ -47,22 +46,22 @@ export class ServiceFeatureService implements IServiceFeatureService {
     };
 
 
-    if (!dto.image) return {
+    if (!createServiceDto.image) return {
       success: false,
       message: 'image not found.'
     };
 
     try {
-      const serviceImageUrl = await this._uploadsUtility.uploadImage(dto.image);
+      const serviceImageUrl = await this._uploadsUtility.uploadImage(createServiceDto.image);
 
-      const subServicesWithImages = dto.subService
-        ? await this._handleSubServices(dto.subService)
+      const subServicesWithImages = createServiceDto.subService
+        ? await this._handleSubServices(createServiceDto.subService)
         : [];
 
       const newOfferedService = await this._serviceOfferedRepository.create(this._serviceOfferedMapper.toDocument({
         providerId,
-        title: dto.title,
-        desc: dto.desc,
+        title: createServiceDto.title,
+        desc: createServiceDto.desc,
         image: serviceImageUrl,
         subService: subServicesWithImages as ISubService[],
       }));
@@ -73,7 +72,7 @@ export class ServiceFeatureService implements IServiceFeatureService {
           $push: { servicesOffered: new Types.ObjectId(newOfferedService.id) },
         },
         { new: true },
-      );
+      ); //todo
 
       if (!updatedProvider) {
         throw new InternalServerErrorException('Something happened while updating the provider schema');
@@ -192,7 +191,7 @@ export class ServiceFeatureService implements IServiceFeatureService {
       { _id: id },
       { $set: updateFields },
       { new: true }
-    );
+    ); //todo
 
     if (!updatedService) {
       throw new NotFoundException('No matching service found to update.');
@@ -309,34 +308,34 @@ export class ServiceFeatureService implements IServiceFeatureService {
     return filteredServices;
   }
 
-  async toggleServiceStatus(dto: ToggleServiceStatusDto): Promise<boolean> {
+  async toggleServiceStatus(toggleServiceDto: ToggleServiceStatusDto): Promise<boolean> {
     const updatedService = await this._serviceOfferedRepository.findOneAndUpdate(
-      { _id: dto.id },
-      { $set: { isActive: dto.isActive } },
+      { _id: toggleServiceDto.id },
+      { $set: { isActive: toggleServiceDto.isActive } },
       { new: true }
-    );
+    ); //todo
 
     if (!updatedService) {
-      throw new NotFoundException(`Service of ID ${dto.id} not found`);
+      throw new NotFoundException(`Service of ID ${toggleServiceDto.id} not found`);
     }
 
     return !!updatedService;
   }
 
-  async toggleSubServiceStatus(dto: ToggleSubServiceStatusDto): Promise<boolean> {
+  async toggleSubServiceStatus(toggleSubServiceDto: ToggleSubServiceStatusDto): Promise<boolean> {
     const updatedSubService = await this._serviceOfferedRepository.findOneAndUpdate(
       {
-        _id: dto.id,
-        'subService._id': dto.subService.id
+        _id: toggleSubServiceDto.id,
+        'subService._id': toggleSubServiceDto.subService.id
       },
       {
-        $set: { 'subService.$.isActive': dto.subService.isActive }
+        $set: { 'subService.$.isActive': toggleSubServiceDto.subService.isActive }
       },
       { new: true }
-    );
+    ); //todo
 
     if (!updatedSubService) {
-      throw new NotFoundException(`subService of ID ${dto.subService.id} not found`);
+      throw new NotFoundException(`subService of ID ${toggleSubServiceDto.subService.id} not found`);
     }
     return !!updatedSubService;
   }
@@ -351,7 +350,7 @@ export class ServiceFeatureService implements IServiceFeatureService {
         }
       },
       { new: true }
-    );
+    ); //todo
 
     await this._providerRepository.findOneAndUpdate(
       { _id: providerId },
@@ -369,17 +368,17 @@ export class ServiceFeatureService implements IServiceFeatureService {
     }
   }
 
-  async removeSubService(dto: RemoveSubServiceDto): Promise<IResponse> {
+  async removeSubService(removeSubServiceDto: RemoveSubServiceDto): Promise<IResponse> {
     const updatedService = await this._serviceOfferedRepository.findOneAndUpdate(
       {
-        _id: dto.serviceId,
-        'subService._id': dto.subId,
+        _id: removeSubServiceDto.serviceId,
+        'subService._id': removeSubServiceDto.subId,
       },
       {
         $set: { 'subService.$.isDeleted': true }
       },
       { new: true }
-    );
+    ); //todo
 
     return {
       success: !!updatedService,

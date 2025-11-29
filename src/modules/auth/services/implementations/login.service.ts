@@ -91,19 +91,19 @@ export class LoginService implements ILoginService {
     await this._walletRepository.create(this._walletMapper.toDocument({ userId, type }));
   }
 
-  async validateUserCredentials(dto: AuthLoginDto): Promise<IUser> {
-    const repository = this._findRepo(dto.type);
-    const userDocument = await repository.findByEmail(dto.email);
+  async validateUserCredentials(loginDto: AuthLoginDto): Promise<IUser> {
+    const repository = this._findRepo(loginDto.type);
+    const userDocument = await repository.findByEmail(loginDto.email);
 
     if (!userDocument || !userDocument.password) {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    const user = this._mappedUser(dto.type, userDocument);
+    const user = this._mappedUser(loginDto.type, userDocument);
 
     const isValidPassword = await this._argon.verify(
       user.password,
-      dto.password,
+      loginDto.password,
     );
 
     if (!isValidPassword) {
@@ -113,7 +113,7 @@ export class LoginService implements ILoginService {
       });
     }
 
-    if (dto.type === 'customer' || dto.type === 'provider') {
+    if (loginDto.type === 'customer' || loginDto.type === 'provider') {
       if (!user.isActive) {
         throw new UnauthorizedException({
           code: ErrorCodes.UNAUTHORIZED_ACCESS,
@@ -121,11 +121,11 @@ export class LoginService implements ILoginService {
         });
       }
 
-      dto.type === 'customer'
-        ? await this._customerRepository.updateLastLogin(dto.email)
-        : await this._providerRepository.updateLastLogin(dto.email);
+      loginDto.type === 'customer'
+        ? await this._customerRepository.updateLastLogin(loginDto.email)
+        : await this._providerRepository.updateLastLogin(loginDto.email);
 
-      this._createWallet(user.id, dto.type as UserType)
+      this._createWallet(user.id, loginDto.type as UserType)
     }
 
     return user;
@@ -192,18 +192,18 @@ export class LoginService implements ILoginService {
     return newUser;
   }
 
-  async requestOtpForForgotPassword(dto: EmailAndTypeDto): Promise<IResponse> {
-    const repository = dto.type === 'customer'
+  async requestOtpForForgotPassword(emailAndType: EmailAndTypeDto): Promise<IResponse> {
+    const repository = emailAndType.type === 'customer'
       ? this._customerRepository
       : this._providerRepository;
 
-    const userDocument = await repository.findByEmail(dto.email);
+    const userDocument = await repository.findByEmail(emailAndType.email);
     if (!userDocument) throw new NotFoundException({
       code: ErrorCodes.NOT_FOUND,
       message: ErrorMessage.USER_NOT_FOUND
     });
 
-    const user = this._mappedUser(dto.type, userDocument);
+    const user = this._mappedUser(emailAndType.type, userDocument);
     await this._otpService.generateAndSendOtp(user.email);
     return { success: true, message: 'Otp requested' }
   }
@@ -213,19 +213,19 @@ export class LoginService implements ILoginService {
     return { success: true, message: 'Otp verified.' }
   }
 
-  async changePassword(dto: ChangePasswordDto): Promise<IResponse> {
-    if (dto.type === 'admin') throw new UnauthorizedException({
+  async changePassword(passwordDto: ChangePasswordDto): Promise<IResponse> {
+    if (passwordDto.type === 'admin') throw new UnauthorizedException({
       code: ErrorCodes.UNAUTHORIZED_ACCESS,
       message: ErrorMessage.INVALID_TYPE
     });
 
-    const hashedPassword = await this._argon.hash(dto.password);
+    const hashedPassword = await this._argon.hash(passwordDto.password);
     let updatedUser: CustomerDocument | ProviderDocument | null = null;
 
-    if (dto.type === 'customer') {
-      updatedUser = await this._customerRepository.updatePassword(dto.email, hashedPassword);
-    } else if (dto.type === 'provider') {
-      updatedUser = await this._providerRepository.updatePassword(dto.email, hashedPassword);
+    if (passwordDto.type === 'customer') {
+      updatedUser = await this._customerRepository.updatePassword(passwordDto.email, hashedPassword);
+    } else if (passwordDto.type === 'provider') {
+      updatedUser = await this._providerRepository.updatePassword(passwordDto.email, hashedPassword);
     }
 
     if (!updatedUser) throw new NotFoundException({

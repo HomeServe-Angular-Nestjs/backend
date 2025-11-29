@@ -11,7 +11,7 @@ import { Request, Response } from 'express';
 @Controller('messages')
 export class MessagesController {
     private readonly logger: ICustomLogger;
-    
+
     constructor(
         @Inject(LOGGER_FACTORY)
         private readonly loggerFactory: ILoggerFactory,
@@ -56,12 +56,7 @@ export class MessagesController {
     }
 
     @Get('')
-    async getAllMessages(@Query() dto: GetMessagesDto) {
-        try {
-            return this._messagesService.getAllMessage(dto.chatId, dto.beforeMessageId);
-        } catch (err) {
-            this.logger.error(`Error fetching messages of chat: ${dto.chatId}, ${err.message}`, err.stack);
-            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
-        }
+    async getAllMessages(@Query() getMessageDto: GetMessagesDto) {
+        return this._messagesService.getAllMessage(getMessageDto.chatId, getMessageDto.beforeMessageId);
     }
 }

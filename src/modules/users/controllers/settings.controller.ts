@@ -18,9 +18,9 @@ export class AdminSettingsController {
     }
 
     @Patch('')
-    async updateSettings(@Body() body: SettingsDto): Promise<IResponse<IAdminSettings>> {
+    async updateSettings(@Body() settingsDto: SettingsDto): Promise<IResponse<IAdminSettings>> {
         const data = Object.fromEntries(
-            Object.entries(body).filter(([_, value]) => value !== undefined)
+            Object.entries(settingsDto).filter(([_, value]) => value !== undefined)
         );
         return await this._settingService.updateSetting(data as IAdminSettings);
     }

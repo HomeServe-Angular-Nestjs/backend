@@ -229,7 +229,7 @@ export class ProviderServices implements IProviderServices {
         $set: sanitizedUpdate,
       },
       { new: true },
-    );
+    ); //todo
 
     if (!updatedProvider) {
       throw new NotFoundException(`Provider with ID ${id} not found`);
@@ -243,7 +243,7 @@ export class ProviderServices implements IProviderServices {
       { _id: id },
       { $set: updateData },
       { new: true }
-    );
+    ); //todo
 
     if (!updatedProvider) {
       throw new NotFoundException(`Provider with id ${id} not found`);
@@ -257,7 +257,7 @@ export class ProviderServices implements IProviderServices {
       { _id: providerId },
       { $push: { defaultSlots: slot } },
       { new: true }
-    );
+    ); //todo
 
     if (!updatedProvider) {
       throw new NotFoundException(`Provider with ID ${providerId} found`);
@@ -276,26 +276,26 @@ export class ProviderServices implements IProviderServices {
       {
         $set: { defaultSlots: [] }
       }
-    );
+    ); //todo
 
     if (!hasDeleted) {
       throw new Error('Failed to delete default slots');
     }
   }
 
-  async updateBio(providerId: string, dto: UpdateBioDto): Promise<IResponse<IProvider>> {
+  async updateBio(providerId: string, updateBioDto: UpdateBioDto): Promise<IResponse<IProvider>> {
     const updateData: Partial<IProvider> = {
-      additionalSkills: dto.additionalSkills,
-      expertise: dto.expertise,
-      languages: dto.languages,
-      bio: dto.providerBio,
+      additionalSkills: updateBioDto.additionalSkills,
+      expertise: updateBioDto.expertise,
+      languages: updateBioDto.languages,
+      bio: updateBioDto.providerBio,
     };
 
     const updatedProvider = await this._providerRepository.findOneAndUpdate(
       { _id: providerId },
       { $set: updateData },
       { new: true }
-    );
+    ); //todo
 
     if (!updatedProvider) {
       throw new NotFoundException(ErrorMessage.PROVIDER_NOT_FOUND_WITH_ID, providerId);
@@ -326,7 +326,7 @@ export class ProviderServices implements IProviderServices {
       { _id: providerId },
       { $push: { docs: doc } },
       { new: true }
-    );
+    ); //todo
 
     if (!updatedProvider) {
       throw new NotFoundException(ErrorMessage.PROVIDER_NOT_FOUND, providerId);
@@ -354,7 +354,7 @@ export class ProviderServices implements IProviderServices {
         $set: { 'docs.$.isDeleted': true }
       },
       { new: true }
-    );
+    ); //todo
 
     if (!updatedProvider) {
       throw new NotFoundException(ErrorMessage.PROVIDER_NOT_FOUND, providerId);

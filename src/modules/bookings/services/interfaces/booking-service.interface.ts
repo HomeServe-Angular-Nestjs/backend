@@ -3,13 +3,13 @@ import { AddReviewDto, BookingDto, IPriceBreakupDto, SelectedServiceDto, UpdateB
 import { IResponse } from '@core/misc/response.util';
 
 export interface IBookingService {
-    preparePriceBreakup(dto: SelectedServiceDto[]): Promise<IPriceBreakupDto>;
+    preparePriceBreakup(serviceDto: SelectedServiceDto[]): Promise<IPriceBreakupDto>;
     createBooking(customerId: string, bookingData: BookingDto): Promise<IResponse>;
-    fetchBookings(id: string, page: number): Promise<IBookingWithPagination>;
+    fetchBookings(bookingId: string, page: number): Promise<IBookingWithPagination>;
     fetchBookingDetails(bookingId: string): Promise<IBookingDetailCustomer>;
     markBookingCancelledByCustomer(bookingId: string, reason: string): Promise<IResponse>;
-    updateBooking(dto: UpdateBookingDto): Promise<IResponse<IBookingResponse>>;
-    updateBookingPaymentStatus(dto: UpdateBookingPaymentStatusDto): Promise<IResponse<boolean>>;
-    addReview(dto: AddReviewDto): Promise<IResponse>;
+    updateBooking(bookingDto: UpdateBookingDto): Promise<IResponse<IBookingResponse>>;
+    updateBookingPaymentStatus(bookingDto: UpdateBookingPaymentStatusDto): Promise<IResponse<boolean>>;
+    addReview(reviewDto: AddReviewDto): Promise<IResponse>;
 }
 

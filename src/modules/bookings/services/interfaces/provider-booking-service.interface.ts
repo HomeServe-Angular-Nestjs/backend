@@ -5,8 +5,8 @@ import { IResponse } from '@core/misc/response.util';
 import { FilterFields, ReviewFilterDto } from '@modules/bookings/dtos/booking.dto';
 
 export interface IProviderBookingService {
-    fetchBookingsList(id: string, page: number, bookingFilters: FilterFields): Promise<IResponseProviderBookingLists>;
-    fetchOverviewData(id: string): Promise<IBookingOverviewData>;
+    fetchBookingsList(bookingId: string, page: number, bookingFilters: FilterFields): Promise<IResponseProviderBookingLists>;
+    fetchOverviewData(bookingId: string): Promise<IBookingOverviewData>;
     fetchBookingDetails(bookingId: string): Promise<IBookingDetailProvider>;
     updateBookingStatus(bookingId: string, newStatus: BookingStatus): Promise<IResponse>;
     markBookingCancelledByProvider(bookingId: string, reason?: string): Promise<IResponse<IBookingDetailProvider>>;

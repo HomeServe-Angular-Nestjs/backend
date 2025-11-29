@@ -1,7 +1,5 @@
 import { Request, Response } from 'express';
-
-import { BadRequestException, Body, Controller, Get, Inject, InternalServerErrorException, Param, Patch, Post, Query, Req, Res, UnauthorizedException } from '@nestjs/common';
-
+import { Body, Controller, Get, Inject, Param, Patch, Post, Query, Req, Res } from '@nestjs/common';
 import { PROVIDER_BOOKING_SERVICE_NAME } from '../../../core/constants/service.constant';
 import { IBookingDetailProvider, IResponseProviderBookingLists } from '../../../core/entities/interfaces/booking.entity.interface';
 import { CUSTOM_LOGGER, ICustomLogger } from '../../../core/logger/interface/custom-logger.interface';
@@ -10,7 +8,6 @@ import { BookingIdDto, BookingPaginationFilterDto, CancelReasonDto, ReviewFilter
 import { IProviderBookingService } from '../services/interfaces/provider-booking-service.interface';
 import { IResponse } from '@core/misc/response.util';
 import { isValidIdPipe } from '@core/pipes/is-valid-id.pipe';
-import { ErrorCodes } from '@core/enum/error.enum';
 
 @Controller('provider/bookings')
 export class ProviderBookingsController {
@@ -36,8 +33,8 @@ export class ProviderBookingsController {
     }
 
     @Get('fetch_details')
-    async getBookingDetails(@Query() dto: BookingIdDto) {
-        return await this._providerBookingService.fetchBookingDetails(dto.bookingId);
+    async getBookingDetails(@Query() bookingDto: BookingIdDto) {
+        return await this._providerBookingService.fetchBookingDetails(bookingDto.bookingId);
     }
 
     @Patch('cancel/:bookingId')
@@ -71,8 +68,8 @@ export class ProviderBookingsController {
     }
 
     @Get('review_data')
-    async getReviewData(@Req() req: Request, @Query() dto: ReviewFilterDto): Promise<IResponse> {
+    async getReviewData(@Req() req: Request, @Query() reviewDto: ReviewFilterDto): Promise<IResponse> {
         const user = req.user as IPayload;
-        return await this._providerBookingService.getReviewData(user.sub, dto);
+        return await this._providerBookingService.getReviewData(user.sub, reviewDto);
     }
 }

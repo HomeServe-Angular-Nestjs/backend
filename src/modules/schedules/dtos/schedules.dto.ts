@@ -155,7 +155,7 @@ export class RemoveScheduleDto {
 
 //* Customer's
 
-export class FetchShcedulesDto {
+export class FetchSchedulesDto {
     @IsDefined()
     @IsString()
     providerId: string;

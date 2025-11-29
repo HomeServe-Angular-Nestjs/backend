@@ -31,7 +31,7 @@ export class SchedulesService implements ISchedulesService {
         this.logger = this.loggerFactory.createLogger(SchedulesService.name);
     }
 
-    async createSchedules(providerId: string, dto: MonthScheduleDto): Promise<IResponse> {
+    async createSchedules(providerId: string, monthScheduleDto: MonthScheduleDto): Promise<IResponse> {
         const providerExists = await this._providerRepository.isExists({ _id: providerId });
         if (!providerExists) {
             throw new NotFoundException(`Provider with ID ${providerId} not found.`);
@@ -39,10 +39,10 @@ export class SchedulesService implements ISchedulesService {
 
         const existingSchedule = await this._schedulesRepository.findOne({
             providerId,
-            month: dto.month
+            month: monthScheduleDto.month
         });
 
-        const sanitizedDays: IScheduleDay[] = dto.days.map(day => ({
+        const sanitizedDays: IScheduleDay[] = monthScheduleDto.days.map(day => ({
             date: day.date,
             slots: day.slots.map(slot => ({
                 from: slot.from,
@@ -57,7 +57,7 @@ export class SchedulesService implements ISchedulesService {
             try {
                 await this._schedulesRepository.create({
                     providerId,
-                    month: dto.month,
+                    month: monthScheduleDto.month,
                     days: sanitizedDays,
                     isActive: true,
                     isDeleted: false
@@ -95,14 +95,14 @@ export class SchedulesService implements ISchedulesService {
             await this._schedulesRepository.findOneAndUpdate(
                 {
                     providerId,
-                    month: dto.month
+                    month: monthScheduleDto.month
                 },
                 {
                     $push: {
                         days: { $each: sanitizedDays }
                     }
                 }
-            );
+            ); //todo
         } catch (err) {
             this.logger.error('Error updating schedule: ', err.message, err.stack);
             throw new InternalServerErrorException('Something went wrong while updating the schedule');
@@ -127,14 +127,15 @@ export class SchedulesService implements ISchedulesService {
         }
     }
 
-    async fetchScheduleList(providerId: string, dto: ScheduleListFilterDto): Promise<IResponse<IScheduleListWithPagination>> {
+    async fetchScheduleList(providerId: string, scheduleListFilterDto: ScheduleListFilterDto): Promise<IResponse<IScheduleListWithPagination>> {
         const limit = 10;
-        const skip = (dto.page - 1) * limit;
+        const page = scheduleListFilterDto.page ?? 1;
+        const skip = (page - 1) * limit;
 
         const filter = { providerId, isDeleted: false };
 
         const [fetchedSchedules, total] = await Promise.all([
-            this._schedulesRepository.find(filter, { skip, limit, sort: { createdAt: -1 } }),
+            this._schedulesRepository.find(filter, { skip, limit, sort: { createdAt: -1 } }), //todo
             this._schedulesRepository.count({ providerId })
         ]);
 
@@ -144,7 +145,7 @@ export class SchedulesService implements ISchedulesService {
                 message: 'Schedule list fetched successfully',
                 data: {
                     scheduleList: [],
-                    pagination: { page: dto.page, limit: 0, total: 0 }
+                    pagination: { page: scheduleListFilterDto.page, limit: 0, total: 0 }
                 }
             }
         }
@@ -162,17 +163,17 @@ export class SchedulesService implements ISchedulesService {
             message: 'Schedule list fetched successfully',
             data: {
                 scheduleList: responseSchedules,
-                pagination: { page: dto.page, limit, total }
+                pagination: { page: scheduleListFilterDto.page, limit, total }
             }
         }
     }
 
-    async fetchScheduleDetails(providerId: string, dto: ScheduleDetailsDto): Promise<IResponse<IScheduleDay[]>> {
+    async fetchScheduleDetails(providerId: string, scheduleDetailsDto: ScheduleDetailsDto): Promise<IResponse<IScheduleDay[]>> {
         const schedule = await this._schedulesRepository.findOne({
-            _id: dto.id,
+            _id: scheduleDetailsDto.id,
             providerId,
-            month: dto.month
-        });
+            month: scheduleDetailsDto.month
+        });//todo
 
         if (!schedule) {
             return {
@@ -184,21 +185,21 @@ export class SchedulesService implements ISchedulesService {
 
         let filteredDays = schedule.days;
 
-        if (dto.date && dto.date) {
-            filteredDays = filteredDays.filter(day => day.date === dto.date);
+        if (scheduleDetailsDto.date && scheduleDetailsDto.date) {
+            filteredDays = filteredDays.filter(day => day.date === scheduleDetailsDto.date);
         }
 
-        if (dto.status && dto.status !== 'all') {
-            const isActive = dto.status === 'true';
+        if (scheduleDetailsDto.status && scheduleDetailsDto.status !== 'all') {
+            const isActive = scheduleDetailsDto.status === 'true';
             filteredDays = filteredDays.filter(day => day.isActive === isActive);
         }
 
-        if (dto.availableType && dto.availableType !== 'all') {
+        if (scheduleDetailsDto.availableType && scheduleDetailsDto.availableType !== 'all') {
             filteredDays = filteredDays
                 .map(day => ({
                     ...day,
                     slots: day.slots.filter(s =>
-                        dto.availableType === 'booked' ? s.takenBy : !s.takenBy
+                        scheduleDetailsDto.availableType === 'booked' ? s.takenBy : !s.takenBy
                     )
                 }))
                 .filter(day => day.slots.length > 0);
@@ -211,19 +212,19 @@ export class SchedulesService implements ISchedulesService {
         }
     }
 
-    async updateScheduleStatus(providerId: string, dto: UpdateScheduleStatusDto): Promise<IResponse> {
+    async updateScheduleStatus(providerId: string, updateScheduleStatusDto: UpdateScheduleStatusDto): Promise<IResponse> {
         const schedule = await this._schedulesRepository.findOneAndUpdate(
             {
-                _id: dto.scheduleId,
+                _id: updateScheduleStatusDto.scheduleId,
                 providerId
             },
             {
                 $set: {
-                    isActive: dto.status
+                    isActive: updateScheduleStatusDto.status
                 }
             },
             { new: true }
-        );
+        ); //todo
 
         if (!schedule) {
             throw new NotFoundException('Schedule not found');
@@ -235,9 +236,9 @@ export class SchedulesService implements ISchedulesService {
         }
     }
 
-    async updateScheduleDateStatus(providerId: string, dto: UpdateScheduleDateStatusDto): Promise<IResponse<IScheduleDay[]>> {
-        const scheduleId = new Types.ObjectId(dto.scheduleId);
-        const dayId = new Types.ObjectId(dto.dayId);
+    async updateScheduleDateStatus(providerId: string, updateScheduleDateStatusDto: UpdateScheduleDateStatusDto): Promise<IResponse<IScheduleDay[]>> {
+        const scheduleId = new Types.ObjectId(updateScheduleDateStatusDto.scheduleId);
+        const dayId = new Types.ObjectId(updateScheduleDateStatusDto.dayId); //todo
 
         const schedule = await this._schedulesRepository.findOneAndUpdate(
             {
@@ -247,11 +248,11 @@ export class SchedulesService implements ISchedulesService {
             },
             {
                 $set: {
-                    'days.$.isActive': dto.status
+                    'days.$.isActive': updateScheduleDateStatusDto.status
                 }
             },
             { new: true }
-        );
+        ); //todo
 
         if (!schedule) {
             throw new NotFoundException('Schedule not found');
@@ -265,8 +266,8 @@ export class SchedulesService implements ISchedulesService {
     }
 
     // TODO - slot status update.
-    async updateScheduleDateSlotStatus(providerId: string, dto: UpdateScheduleDateSlotStatusDto): Promise<IResponse> {
-        const { scheduleId, dayId, slotId, status } = dto;
+    async updateScheduleDateSlotStatus(providerId: string, updateScheduleDateSlotStatusDto: UpdateScheduleDateSlotStatusDto): Promise<IResponse> {
+        const { scheduleId, dayId, slotId, status } = updateScheduleDateSlotStatusDto;
 
 
 
@@ -288,7 +289,7 @@ export class SchedulesService implements ISchedulesService {
                     isDeleted: true
                 }
             }
-        );
+        ); //todo
 
         if (!schedule) {
             throw new NotFoundException('Schedule not found');

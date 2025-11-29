@@ -52,7 +52,7 @@ export class CreateSubscriptionDto {
     price: number;
 }
 
-export class IUpdatePaymentStatusDto {
+export class UpdatePaymentStatusDto {
     @IsNotEmpty()
     @IsString()
     transactionId: string;

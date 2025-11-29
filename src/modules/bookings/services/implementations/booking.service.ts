@@ -73,8 +73,8 @@ export class BookingService implements IBookingService {
     }
 
     // Calculates the detailed price breakup for a list of selected services and subServices.
-    async preparePriceBreakup(dto: SelectedServiceDto[]): Promise<IPricingBreakup> {
-        const subServiceIds = dto.flatMap(ids => ids.subServiceIds);
+    async preparePriceBreakup(serviceDto: SelectedServiceDto[]): Promise<IPricingBreakup> {
+        const subServiceIds = serviceDto.flatMap(ids => ids.subServiceIds);
         const subServiceDocuments = await this._serviceOfferedRepository.findSubServicesByIds(subServiceIds);
 
         const prices = subServiceDocuments.flatMap(sub => {
@@ -324,13 +324,13 @@ export class BookingService implements IBookingService {
     }
 
     // !TODO
-    async updateBooking(dto: UpdateBookingDto): Promise<IResponse<IBookingResponse>> {
+    async updateBooking(updateBookingDto: UpdateBookingDto): Promise<IResponse<IBookingResponse>> {
         const updatedBooking = await this._bookingRepository.findOneAndUpdate(
-            { _id: dto.bookingId },
+            { _id: updateBookingDto.bookingId },
             {
                 $set: {
-                    transactionId: dto.transactionId ?? null,
-                    paymentStatus: dto.transactionId ? PaymentStatus.PAID : PaymentStatus.UNPAID,
+                    transactionId: updateBookingDto.transactionId ?? null,
+                    paymentStatus: updateBookingDto.transactionId ? PaymentStatus.PAID : PaymentStatus.UNPAID,
                 }
             },
             { new: true }
@@ -390,11 +390,11 @@ export class BookingService implements IBookingService {
         }
     }
 
-    async updateBookingPaymentStatus(dto: UpdateBookingPaymentStatusDto): Promise<IResponse<boolean>> {
+    async updateBookingPaymentStatus(updatePaymentDto: UpdateBookingPaymentStatusDto): Promise<IResponse<boolean>> {
         const result = await this._bookingRepository.updatePaymentStatus(
-            dto.bookingId,
-            dto.paymentStatus,
-            dto.transactionId
+            updatePaymentDto.bookingId,
+            updatePaymentDto.paymentStatus,
+            updatePaymentDto.transactionId
         );
 
         return {
@@ -404,11 +404,11 @@ export class BookingService implements IBookingService {
         }
     }
 
-    async addReview(dto: AddReviewDto): Promise<IResponse> {
+    async addReview(addReviewDto: AddReviewDto): Promise<IResponse> {
         const isAdded = await this._bookingRepository.addReview(
-            dto.bookingId,
-            dto.description,
-            dto.ratings
+            addReviewDto.bookingId,
+            addReviewDto.description,
+            addReviewDto.ratings
         );
 
         return {

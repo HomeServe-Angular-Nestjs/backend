@@ -2,11 +2,11 @@ import { OTP_MAPPER } from '@core/constants/mappers.constant';
 import { OTP_REPOSITORY_INTERFACE_NAME } from '@core/constants/repository.constant';
 import { MAILER_UTILITY_INTERFACE_NAME } from '@core/constants/utility.constant';
 import { IOtpMapper } from '@core/dto-mapper/interface/otp.mapper';
-import { ErrorCodes } from '@core/enum/error.enum';
+import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
 import { IOtpRepository } from '@core/repositories/interfaces/otp-repo.interface';
 import { IMailerUtility } from '@core/utilities/interface/mailer.utility.interface';
 import { IOtpService } from '@modules/auth/services/interfaces/otp-service.interface';
-import { BadRequestException, Inject, Injectable, InternalServerErrorException } from '@nestjs/common';``
+import { BadRequestException, Inject, Injectable, InternalServerErrorException } from '@nestjs/common'; ``
 
 @Injectable()
 export class OtpService implements IOtpService {
@@ -48,14 +48,14 @@ export class OtpService implements IOtpService {
     if (!otp) {
       throw new BadRequestException({
         code: ErrorCodes.VALIDATION_FAILED,
-        message: 'OTP expired. Please try again.',
+        message: ErrorMessage.OTP_EXPIRED,
       });
     }
 
     if (otp.code !== code) {
       throw new BadRequestException({
         code: ErrorCodes.VALIDATION_FAILED,
-        message: 'Invalid OTP. Please try again.',
+        message: ErrorMessage.INVALID_OTP,
       });
     }
 

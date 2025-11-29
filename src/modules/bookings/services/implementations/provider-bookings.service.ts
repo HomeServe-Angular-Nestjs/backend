@@ -1,16 +1,4 @@
 import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException, } from '@nestjs/common';
-import { ADMIN_REPOSITORY_NAME, ADMIN_SETTINGS_REPOSITORY_NAME, BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SERVICE_OFFERED_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME, WALLET_REPOSITORY_NAME } from '../../../../core/constants/repository.constant';
-import { IBookedService, IBookingDetailProvider, IBookingInvoice, IBookingOverviewChanges, IBookingOverviewData, IResponseProviderBookingLists, IReviewDetails, IReviewFilter, IReviewWithPagination } from '../../../../core/entities/interfaces/booking.entity.interface';
-import { BookingStatus, CancelStatus, DateRange, PaymentStatus } from '../../../../core/enum/bookings.enum';
-import { ICustomLogger } from '../../../../core/logger/interface/custom-logger.interface';
-import { ILoggerFactory, LOGGER_FACTORY } from '../../../../core/logger/interface/logger-factory.interface';
-import { IResponse } from '../../../../core/misc/response.util';
-import { IBookingRepository } from '../../../../core/repositories/interfaces/bookings-repo.interface';
-import { ICustomerRepository } from '../../../../core/repositories/interfaces/customer-repo.interface';
-import { IServiceOfferedRepository } from '../../../../core/repositories/interfaces/serviceOffered-repo.interface';
-import { ITransactionRepository } from '../../../../core/repositories/interfaces/transaction-repo.interface';
-import { FilterFields, ReviewFilterDto } from '../../dtos/booking.dto';
-import { IProviderBookingService } from '../interfaces/provider-booking-service.interface';
 import { BOOKING_MAPPER, CUSTOMER_MAPPER, PROVIDER_MAPPER, SERVICE_OFFERED_MAPPER, TRANSACTION_MAPPER } from '@core/constants/mappers.constant';
 import { IBookingMapper } from '@core/dto-mapper/interface/bookings.mapper.interface';
 import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
@@ -29,6 +17,18 @@ import { IProviderRepository } from '@core/repositories/interfaces/provider-repo
 import { UPLOAD_UTILITY_NAME } from '@core/constants/utility.constant';
 import { IUploadsUtility } from '@core/utilities/interface/upload.utility.interface';
 import { IServiceOfferedMapper } from '@core/dto-mapper/interface/serviceOffered.mapper.interface';
+import { IProviderBookingService } from '@modules/bookings/services/interfaces/provider-booking-service.interface';
+import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
+import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
+import { ADMIN_REPOSITORY_NAME, ADMIN_SETTINGS_REPOSITORY_NAME, BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SERVICE_OFFERED_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME, WALLET_REPOSITORY_NAME } from '@core/constants/repository.constant';
+import { IServiceOfferedRepository } from '@core/repositories/interfaces/serviceOffered-repo.interface';
+import { IBookingRepository } from '@core/repositories/interfaces/bookings-repo.interface';
+import { ICustomerRepository } from '@core/repositories/interfaces/customer-repo.interface';
+import { ITransactionRepository } from '@core/repositories/interfaces/transaction-repo.interface';
+import { IBookedService, IBookingDetailProvider, IBookingInvoice, IBookingOverviewChanges, IBookingOverviewData, IResponseProviderBookingLists, IReviewDetails, IReviewFilter, IReviewWithPagination } from '@core/entities/interfaces/booking.entity.interface';
+import { FilterFields, ReviewFilterDto } from '@modules/bookings/dtos/booking.dto';
+import { BookingStatus, CancelStatus, DateRange, PaymentStatus } from '@core/enum/bookings.enum';
+import { IResponse } from '@core/misc/response.util';
 
 @Injectable()
 export class ProviderBookingService implements IProviderBookingService {
@@ -143,11 +143,11 @@ export class ProviderBookingService implements IProviderBookingService {
         ).flat();
     }
 
-    async fetchBookingsList(id: string, page: number = 1, filters: FilterFields): Promise<IResponseProviderBookingLists> {
+    async fetchBookingsList(providerId: string, page: number = 1, filters: FilterFields): Promise<IResponseProviderBookingLists> {
         const limit = 5;
         const skip = (page - 1) * limit;
 
-        const bookingDocuments = await this._bookingRepository.findBookingsByProviderId(id);
+        const bookingDocuments = await this._bookingRepository.findBookingsByProviderId(providerId);
         if (!bookingDocuments.length) {
             return {
                 bookingData: [],
@@ -255,8 +255,8 @@ export class ProviderBookingService implements IProviderBookingService {
         }
     }
 
-    async fetchOverviewData(id: string): Promise<IBookingOverviewData> {
-        const bookings = await this._bookingRepository.find({ providerId: id });
+    async fetchOverviewData(providerId: string): Promise<IBookingOverviewData> {
+        const bookings = await this._bookingRepository.find({ providerId });
         const now = new Date();
 
         const getMonthRange = (date: Date) => ({
@@ -639,18 +639,18 @@ export class ProviderBookingService implements IProviderBookingService {
         const isCancelled = await this._bookingRepository.isAlreadyRequestedForCancellation(bookingId);
         if (isCancelled) throw new BadRequestException({
             code: ErrorCodes.BAD_REQUEST,
-            message: 'This booking is already cancelled'
+            message: ErrorMessage.BOOKING_ALREADY_CANCELLED
         });
 
         const updated = await this._bookingRepository.updateBookingStatus(bookingId, newStatus);
         if (!updated) throw new BadRequestException({
             code: ErrorCodes.BAD_REQUEST,
-            message: 'Booking is already cancelled.'
+            message: ErrorMessage.BOOKING_ALREADY_CANCELLED
         });
 
         return {
             success: updated,
-            message: 'Status updated successfully.',
+            message: ErrorMessage.BOOKING_ALREADY_CANCELLED
         }
     }
 }

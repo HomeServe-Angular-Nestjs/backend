@@ -1,9 +1,7 @@
 import { IDisplayReviews, IProvider, IProviderCardWithPagination, UserType } from '@core/entities/interfaces/user.entity.interface';
 import { UploadsType } from '@core/enum/uploads.enum';
 import { IResponse } from '@core/misc/response.util';
-import {
-  FilterDto, GetProvidersFromLocationSearch, SlotDto, UpdateBioDto
-} from '@modules/providers/dtos/provider.dto';
+import { FilterDto, GetProvidersFromLocationSearch, SlotDto, UpdateBioDto } from '@modules/providers/dtos/provider.dto';
 
 export interface IProviderServices {
   getProviders(customerId: string, filter: FilterDto): Promise<IResponse<IProviderCardWithPagination>>;
@@ -11,7 +9,7 @@ export interface IProviderServices {
   getReviews(providerId: string, count: number): Promise<IResponse<IDisplayReviews>>;
   fetchOneProvider(id: string): Promise<IProvider>;
   bulkUpdateProvider(id: string, updateData: Partial<IProvider>, file?: Express.Multer.File,): Promise<IProvider>;
-  updateBio(providerId: string, dto: UpdateBioDto): Promise<IResponse<IProvider>>;
+  updateBio(providerId: string, updateBioDto: UpdateBioDto): Promise<IResponse<IProvider>>;
   uploadCertificate(providerId: string, label: string, file: Express.Multer.File): Promise<IResponse<IProvider>>;
   updateDefaultSlot(slot: SlotDto, providerId: string): Promise<IProvider>;
   partialUpdate(id: string, updateData: Partial<IProvider>): Promise<IProvider>;

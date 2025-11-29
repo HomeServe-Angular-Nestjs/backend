@@ -7,9 +7,9 @@ import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-fa
 import { IPayload } from '@core/misc/payload.interface';
 import { IResponse } from '@core/misc/response.util';
 import { ISubscriptionService } from '@modules/subscriptions/services/interface/subscription-service.interface';
-import { CreateSubscriptionDto, IUpdatePaymentStatusDto, } from '../dto/subscription.dto';
 import { PlanRoleEnum } from '@core/enum/subscription.enum';
 import { isValidIdPipe } from '@core/pipes/is-valid-id.pipe';
+import { CreateSubscriptionDto, UpdatePaymentStatusDto } from '@modules/subscriptions/dto/subscription.dto';
 
 @Controller('subscription')
 export class SubscriptionController {
@@ -25,9 +25,9 @@ export class SubscriptionController {
     }
 
     @Post('')
-    async createSubscription(@Req() req: Request, @Body() dto: CreateSubscriptionDto): Promise<IResponse<ISubscription>> {
+    async createSubscription(@Req() req: Request, @Body() createSubscriptionDto: CreateSubscriptionDto): Promise<IResponse<ISubscription>> {
         const user = req.user as IPayload;
-        return await this._subscriptionService.createSubscription(user.sub, user.type, dto);
+        return await this._subscriptionService.createSubscription(user.sub, user.type, createSubscriptionDto);
     }
 
     @Get('')
@@ -43,15 +43,15 @@ export class SubscriptionController {
     }
 
     @Post('upgrade')
-    async upgradeSubscription(@Req() req: Request, @Body() dto: CreateSubscriptionDto): Promise<IResponse<ISubscription>> {
+    async upgradeSubscription(@Req() req: Request, @Body() createSubscriptionDto: CreateSubscriptionDto): Promise<IResponse<ISubscription>> {
         const user = req.user as IPayload;
-        return await this._subscriptionService.upgradeSubscription(user.sub, user.type, dto);
+        return await this._subscriptionService.upgradeSubscription(user.sub, user.type, createSubscriptionDto);
     }
 
     @Patch('payment_status')
-    async updatePaymentStatus(@Req() req: Request, @Body() dto: IUpdatePaymentStatusDto): Promise<IResponse> {
+    async updatePaymentStatus(@Req() req: Request, @Body() updatePaymentStatusDto: UpdatePaymentStatusDto): Promise<IResponse> {
         const user = req.user as IPayload;
-        return await this._subscriptionService.updatePaymentStatus(user.sub, user.type, dto);
+        return await this._subscriptionService.updatePaymentStatus(user.sub, user.type, updatePaymentStatusDto);
     }
 
     @Delete(':subscriptionId')

@@ -1,11 +1,10 @@
-import { ConflictException, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
-
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { PLAN_REPOSITORY_INTERFACE_NAME } from '@core/constants/repository.constant';
 import { IPlan } from '@core/entities/interfaces/plans.entity.interface';
-import { ErrorMessage } from '@core/enum/error.enum';
+import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
 import { IResponse } from '@core/misc/response.util';
 import { IPlanRepository } from '@core/repositories/interfaces/plans-repo.interface';
-import { GetOnePlanDto, SavePlanDto, UpdatePlanDto, UpdatePlanStatusDto } from '@modules/plans/dto/plans.dto';
+import { GetOnePlanDto, UpdatePlanStatusDto } from '@modules/plans/dto/plans.dto';
 import { IPlanService } from '@modules/plans/services/interfaces/plan-service.interface';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
@@ -37,11 +36,14 @@ export class PlanService implements IPlanService {
         }
     }
 
-    async fetchOnePlan(dto: GetOnePlanDto): Promise<IResponse<IPlan>> {
-        const plan = await this._planRepository.findOne({ _id: dto.planId, isDeleted: false });
+    async fetchOnePlan(getPlanDto: GetOnePlanDto): Promise<IResponse<IPlan>> {
+        const plan = await this._planRepository.findPlan(getPlanDto.planId);
 
         if (!plan) {
-            throw new NotFoundException(ErrorMessage.DOCUMENT_NOT_FOUND);
+            throw new NotFoundException({
+                code: ErrorCodes.NOT_FOUND,
+                message: ErrorMessage.DOCUMENT_NOT_FOUND
+            });
         }
 
         return {
@@ -51,15 +53,18 @@ export class PlanService implements IPlanService {
         }
     }
 
-    async updateStatus(dto: UpdatePlanStatusDto): Promise<IResponse<IPlan>> {
-        const updatedPlan = await this._planRepository.findOneAndUpdate(
-            { _id: dto.id },
-            { $set: { isActive: !dto.status } },
+    async updateStatus(updatePlanDto: UpdatePlanStatusDto): Promise<IResponse<IPlan>> {
+        const updatedPlan = await this._planRepository.updatePlan(
+            { id: updatePlanDto.id },
+            { isActive: !updatePlanDto },
             { new: true }
         );
 
         if (!updatedPlan) {
-            throw new NotFoundException(ErrorMessage.DOCUMENT_NOT_FOUND);
+            throw new NotFoundException({
+                code: ErrorCodes.NOT_FOUND,
+                message: ErrorMessage.DOCUMENT_NOT_FOUND
+            });
         }
 
         return {

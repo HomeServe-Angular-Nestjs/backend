@@ -12,13 +12,13 @@ export class SignUpController {
   ) { }
 
   @Post('initiate_signup')
-  async initiateSignup(@Body() dto: InitiateSignupDto) {
-    await this._signupService.initiateSignup(dto);
+  async initiateSignup(@Body() initiateSignupDto: InitiateSignupDto) {
+    await this._signupService.initiateSignup(initiateSignupDto);
     return { success: true, message: 'OTP send to email.' };
   }
 
   @Post('verify_otp')
-  async completeSignup(@Body() dto: CompleteSignupDto) {
-    return await this._signupService.verifyOtpAndCreateUser(dto);
+  async completeSignup(@Body() completeSignupDto: CompleteSignupDto) {
+    return await this._signupService.verifyOtpAndCreateUser(completeSignupDto);
   }
 }
