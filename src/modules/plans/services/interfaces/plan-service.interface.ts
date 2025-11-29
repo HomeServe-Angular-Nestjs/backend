@@ -4,6 +4,6 @@ import { GetOnePlanDto, UpdatePlanStatusDto } from '@modules/plans/dto/plans.dto
 
 export interface IPlanService {
     fetchPlans(): Promise<IResponse<IPlan[]>>;
-    fetchOnePlan(dto: GetOnePlanDto): Promise<IResponse<IPlan>>
-    updateStatus(dto: UpdatePlanStatusDto): Promise<IResponse>;
+    fetchOnePlan(getPlanDto: GetOnePlanDto): Promise<IResponse<IPlan>>
+    updateStatus(updatePlan: UpdatePlanStatusDto): Promise<IResponse>;
 }

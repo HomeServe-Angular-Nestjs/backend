@@ -1,16 +1,15 @@
+import { BadRequestException, Body, Controller, Get, Inject, Patch, Put, Query, Req, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { FilterDto, GetProvidersFromLocationSearch, GetReviewsDto, RemoveCertificateDto, SlotDto, UpdateBioDto, UpdatePasswordDto, UploadCertificateDto, UploadGalleryImageDto } from '@modules/providers/dtos/provider.dto';
 import { Request } from 'express';
 import { PROVIDER_SERVICE_NAME } from '@core/constants/service.constant';
-import { IProvider, IProviderCardWithPagination } from '@core/entities/interfaces/user.entity.interface';
-import { ErrorMessage } from '@core/enum/error.enum';
+import { IProvider } from '@core/entities/interfaces/user.entity.interface';
+import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
 import { IPayload } from '@core/misc/payload.interface';
-import { BadRequestException, Body, Controller, Get, Inject, Patch, Put, Query, Req, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { FilterDto, GetProvidersFromLocationSearch, GetReviewsDto, RemoveCertificateDto, SlotDto, UpdateBioDto, UpdatePasswordDto, UploadCertificateDto, UploadGalleryImageDto } from '../dtos/provider.dto';
-import { IProviderServices } from '../services/interfaces/provider-service.interface';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
-import { SubscriptionGuard } from '@core/guards/subscription.guard';
 import { IResponse } from '@core/misc/response.util';
+import { IProviderServices } from '@modules/providers/services/interfaces/provider-service.interface';
 
 @Controller('provider')
 export class ProviderController {
@@ -26,16 +25,14 @@ export class ProviderController {
         this.logger = this._loggerFactory.createLogger(ProviderController.name);
     }
 
-    private _getUSer(req: Request): IPayload {
+    private _getUser(req: Request): IPayload {
         return req.user as IPayload;
     }
 
     @Get('fetch_providers')
-    async fetchProviders(@Req() req: Request, @Query() dto: FilterDto & GetProvidersFromLocationSearch) {
-        const user = this._getUSer(req);
-        const { lat, lng, title, page, ...filter } = dto;
-
-        console.log(dto)
+    async fetchProviders(@Req() req: Request, @Query() providerLocationWithFilterDto: FilterDto & GetProvidersFromLocationSearch) {
+        const user = this._getUser(req);
+        const { lat, lng, title, page, ...filter } = providerLocationWithFilterDto;
 
         if (lat && lng && title) {
             const locationSearch = { lat, lng, title };
@@ -46,35 +43,38 @@ export class ProviderController {
     }
 
     @Get('fetch_one_provider')
-    async fetchOneProvider(@Req() req: Request, @Query() query: { id: string | null }): Promise<IProvider> {
-        const user = req.user as IPayload;
-        let id = user.sub;
+    async fetchOneProvider(@Req() req: Request, @Query() query: { userId: string | null }): Promise<IProvider> {
+        const user = this._getUser(req);
+        let userId = user.sub;
 
-        if (query && query.id !== null && query.id !== 'null') {
-            id = query.id;
+        if (query && query.userId !== null && query.userId !== 'null') {
+            userId = query.userId;
         }
 
-        return await this._providerServices.fetchOneProvider(id);
+        return await this._providerServices.fetchOneProvider(userId);
     }
 
     @Get('reviews')
-    async getReviews(@Query() dto: GetReviewsDto) {
-        return await this._providerServices.getReviews(dto.providerId, dto.count);
+    async getReviews(@Query() getReviewsDto: GetReviewsDto) {
+        return await this._providerServices.getReviews(getReviewsDto.providerId, getReviewsDto.count);
     }
 
     @Put('bio')
-    async updateBio(@Req() req: Request, @Body() dto: UpdateBioDto) {
-        const user = req.user as IPayload;
-        return await this._providerServices.updateBio(user.sub, dto);
+    async updateBio(@Req() req: Request, @Body() updateBioDto: UpdateBioDto) {
+        const user = this._getUser(req);
+        return await this._providerServices.updateBio(user.sub, updateBioDto);
     }
 
     @Put('cert_upload')
     @UseInterceptors(FileInterceptor('doc'))
     async uploadCertificate(@Req() req: Request, @Body() { label }: UploadCertificateDto, @UploadedFile() file: Express.Multer.File) {
-        const user = req.user as IPayload;
+        const user = this._getUser(req);
 
         if (!label || !file) {
-            throw new BadRequestException(ErrorMessage.MISSING_FIELDS);
+            throw new BadRequestException({
+                code: ErrorCodes.BAD_REQUEST,
+                message: ErrorMessage.MISSING_FIELDS
+            });
         }
 
         return await this._providerServices.uploadCertificate(user.sub, label, file);
@@ -83,18 +83,22 @@ export class ProviderController {
     // Performs a bulk update of provider data, including optional avatar upload.
     @Patch('update_provider')
     @UseInterceptors(FileInterceptor('providerAvatar'))
-    async bulkUpdateProvider(@Req() req: Request, @Body('providerData') dto: string, @UploadedFile() file: Express.Multer.File,): Promise<IProvider> {
-        const user = req.user as IPayload;
-        const updateData = JSON.parse(dto);
+    async bulkUpdateProvider(@Req() req: Request, @Body('providerData') providerDetailsDto: string, @UploadedFile() file: Express.Multer.File,): Promise<IProvider> {
+        const user = this._getUser(req);
+        const updateData = JSON.parse(providerDetailsDto);
 
         return await this._providerServices.bulkUpdateProvider(user.sub, updateData, file);
     }
 
     @Patch('partial_update')
-    async partialUpdate(@Body() dto: Partial<IProvider>): Promise<IProvider> {
-        const { id, ...updateData } = dto;
+    async partialUpdate(@Body() providerDto: Partial<IProvider>): Promise<IProvider> {
+        const { id, ...updateData } = providerDto;
         if (!id) {
-            throw new BadRequestException('Id is is not found in the request');
+            this.logger.error('provider id is missing.');
+            throw new BadRequestException({
+                code: ErrorCodes.BAD_REQUEST,
+                message: ErrorMessage.MISSING_FIELDS
+            });
         }
 
         return this._providerServices.partialUpdate(id, updateData);
@@ -117,22 +121,21 @@ export class ProviderController {
     }
 
     @Get('work_images')
-    // @UseGuards(SubscriptionGuard)
     async getWorkImage(@Req() req: Request) {
-        const user = req.user as IPayload;
+        const user = this._getUser(req);
         return await this._providerServices.getWorkImages(user.sub);
     }
 
     @Patch('gallery_upload')
     @UseInterceptors(FileInterceptor('gallery_image'))
-    async uploadWorkImage(@Req() req: Request, @Body() dto: UploadGalleryImageDto, @UploadedFile() file: Express.Multer.File) {
-        const user = req.user as IPayload;
-        return await this._providerServices.uploadWorkImage(user.sub, user.type, dto.type, file);
+    async uploadWorkImage(@Req() req: Request, @Body() uploadImageDto: UploadGalleryImageDto, @UploadedFile() file: Express.Multer.File) {
+        const user = this._getUser(req);
+        return await this._providerServices.uploadWorkImage(user.sub, user.type, uploadImageDto.type, file);
     }
 
     @Patch('update_password')
     async updatePassword(@Req() req: Request, @Body() { currentPassword, newPassword }: UpdatePasswordDto): Promise<IResponse> {
-        const user = req.user as IPayload;
+        const user = this._getUser(req);
         return await this._providerServices.updatePassword(user.sub, currentPassword, newPassword);
     }
 

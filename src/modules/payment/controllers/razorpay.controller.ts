@@ -10,6 +10,7 @@ import { CreateOrderDto, BookingPaymentVerifyDto, SubscriptionPaymentVerifyDto }
 import { IRazorPaymentService } from '@modules/payment/services/interfaces/razorpay-service.interface';
 import { BadRequestException, Body, Controller, Inject, InternalServerErrorException, Post, Req, UnauthorizedException, UseGuards, } from '@nestjs/common';
 import { OngoingPaymentGuard } from '@core/guards/ongoing-payment.guard';
+import { ClientUserType } from '@core/entities/interfaces/user.entity.interface';
 
 @Controller('payment')
 export class RazorpayController {
@@ -39,7 +40,7 @@ export class RazorpayController {
                 throw new BadRequestException('Invalid amount: must be a positive number');
             }
 
-            return this._paymentService.createOrder(user.sub, user.type, numericAmount);
+            return this._paymentService.createOrder(user.sub, user.type as ClientUserType, numericAmount);
         } catch (err) {
             this.logger.error(`Error making the payment: ${err.message}`, err.stack);
             throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
@@ -47,30 +48,36 @@ export class RazorpayController {
     }
 
     @Post('verify_booking')
-    async handleBookingPaymentVerification(@Req() req: Request, @Body() dto: BookingPaymentVerifyDto) {
+    async handleBookingPaymentVerification(@Req() req: Request, @Body() bookingPaymentVerifyDto: BookingPaymentVerifyDto) {
         const user = req.user as IPayload;
 
-        const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = dto.verifyData;
+        const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = bookingPaymentVerifyDto.verifyData;
 
         if (![razorpay_order_id, razorpay_payment_id, razorpay_signature].every(v => v?.trim())) {
             this.logger.warn(`Missing payment fields: orderId=${razorpay_order_id}, paymentId=${razorpay_payment_id}`);
-            throw new BadRequestException('Missing or invalid payment verification fields.');
+            throw new BadRequestException({
+                code: ErrorCodes.BAD_REQUEST,
+                message: ErrorMessage.PAYMENT_VERIFICATION_FAILED
+            });
         }
 
-        return await this._paymentService.handleBookingPayment(user.sub, user.type, dto.verifyData, dto.orderData);
+        return await this._paymentService.handleBookingPayment(user.sub, user.type as ClientUserType, bookingPaymentVerifyDto.verifyData, bookingPaymentVerifyDto.orderData);
     }
 
     @Post('verify_subscription')
-    async handleSubscriptionPaymentVerification(@Req() req: Request, @Body() dto: SubscriptionPaymentVerifyDto) {
+    async handleSubscriptionPaymentVerification(@Req() req: Request, @Body() subscriptionPaymentDto: SubscriptionPaymentVerifyDto) {
         const user = req.user as IPayload;
 
-        const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = dto.verifyData;
+        const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = subscriptionPaymentDto.verifyData;
 
         if (![razorpay_order_id, razorpay_payment_id, razorpay_signature].every(v => v?.trim())) {
             this.logger.warn(`Missing payment fields: orderId=${razorpay_order_id}, paymentId=${razorpay_payment_id}`);
-            throw new BadRequestException('Missing or invalid payment verification fields.');
+            throw new BadRequestException({
+                code: ErrorCodes.BAD_REQUEST,
+                message: ErrorMessage.PAYMENT_VERIFICATION_FAILED
+            });
         }
 
-        return await this._paymentService.handleSubscriptionPayment(user.sub, user.type, dto.verifyData, dto.orderData);
+        return await this._paymentService.handleSubscriptionPayment(user.sub, user.type as ClientUserType, subscriptionPaymentDto.verifyData, subscriptionPaymentDto.orderData);
     }
 }

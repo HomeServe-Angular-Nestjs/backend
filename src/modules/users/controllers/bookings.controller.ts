@@ -1,15 +1,11 @@
 import { ADMIN_BOOKINGS_SERVICE_NAME } from '@core/constants/service.constant';
-import {
-    IBookingStats, IPaginatedBookingsResponse
-} from '@core/entities/interfaces/booking.entity.interface';
+import { IBookingStats, IPaginatedBookingsResponse } from '@core/entities/interfaces/booking.entity.interface';
 import { ErrorMessage } from '@core/enum/error.enum';
 import { CustomLogger } from '@core/logger/implementation/custom-logger';
 import { IResponse } from '@core/misc/response.util';
 import { BookingReportDownloadDto, GetBookingsFilter } from '@modules/users/dtos/admin-user.dto';
-import {
-    IAdminBookingService
-} from '@modules/users/services/interfaces/admin-bookings-service.interface';
-import { Body, Controller, Get, Header, Inject, InternalServerErrorException, Post, Query, Res } from '@nestjs/common';
+import { IAdminBookingService } from '@modules/users/services/interfaces/admin-bookings-service.interface';
+import { Body, Controller, Get, Inject, InternalServerErrorException, Post, Query, Res } from '@nestjs/common';
 import { Response } from 'express';
 
 @Controller('admin/bookings')
@@ -22,30 +18,20 @@ export class AdminBookingController {
     ) { }
 
     @Get('')
-    async getBookings(@Query() dto: GetBookingsFilter): Promise<IResponse<IPaginatedBookingsResponse>> {
-        try {
-            return await this._adminBookingService.fetchBookings(dto);
-        } catch (err) {
-            this.logger.error(`Error fetching bookings table details: ${err.message}`, err.stack);
-            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
-        }
+    async getBookings(@Query() getBookingsFilterDto: GetBookingsFilter): Promise<IResponse<IPaginatedBookingsResponse>> {
+        return await this._adminBookingService.fetchBookings(getBookingsFilterDto);
     }
 
     @Get('stats')
     async getBookingStats(): Promise<IResponse<IBookingStats>> {
-        try {
-            return await this._adminBookingService.getBookingStats();
-        } catch (err) {
-            this.logger.error(`Error fetching bookings stats: ${err.message}`, err.stack);
-            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
-        }
+        return await this._adminBookingService.getBookingStats();
     }
 
     @Post('download_report')
-    async downloadBookingReport(@Res() res: Response, @Body() dto: BookingReportDownloadDto): Promise<void> {
+    async downloadBookingReport(@Res() res: Response, @Body() bookingReportDownloadDto: BookingReportDownloadDto): Promise<void> {
         try {
             const start = Date.now();
-            const pdfBuffer = await this._adminBookingService.downloadBookingReport(dto);
+            const pdfBuffer = await this._adminBookingService.downloadBookingReport(bookingReportDownloadDto);
             this.logger.debug(`[Admin] - PDF Generation Time: ${Date.now() - start}ms`);
 
             res.set({

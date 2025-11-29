@@ -19,8 +19,8 @@ export class ProviderRepository extends BaseRepository<ProviderDocument> impleme
   }
 
 
-  async findByGoogleId(id: string): Promise<ProviderDocument | null> {
-    return await this._providerModel.findOne({ googleId: id });
+  async findByGoogleId(googleId: string): Promise<ProviderDocument | null> {
+    return await this._providerModel.findOne({ googleId });
   }
 
   async updateGoogleId(email: string, googleId: string): Promise<ProviderDocument | null> {

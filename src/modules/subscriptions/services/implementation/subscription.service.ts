@@ -6,7 +6,7 @@ import { ErrorCodes, ErrorMessage } from '@/core/enum/error.enum';
 import { IResponse } from '@/core/misc/response.util';
 import { IPlanRepository } from '@/core/repositories/interfaces/plans-repo.interface';
 import { ISubscriptionRepository } from '@/core/repositories/interfaces/subscription-repo.interface';
-import { CreateSubscriptionDto, IUpdatePaymentStatusDto } from '@modules/subscriptions/dto/subscription.dto';
+import { CreateSubscriptionDto, UpdatePaymentStatusDto } from '@modules/subscriptions/dto/subscription.dto';
 import { ISubscriptionService } from '@modules/subscriptions/services/interface/subscription-service.interface';
 import { PLAN_MAPPER, SUBSCRIPTION_MAPPER } from '@core/constants/mappers.constant';
 import { ISubscriptionMapper } from '@core/dto-mapper/interface/subscription.mapper.interface';
@@ -72,14 +72,14 @@ export class SubscriptionService implements ISubscriptionService {
         return Math.floor(yearlyPrice - creditAmount);
     }
 
-    async createSubscription(userId: string, userType: string, dto: CreateSubscriptionDto): Promise<IResponse<ISubscription>> {
+    async createSubscription(userId: string, userType: string, createSubscriptionDto: CreateSubscriptionDto): Promise<IResponse<ISubscription>> {
         const isSubscriptionExists = await this._subscriptionRepository.findActiveSubscriptionByUserId(userId, userType);
 
         if (isSubscriptionExists) {
             throw new ConflictException(ErrorMessage.DOCUMENT_ALREADY_EXISTS);
         }
 
-        const plan = await this._planRepository.findById(dto.planId);
+        const plan = await this._planRepository.findById(createSubscriptionDto.planId);
         if (!plan) throw new NotFoundException({
             code: ErrorCodes.NOT_FOUND,
             message: ErrorMessage.DOCUMENT_NOT_FOUND
@@ -88,17 +88,17 @@ export class SubscriptionService implements ISubscriptionService {
         const newSubscription = await this._subscriptionRepository.create(
             this._subscriptionMapper.toDocument({
                 userId,
-                planId: dto.planId,
+                planId: createSubscriptionDto.planId,
                 transactionId: null,
                 name: plan.name,
-                role: dto.role,
-                price: dto.price,
-                duration: dto.duration,
-                features: dto.features,
-                startTime: new Date(dto.startTime),
+                role: createSubscriptionDto.role,
+                price: createSubscriptionDto.price,
+                duration: createSubscriptionDto.duration,
+                features: createSubscriptionDto.features,
+                startTime: new Date(createSubscriptionDto.startTime),
                 isActive: false,
                 isDeleted: false,
-                paymentStatus: dto.paymentStatus,
+                paymentStatus: createSubscriptionDto.paymentStatus,
                 cancelledAt: null,
                 endDate: new Date()
             })
@@ -169,7 +169,7 @@ export class SubscriptionService implements ISubscriptionService {
         }
     }
 
-    async upgradeSubscription(userId: string, userType: string, dto: CreateSubscriptionDto): Promise<IResponse<ISubscription>> {
+    async upgradeSubscription(userId: string, userType: string, createSubscriptionDto: CreateSubscriptionDto): Promise<IResponse<ISubscription>> {
         const isSubscriptionExists = await this._subscriptionRepository.findActiveSubscriptionByUserId(userId, userType);
         if (!isSubscriptionExists) {
             throw new BadRequestException({
@@ -178,7 +178,7 @@ export class SubscriptionService implements ISubscriptionService {
             });
         }
 
-        const plan = await this._planRepository.findById(dto.planId);
+        const plan = await this._planRepository.findById(createSubscriptionDto.planId);
         if (!plan) {
             throw new NotFoundException(ErrorMessage.DOCUMENT_NOT_FOUND);
         }
@@ -192,18 +192,18 @@ export class SubscriptionService implements ISubscriptionService {
         const newSubscription = await this._subscriptionRepository.create(
             this._subscriptionMapper.toDocument({
                 userId,
-                planId: dto.planId,
+                planId: createSubscriptionDto.planId,
                 transactionId: null,
                 name: plan.name,
-                role: dto.role,
-                price: dto.price,
-                duration: dto.duration,
-                features: dto.features,
+                role: createSubscriptionDto.role,
+                price: createSubscriptionDto.price,
+                duration: createSubscriptionDto.duration,
+                features: createSubscriptionDto.features,
                 startTime: new Date(),
-                endDate: new Date(dto.endDate),
+                endDate: new Date(createSubscriptionDto.endDate),
                 isActive: false,
                 isDeleted: false,
-                paymentStatus: dto.paymentStatus,
+                paymentStatus: createSubscriptionDto.paymentStatus,
                 cancelledAt: null
             })
         );
@@ -219,7 +219,7 @@ export class SubscriptionService implements ISubscriptionService {
         }
     }
 
-    async updatePaymentStatus(userId: string, userType: string, data: IUpdatePaymentStatusDto): Promise<IResponse> {
+    async updatePaymentStatus(userId: string, userType: string, data: UpdatePaymentStatusDto): Promise<IResponse> {
         const subscriptionDoc = await this._subscriptionRepository.findSubscriptionById(data.subscriptionId);
 
         if (!subscriptionDoc) throw new NotFoundException({

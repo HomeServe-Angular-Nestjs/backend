@@ -14,9 +14,9 @@ import { BookingOrderData, RazorpayVerifyData, SubscriptionOrderData } from '@mo
 import { IRazorPaymentService } from '@modules/payment/services/interfaces/razorpay-service.interface';
 import { PaymentDirection, TransactionStatus, TransactionType } from '@core/enum/transaction.enum';
 import { IWalletRepository } from '@core/repositories/interfaces/wallet-repo.interface';
-import { ErrorCodes } from '@core/enum/error.enum';
+import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
 import { IAdminSettingsRepository } from '@core/repositories/interfaces/admin-settings-repo.interface';
-import { ICustomer, IProvider, UserType } from '@core/entities/interfaces/user.entity.interface';
+import { ClientUserType, ICustomer, IProvider, UserType } from '@core/entities/interfaces/user.entity.interface';
 import { ICustomerMapper } from '@core/dto-mapper/interface/customer.mapper..interface';
 import { IProviderMapper } from '@core/dto-mapper/interface/provider.mapper.interface';
 import { CustomerDocument } from '@core/schema/customer.schema';
@@ -61,7 +61,7 @@ export class RazorPaymentService implements IRazorPaymentService {
         this.logger = this._loggerFactory.createLogger(RazorPaymentService.name);
     }
 
-    private async _getUser(userId: string, role: string): Promise<IProvider | ICustomer> {
+    private async _getUser(userId: string, role: ClientUserType): Promise<IProvider | ICustomer> {
         const repo = role === 'customer' ? this._customerRepository : this._providerRepository;
         if (!repo) throw new BadRequestException({
             code: ErrorCodes.BAD_REQUEST,
@@ -196,7 +196,7 @@ export class RazorPaymentService implements IRazorPaymentService {
         return await this._paymentService.createOrder(amount, currency);
     }
 
-    async handleBookingPayment(userId: string, role: UserType, verifyData: RazorpayVerifyData, orderData: BookingOrderData): Promise<IVerifiedBookingsPayment> {
+    async handleBookingPayment(userId: string, role: ClientUserType, verifyData: RazorpayVerifyData, orderData: BookingOrderData): Promise<IVerifiedBookingsPayment> {
         const key = this._paymentLockingUtility.generatePaymentKey(userId, role);
         try {
             const user = await this._getUser(userId, role);
@@ -209,7 +209,7 @@ export class RazorPaymentService implements IRazorPaymentService {
 
             if (!verified) throw new BadRequestException({
                 code: ErrorCodes.BAD_REQUEST,
-                message: 'Payment verification failed'
+                message: ErrorMessage.PAYMENT_VERIFICATION_FAILED
             });
 
             let transaction: ITransaction | null = null;
@@ -223,7 +223,8 @@ export class RazorPaymentService implements IRazorPaymentService {
             }
 
             if (!transaction) {
-                throw new InternalServerErrorException('Transaction could not be created.');
+                this.logger.error('Transaction could not be created.');
+                throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR)
             }
 
             await this._walletRepository.bulkUpdate(transaction);
@@ -233,7 +234,7 @@ export class RazorPaymentService implements IRazorPaymentService {
         }
     }
 
-    async handleSubscriptionPayment(userId: string, role: UserType, verifyData: RazorpayVerifyData, orderData: SubscriptionOrderData): Promise<IVerifiedSubscriptionPayment> {
+    async handleSubscriptionPayment(userId: string, role: ClientUserType, verifyData: RazorpayVerifyData, orderData: SubscriptionOrderData): Promise<IVerifiedSubscriptionPayment> {
         const key = this._paymentLockingUtility.generatePaymentKey(userId, role);
         try {
             const verified = this._paymentService.verifySignature(
@@ -244,7 +245,7 @@ export class RazorPaymentService implements IRazorPaymentService {
 
             if (!verified) throw new BadRequestException({
                 code: ErrorCodes.BAD_REQUEST,
-                message: 'Payment verification failed'
+                message: ErrorMessage.PAYMENT_VERIFICATION_FAILED
             });
 
             const user = await this._getUser(userId, role);
@@ -261,7 +262,8 @@ export class RazorPaymentService implements IRazorPaymentService {
             }
 
             if (!transaction) {
-                throw new InternalServerErrorException('Transaction could not be created.');
+                this.logger.error('Transaction could not be created.');
+                throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR)
             }
 
             await this._walletRepository.bulkUpdate(transaction);

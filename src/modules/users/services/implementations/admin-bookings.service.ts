@@ -1,27 +1,19 @@
-import {
-    BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME
-} from '@/core/constants/repository.constant';
-import {
-    IAdminBookingForTable, IBookingStats, IPaginatedBookingsResponse
-} from '@/core/entities/interfaces/booking.entity.interface';
+import { Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME } from '@/core/constants/repository.constant';
+import { IAdminBookingForTable, IBookingStats, IPaginatedBookingsResponse } from '@/core/entities/interfaces/booking.entity.interface';
 import { ErrorMessage } from '@/core/enum/error.enum';
 import { IResponse } from '@/core/misc/response.util';
 import { IBookingRepository } from '@/core/repositories/interfaces/bookings-repo.interface';
 import { ICustomerRepository } from '@/core/repositories/interfaces/customer-repo.interface';
 import { IProviderRepository } from '@/core/repositories/interfaces/provider-repo.interface';
 import { PDF_SERVICE } from '@core/constants/service.constant';
-import { IBookingMatrixData, IBookingReportData, IReportDownloadBookingData, ReportCategoryType } from '@core/entities/interfaces/admin.entity.interface';
+import { IBookingMatrixData, IBookingReportData, ReportCategoryType } from '@core/entities/interfaces/admin.entity.interface';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { createBookingReportTableTemplate, IBookingTableTemplate } from '@core/services/pdf/mappers/booking-report.mapper';
 import { IPdfService } from '@core/services/pdf/pdf.interface';
 import { BookingReportDownloadDto, GetBookingsFilter } from '@modules/users/dtos/admin-user.dto';
-import {
-    IAdminBookingService
-} from '@modules/users/services/interfaces/admin-bookings-service.interface';
-import {
-    Inject, Injectable, InternalServerErrorException, NotFoundException
-} from '@nestjs/common';
+import { IAdminBookingService } from '@modules/users/services/interfaces/admin-bookings-service.interface';
 
 @Injectable()
 export class AdminBookingService implements IAdminBookingService {
@@ -84,34 +76,34 @@ export class AdminBookingService implements IAdminBookingService {
         };
     }
 
-    async fetchBookings(dto: GetBookingsFilter): Promise<IResponse<IPaginatedBookingsResponse>> {
-        const page = dto.page || 1;
+    async fetchBookings(getBookingsFilter: GetBookingsFilter): Promise<IResponse<IPaginatedBookingsResponse>> {
+        const page = getBookingsFilter.page || 1;
         const limit = 10;
         const skip = (page - 1) * limit;
 
         let bookingFilter: any = {};
 
         // Search by Customer name/email (partial match)
-        if (dto.search && dto.searchBy === 'customer') {
+        if (getBookingsFilter.search && getBookingsFilter.searchBy === 'customer') {
             const customers = await this._customerRepository.find({
                 $or: [
-                    { username: { $regex: dto.search, $options: 'i' } },
-                    { email: { $regex: dto.search, $options: 'i' } },
+                    { username: { $regex: getBookingsFilter.search, $options: 'i' } },
+                    { email: { $regex: getBookingsFilter.search, $options: 'i' } },
                 ],
-            });
+            }); //todo
 
             const customerIds = customers.map((c) => c.id);
             bookingFilter.customerId = { $in: customerIds };
         }
 
         // Filter by booking status
-        if (dto.bookingStatus) {
-            bookingFilter.bookingStatus = dto.bookingStatus;
+        if (getBookingsFilter.bookingStatus) {
+            bookingFilter.bookingStatus = getBookingsFilter.bookingStatus;
         }
 
         // Filter by payment status
-        if (dto.paymentStatus) {
-            bookingFilter.paymentStatus = dto.paymentStatus;
+        if (getBookingsFilter.paymentStatus) {
+            bookingFilter.paymentStatus = getBookingsFilter.paymentStatus;
         }
 
         // Fetch bookings and total count
@@ -162,9 +154,9 @@ export class AdminBookingService implements IAdminBookingService {
         );
 
         let filteredBookings = bookingResponseData;
-        if (dto.search && dto.searchBy === 'id') {
+        if (getBookingsFilter.search && getBookingsFilter.searchBy === 'id') {
             filteredBookings = filteredBookings.filter(b =>
-                b.bookingId.toLowerCase().includes(dto.search.toLowerCase())
+                b.bookingId.toLowerCase().includes(getBookingsFilter.search.toLowerCase())
             );
         }
 

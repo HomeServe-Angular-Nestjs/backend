@@ -7,11 +7,7 @@ import { Server, Socket } from 'socket.io';
 import { CallReceiverDto, SignalPayloadDto } from '@modules/websockets/dto/video-call.dto';
 import { CUSTOM_DTO_VALIDATOR_NAME } from '@core/constants/utility.constant';
 import { ICustomDtoValidator } from '@core/utilities/interface/custom-dto-validator.utility.interface';
-import {
-  AUTH_SOCKET_SERVICE_NAME,
-  USER_SOCKET_STORE_SERVICE_NAME,
-  VIDEO_CALL_SERVICE_NAME,
-} from '@core/constants/service.constant';
+import { AUTH_SOCKET_SERVICE_NAME, USER_SOCKET_STORE_SERVICE_NAME, VIDEO_CALL_SERVICE_NAME, } from '@core/constants/service.constant';
 import { IVideoCallService } from '@modules/websockets/services/interface/video-call-service.interface';
 import { GlobalWsExceptionFilter } from '@core/exception-filters/ws-exception.filters';
 import { IAuthSocketService } from '@modules/websockets/services/interface/auth-socket-service.interface';

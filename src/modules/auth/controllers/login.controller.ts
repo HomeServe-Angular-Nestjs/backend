@@ -28,18 +28,18 @@ export class LoginController {
   }
 
   @Post('auth')
-  async validateCredentials(@Body() dto: AuthLoginDto, @Res({ passthrough: true }) response: Response,) {
-    const user = await this._loginService.validateUserCredentials(dto);
+  async validateCredentials(@Body() loginDto: AuthLoginDto, @Res({ passthrough: true }) response: Response,) {
+    const user = await this._loginService.validateUserCredentials(loginDto);
     if (!user) {
       throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
     }
 
-    const accessToken = this._tokenService.generateAccessToken(user.id, user.email, dto.type);
+    const accessToken = this._tokenService.generateAccessToken(user.id, user.email, loginDto.type);
     if (!accessToken) {
       throw new UnauthorizedException('Access token is missing');
     }
 
-    const refreshToken = await this._tokenService.generateRefreshToken(user.id, user.email, dto.type);
+    const refreshToken = await this._tokenService.generateRefreshToken(user.id, user.email, loginDto.type);
     if (!refreshToken) {
       throw new UnauthorizedException('Refresh token is missing');
     }
@@ -62,13 +62,13 @@ export class LoginController {
   }
 
   @Post('otp_forgot_password')
-  async forgotPassword(@Body() dto: EmailAndTypeDto) {
-    return await this._loginService.requestOtpForForgotPassword(dto);
+  async forgotPassword(@Body() emailAndTypeDto: EmailAndTypeDto) {
+    return await this._loginService.requestOtpForForgotPassword(emailAndTypeDto);
   }
 
   @Post('verify_otp_forgot')
-  async verifyOtpFromForgotPassword(@Body() dto: VerifyOtpForgotPassDto) {
-    const { code, email } = dto;
+  async verifyOtpFromForgotPassword(@Body() verifyDto: VerifyOtpForgotPassDto) {
+    const { code, email } = verifyDto;
     if (!code || !email) throw new BadRequestException({
       code: ErrorCodes.BAD_REQUEST,
       message: 'otp code or email is missing.'
@@ -78,8 +78,8 @@ export class LoginController {
   }
 
   @Put('change_password')
-  async changePassword(@Body() dto: ChangePasswordDto) {
-    await this._loginService.changePassword(dto);
+  async changePassword(@Body() passwordDto: ChangePasswordDto) {
+    await this._loginService.changePassword(passwordDto);
   }
 
   @Get('google/init')

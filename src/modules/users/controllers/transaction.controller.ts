@@ -3,7 +3,7 @@ import { ITransactionStats, ITransactionDataWithPagination } from "@core/entitie
 import { ICustomLogger } from "@core/logger/interface/custom-logger.interface";
 import { ILoggerFactory, LOGGER_FACTORY } from "@core/logger/interface/logger-factory.interface";
 import { IResponse } from "@core/misc/response.util";
-import { PageDto, TransactionReportDownloadDto } from "@modules/users/dtos/admin-user.dto";
+import { TransactionReportDownloadDto } from "@modules/users/dtos/admin-user.dto";
 import { IAdminTransactionService } from "@modules/users/services/interfaces/admin-transaction-service.interface";
 import { ProviderWalletFilterDto } from "@modules/wallet/dto/wallet.dto";
 import { Body, Controller, Get, Inject, Post, Query, Res } from "@nestjs/common";
@@ -23,9 +23,9 @@ export class AdminTransactionController {
     }
 
     @Post('download_report')
-    async downloadTransactionReport(@Res() res: Response, @Body() dto: TransactionReportDownloadDto): Promise<void> {
+    async downloadTransactionReport(@Res() res: Response, @Body() transactionReportDownloadDto: TransactionReportDownloadDto): Promise<void> {
         const start = Date.now();
-        const pdfBuffer = await this._adminTransactionService.downloadTransactionReport(dto);
+        const pdfBuffer = await this._adminTransactionService.downloadTransactionReport(transactionReportDownloadDto);
         this.logger.debug(`[Admin] - PDF Generation Time: ${Date.now() - start}ms`);
 
         res.set({

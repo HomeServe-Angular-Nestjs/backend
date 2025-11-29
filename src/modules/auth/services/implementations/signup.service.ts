@@ -34,34 +34,34 @@ export class SignupService implements ISignupService {
   }
 
   // Initiates signup
-  async initiateSignup(dto: InitiateSignupDto): Promise<void> {
-    if (await this.checkEmailExistence(dto)) {
+  async initiateSignup(initiateSignupDto: InitiateSignupDto): Promise<void> {
+    if (await this.checkEmailExistence(initiateSignupDto)) {
       throw new ConflictException({
         code: ErrorCodes.CONFLICT,
         message: ErrorMessage.EMAIL_CONFLICT_ERROR
       });
     }
 
-    await this._otpService.generateAndSendOtp(dto.email);
+    await this._otpService.generateAndSendOtp(initiateSignupDto.email);
   }
 
-  async verifyOtpAndCreateUser(dto: CompleteSignupDto): Promise<void> {
+  async verifyOtpAndCreateUser(completeSignupDto: CompleteSignupDto): Promise<void> {
     try {
-      await this._otpService.verifyOtp(dto.email, dto.code);
+      await this._otpService.verifyOtp(completeSignupDto.email, completeSignupDto.code);
 
-      const hashedPassword = await this._argon.hash(dto.password);
+      const hashedPassword = await this._argon.hash(completeSignupDto.password);
 
-      if (dto.type === 'customer') {
+      if (completeSignupDto.type === 'customer') {
         await this._customerRepository.create({
-          email: dto.email,
-          username: dto.username,
+          email: completeSignupDto.email,
+          username: completeSignupDto.username,
           password: hashedPassword,
           isActive: true,
         });
-      } else if (dto.type === 'provider') {
+      } else if (completeSignupDto.type === 'provider') {
         await this._providerRepository.create({
-          email: dto.email,
-          username: dto.username,
+          email: completeSignupDto.email,
+          username: completeSignupDto.username,
           password: hashedPassword,
           isActive: true,
         });
@@ -76,12 +76,12 @@ export class SignupService implements ISignupService {
     }
   }
 
-  private async checkEmailExistence(dto: InitiateSignupDto): Promise<boolean> {
+  private async checkEmailExistence(initiateSignupDto: InitiateSignupDto): Promise<boolean> {
     const repository =
-      dto.type === 'customer'
+      initiateSignupDto.type === 'customer'
         ? this._customerRepository
         : this._providerRepository;
-    const existingEntry = await repository.findByEmail(dto.email);
+    const existingEntry = await repository.findByEmail(initiateSignupDto.email);
     return existingEntry ? true : false;
   }
 }

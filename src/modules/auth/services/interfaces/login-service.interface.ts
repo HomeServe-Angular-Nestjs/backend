@@ -3,9 +3,9 @@ import { IUser } from '../../../../core/entities/interfaces/user.entity.interfac
 import { AuthLoginDto, ChangePasswordDto, EmailAndTypeDto, GoogleLoginDto } from '../../dtos/login.dto';
 
 export interface ILoginService {
-  validateUserCredentials(dto: AuthLoginDto): Promise<IUser>;
-  requestOtpForForgotPassword(dto: EmailAndTypeDto): Promise<IResponse>;
+  validateUserCredentials(loginDto: AuthLoginDto): Promise<IUser>;
+  requestOtpForForgotPassword(emailAndType: EmailAndTypeDto): Promise<IResponse>;
   verifyOtpFromForgotPassword(email: string, code: string): Promise<IResponse>;
-  changePassword(dto: ChangePasswordDto): Promise<IResponse>;
+  changePassword(passwordDto: ChangePasswordDto): Promise<IResponse>;
   findOrCreateUser(user: GoogleLoginDto): Promise<IUser>;
 }

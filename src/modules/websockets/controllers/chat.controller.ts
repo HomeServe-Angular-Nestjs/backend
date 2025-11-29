@@ -9,12 +9,8 @@ import { IResponse } from '@/core/misc/response.util';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { GetChatDto } from '@modules/websockets/dto/chat.dto';
-import {
-    IChatSocketService
-} from '@modules/websockets/services/interface/chat-socket-service.interface';
-import {
-    Controller, Get, Inject, InternalServerErrorException, Post, Query, Req, Res, UnauthorizedException
-} from '@nestjs/common';
+import { IChatSocketService } from '@modules/websockets/services/interface/chat-socket-service.interface';
+import { Controller, Get, Inject, InternalServerErrorException, Post, Query, Req, Res, UnauthorizedException } from '@nestjs/common';
 import { ITokenService } from '@modules/auth/services/interfaces/token-service.interface';
 import { UserType } from '@core/entities/interfaces/user.entity.interface';
 
@@ -77,27 +73,22 @@ export class ChatController {
     }
 
     @Get('one')
-    async getChat(@Req() req: Request, @Query() dto: GetChatDto) {
-        try {
-            const user = req.user as IPayload;
-            if (!user.sub || !user.type) {
-                throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
-            }
-
-            const sender: IParticipant = {
-                id: new Types.ObjectId(user.sub),
-                type: user.type,
-            }
-
-            const receiver: IParticipant = {
-                id: new Types.ObjectId(dto.id),
-                type: dto.type as UserType,
-            }
-
-            return await this._chatService.getChat(sender, receiver);
-        } catch (err) {
-            this.logger.error('Error fetching chats: ', err.message, err.stack);
-            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+    async getChat(@Req() req: Request, @Query() getChatDto: GetChatDto) {
+        const user = req.user as IPayload;
+        if (!user.sub || !user.type) {
+            throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
         }
+
+        const sender: IParticipant = {
+            id: new Types.ObjectId(user.sub),
+            type: user.type,
+        }
+
+        const receiver: IParticipant = {
+            id: new Types.ObjectId(getChatDto.id), //todo
+            type: getChatDto.type as UserType,
+        }
+
+        return await this._chatService.getChat(sender, receiver);
     }
 }

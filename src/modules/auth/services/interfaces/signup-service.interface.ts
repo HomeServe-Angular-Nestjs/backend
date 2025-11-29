@@ -1,6 +1,6 @@
 import { CompleteSignupDto, InitiateSignupDto } from '../../dtos/signup.dto';
 
 export interface ISignupService {
-  initiateSignup(dto: InitiateSignupDto): Promise<void>;
-  verifyOtpAndCreateUser(dto: CompleteSignupDto): Promise<void>;
+  initiateSignup(initiateSignupDto: InitiateSignupDto): Promise<void>;
+  verifyOtpAndCreateUser(completeSignupDto: CompleteSignupDto): Promise<void>;
 }

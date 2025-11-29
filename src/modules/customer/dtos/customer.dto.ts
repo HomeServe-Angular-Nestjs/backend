@@ -5,7 +5,7 @@ import {
     ValidateNested
 } from 'class-validator';
 
-export class UpdateSavedProvidersDto {
+export class ProviderIdDto {
     @IsNotEmpty()
     @IsString()
     providerId: string;

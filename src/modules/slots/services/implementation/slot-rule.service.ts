@@ -141,24 +141,24 @@ export class SlotRuleService implements ISlotRuleService {
         );
     }
 
-    async createRule(providerId: string, dto: CreateRuleDto): Promise<IResponse<ISlotRule>> {
+    async createRule(providerId: string, createRuleDto: CreateRuleDto): Promise<IResponse<ISlotRule>> {
 
         const newSlotRule = await this._slotRuleRepository.create({
             providerId: new Types.ObjectId(providerId),
-            name: dto.name,
-            description: dto.description,
-            startDate: new Date(dto.startDate),
-            endDate: new Date(dto.endDate),
-            daysOfWeek: dto.daysOfWeek,
-            startTime: dto.startTime,
-            endTime: dto.endTime,
-            slotDuration: dto.slotDuration,
-            breakDuration: dto.breakDuration,
-            capacity: dto.capacity,
-            isActive: dto.isActive,
-            priority: dto.priority,
-            excludeDates: (dto.excludeDates).map(dateStr => new Date(dateStr))
-        });
+            name: createRuleDto.name,
+            description: createRuleDto.description,
+            startDate: new Date(createRuleDto.startDate),
+            endDate: new Date(createRuleDto.endDate),
+            daysOfWeek: createRuleDto.daysOfWeek,
+            startTime: createRuleDto.startTime,
+            endTime: createRuleDto.endTime,
+            slotDuration: createRuleDto.slotDuration,
+            breakDuration: createRuleDto.breakDuration,
+            capacity: createRuleDto.capacity,
+            isActive: createRuleDto.isActive,
+            priority: createRuleDto.priority,
+            excludeDates: (createRuleDto.excludeDates).map(dateStr => new Date(dateStr))
+        }); //todo
 
         if (!newSlotRule) return {
             success: false,
@@ -238,7 +238,7 @@ export class SlotRuleService implements ISlotRuleService {
         const result = await this._slotRuleRepository.deleteOne({
             _id: ruleId,
             providerId: new Types.ObjectId(providerId)
-        });
+        }); //todo
 
         if (result.deletedCount == 0) {
             this.logger.error(`Rule document of id ${ruleId} was not found.`);

@@ -24,13 +24,13 @@ export class BookingsController {
     }
 
     @Post('price_breakup')
-    async calcPriceBreakup(@Body() dto: SelectedServiceDto[]) {
+    async calcPriceBreakup(@Body() selectedServiceDto: SelectedServiceDto[]) {
         try {
-            if (!dto || dto.length === 0) {
+            if (!selectedServiceDto || selectedServiceDto.length === 0) {
                 throw new BadRequestException(ErrorMessage.MISSING_FIELDS);
             }
 
-            return await this._bookingService.preparePriceBreakup(dto);
+            return await this._bookingService.preparePriceBreakup(selectedServiceDto);
         } catch (err) {
             this.logger.error(`Error while price calculation: ${err}`);
             throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
@@ -38,27 +38,27 @@ export class BookingsController {
     }
 
     @Post('confirm')
-    async handleBooking(@Req() req: Request, @Body() dto: BookingDto) {
+    async handleBooking(@Req() req: Request, @Body() bookingDto: BookingDto) {
         const user = req.user as IPayload;
 
-        if (!Array.isArray(dto.serviceIds) || dto.serviceIds.some(s => !s.id || !Array.isArray(s.selectedIds))) {
+        if (!Array.isArray(bookingDto.serviceIds) || bookingDto.serviceIds.some(s => !s.id || !Array.isArray(s.selectedIds))) {
             throw new BadRequestException('Invalid serviceIds format');
         }
 
-        return this._bookingService.createBooking(user.sub, dto);
+        return this._bookingService.createBooking(user.sub, bookingDto);
     }
 
     @Get('fetch')
-    async fetchBooking(@Req() req: Request, @Query() dto: BookingPaginationFilterDto): Promise<IBookingWithPagination> {
+    async fetchBooking(@Req() req: Request, @Query() bookingDto: BookingPaginationFilterDto): Promise<IBookingWithPagination> {
         const user = req.user as IPayload;
-        const { page } = dto;
+        const { page } = bookingDto;
         return await this._bookingService.fetchBookings(user.sub, page);
     }
 
     @Get('view_details')
-    async getBookingDetails(@Query() dto: BookingIdDto): Promise<IBookingDetailCustomer> {
+    async getBookingDetails(@Query() bookingDto: BookingIdDto): Promise<IBookingDetailCustomer> {
         try {
-            const { bookingId } = dto
+            const { bookingId } = bookingDto
             if (!bookingId) {
                 throw new BadRequestException(ErrorMessage.MISSING_FIELDS);
             }
@@ -71,14 +71,14 @@ export class BookingsController {
     }
 
     @Patch('cancel')
-    async cancelBooking(@Body() dto: CancelBookingDto): Promise<IResponse> {
-        return await this._bookingService.markBookingCancelledByCustomer(dto.bookingId, dto.reason);
+    async cancelBooking(@Body() bookingDto: CancelBookingDto): Promise<IResponse> {
+        return await this._bookingService.markBookingCancelledByCustomer(bookingDto.bookingId, bookingDto.reason);
     }
 
     @Patch('update')
-    async updateBooking(@Body() dto: UpdateBookingDto): Promise<IResponse<IBookingResponse>> {
+    async updateBooking(@Body() bookingDto: UpdateBookingDto): Promise<IResponse<IBookingResponse>> {
         try {
-            return await this._bookingService.updateBooking(dto);
+            return await this._bookingService.updateBooking(bookingDto);
         } catch (err) {
             this.logger.error(`Error cancelling a booking: ${err}`);
             throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
@@ -86,9 +86,9 @@ export class BookingsController {
     }
 
     @Patch('payment_status')
-    async updatePaymentStatus(@Body() dto: UpdateBookingPaymentStatusDto): Promise<IResponse<boolean>> {
+    async updatePaymentStatus(@Body() bookingDto: UpdateBookingPaymentStatusDto): Promise<IResponse<boolean>> {
         try {
-            return await this._bookingService.updateBookingPaymentStatus(dto);
+            return await this._bookingService.updateBookingPaymentStatus(bookingDto);
         } catch (err) {
             this.logger.error(`Error cancelling a booking: ${err}`);
             throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);

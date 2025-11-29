@@ -70,38 +70,38 @@ export class AdminUserManagementService implements IAdminUserManagementService {
         return enriched;
     }
 
-    async getUsers(page: number = 1, dto: Omit<GetUsersWithFilterDto, 'page'>): Promise<IUserDataWithPagination> {
+    async getUsers(page: number = 1, getUserDto: Omit<GetUsersWithFilterDto, 'page'>): Promise<IUserDataWithPagination> {
         const limit = 10;
         const skip = (page - 1) * limit;
 
         const query: { [key: string]: any | string } = { isDeleted: false };
 
-        if (typeof dto.search === 'string') {
-            query.email = new RegExp(dto.search, 'i')
+        if (typeof getUserDto.search === 'string') {
+            query.email = new RegExp(getUserDto.search, 'i')
         }
 
-        if (typeof dto.status === 'boolean') {
-            query.isActive = dto.status
+        if (typeof getUserDto.status === 'boolean') {
+            query.isActive = getUserDto.status
         }
 
-        if (dto.date) {
-            const dayStart = new Date(dto.date);
+        if (getUserDto.date) {
+            const dayStart = new Date(getUserDto.date);
             dayStart.setHours(0, 0, 0, 0);
 
-            const dayEnd = new Date(dto.date);
+            const dayEnd = new Date(getUserDto.date);
             dayEnd.setHours(23, 59, 59, 999);
 
             query.createdAt = { $gte: dayStart, $lte: dayEnd };
         }
 
-        const repo = dto.role === 'customer' ? this._customerRepository : this._providerRepository;
+        const repo = getUserDto.role === 'customer' ? this._customerRepository : this._providerRepository;
         const [userDocuments, total] = await Promise.all([
             repo.find(query, { skip, limit }),
             repo.count(query)
         ]);
 
         let users: ICustomer[] | IProvider[] = [];
-        switch (dto.role) {
+        switch (getUserDto.role) {
             case 'customer':
                 users = (userDocuments ?? []).map((user) => this._customerMapper.toEntity(user));
                 break;
@@ -123,32 +123,32 @@ export class AdminUserManagementService implements IAdminUserManagementService {
         return { data, pagination: { limit, page, total } }
     }
 
-    async updateUserStatus(dto: StatusUpdateDto): Promise<boolean> {
-        const repo = dto.role === 'customer' ? this._customerRepository : this._providerRepository;
+    async updateUserStatus(statusUpdateDto: StatusUpdateDto): Promise<boolean> {
+        const repo = statusUpdateDto.role === 'customer' ? this._customerRepository : this._providerRepository;
 
         const updatedUser = await repo.findOneAndUpdate(
-            { _id: dto.userId },
-            { $set: { isActive: !dto.status } },
+            { _id: statusUpdateDto.userId },
+            { $set: { isActive: !statusUpdateDto.status } },
             { new: true }
-        );
+        ); //todo
 
         if (!updatedUser) {
-            throw new NotFoundException(`${dto.role} with ID ${dto.userId} not found.`);
+            throw new NotFoundException(`${statusUpdateDto.role} with ID ${statusUpdateDto.userId} not found.`);
         }
 
         return !!updatedUser;
     }
 
-    async removeUser(dto: RemoveUserDto): Promise<boolean> {
-        const repo = dto.role === 'customer' ? this._customerRepository : this._providerRepository;
+    async removeUser(removeUserDto: RemoveUserDto): Promise<boolean> {
+        const repo = removeUserDto.role === 'customer' ? this._customerRepository : this._providerRepository;
 
         const deletedUser = await repo.findOneAndUpdate(
-            { _id: dto.userId },
+            { _id: removeUserDto.userId },
             { $set: { isDeleted: true } }
-        );
+        ); //todo
 
         if (!deletedUser) {
-            throw new NotFoundException(`${dto.role} with ID ${dto.userId} not found.`);
+            throw new NotFoundException(`${removeUserDto.role} with ID ${removeUserDto.userId} not found.`);
         }
 
         return !!deletedUser;

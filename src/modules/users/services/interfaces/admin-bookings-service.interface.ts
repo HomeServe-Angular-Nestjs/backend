@@ -1,6 +1,4 @@
-import {
-    IBookingStats, IPaginatedBookingsResponse
-} from '@/core/entities/interfaces/booking.entity.interface';
+import { IBookingStats, IPaginatedBookingsResponse } from '@/core/entities/interfaces/booking.entity.interface';
 import { IResponse } from '@/core/misc/response.util';
 import { BookingReportDownloadDto, GetBookingsFilter } from '@modules/users/dtos/admin-user.dto';
 

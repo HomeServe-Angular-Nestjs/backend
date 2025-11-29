@@ -3,7 +3,6 @@ import { TRANSACTION_REPOSITORY_NAME, WALLET_REPOSITORY_NAME } from "@core/const
 import { ITransactionMapper } from "@core/dto-mapper/interface/transaction.mapper.interface";
 import { IWalletMapper } from "@core/dto-mapper/interface/wallet.mapper.interface";
 import { ITransactionFilter, ITransactionTableData, ITransactionUserTableData } from "@core/entities/interfaces/transaction.entity.interface";
-import { ClientUserType } from "@core/entities/interfaces/user.entity.interface";
 import { IWallet } from "@core/entities/interfaces/wallet.entity.interface";
 import { IResponse } from "@core/misc/response.util";
 import { ITransactionRepository } from "@core/repositories/interfaces/transaction-repo.interface";
