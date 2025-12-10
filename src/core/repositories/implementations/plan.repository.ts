@@ -26,4 +26,12 @@ export class PlanRepository extends BaseRepository<PlanDocument> implements IPla
             upsert: true
         });
     }
+
+    async findPlan(planId: string): Promise<PlanDocument | null> {
+        return this._planModel.findOne({ _id: planId });
+    }
+
+    async updatePlan(filter: Partial<IPlan>, updateData: Partial<IPlan>, options?: { new?: boolean }): Promise<PlanDocument | null> {
+        return this._planModel.findOneAndUpdate(filter, updateData, options);
+    }
 }

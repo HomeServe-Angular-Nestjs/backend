@@ -1,10 +1,10 @@
 import { ADMIN_SETTINGS_MODEL_NAME } from "@core/constants/model.constant";
-import { ErrorCodes, ErrorMessage } from "@core/enum/error.enum";
+import { ErrorCodes } from "@core/enum/error.enum";
 import { ICustomLogger } from "@core/logger/interface/custom-logger.interface";
 import { ILoggerFactory, LOGGER_FACTORY } from "@core/logger/interface/logger-factory.interface";
 import { IAdminSettingsRepository } from "@core/repositories/interfaces/admin-settings-repo.interface";
 import { AdminSettingsDocument } from "@core/schema/admin-settings.schema";
-import { Inject, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 
@@ -33,15 +33,19 @@ export class AdminSettingsRepository implements IAdminSettingsRepository {
     }
 
     async updateSettings(update: Partial<AdminSettingsDocument>): Promise<AdminSettingsDocument> {
+        if (update === undefined || update === null) {
+            throw new BadRequestException("undefined settings provided to update");
+        }
+
         return this._settingsModel.findOneAndUpdate(
             {},
             { $set: update },
             { new: true, upsert: true })
-            .lean().exec();
+            .lean();
     }
 
     async getTax(): Promise<number> {
-        const settings = await this._settingsModel.findOne().lean().exec();
+        const settings = await this._settingsModel.findOne().lean();
         if (!settings || typeof settings.gstPercentage !== 'number') {
             this.logger.error('Failed to get settings or invalid GST value.');
             throw new NotFoundException({
@@ -54,7 +58,7 @@ export class AdminSettingsRepository implements IAdminSettingsRepository {
     }
 
     async getCustomerCommission(): Promise<number> {
-        const settings = await this._settingsModel.findOne().lean().exec();
+        const settings = await this._settingsModel.findOne().lean();
         if (!settings || typeof settings.customerCommission !== 'number') {
             this.logger.error('Failed to get settings or invalid customer commission value.');
             throw new NotFoundException({
@@ -67,7 +71,7 @@ export class AdminSettingsRepository implements IAdminSettingsRepository {
     }
 
     async getProviderCommission(): Promise<number> {
-        const settings = await this._settingsModel.findOne().lean().exec();
+        const settings = await this._settingsModel.findOne().lean();
         if (!settings || typeof settings.providerCommission !== 'number') {
             this.logger.error('Failed to get settings or invalid customer commission value.');
             throw new NotFoundException({

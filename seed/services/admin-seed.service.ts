@@ -1,7 +1,6 @@
 import { Inject, Injectable, InternalServerErrorException, } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { ISeedAdminService } from '../interface/seed-service.interface';
-import { ADMIN_REPOSITORY_NAME, WALLET_REPOSITORY_NAME } from '@core/constants/repository.constant';
+import { ADMIN_REPOSITORY_NAME, ADMIN_SETTINGS_REPOSITORY_NAME, WALLET_REPOSITORY_NAME } from '@core/constants/repository.constant';
 import { IAdminRepository } from '@core/repositories/interfaces/admin-repo.interface';
 import { ARGON_UTILITY_NAME } from '@core/constants/utility.constant';
 import { IArgonUtility } from '@core/utilities/interface/argon.utility.interface';
@@ -14,13 +13,13 @@ import { IAdmin } from '@core/entities/interfaces/admin.entity.interface';
 import { IWalletRepository } from '@core/repositories/interfaces/wallet-repo.interface';
 import { IWalletMapper } from '@core/dto-mapper/interface/wallet.mapper.interface';
 import { AdminDocument } from '@core/schema/admin.schema';
+import { IAdminSettingsRepository } from '@core/repositories/interfaces/admin-settings-repo.interface';
 
 @Injectable()
 export class SeedAdminService implements ISeedAdminService {
   private logger: ICustomLogger;
 
   constructor(
-    private readonly _config: ConfigService,
     @Inject(LOGGER_FACTORY)
     private readonly _loggerFactory: ILoggerFactory,
     @Inject(ADMIN_REPOSITORY_NAME)
@@ -33,6 +32,8 @@ export class SeedAdminService implements ISeedAdminService {
     private readonly _walletRepository: IWalletRepository,
     @Inject(WALLET_MAPPER)
     private readonly _walletMapper: IWalletMapper,
+    @Inject(ADMIN_SETTINGS_REPOSITORY_NAME)
+    private readonly _adminSettingsRepository: IAdminSettingsRepository,
   ) {
     this.logger = this._loggerFactory.createLogger(SeedAdminService.name);
   }
@@ -57,10 +58,19 @@ export class SeedAdminService implements ISeedAdminService {
       let savedAdmin: AdminDocument | null;
 
       if (existingAdmin) {
-        savedAdmin = await this._adminRepository.findOneAndUpdate(
-          { email },
-          { password: hashedPassword }
-        );
+        let [admin, settings] = await Promise.all([
+          this._adminRepository.findOneAndUpdate(
+            { email },
+            { password: hashedPassword }
+          ),
+          this._adminSettingsRepository.updateSettings({
+            gstPercentage: 18,
+            providerCommission: 10,
+            customerCommission: 10
+          })
+        ]);
+
+        savedAdmin = admin;
 
         this.logger.log('Admin updated successfully');
       } else {
