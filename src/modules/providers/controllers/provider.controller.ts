@@ -43,14 +43,13 @@ export class ProviderController {
     }
 
     @Get('fetch_one_provider')
-    async fetchOneProvider(@Req() req: Request, @Query() query: { userId: string | null }): Promise<IProvider> {
+    async fetchOneProvider(@Req() req: Request, @Query() query: { providerId: string | null }): Promise<IProvider> {
         const user = this._getUser(req);
         let userId = user.sub;
 
-        if (query && query.userId !== null && query.userId !== 'null') {
-            userId = query.userId;
+        if (query && query.providerId !== null && query.providerId !== 'null') {
+            userId = query.providerId;
         }
-
         return await this._providerServices.fetchOneProvider(userId);
     }
 

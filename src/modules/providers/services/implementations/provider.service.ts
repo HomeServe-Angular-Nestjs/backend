@@ -193,13 +193,13 @@ export class ProviderServices implements IProviderServices {
     }
   }
 
-  async fetchOneProvider(id: string): Promise<IProvider> {
-    const providerDoc = await this._providerRepository.findById(id);
+  async fetchOneProvider(providerId: string): Promise<IProvider> {
+    const providerDoc = await this._providerRepository.findById(providerId);
 
     if (!providerDoc) throw new NotFoundException({
       code: ErrorCodes.NOT_FOUND,
       message: 'Provider not found'
-    })
+    });
 
     const provider = this._providerMapper.toEntity(providerDoc);
     provider.avatar = provider?.avatar ? this._uploadsUtility.getSignedImageUrl(provider.avatar) : '';

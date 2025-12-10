@@ -7,12 +7,12 @@ export interface IProviderServices {
   getProviders(customerId: string, filter: FilterDto): Promise<IResponse<IProviderCardWithPagination>>;
   getProvidersLocationBasedSearch(searchData: GetProvidersFromLocationSearch): Promise<IResponse<IProviderCardWithPagination>>
   getReviews(providerId: string, count: number): Promise<IResponse<IDisplayReviews>>;
-  fetchOneProvider(id: string): Promise<IProvider>;
+  fetchOneProvider(providerId: string): Promise<IProvider>;
   bulkUpdateProvider(id: string, updateData: Partial<IProvider>, file?: Express.Multer.File,): Promise<IProvider>;
   updateBio(providerId: string, updateBioDto: UpdateBioDto): Promise<IResponse<IProvider>>;
   uploadCertificate(providerId: string, label: string, file: Express.Multer.File): Promise<IResponse<IProvider>>;
   updateDefaultSlot(slot: SlotDto, providerId: string): Promise<IProvider>;
-  partialUpdate(id: string, updateData: Partial<IProvider>): Promise<IProvider>;
+  partialUpdate(providerId: string, updateData: Partial<IProvider>): Promise<IProvider>;
   removeCertificate(providerId: string, docId: string): Promise<IResponse<IProvider>>;
   deleteDefaultSlot(id: string): Promise<void>;
   getWorkImages(providerId: string): Promise<IResponse<string[]>>;

@@ -467,6 +467,13 @@ export class ProviderBookingService implements IProviderBookingService {
 
         const booking = this._bookingMapper.toEntity(bookingDoc);
 
+        if (booking.bookingStatus !== BookingStatus.COMPLETED) {
+            throw new BadRequestException({
+                code: ErrorCodes.BAD_REQUEST,
+                message: 'Booking is not completed.'
+            });
+        }
+
         const services = await this._getBookedServices(booking.services);
 
         let user: IProvider | ICustomer;
