@@ -1,6 +1,6 @@
 import { IEntity } from '@core/entities/base/interfaces/base-entity.entity.interface';
 import { IPagination } from '@core/entities/interfaces/booking.entity.interface';
-import { PaymentDirection, PaymentSource, TransactionStatus, TransactionType } from '@core/enum/transaction.enum';
+import { CurrencyType, PaymentDirection, PaymentSource, TransactionStatus, TransactionType } from '@core/enum/transaction.enum';
 
 export interface ITransaction extends IEntity {
     userId: string;
@@ -9,7 +9,7 @@ export interface ITransaction extends IEntity {
     source: PaymentSource;
     status: TransactionStatus;
     amount: number;
-    currency: string;
+    currency: CurrencyType;
     gateWayDetails: IGatewayDetails | null;
     userDetails: ITxUserDetails | null;
     metadata?: ITransactionMetadata | null;

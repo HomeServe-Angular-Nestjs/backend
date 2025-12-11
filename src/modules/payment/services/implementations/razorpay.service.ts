@@ -1,6 +1,6 @@
 import { BadRequestException, ForbiddenException, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
-import { ADMIN_SETTINGS_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SUBSCRIPTION_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME, WALLET_REPOSITORY_NAME } from '@core/constants/repository.constant';
-import { CUSTOMER_MAPPER, PROVIDER_MAPPER, SUBSCRIPTION_MAPPER, TRANSACTION_MAPPER } from '@core/constants/mappers.constant';
+import { ADMIN_SETTINGS_REPOSITORY_NAME, BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SUBSCRIPTION_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME, WALLET_LEDGER_REPOSITORY_NAME, WALLET_REPOSITORY_NAME } from '@core/constants/repository.constant';
+import { CUSTOMER_MAPPER, PROVIDER_MAPPER, SUBSCRIPTION_MAPPER, TRANSACTION_MAPPER, WALLET_LEDGER_MAPPER, WALLET_MAPPER } from '@core/constants/mappers.constant';
 import { PAYMENT_LOCKING_UTILITY_NAME, PAYMENT_UTILITY_NAME } from '@core/constants/utility.constant';
 import { ITransactionMapper } from '@core/dto-mapper/interface/transaction.mapper.interface';
 import { IRazorpayOrder, ITransaction, ITxUserDetails, IVerifiedBookingsPayment, IVerifiedSubscriptionPayment } from '@core/entities/interfaces/transaction.entity.interface';
@@ -12,7 +12,7 @@ import { ITransactionRepository } from '@core/repositories/interfaces/transactio
 import { IPaymentGateway } from '@core/utilities/interface/razorpay.utility.interface';
 import { BookingOrderData, RazorpayVerifyData, SubscriptionOrderData } from '@modules/payment/dtos/payment.dto';
 import { IRazorPaymentService } from '@modules/payment/services/interfaces/razorpay-service.interface';
-import { PaymentDirection, TransactionStatus, TransactionType } from '@core/enum/transaction.enum';
+import { CurrencyType, PaymentDirection, PaymentSource, TransactionStatus, TransactionType } from '@core/enum/transaction.enum';
 import { IWalletRepository } from '@core/repositories/interfaces/wallet-repo.interface';
 import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
 import { IAdminSettingsRepository } from '@core/repositories/interfaces/admin-settings-repo.interface';
@@ -25,6 +25,13 @@ import { ISubscriptionRepository } from '@core/repositories/interfaces/subscript
 import { ISubscription } from '@core/entities/interfaces/subscription.entity.interface';
 import { ISubscriptionMapper } from '@core/dto-mapper/interface/subscription.mapper.interface';
 import { IPaymentLockingUtility } from '@core/utilities/interface/payment-locking.utility';
+import { TransactionDocument } from '@core/schema/bookings.schema';
+import { IWalletLedgerRepository } from '@core/repositories/interfaces/wallet-ledger.repo.interface';
+import { IWalletLedgerMapper } from '@core/dto-mapper/interface/wallet-ledger.mapper.interface';
+import { v4 as uuid } from 'uuid';
+import { IWalletMapper } from '@core/dto-mapper/interface/wallet.mapper.interface';
+import { IBookingRepository } from '@core/repositories/interfaces/bookings-repo.interface';
+import { PaymentStatus } from '@core/enum/bookings.enum';
 
 @Injectable()
 export class RazorPaymentService implements IRazorPaymentService {
@@ -57,6 +64,14 @@ export class RazorPaymentService implements IRazorPaymentService {
         private readonly _subscriptionMapper: ISubscriptionMapper,
         @Inject(PAYMENT_LOCKING_UTILITY_NAME)
         private readonly _paymentLockingUtility: IPaymentLockingUtility,
+        @Inject(WALLET_LEDGER_REPOSITORY_NAME)
+        private readonly _walletLedgerRepository: IWalletLedgerRepository,
+        @Inject(WALLET_LEDGER_MAPPER)
+        private readonly _walletLedgerMapper: IWalletLedgerMapper,
+        @Inject(WALLET_MAPPER)
+        private readonly _walletMapper: IWalletMapper,
+        @Inject(BOOKING_REPOSITORY_NAME)
+        private readonly _bookingRepository: IBookingRepository,
     ) {
         this.logger = this._loggerFactory.createLogger(RazorPaymentService.name);
     }
@@ -106,7 +121,7 @@ export class RazorPaymentService implements IRazorPaymentService {
         return this._subscriptionMapper.toEntity(subscriptionDoc);
     }
 
-    private async _settleBookingPayment(orderData: BookingOrderData, user: ITxUserDetails & { id: string }, verifyData: RazorpayVerifyData,): Promise<ITransaction> {
+    private async _settleBookingPayment(orderData: BookingOrderData, user: ITxUserDetails & { id: string }, verifyData: RazorpayVerifyData,): Promise<ITransaction | null> {
         const totalAmount = orderData.amount;
         const commissionRate = await this._adminSettingsRepository.getCustomerCommission();
         const gstRate = await this._adminSettingsRepository.getTax();
@@ -122,13 +137,14 @@ export class RazorPaymentService implements IRazorPaymentService {
         // Provider’s share
         const providerAmount = baseAmount - commission;
 
-        const customerTxDoc = await this._transactionRepository.create(
+        const customerTxDoc: TransactionDocument | null = await this._transactionRepository.createNewTransaction(
+            orderData.bookingId,
             this._transactionMapper.toDocument({
                 userId: user.id,
-                transactionType: TransactionType.BOOKING,
+                transactionType: TransactionType.BOOKING_PAYMENT,
                 direction: PaymentDirection.DEBIT,
                 amount: totalAmount,
-                currency: 'INR',
+                currency: CurrencyType.INR,
                 source: orderData.source,
                 status: orderData.status,
                 gateWayDetails: {
@@ -142,22 +158,23 @@ export class RazorPaymentService implements IRazorPaymentService {
                     bookingId: orderData.bookingId,
                     breakup: { providerAmount, commission, gst: gstAmount }
                 }
-            })
+            }),
         );
 
-        return this._transactionMapper.toEntity(customerTxDoc);
+        return customerTxDoc ? this._transactionMapper.toEntity(customerTxDoc) : null;
     }
 
-    private async _settleSubscriptionPayment(userDetails: ITxUserDetails & { id: string }, subscription: ISubscription, orderData: SubscriptionOrderData, verifyData: RazorpayVerifyData): Promise<ITransaction> {
-        const subscriptionTnx = await this._transactionRepository.create(
+    private async _settleSubscriptionPayment(userDetails: ITxUserDetails & { id: string }, subscription: ISubscription, orderData: SubscriptionOrderData, verifyData: RazorpayVerifyData): Promise<ITransaction | null> {
+        const subscriptionTnx = await this._transactionRepository.createNewTransaction(
+            subscription.id, //todo: change this
             this._transactionMapper.toDocument({
                 userId: userDetails.id,
-                transactionType: TransactionType.SUBSCRIPTION,
+                transactionType: TransactionType.SUBSCRIPTION_PAYMENT,
                 direction: PaymentDirection.CREDIT,
                 source: orderData.source,
                 status: TransactionStatus.SUCCESS,
                 amount: orderData.amount,
-                currency: 'INR',
+                currency: CurrencyType.INR,
                 gateWayDetails: {
                     orderId: verifyData.razorpay_order_id,
                     paymentId: verifyData.razorpay_payment_id,
@@ -176,7 +193,100 @@ export class RazorPaymentService implements IRazorPaymentService {
             })
         );
 
-        return this._transactionMapper.toEntity(subscriptionTnx);
+        return subscriptionTnx ? this._transactionMapper.toEntity(subscriptionTnx) : null;
+    }
+
+    private async _applyPaymentWalletMovements(userId: string, role: UserType, orderData: BookingOrderData, transaction: ITransaction, verifyData: RazorpayVerifyData): Promise<void> {
+        const adminWalletDoc = await this._walletRepository.getAdminWallet();
+
+        if (!adminWalletDoc) {
+            this.logger.error('Failed to get admin wallet.');
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+        }
+
+        const adminWallet = this._walletMapper.toEntity(adminWalletDoc);
+        const journalId = uuid();
+
+        await this._walletLedgerRepository.create(
+            this._walletLedgerMapper.toDocument({
+                walletId: adminWallet.id,
+                userId: adminWallet.userId,
+                userRole: 'admin',
+                direction: PaymentDirection.CREDIT,
+                type: TransactionType.BOOKING_PAYMENT,
+                amount: transaction.amount,
+                currency: CurrencyType.INR,
+                balanceBefore: adminWallet.balance,
+                balanceAfter: adminWallet.balance + transaction.amount,
+                journalId,
+                bookingId: orderData.bookingId,
+                bookingTransactionId: transaction.id,
+                subscriptionId: null,
+                subscriptionTransactionId: null,
+                gatewayOrderId: orderData.id,
+                gatewayPaymentId: verifyData.razorpay_payment_id,
+                source: orderData.source,
+                metadata: {
+                    breakup: transaction.metadata?.breakup,
+                },
+            }),
+        );
+
+        const adminWalletUpdated = await this._walletRepository.updateAdminAmount(transaction.amount);
+
+        if (!adminWalletUpdated) {
+            this.logger.error('Failed to update admin wallet.');
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+        }
+
+        if (orderData.source !== PaymentSource.WALLET) {
+            return;
+        }
+
+        const userWalletDoc = await this._walletRepository.findWallet(userId);
+
+        if (!userWalletDoc) {
+            this.logger.error('Failed to get user wallet.');
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+        }
+
+        const userWallet = this._walletMapper.toEntity(userWalletDoc);
+
+        await this._walletLedgerRepository.create(
+            this._walletLedgerMapper.toDocument({
+                walletId: userWallet.id,
+                userId: userWallet.userId,
+                userRole: role,
+                direction: PaymentDirection.DEBIT,
+                type: orderData.transactionType,
+                amount: transaction.amount,
+                currency: CurrencyType.INR,
+                balanceBefore: userWallet.balance,
+                balanceAfter: userWallet.balance - transaction.amount,
+                journalId,
+                bookingId: orderData.bookingId,
+                bookingTransactionId: transaction.id,
+                subscriptionId: null,
+                subscriptionTransactionId: null,
+                gatewayOrderId: orderData.id,
+                gatewayPaymentId: verifyData.razorpay_payment_id,
+                source: orderData.source,
+                metadata: {
+                    breakup: transaction.metadata?.breakup,
+                },
+            }),
+        );
+
+        const userWalletUpdated = await this._walletRepository.updateUserAmount(
+            userId,
+            role,
+            -transaction.amount,
+        );
+
+        if (!userWalletUpdated) {
+            this.logger.error('Failed to update user wallet.');
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+        }
     }
 
     async createOrder(userId: string, role: UserType, amount: number, currency: string = 'INR'): Promise<IRazorpayOrder> {
@@ -198,37 +308,60 @@ export class RazorPaymentService implements IRazorPaymentService {
 
     async handleBookingPayment(userId: string, role: ClientUserType, verifyData: RazorpayVerifyData, orderData: BookingOrderData): Promise<IVerifiedBookingsPayment> {
         const key = this._paymentLockingUtility.generatePaymentKey(userId, role);
+
         try {
             const user = await this._getUser(userId, role);
 
             const verified = this._paymentService.verifySignature(
                 verifyData.razorpay_order_id,
                 verifyData.razorpay_payment_id,
-                verifyData.razorpay_signature
+                verifyData.razorpay_signature,
             );
 
-            if (!verified) throw new BadRequestException({
-                code: ErrorCodes.BAD_REQUEST,
-                message: ErrorMessage.PAYMENT_VERIFICATION_FAILED
-            });
+            if (!verified) {
+                throw new BadRequestException({
+                    code: ErrorCodes.BAD_REQUEST,
+                    message: ErrorMessage.PAYMENT_VERIFICATION_FAILED,
+                });
+            }
 
             let transaction: ITransaction | null = null;
-            if (orderData.transactionType === TransactionType.BOOKING) {
-                transaction = await this._settleBookingPayment(orderData, {
-                    contact: user.phone,
-                    email: user.email,
-                    id: user.id,
-                    role
-                }, verifyData);
+
+            if (orderData.transactionType === TransactionType.BOOKING_PAYMENT) {
+                transaction = await this._settleBookingPayment(
+                    orderData,
+                    {
+                        contact: user.phone,
+                        email: user.email,
+                        id: user.id,
+                        role,
+                    },
+                    verifyData,
+                );
             }
 
             if (!transaction) {
-                this.logger.error('Transaction could not be created.');
-                throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR)
+                this.logger.error('Failed to create transaction for booking payment.');
+                throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
             }
 
-            await this._walletRepository.bulkUpdate(transaction);
+            await this._applyPaymentWalletMovements(
+                userId,
+                role,
+                orderData,
+                transaction,
+                verifyData,
+            );
+
+            const updatePaymentStatus = await this._bookingRepository.updatePaymentStatus(orderData.bookingId, PaymentStatus.PAID);
+            if (!updatePaymentStatus) {
+                this.logger.error('Failed to update payment status for booking payment.');
+                throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+            }
+
             return { verified, bookingId: orderData.bookingId, transaction };
+        } catch (error) {
+            throw error;
         } finally {
             await this._paymentLockingUtility.releaseLock(key);
         }
@@ -252,7 +385,7 @@ export class RazorPaymentService implements IRazorPaymentService {
             const subscription = await this._getSubscription(orderData.subscriptionId);
 
             let transaction: ITransaction | null = null;
-            if (orderData.transactionType === TransactionType.SUBSCRIPTION) {
+            if (orderData.transactionType === TransactionType.SUBSCRIPTION_PAYMENT) {
                 transaction = await this._settleSubscriptionPayment(
                     { id: user.id, contact: user.phone, email: user.email, role },
                     subscription,
@@ -266,7 +399,7 @@ export class RazorPaymentService implements IRazorPaymentService {
                 throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR)
             }
 
-            await this._walletRepository.bulkUpdate(transaction);
+            // await this._walletRepository.bulkUpdate(transaction);
             return { verified, subscriptionId: subscription.id, transaction };
         } finally {
             await this._paymentLockingUtility.releaseLock(key);

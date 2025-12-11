@@ -1,7 +1,7 @@
 import { ITransaction } from "@core/entities/interfaces/transaction.entity.interface";
-import { TransactionDocument } from "@core/schema/transaction.schema";
+import { TransactionDocument } from "@core/schema/bookings.schema";
 
 export interface ITransactionMapper {
     toEntity(doc: TransactionDocument): ITransaction;
-    toDocument(entity: Omit<ITransaction, 'id'>): Partial<TransactionDocument>;
+    toDocument(entity: Partial<ITransaction>): Partial<TransactionDocument>;
 }

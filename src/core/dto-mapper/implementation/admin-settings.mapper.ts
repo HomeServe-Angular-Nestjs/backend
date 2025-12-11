@@ -12,7 +12,9 @@ export class AdminSettingsMapper implements IAdminSettingMapper {
             id: (doc._id as Types.ObjectId).toString(),
             gstPercentage: doc.gstPercentage,
             providerCommission: doc.providerCommission,
-            customerCommission: doc.customerCommission
+            customerCommission: doc.customerCommission,
+            cancellationFee: doc.cancellationFee,
+            providerCancellationFine: doc.providerCancellationFine,
         });
     }
 
@@ -20,7 +22,9 @@ export class AdminSettingsMapper implements IAdminSettingMapper {
         return {
             gstPercentage: entity.gstPercentage,
             providerCommission: entity.providerCommission,
-            customerCommission: entity.customerCommission
+            customerCommission: entity.customerCommission,
+            cancellationFee: entity.cancellationFee,
+            providerCancellationFine: entity.providerCancellationFine,
         }
     }
 }

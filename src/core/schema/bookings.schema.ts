@@ -3,6 +3,8 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { BookingStatus, CancelStatus, PaymentStatus } from '../enum/bookings.enum';
 import { SlotStatusEnum } from '@core/enum/slot.enum';
 import { CUSTOMER_MODEL_NAME, SERVICE_OFFERED_MODEL_NAME } from '@core/constants/model.constant';
+import { CurrencyType, PaymentDirection, PaymentSource, TransactionStatus, TransactionType } from '@core/enum/transaction.enum';
+import { IGatewayDetails, ITxUserDetails } from '@core/entities/interfaces/transaction.entity.interface';
 
 @Schema()
 export class ReviewDocument {
@@ -55,6 +57,112 @@ export class SlotDocument {
         enum: Object.values(SlotStatusEnum)
     })
     status: SlotStatusEnum
+}
+
+@Schema({ timestamps: true })
+export class TransactionDocument {
+    _id?: Types.ObjectId;
+
+    @Prop({
+        type: Types.ObjectId,
+        required: true
+    })
+    userId: Types.ObjectId;
+
+    @Prop({
+        type: String,
+        required: true,
+        enum: Object.values(TransactionType)
+    })
+    transactionType: TransactionType
+
+    @Prop({
+        type: String,
+        enum: Object.values(PaymentDirection),
+        required: true
+    })
+    direction: PaymentDirection;
+
+    @Prop({
+        type: String,
+        enum: Object.values(PaymentSource),
+        required: true
+    })
+    source: PaymentSource;
+
+    @Prop({
+        type: String,
+        enum: Object.values(TransactionStatus),
+        required: true
+    })
+    status: TransactionStatus;
+
+    @Prop({
+        type: Number,
+        required: true
+    })
+    amount: number;
+
+    @Prop({
+        type: String,
+        default: CurrencyType.INR,
+        enum: Object.values(CurrencyType)
+    })
+    currency: CurrencyType;
+
+    @Prop({
+        type: {
+            orderId: { type: String, },
+            paymentId: { type: String },
+            signature: { type: String },
+            receipt: { type: String },
+        },
+        default: null,
+        _id: false,
+    })
+    gateWayDetails: IGatewayDetails | null;
+
+    @Prop({
+        type: {
+            email: { type: String },
+            contact: { type: String },
+            role: { type: String },
+            _id: false
+        }
+    })
+    userDetails: ITxUserDetails | null;
+
+    @Prop({
+        type: {
+            bookingId: { type: Types.ObjectId },
+            subscriptionId: { type: Types.ObjectId },
+            breakup: {
+                type: {
+                    providerAmount: { type: Number },
+                    commission: { type: Number },
+                    gst: { type: Number },
+                },
+                default: null
+            }
+        },
+        default: null,
+        _id: false
+    })
+    metadata: {
+        bookingId: Types.ObjectId | null;
+        subscriptionId: Types.ObjectId | null;
+        breakup: {
+            providerAmount: number | null;
+            commission: number | null;
+            gst: number | null;
+        }
+    } | null;
+
+    @Prop({ type: Date })
+    createdAt: Date;
+
+    @Prop({ type: Date })
+    updatedAt: Date;
 }
 
 @Schema({ timestamps: true })
@@ -121,8 +229,8 @@ export class BookingDocument extends Document {
         subserviceIds: Types.ObjectId[];
     }[];
 
-    @Prop({ type: Types.ObjectId, default: null })
-    transactionId: Types.ObjectId | null;
+    @Prop({ type: [TransactionDocument], default: [] })
+    transactionHistory: TransactionDocument[];
 
     @Prop({ type: String, enum: PaymentStatus, default: PaymentStatus.UNPAID })
     paymentStatus: PaymentStatus;

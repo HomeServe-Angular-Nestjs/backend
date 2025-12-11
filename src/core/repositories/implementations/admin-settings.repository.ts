@@ -2,6 +2,7 @@ import { ADMIN_SETTINGS_MODEL_NAME } from "@core/constants/model.constant";
 import { ErrorCodes } from "@core/enum/error.enum";
 import { ICustomLogger } from "@core/logger/interface/custom-logger.interface";
 import { ILoggerFactory, LOGGER_FACTORY } from "@core/logger/interface/logger-factory.interface";
+import { BaseRepository } from "@core/repositories/base/implementations/base.repository";
 import { IAdminSettingsRepository } from "@core/repositories/interfaces/admin-settings-repo.interface";
 import { AdminSettingsDocument } from "@core/schema/admin-settings.schema";
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
@@ -9,7 +10,7 @@ import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 
 @Injectable()
-export class AdminSettingsRepository implements IAdminSettingsRepository {
+export class AdminSettingsRepository extends BaseRepository<AdminSettingsDocument> implements IAdminSettingsRepository {
     private readonly logger: ICustomLogger;
 
     constructor(
@@ -18,6 +19,7 @@ export class AdminSettingsRepository implements IAdminSettingsRepository {
         @Inject(LOGGER_FACTORY)
         private readonly _loggerFactory: ILoggerFactory,
     ) {
+        super(_settingsModel);
         this.logger = this._loggerFactory.createLogger(AdminSettingsRepository.name);
     }
 

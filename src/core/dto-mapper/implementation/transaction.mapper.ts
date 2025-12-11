@@ -1,7 +1,7 @@
 import { ITransactionMapper } from "@core/dto-mapper/interface/transaction.mapper.interface";
 import { Transaction } from "@core/entities/implementation/transaction.entity";
 import { ITransaction } from "@core/entities/interfaces/transaction.entity.interface";
-import { TransactionDocument } from "@core/schema/transaction.schema";
+import { TransactionDocument } from "@core/schema/bookings.schema";
 import { Injectable } from "@nestjs/common";
 import { Types } from "mongoose";
 
@@ -41,7 +41,7 @@ export class TransactionMapper implements ITransactionMapper {
         });
     }
 
-    toDocument(entity: Omit<ITransaction, "id">): Partial<TransactionDocument> {
+    toDocument(entity: Partial<ITransaction>): Partial<TransactionDocument> {
         return {
             userId: new Types.ObjectId(entity.userId),
             transactionType: entity.transactionType,

@@ -58,17 +58,10 @@ export class SeedAdminService implements ISeedAdminService {
       let savedAdmin: AdminDocument | null;
 
       if (existingAdmin) {
-        let [admin, settings] = await Promise.all([
-          this._adminRepository.findOneAndUpdate(
-            { email },
-            { password: hashedPassword }
-          ),
-          this._adminSettingsRepository.updateSettings({
-            gstPercentage: 18,
-            providerCommission: 10,
-            customerCommission: 10
-          })
-        ]);
+        let admin = await this._adminRepository.findOneAndUpdate(
+          { email },
+          { password: hashedPassword }
+        );
 
         savedAdmin = admin;
 
@@ -94,6 +87,12 @@ export class SeedAdminService implements ISeedAdminService {
       if (!wallet) {
         await this._walletRepository.create(this._walletMapper.toDocument({ userId: admin.id, type: 'admin' }));
       }
+
+      const adminSettings = await this._adminSettingsRepository.find({});
+      if (!adminSettings || !adminSettings.length) {
+        await this._adminSettingsRepository.create({});
+      }
+
       return admin;
     } catch (err) {
       this.logger.error('Error caught while saving the admin: ', err);

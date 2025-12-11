@@ -9,6 +9,7 @@ import { IPayload } from '../../../core/misc/payload.interface';
 import { IResponse } from '../../../core/misc/response.util';
 import { AddReviewDto, BookingDto, BookingIdDto, BookingPaginationFilterDto, CancelBookingDto, SelectedServiceDto, UpdateBookingDto, UpdateBookingPaymentStatusDto } from '../dtos/booking.dto';
 import { IBookingService } from '../services/interfaces/booking-service.interface';
+import { User } from '@core/decorators/extract-user.decorator';
 
 @Controller('booking')
 export class BookingsController {
@@ -56,43 +57,24 @@ export class BookingsController {
     }
 
     @Get('view_details')
-    async getBookingDetails(@Query() bookingDto: BookingIdDto): Promise<IBookingDetailCustomer> {
-        try {
-            const { bookingId } = bookingDto
-            if (!bookingId) {
-                throw new BadRequestException(ErrorMessage.MISSING_FIELDS);
-            }
-
-            return await this._bookingService.fetchBookingDetails(bookingId);
-        } catch (err) {
-            this.logger.error(`Error fetching booking details: ${err}`);
-            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
-        }
+    async getBookingDetails(@Query() { bookingId }: BookingIdDto): Promise<IBookingDetailCustomer> {
+        this.logger.debug(bookingId);
+        return await this._bookingService.fetchBookingDetails(bookingId);
     }
 
     @Patch('cancel')
-    async cancelBooking(@Body() bookingDto: CancelBookingDto): Promise<IResponse> {
-        return await this._bookingService.markBookingCancelledByCustomer(bookingDto.bookingId, bookingDto.reason);
+    async cancelBooking(@User() user: IPayload, @Body() bookingDto: CancelBookingDto): Promise<IResponse<IBookingResponse>> {
+        return await this._bookingService.markBookingCancelledByCustomer(user.sub, bookingDto.bookingId, bookingDto.reason);
     }
 
     @Patch('update')
     async updateBooking(@Body() bookingDto: UpdateBookingDto): Promise<IResponse<IBookingResponse>> {
-        try {
-            return await this._bookingService.updateBooking(bookingDto);
-        } catch (err) {
-            this.logger.error(`Error cancelling a booking: ${err}`);
-            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
-        }
+        return await this._bookingService.updateBooking(bookingDto);
     }
 
     @Patch('payment_status')
     async updatePaymentStatus(@Body() bookingDto: UpdateBookingPaymentStatusDto): Promise<IResponse<boolean>> {
-        try {
-            return await this._bookingService.updateBookingPaymentStatus(bookingDto);
-        } catch (err) {
-            this.logger.error(`Error cancelling a booking: ${err}`);
-            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
-        }
+        return await this._bookingService.updateBookingPaymentStatus(bookingDto);
     }
 
     @Patch('add_review')

@@ -1,3 +1,4 @@
+import { ITransaction } from '@core/entities/interfaces/transaction.entity.interface';
 import { BookingStatus, CancelStatus, PaymentStatus } from '../../enum/bookings.enum';
 import { IEntity } from '../base/interfaces/base-entity.entity.interface';
 import { SlotStatusEnum } from '@core/enum/slot.enum';
@@ -109,7 +110,7 @@ export interface IBooking extends IEntity {
         serviceId: string;
         subserviceIds: string[];
     }[];
-    transactionId: string | null;
+    transactionHistory: ITransaction[];
     paymentStatus: PaymentStatus;
     review: IReview | null;
     respondedAt: Date | null;
@@ -145,8 +146,8 @@ export interface IBookingDetailsBase {
     orderedServices: IBookedService[];
     transaction: {
         id: string;
-        paymentMethod: string;
-        paymentDate: Date
+        paymentDate: Date | string;
+        paymentMethod: PaymentSource;
     } | null;
 }
 

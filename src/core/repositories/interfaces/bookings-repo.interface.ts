@@ -22,9 +22,9 @@ export interface IBookingRepository extends IBaseRepository<BookingDocument> {
     isAlreadyBooked(ruleId: string, from: string, to: string, dateISO: string): Promise<boolean>;
     updateBookingStatus(bookingId: string, newStatus: BookingStatus): Promise<boolean>;
     updateSlotStatus(ruleId: string, from: string, to: string, dateISO: string, status: SlotStatusEnum): Promise<boolean>;
-    markBookingCancelledByCustomer(bookingId: string, reason: string, cancelStatus: CancelStatus, bookingStatus: BookingStatus): Promise<BookingDocument | null>;
-    updatePaymentStatus(bookingId: string, status: PaymentStatus, transactionId: string): Promise<BookingDocument | null>;
-    markBookingCancelledByProvider(bookingId: string, bookingStatus: BookingStatus, cancelStatus: CancelStatus, reason?: string): Promise<BookingDocument | null>;
+    markBookingCancelledByCustomer(customerId: string, bookingId: string, reason: string, cancelStatus: CancelStatus, bookingStatus: BookingStatus): Promise<BookingDocument | null>;
+    updatePaymentStatus(bookingId: string, status: PaymentStatus): Promise<BookingDocument | null>;
+    markBookingCancelledByProvider(providerId: string, bookingId: string, bookingStatus: BookingStatus, cancelStatus: CancelStatus, reason?: string): Promise<BookingDocument | null>;
     addReview(bookingId: string, desc: string, rating: number): Promise<boolean>;
     getAvgRating(providerId: string): Promise<number>;
     getReviews(providerId: string, filter: IReviewFilter, options?: { page?: number, limit?: number }): Promise<IReviewDetailsRaw[]>;

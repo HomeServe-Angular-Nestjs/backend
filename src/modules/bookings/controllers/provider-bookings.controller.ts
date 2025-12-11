@@ -8,6 +8,7 @@ import { BookingIdDto, BookingPaginationFilterDto, CancelReasonDto, ReviewFilter
 import { IProviderBookingService } from '../services/interfaces/provider-booking-service.interface';
 import { IResponse } from '@core/misc/response.util';
 import { isValidIdPipe } from '@core/pipes/is-valid-id.pipe';
+import { User } from '@core/decorators/extract-user.decorator';
 
 @Controller('provider/bookings')
 export class ProviderBookingsController {
@@ -38,19 +39,13 @@ export class ProviderBookingsController {
     }
 
     @Patch('cancel/:bookingId')
-    async markBookingCancelledByProvider(@Param('bookingId', new isValidIdPipe()) bookingId: string, @Body() { reason }: CancelReasonDto): Promise<IResponse<IBookingDetailProvider>> {
-        return await this._providerBookingService.markBookingCancelledByProvider(bookingId, reason);
+    async markBookingCancelledByProvider(@User() user: IPayload, @Param('bookingId', new isValidIdPipe()) bookingId: string, @Body() { reason }: CancelReasonDto): Promise<IResponse<IBookingDetailProvider>> {
+        return await this._providerBookingService.markBookingCancelledByProvider(user.sub, bookingId, reason);
     }
 
     @Patch('status/:bookingId')
     async updateBookingStatus(@Param('bookingId', new isValidIdPipe()) bookingId: string, @Body() { newStatus }: UpdateBookingStatusDto): Promise<IResponse> {
         return await this._providerBookingService.updateBookingStatus(bookingId, newStatus);
-    }
-
-    @Get('booked_slots')
-    async fetchBookedSlots(@Req() req: Request): Promise<IResponse> {
-        const user = req.user as IPayload;
-        return await this._providerBookingService.fetchBookedSlots(user.sub);
     }
 
     @Post('download_invoice')
