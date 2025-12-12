@@ -1,11 +1,10 @@
 import { FilterQuery, Model, PipelineStage, SortOrder } from 'mongoose';
 
-import { PaymentStatus } from '@core/enum/bookings.enum';
 import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
 import { ITransactionRepository } from '@core/repositories/interfaces/transaction-repo.interface';
 import { InjectModel } from '@nestjs/mongoose';
 import { IReportDownloadTransactionData, IReportTransactionData } from '@core/entities/interfaces/admin.entity.interface';
-import { ITransaction, ITransactionFilter, ITransactionStats } from '@core/entities/interfaces/transaction.entity.interface';
+import { ITransactionStats } from '@core/entities/interfaces/transaction.entity.interface';
 import { Injectable } from '@nestjs/common';
 import { PaymentDirection, TransactionStatus } from '@core/enum/transaction.enum';
 import { SortQuery } from '@core/repositories/implementations/slot-rule.repository';
@@ -21,92 +20,92 @@ export class TransactionRepository extends BaseRepository<BookingDocument> imple
         super(_bookingModel);
     }
 
-    private _escapeRegex(input: string): string {
-        return input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    }
+    // private _escapeRegex(input: string): string {
+    //     return input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // }
 
 
-    private _buildTransactionFilterQuery(filters: ITransactionFilter, userId?: string): { match: FilterQuery<TransactionDocument>, sort: SortQuery<TransactionDocument> } {
-        const match: FilterQuery<TransactionDocument> = {};
+    // private _buildTransactionFilterQuery(filters: IWalletTransactionFilter, userId?: string): { match: FilterQuery<TransactionDocument>, sort: SortQuery<TransactionDocument> } {
+    //     const match: FilterQuery<TransactionDocument> = {};
 
-        if (userId) {
-            match['transactionHistory.userId'] = this._toObjectId(userId);
-        }
+    //     if (userId) {
+    //         match['transactionHistory.userId'] = this._toObjectId(userId);
+    //     }
 
-        if (filters.search) {
-            const escaped = this._escapeRegex(filters.search);
-            const searchRegex = new RegExp(escaped, 'i');
+    //     if (filters.search) {
+    //         const escaped = this._escapeRegex(filters.search);
+    //         const searchRegex = new RegExp(escaped, 'i');
 
-            match.$or = [
-                {
-                    $expr: {
-                        $regexMatch: {
-                            input: { $toString: "$transactionHistory._id" },
-                            regex: searchRegex
-                        }
-                    }
-                },
-                { 'transactionHistory.gateWayDetails.paymentId': searchRegex },
-                { 'transactionHistory.userDetails.email': searchRegex },
-            ];
-        }
+    //         match.$or = [
+    //             {
+    //                 $expr: {
+    //                     $regexMatch: {
+    //                         input: { $toString: "$transactionHistory._id" },
+    //                         regex: searchRegex
+    //                     }
+    //                 }
+    //             },
+    //             { 'transactionHistory.gateWayDetails.paymentId': searchRegex },
+    //             { 'transactionHistory.userDetails.email': searchRegex },
+    //         ];
+    //     }
 
-        if (filters.date && filters.date !== 'all') {
-            const now = new Date();
-            let start: Date | null = null;
+    //     if (filters.date && filters.date !== 'all') {
+    //         const now = new Date();
+    //         let start: Date | null = null;
 
-            switch (filters.date) {
-                case 'last_six_months':
-                    start = new Date();
-                    start.setMonth(start.getMonth() - 6);
-                    break;
-                case 'last_year':
-                    start = new Date();
-                    start.setFullYear(start.getFullYear() - 1);
-                    break;
-                default:
-                    start = new Date(0);
-            }
+    //         switch (filters.date) {
+    //             case 'last_six_months':
+    //                 start = new Date();
+    //                 start.setMonth(start.getMonth() - 6);
+    //                 break;
+    //             case 'last_year':
+    //                 start = new Date();
+    //                 start.setFullYear(start.getFullYear() - 1);
+    //                 break;
+    //             default:
+    //                 start = new Date(0);
+    //         }
 
-            if (start) {
-                match['transactionHistory.createdAt'] = { $gte: start, $lte: now };
-            }
-        }
+    //         if (start) {
+    //             match['transactionHistory.createdAt'] = { $gte: start, $lte: now };
+    //         }
+    //     }
 
-        if (filters.method && filters.method !== 'all') {
-            match['transactionHistory.direction'] = filters.method;
-        }
+    //     if (filters.method && filters.method !== 'all') {
+    //         match['transactionHistory.direction'] = filters.method;
+    //     }
 
-        if (filters.type && filters.type !== 'all') {
-            match['transactionHistory.transactionType'] = filters.type;
-        }
+    //     if (filters.type && filters.type !== 'all') {
+    //         match['transactionHistory.transactionType'] = filters.type;
+    //     }
 
-        const sort: Record<string, SortOrder> = {};
+    //     const sort: Record<string, SortOrder> = {};
 
-        switch (filters.sort) {
-            case 'newest':
-                sort['transactionHistory.createdAt'] = -1;
-                break;
+    //     switch (filters.sort) {
+    //         case 'newest':
+    //             sort['transactionHistory.createdAt'] = -1;
+    //             break;
 
-            case 'oldest':
-                sort['transactionHistory.createdAt'] = 1;
-                break;
+    //         case 'oldest':
+    //             sort['transactionHistory.createdAt'] = 1;
+    //             break;
 
-            case 'high':
-                sort['transactionHistory.amount'] = -1;
-                break;
+    //         case 'high':
+    //             sort['transactionHistory.amount'] = -1;
+    //             break;
 
-            case 'low':
-                sort['transactionHistory.amount'] = 1;
-                break;
+    //         case 'low':
+    //             sort['transactionHistory.amount'] = 1;
+    //             break;
 
-            default:
-                sort['transactionHistory.createdAt'] = -1;
-                break;
-        }
+    //         default:
+    //             sort['transactionHistory.createdAt'] = -1;
+    //             break;
+    //     }
 
-        return { match, sort };
-    }
+    //     return { match, sort };
+    // }
 
     async createNewTransaction(bookingId: string, transaction: Partial<TransactionDocument>): Promise<TransactionDocument | null> {
         const result = await this._bookingModel.findOneAndUpdate(
@@ -248,24 +247,24 @@ export class TransactionRepository extends BaseRepository<BookingDocument> imple
         };
     }
 
-    async fetchTransactionsByAdminWithPagination(filters: ITransactionFilter, options?: { page?: number, limit?: number }): Promise<TransactionDocument[]> {
-        const page = options?.page || 1;
-        const limit = options?.limit || 10;
-        const skip = (page - 1) * limit;
+    // async fetchTransactionsByAdminWithPagination(filters: IWalletTransactionFilter, options?: { page?: number, limit?: number }): Promise<TransactionDocument[]> {
+    //     const page = options?.page || 1;
+    //     const limit = options?.limit || 10;
+    //     const skip = (page - 1) * limit;
 
-        const { match, sort } = this._buildTransactionFilterQuery(filters);
+    //     const { match, sort } = this._buildTransactionFilterQuery(filters);
 
-        const pipeline: PipelineStage[] = [
-            { $unwind: "$transactionHistory" },
-            { $match: match },
-            { $replaceRoot: { newRoot: "$transactionHistory" } },
-            { $sort: sort },
-            { $skip: skip },
-            { $limit: limit }
-        ];
+    //     const pipeline: PipelineStage[] = [
+    //         { $unwind: "$transactionHistory" },
+    //         { $match: match },
+    //         { $replaceRoot: { newRoot: "$transactionHistory" } },
+    //         { $sort: sort },
+    //         { $skip: skip },
+    //         { $limit: limit }
+    //     ];
 
-        return await this._bookingModel.aggregate(pipeline);
-    }
+    //     return await this._bookingModel.aggregate(pipeline);
+    // }
 
     async updateStatus(txId: string, status: TransactionStatus): Promise<boolean> {
         return !!(await this._bookingModel.findOneAndUpdate(
@@ -275,22 +274,22 @@ export class TransactionRepository extends BaseRepository<BookingDocument> imple
         ));
     }
 
-    async getFilteredTransactionByUserIdWithPagination(userId: string, filters: ITransactionFilter, options?: { page?: number, limit?: number }): Promise<TransactionDocument[]> {
-        const page = options?.page && options.page > 0 ? options.page : 1;
-        const limit = options?.limit && options.limit > 0 ? options.limit : 10;
-        const skip = (page - 1) * limit;
+    // async getFilteredTransactionByUserIdWithPagination(userId: string, filters: IWalletTransactionFilter, options?: { page?: number, limit?: number }): Promise<TransactionDocument[]> {
+    //     const page = options?.page && options.page > 0 ? options.page : 1;
+    //     const limit = options?.limit && options.limit > 0 ? options.limit : 10;
+    //     const skip = (page - 1) * limit;
 
-        const { match, sort } = this._buildTransactionFilterQuery(filters, userId);
+    //     const { match, sort } = this._buildTransactionFilterQuery(filters, userId);
 
-        const pipeline: any[] = [
-            { $unwind: '$transactionHistory' },
-            { $match: match },
-            { $replaceRoot: { newRoot: '$transactionHistory' } },
-            { $sort: sort },
-            { $skip: skip },
-            { $limit: limit },
-        ];
+    //     const pipeline: any[] = [
+    //         { $unwind: '$transactionHistory' },
+    //         { $match: match },
+    //         { $replaceRoot: { newRoot: '$transactionHistory' } },
+    //         { $sort: sort },
+    //         { $skip: skip },
+    //         { $limit: limit },
+    //     ];
 
-        return await this._bookingModel.aggregate(pipeline);
-    }
+    //     return await this._bookingModel.aggregate(pipeline);
+    // }
 }

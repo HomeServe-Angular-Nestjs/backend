@@ -54,34 +54,34 @@ export class AdminTransactionService implements IAdminTransactionService {
     async getTransactionTableData(filters: ProviderWalletFilterDto): Promise<IResponse<ITransactionDataWithPagination>> {
         const { page = 1, limit = 10, ...filter } = filters;
 
-        const [transactionDocument, totalTransactions] = await Promise.all([
-            this._transactionRepository.fetchTransactionsByAdminWithPagination(filter, { page, limit }),
-            this._transactionRepository.count()
-        ]);
+        // const [transactionDocument, totalTransactions] = await Promise.all([
+        //     this._transactionRepository.fetchTransactionsByAdminWithPagination(filter, { page, limit }),
+        //     this._transactionRepository.count()
+        // ]);
 
-        const transactions = transactionDocument.map(doc => this._transactionMapper.toEntity(doc));
+        // const transactions = transactionDocument.map(doc => this._transactionMapper.toEntity(doc));
 
-        const tableData: ITransactionTableData[] = (transactions ?? []).map(transaction => ({
-            transactionId: transaction.id,
-            paymentId: transaction.gateWayDetails ? transaction.gateWayDetails.paymentId : null,
-            amount: transaction.amount,
-            source: transaction.source,
-            method: transaction.direction,
-            transactionType: transaction.transactionType,
-            createdAt: transaction.createdAt as Date
-        }));
+        // const tableData: ITransactionTableData[] = (transactions ?? []).map(transaction => ({
+        //     transactionId: transaction.id,
+        //     paymentId: transaction.gateWayDetails ? transaction.gateWayDetails.paymentId : null,
+        //     amount: transaction.amount,
+        //     source: transaction.source,
+        //     method: transaction.direction,
+        //     transactionType: transaction.transactionType,
+        //     createdAt: transaction.createdAt as Date
+        // }));
 
         return {
             success: true,
             message: 'Transaction table data fetched successfully',
-            data: {
-                tableData,
-                pagination: {
-                    page,
-                    limit,
-                    total: totalTransactions
-                }
-            },
+            // data: {
+            //     tableData,
+            //     pagination: {
+            //         page,
+            //         limit,
+            //         total: totalTransactions
+            //     }
+            // },
         }
     }
 }

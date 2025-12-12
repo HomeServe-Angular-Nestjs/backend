@@ -75,9 +75,9 @@ export interface ITransactionTableData {
     transactionId: string;
     paymentId: string | null;
     amount: number;
-    method: string;
+    method: PaymentDirection;
     source: PaymentSource,
-    transactionType: string;
+    transactionType: TransactionType;
     createdAt: Date;
 }
 
@@ -87,15 +87,7 @@ export interface ITransactionDataWithPagination {
 }
 
 export interface ITransactionUserTableData {
-    transactions: (ITransactionTableData & { email: string })[];
+    transactions: ITransactionTableData[];
     pagination: IPagination;
 }
 
-export interface ITransactionFilter {
-    page?: number;
-    search?: string;
-    sort?: 'newest' | 'oldest' | 'high' | 'low';
-    type?: TransactionType | 'all';
-    date?: 'all' | 'last_six_months' | 'last_year';
-    method?: PaymentDirection | 'all';
-}

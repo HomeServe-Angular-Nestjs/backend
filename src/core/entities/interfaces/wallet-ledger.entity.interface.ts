@@ -22,3 +22,12 @@ export interface IWalletLedger extends IEntity {
     source: PaymentSource;
     metadata?: Record<string, any>;
 }
+
+export interface IWalletTransactionFilter {
+    page?: number;
+    search?: string;
+    sort?: 'newest' | 'oldest' | 'high' | 'low';
+    type?: TransactionType | 'all';
+    date?: 'all' | 'last_six_months' | 'last_year';
+    method?: PaymentDirection | 'all';
+}
