@@ -1,5 +1,5 @@
 import { Request } from 'express';
-import { BadRequestException, Body, Controller, Get, Inject, InternalServerErrorException, Patch, Post, Query, Req } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Inject, InternalServerErrorException, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { CUSTOMER_SERVICE_NAME } from '../../../core/constants/service.constant';
 import { IBookingDetailCustomer, IBookingResponse, IBookingWithPagination } from '../../../core/entities/interfaces/booking.entity.interface';
 import { ErrorMessage } from '../../../core/enum/error.enum';
@@ -10,6 +10,7 @@ import { IResponse } from '../../../core/misc/response.util';
 import { AddReviewDto, BookingDto, BookingIdDto, BookingPaginationFilterDto, CancelBookingDto, SelectedServiceDto, UpdateBookingDto, UpdateBookingPaymentStatusDto } from '../dtos/booking.dto';
 import { IBookingService } from '../services/interfaces/booking-service.interface';
 import { User } from '@core/decorators/extract-user.decorator';
+import { OngoingPaymentGuard } from '@core/guards/ongoing-payment.guard';
 
 @Controller('booking')
 export class BookingsController {
@@ -38,6 +39,7 @@ export class BookingsController {
         }
     }
 
+    @UseGuards(OngoingPaymentGuard)
     @Post('confirm')
     async handleBooking(@Req() req: Request, @Body() bookingDto: BookingDto) {
         const user = req.user as IPayload;

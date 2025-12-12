@@ -290,19 +290,6 @@ export class RazorPaymentService implements IRazorPaymentService {
     }
 
     async createOrder(userId: string, role: UserType, amount: number, currency: string = 'INR'): Promise<IRazorpayOrder> {
-        const key = this._paymentLockingUtility.generatePaymentKey(userId, role);
-
-        const acquired = await this._paymentLockingUtility.acquireLock(key, 300);
-        if (!acquired) {
-            const ttl = await this._paymentLockingUtility.getTTL(key);
-
-            throw new ForbiddenException({
-                code: ErrorCodes.PAYMENT_IN_PROGRESS,
-                message: `We are still processing your previous payment. Please try again in ${ttl} seconds.`,
-                ttl
-            });
-        }
-
         return await this._paymentService.createOrder(amount, currency);
     }
 

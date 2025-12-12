@@ -1,4 +1,3 @@
-import { REDIS_CLIENT } from '@configs/redis/redis.module';
 import { PAYMENT_LOCKING_UTILITY_NAME } from '@core/constants/utility.constant';
 import { ErrorCodes } from '@core/enum/error.enum';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';

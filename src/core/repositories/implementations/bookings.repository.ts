@@ -387,15 +387,13 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
         ).lean();
     }
 
-    async updateBookingStatus(bookingId: string, newStatus: BookingStatus): Promise<boolean> {
-        const update = await this._bookingModel.updateOne(
+    async updateBookingStatus(bookingId: string, newStatus: BookingStatus): Promise<BookingDocument | null> {
+        return await this._bookingModel.findOneAndUpdate(
             { _id: bookingId },
-            { $set: { bookingStatus: newStatus } }
+            { $set: { bookingStatus: newStatus } },
+            { new: true }
         );
-
-        return update.modifiedCount > 0;
     }
-
 
     async markBookingCancelledByProvider(providerId: string, bookingId: string, bookingStatus: BookingStatus, cancelStatus: CancelStatus, reason?: string): Promise<BookingDocument | null> {
         const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;

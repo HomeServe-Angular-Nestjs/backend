@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { Body, Controller, Get, Inject, Param, Patch, Post, Query, Req, Res } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Param, Patch, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
 import { PROVIDER_BOOKING_SERVICE_NAME } from '../../../core/constants/service.constant';
 import { IBookingDetailProvider, IResponseProviderBookingLists } from '../../../core/entities/interfaces/booking.entity.interface';
 import { CUSTOM_LOGGER, ICustomLogger } from '../../../core/logger/interface/custom-logger.interface';
@@ -9,6 +9,7 @@ import { IProviderBookingService } from '../services/interfaces/provider-booking
 import { IResponse } from '@core/misc/response.util';
 import { isValidIdPipe } from '@core/pipes/is-valid-id.pipe';
 import { User } from '@core/decorators/extract-user.decorator';
+import { OngoingPaymentGuard } from '@core/guards/ongoing-payment.guard';
 
 @Controller('provider/bookings')
 export class ProviderBookingsController {
@@ -46,6 +47,12 @@ export class ProviderBookingsController {
     @Patch('status/:bookingId')
     async updateBookingStatus(@Param('bookingId', new isValidIdPipe()) bookingId: string, @Body() { newStatus }: UpdateBookingStatusDto): Promise<IResponse> {
         return await this._providerBookingService.updateBookingStatus(bookingId, newStatus);
+    }
+
+    @UseGuards(OngoingPaymentGuard)
+    @Post('complete')
+    async completeBooking(@Body() { bookingId }: BookingIdDto): Promise<IResponse<IBookingDetailProvider>> {
+        return await this._providerBookingService.completeBooking(bookingId);
     }
 
     @Post('download_invoice')

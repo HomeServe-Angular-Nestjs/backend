@@ -1,8 +1,8 @@
 import { FilterQuery, Types } from 'mongoose';
-import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData, ILocationRevenue, ITopAreaRevenue, IUnderperformingArea, IPeakServiceTime, IRevenueBreakdown, IBookingsBreakdown, IReviewDetails, IReviewDetailsRaw, IReviewFilter } from '@core/entities/interfaces/booking.entity.interface';
+import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData, ILocationRevenue, ITopAreaRevenue, IUnderperformingArea, IPeakServiceTime, IRevenueBreakdown, IBookingsBreakdown, IReviewDetailsRaw, IReviewFilter } from '@core/entities/interfaces/booking.entity.interface';
 import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderRevenueOverview, IResponseTimeChartData, ITopProviders, ITotalReviewAndAvgRating } from '@core/entities/interfaces/user.entity.interface';
 import { IBaseRepository } from '@core/repositories/base/interfaces/base-repo.interface';
-import { BookingDocument, ReviewDocument, SlotDocument } from '@core/schema/bookings.schema';
+import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
 import { IBookingReportData, IReportCustomerMatrix, IReportDownloadBookingData, IReportProviderMatrix } from '@core/entities/interfaces/admin.entity.interface';
 import { SlotStatusEnum } from '@core/enum/slot.enum';
 import { BookingStatus, CancelStatus, PaymentStatus } from '@core/enum/bookings.enum';
@@ -20,7 +20,7 @@ export interface IBookingRepository extends IBaseRepository<BookingDocument> {
     findSlotsByDate(date: Date): Promise<SlotDocument[]>;
     findBookedSlots(ruleId: string): Promise<SlotDocument[]>;
     isAlreadyBooked(ruleId: string, from: string, to: string, dateISO: string): Promise<boolean>;
-    updateBookingStatus(bookingId: string, newStatus: BookingStatus): Promise<boolean>;
+    updateBookingStatus(bookingId: string, newStatus: BookingStatus): Promise<BookingDocument | null>;
     updateSlotStatus(ruleId: string, from: string, to: string, dateISO: string, status: SlotStatusEnum): Promise<boolean>;
     markBookingCancelledByCustomer(customerId: string, bookingId: string, reason: string, cancelStatus: CancelStatus, bookingStatus: BookingStatus): Promise<BookingDocument | null>;
     updatePaymentStatus(bookingId: string, status: PaymentStatus): Promise<BookingDocument | null>;

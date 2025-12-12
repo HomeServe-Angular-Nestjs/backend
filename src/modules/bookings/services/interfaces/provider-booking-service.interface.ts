@@ -12,4 +12,5 @@ export interface IProviderBookingService {
     markBookingCancelledByProvider(providerId: string, bookingId: string, reason?: string): Promise<IResponse<IBookingDetailProvider>>;
     downloadBookingInvoice(bookingId: string, userType: UserType): Promise<Buffer>;
     getReviewData(providerId: string, filters: ReviewFilterDto): Promise<IResponse<IReviewWithPagination>>;
+    completeBooking(bookingId: string): Promise<IResponse<IBookingDetailProvider>>;
 }

@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SERVICE_OFFERED_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME, WALLET_REPOSITORY_NAME } from '@core/constants/repository.constant';
 import { IBooking, IBookingDetailCustomer, IBookingResponse, IBookingWithPagination } from '@core/entities/interfaces/booking.entity.interface';
 import { BookingStatus, CancelStatus, PaymentStatus } from '@core/enum/bookings.enum';
@@ -15,15 +15,15 @@ import { IBookingService } from '@modules/bookings/services/interfaces/booking-s
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { SlotStatusEnum } from '@core/enum/slot.enum';
 import { IBookingMapper } from '@core/dto-mapper/interface/bookings.mapper.interface';
-import { BOOKING_MAPPER, PROVIDER_MAPPER, TRANSACTION_MAPPER } from '@core/constants/mappers.constant';
+import { BOOKING_MAPPER, TRANSACTION_MAPPER } from '@core/constants/mappers.constant';
 import { ITransactionMapper } from '@core/dto-mapper/interface/transaction.mapper.interface';
-import { PRICING_UTILITY_NAME, SLOT_UTILITY_NAME, TIME_UTILITY_NAME } from '@core/constants/utility.constant';
+import { PAYMENT_LOCKING_UTILITY_NAME, PRICING_UTILITY_NAME, SLOT_UTILITY_NAME, TIME_UTILITY_NAME } from '@core/constants/utility.constant';
 import { IPricingBreakup, IPricingUtility } from '@core/utilities/interface/pricing.utility.interface';
 import { ISlotUtility } from '@core/utilities/interface/slot.utility.interface';
 import { ITimeUtility } from '@core/utilities/interface/time.utility.interface';
 import { IWalletRepository } from '@core/repositories/interfaces/wallet-repo.interface';
 import { TransactionStatus, TransactionType } from '@core/enum/transaction.enum';
-import { IProviderMapper } from '@core/dto-mapper/interface/provider.mapper.interface';
+import { IPaymentLockingUtility } from '@core/utilities/interface/payment-locking.utility';
 
 @Injectable()
 export class BookingService implements IBookingService {
@@ -54,8 +54,8 @@ export class BookingService implements IBookingService {
         private readonly _bookingMapper: IBookingMapper,
         @Inject(TRANSACTION_MAPPER)
         private readonly _transactionMapper: ITransactionMapper,
-        @Inject(PROVIDER_MAPPER)
-        private readonly _providerMapper: IProviderMapper,
+        @Inject(PAYMENT_LOCKING_UTILITY_NAME)
+        private readonly _paymentLockingUtility: IPaymentLockingUtility,
     ) {
         this.logger = this._loggerFactor.createLogger(BookingService.name);
     }
@@ -78,6 +78,19 @@ export class BookingService implements IBookingService {
     }
 
     async createBooking(customerId: string, data: BookingDto): Promise<IResponse<IBooking>> {
+        const key = this._paymentLockingUtility.generatePaymentKey(customerId, 'customer');
+
+        const acquired = await this._paymentLockingUtility.acquireLock(key, 300);
+        if (!acquired) {
+            const ttl = await this._paymentLockingUtility.getTTL(key);
+
+            throw new ConflictException({
+                code: ErrorCodes.PAYMENT_IN_PROGRESS,
+                message: `We are still processing your previous payment. Please try again in ${ttl} seconds.`,
+                ttl
+            });
+        }
+
         const { slotData } = data;
 
         const isAvailable = await this._slotUtility.isAvailable(
