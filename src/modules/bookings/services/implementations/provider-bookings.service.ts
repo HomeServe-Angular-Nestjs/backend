@@ -511,9 +511,9 @@ export class ProviderBookingService implements IProviderBookingService {
     }
 
     async fetchOverviewData(providerId: string): Promise<IBookingOverviewData> {
-        const bookings = await this._bookingRepository.find({ providerId });
+        const bookings = await this._bookingRepository.findBookingsByProviderId(providerId)
         const now = new Date();
-
+        
         const getMonthRange = (date: Date) => ({
             start: new Date(date.getFullYear(), date.getMonth(), 1),
             end: new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999),
