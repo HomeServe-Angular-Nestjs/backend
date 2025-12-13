@@ -15,6 +15,7 @@ export class PageDto {
 export class ProviderWalletFilterDto extends PageDto {
     @IsOptional()
     @IsString()
+    @Transform(({ value }) => value.toLowerCase())
     search?: string;
 
     @IsOptional()
@@ -24,8 +25,7 @@ export class ProviderWalletFilterDto extends PageDto {
 
     @IsOptional()
     @IsString()
-    @IsIn(['all', ...Object.values(TransactionType)])
-    type: TransactionType | 'all';
+    type: string;
 
     @IsOptional()
     @IsString()

@@ -70,24 +70,3 @@ export interface ITransactionStats {
     successRate: number;
     avgTransactionValue: number;
 }
-
-export interface ITransactionTableData {
-    transactionId: string;
-    paymentId: string | null;
-    amount: number;
-    method: PaymentDirection;
-    source: PaymentSource,
-    transactionType: TransactionType;
-    createdAt: Date;
-}
-
-export interface ITransactionDataWithPagination {
-    tableData: ITransactionTableData[];
-    pagination: IPagination;
-}
-
-export interface ITransactionUserTableData {
-    transactions: ITransactionTableData[];
-    pagination: IPagination;
-}
-

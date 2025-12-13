@@ -1,13 +1,10 @@
-import { TRANSACTION_MAPPER, WALLET_LEDGER_MAPPER, WALLET_MAPPER } from "@core/constants/mappers.constant";
-import { TRANSACTION_REPOSITORY_NAME, WALLET_LEDGER_REPOSITORY_NAME, WALLET_REPOSITORY_NAME } from "@core/constants/repository.constant";
-import { ITransactionMapper } from "@core/dto-mapper/interface/transaction.mapper.interface";
+import { WALLET_LEDGER_MAPPER, WALLET_MAPPER } from "@core/constants/mappers.constant";
+import { WALLET_LEDGER_REPOSITORY_NAME, WALLET_REPOSITORY_NAME } from "@core/constants/repository.constant";
 import { IWalletLedgerMapper } from "@core/dto-mapper/interface/wallet-ledger.mapper.interface";
 import { IWalletMapper } from "@core/dto-mapper/interface/wallet.mapper.interface";
-import { ITransactionTableData, ITransactionUserTableData } from "@core/entities/interfaces/transaction.entity.interface";
-import { IWalletTransactionFilter } from "@core/entities/interfaces/wallet-ledger.entity.interface";
+import { ICustomerTransactionDataWithPagination, IProviderTransactionDataWithPagination, IWalletTransactionFilter } from "@core/entities/interfaces/wallet-ledger.entity.interface";
 import { IWallet } from "@core/entities/interfaces/wallet.entity.interface";
 import { IResponse } from "@core/misc/response.util";
-import { ITransactionRepository } from "@core/repositories/interfaces/transaction-repo.interface";
 import { IWalletLedgerRepository } from "@core/repositories/interfaces/wallet-ledger.repo.interface";
 import { IWalletRepository } from "@core/repositories/interfaces/wallet-repo.interface";
 import { ProviderWalletFilterDto } from "@modules/wallet/dto/wallet.dto";
@@ -40,15 +37,36 @@ export class WalletService implements IWalletService {
         }
     }
 
-    async getTransactions(userId: string, filter?: ProviderWalletFilterDto): Promise<IResponse<ITransactionUserTableData>> {
+    async getTransactions(customerId: string, filter?: ProviderWalletFilterDto): Promise<IResponse<ICustomerTransactionDataWithPagination>> {
         const { page = 1, limit = 10, ...filters } = filter as unknown as {
             page: number;
             limit: number;
         } & IWalletTransactionFilter;
 
         const [total, transactions] = await Promise.all([
-            this._walletLedgerRepository.getTotalLedgerCountByUserId(userId),
-            this._walletLedgerRepository.getFilteredLedgersByUserIdWithPagination(userId, filters, { page, limit })
+            this._walletLedgerRepository.getTotalLedgerCountByUserId(customerId),
+            this._walletLedgerRepository.getFilteredCustomerLedgersByUserIdWithPagination(customerId, filters, { page, limit })
+        ]);
+
+        return {
+            success: true,
+            message: 'Transaction details fetched successfully.',
+            data: {
+                transactions,
+                pagination: { page, total, limit }
+            }
+        }
+    }
+
+    async getFilteredProviderTransactionsWithPagination(providerId: string, filter?: ProviderWalletFilterDto): Promise<IResponse<IProviderTransactionDataWithPagination>> {
+        const { page = 1, limit = 10, ...filters } = filter as unknown as {
+            page: number;
+            limit: number;
+        } & IWalletTransactionFilter;
+
+        const [total, transactions] = await Promise.all([
+            this._walletLedgerRepository.getTotalLedgerCountByUserId(providerId),
+            this._walletLedgerRepository.getFilteredProviderLedgersByUserIdWithPagination(providerId, filters, { page, limit })
         ]);
 
         return {

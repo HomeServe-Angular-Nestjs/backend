@@ -1,12 +1,11 @@
 import { ADMIN_TRANSACTION_SERVICE_NAME } from "@core/constants/service.constant";
-import { ITransactionStats, ITransactionDataWithPagination } from "@core/entities/interfaces/transaction.entity.interface";
+import { ITransactionStats } from "@core/entities/interfaces/transaction.entity.interface";
 import { ICustomLogger } from "@core/logger/interface/custom-logger.interface";
 import { ILoggerFactory, LOGGER_FACTORY } from "@core/logger/interface/logger-factory.interface";
 import { IResponse } from "@core/misc/response.util";
 import { TransactionReportDownloadDto } from "@modules/users/dtos/admin-user.dto";
 import { IAdminTransactionService } from "@modules/users/services/interfaces/admin-transaction-service.interface";
-import { ProviderWalletFilterDto } from "@modules/wallet/dto/wallet.dto";
-import { Body, Controller, Get, Inject, Post, Query, Res } from "@nestjs/common";
+import { Body, Controller, Get, Inject, Post, Res } from "@nestjs/common";
 import { Response } from "express";
 
 @Controller('admin/transactions')
@@ -40,10 +39,5 @@ export class AdminTransactionController {
     @Get('stats')
     async getTransactionStats(): Promise<IResponse<ITransactionStats>> {
         return await this._adminTransactionService.getTransactionStats();
-    }
-
-    @Get('table_data')
-    async getTransactionTableData(@Query() filters: ProviderWalletFilterDto): Promise<IResponse<ITransactionDataWithPagination>> {
-        return await this._adminTransactionService.getTransactionTableData(filters);
     }
 }

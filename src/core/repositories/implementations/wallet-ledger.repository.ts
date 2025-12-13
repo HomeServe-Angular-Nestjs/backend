@@ -1,7 +1,5 @@
 import { WALLET_LEDGER_MODEL_NAME } from "@core/constants/model.constant";
-import { ITransactionTableData } from "@core/entities/interfaces/transaction.entity.interface";
-import { IWalletTransactionFilter } from "@core/entities/interfaces/wallet-ledger.entity.interface";
-import { PaymentStatus } from "@core/enum/bookings.enum";
+import { ICustomerTransactionData, IProviderTransactionData, IWalletTransactionFilter } from "@core/entities/interfaces/wallet-ledger.entity.interface";
 import { PaymentDirection, TransactionType } from "@core/enum/transaction.enum";
 import { BaseRepository } from "@core/repositories/base/implementations/base.repository";
 import { SortQuery } from "@core/repositories/implementations/slot-rule.repository";
@@ -90,7 +88,9 @@ export class WalletLedgerRepository extends BaseRepository<WalletLedgerDocument>
         }
 
         if (filters.type && filters.type !== 'all') {
-            match.transactionType = filters.type;
+            const escaped = this._escapeRegex(filters.type);
+            const searchRegex = new RegExp(escaped, 'i');
+            match.type = searchRegex;
         }
 
         const sort: Record<string, SortOrder> = {};
@@ -169,7 +169,7 @@ export class WalletLedgerRepository extends BaseRepository<WalletLedgerDocument>
         }).lean();
     }
 
-    async getFilteredLedgersByUserIdWithPagination(userId: string, filters: IWalletTransactionFilter, options: { page: number; limit: number }): Promise<ITransactionTableData[]> {
+    async getFilteredCustomerLedgersByUserIdWithPagination(userId: string, filters: IWalletTransactionFilter, options: { page: number; limit: number }): Promise<ICustomerTransactionData[]> {
         const page = options?.page && options.page > 0 ? options.page : 1;
         const limit = options?.limit && options.limit > 0 ? options.limit : 10;
         const skip = (page - 1) * limit;
@@ -193,6 +193,36 @@ export class WalletLedgerRepository extends BaseRepository<WalletLedgerDocument>
                     method: "$direction",
                     source: "$source",
                     transactionType: "$type",
+                }
+            }
+        ];
+
+        return await this._walletLedgerModel.aggregate(pipeline);
+    }
+
+    async getFilteredProviderLedgersByUserIdWithPagination(userId: string, filters: IWalletTransactionFilter, options: { page: number; limit: number }): Promise<IProviderTransactionData[]> {
+        const page = options?.page && options.page > 0 ? options.page : 1;
+        const limit = options?.limit && options.limit > 0 ? options.limit : 10;
+        const skip = (page - 1) * limit;
+
+        const { match, sort } = this._buildTransactionFilterQuery(filters, userId);
+
+        const pipeline: any[] = [
+            { $match: match },
+            { $sort: sort },
+            { $skip: skip },
+            { $limit: limit },
+            {
+                $project: {
+                    _id: 0,
+                    createdAt: 1,
+                    paymentId: "$gatewayPaymentId",
+                    amount: { $divide: ["$amount", 100] },
+                    method: "$direction",
+                    transactionType: "$type",
+                    bookingId: "$bookingId",
+                    subscriptionId: "$subscriptionId",
+                    source: "$source",
                 }
             }
         ];

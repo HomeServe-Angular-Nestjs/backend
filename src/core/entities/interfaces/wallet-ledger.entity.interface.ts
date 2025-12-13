@@ -1,6 +1,7 @@
 import { IEntity } from "@core/entities/base/interfaces/base-entity.entity.interface";
+import { IPagination } from "@core/entities/interfaces/booking.entity.interface";
 import { UserType } from "@core/entities/interfaces/user.entity.interface";
-import { CurrencyType, PaymentDirection, PaymentSource, TransactionType } from "@core/enum/transaction.enum";
+import { CurrencyType, PaymentDirection, PaymentSource, TransactionStatus, TransactionType } from "@core/enum/transaction.enum";
 
 export interface IWalletLedger extends IEntity {
     walletId: string;
@@ -30,4 +31,35 @@ export interface IWalletTransactionFilter {
     type?: TransactionType | 'all';
     date?: 'all' | 'last_six_months' | 'last_year';
     method?: PaymentDirection | 'all';
+}
+
+export interface ICustomerTransactionData {
+    transactionId: string;
+    paymentId: string | null;
+    amount: number;
+    method: PaymentDirection;
+    source: PaymentSource,
+    transactionType: TransactionType;
+    createdAt: Date;
+}
+
+export interface ICustomerTransactionDataWithPagination {
+    transactions: ICustomerTransactionData[];
+    pagination: IPagination;
+}
+
+export interface IProviderTransactionData {
+    createdAt: string;
+    paymentId: string | null;
+    amount: number;
+    method: PaymentDirection;
+    transactionType: TransactionType;
+    bookingId: string | null;
+    subscriptionId: string | null;
+    source: PaymentSource;
+}
+
+export interface IProviderTransactionDataWithPagination {
+    transactions: IProviderTransactionData[];
+    pagination: IPagination;
 }
