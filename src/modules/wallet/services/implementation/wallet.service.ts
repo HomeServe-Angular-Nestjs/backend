@@ -2,7 +2,7 @@ import { WALLET_LEDGER_MAPPER, WALLET_MAPPER } from "@core/constants/mappers.con
 import { WALLET_LEDGER_REPOSITORY_NAME, WALLET_REPOSITORY_NAME } from "@core/constants/repository.constant";
 import { IWalletLedgerMapper } from "@core/dto-mapper/interface/wallet-ledger.mapper.interface";
 import { IWalletMapper } from "@core/dto-mapper/interface/wallet.mapper.interface";
-import { ICustomerTransactionDataWithPagination, IProviderTransactionDataWithPagination, IWalletTransactionFilter } from "@core/entities/interfaces/wallet-ledger.entity.interface";
+import { ICustomerTransactionDataWithPagination, IProviderTransactionDataWithPagination, IWalletTransactionFilter, IProviderTransactionOverview } from "@core/entities/interfaces/wallet-ledger.entity.interface";
 import { IWallet } from "@core/entities/interfaces/wallet.entity.interface";
 import { IResponse } from "@core/misc/response.util";
 import { IWalletLedgerRepository } from "@core/repositories/interfaces/wallet-ledger.repo.interface";
@@ -75,6 +75,24 @@ export class WalletService implements IWalletService {
             data: {
                 transactions,
                 pagination: { page, total, limit }
+            }
+        }
+    }
+
+    async getProviderTransactionOverview(providerId: string): Promise<IResponse<IProviderTransactionOverview>> {
+        const [providerWallet, providerTransactionStats] = await Promise.all([
+            this._walletRepository.findWallet(providerId),
+            this._walletLedgerRepository.getProviderTransactionOverview(providerId)
+        ]);
+
+        return {
+            success: true,
+            message: 'Transaction details fetched successfully.',
+            data: {
+                balance: providerWallet?.balance ?? 0,
+                totalCredit: providerTransactionStats?.totalCredit ?? 0,
+                totalDebit: providerTransactionStats?.totalDebit ?? 0,
+                netGain: providerTransactionStats?.netGain ?? 0
             }
         }
     }

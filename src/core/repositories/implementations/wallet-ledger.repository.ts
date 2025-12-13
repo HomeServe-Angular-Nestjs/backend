@@ -1,5 +1,5 @@
 import { WALLET_LEDGER_MODEL_NAME } from "@core/constants/model.constant";
-import { ICustomerTransactionData, IProviderTransactionData, IWalletTransactionFilter } from "@core/entities/interfaces/wallet-ledger.entity.interface";
+import { ICustomerTransactionData, IProviderTransactionData, IProviderTransactionOverview, IWalletTransactionFilter } from "@core/entities/interfaces/wallet-ledger.entity.interface";
 import { PaymentDirection, TransactionType } from "@core/enum/transaction.enum";
 import { BaseRepository } from "@core/repositories/base/implementations/base.repository";
 import { SortQuery } from "@core/repositories/implementations/slot-rule.repository";
@@ -7,7 +7,7 @@ import { IWalletLedgerRepository } from "@core/repositories/interfaces/wallet-le
 import { WalletLedgerDocument } from "@core/schema/wallet-ledger.schema";
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { FilterQuery, Model, SortOrder } from "mongoose";
+import { FilterQuery, Model, PipelineStage, SortOrder } from "mongoose";
 
 @Injectable()
 export class WalletLedgerRepository extends BaseRepository<WalletLedgerDocument> implements IWalletLedgerRepository {
@@ -228,6 +228,30 @@ export class WalletLedgerRepository extends BaseRepository<WalletLedgerDocument>
         ];
 
         return await this._walletLedgerModel.aggregate(pipeline);
+    }
+
+    async getProviderTransactionOverview(providerId: string): Promise<Omit<IProviderTransactionOverview, "balance">> {
+        const pipeline: PipelineStage[] = [
+            { $match: { userId: this._toObjectId(providerId) } },
+            {
+                $group: {
+                    _id: null,
+                    totalCredit: { $sum: { $cond: [{ $eq: ["$direction", PaymentDirection.CREDIT] }, "$amount", 0] } },
+                    totalDebit: { $sum: { $cond: [{ $eq: ["$direction", PaymentDirection.DEBIT] }, "$amount", 0] } },
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    totalCredit: { $divide: ["$totalCredit", 100] },
+                    totalDebit: { $divide: ["$totalDebit", 100] },
+                    netGain: { $divide: [{ $subtract: ["$totalCredit", "$totalDebit"] }, 100] }
+                }
+            }
+        ];
+
+        const result = await this._walletLedgerModel.aggregate(pipeline);
+        return result[0] ?? { totalCredit: 0, totalDebit: 0, netGain: 0 };
     }
 
 }
