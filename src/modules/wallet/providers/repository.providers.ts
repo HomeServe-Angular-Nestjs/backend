@@ -22,5 +22,4 @@ export const walletRepositoryProviders: Provider[] = [
             new WalletLedgerRepository(walletLedgerModel),
         inject: [getModelToken(WALLET_LEDGER_MODEL_NAME)]
     },
-
 ];

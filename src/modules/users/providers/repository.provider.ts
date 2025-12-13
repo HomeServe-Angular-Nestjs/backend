@@ -4,12 +4,14 @@ import {
     ADMIN_SETTINGS_MODEL_NAME,
     BOOKINGS_MODEL_NAME, CUSTOMER_MODEL_NAME, PROVIDER_MODEL_NAME, SUBSCRIPTION_MODEL_NAME,
     WALLET_LEDGER_MODEL_NAME,
+    WALLET_MODEL_NAME,
 } from '@/core/constants/model.constant';
 import {
     ADMIN_SETTINGS_REPOSITORY_NAME,
     BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME,
     SUBSCRIPTION_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME,
-    WALLET_LEDGER_REPOSITORY_NAME
+    WALLET_LEDGER_REPOSITORY_NAME,
+    WALLET_REPOSITORY_NAME
 } from '@/core/constants/repository.constant';
 import { BookingRepository } from '@/core/repositories/implementations/bookings.repository';
 import { CustomerRepository } from '@/core/repositories/implementations/customer.repository';
@@ -29,6 +31,8 @@ import { AdminSettingsRepository } from '@core/repositories/implementations/admi
 import { LoggerFactory } from '@core/logger/implementation/logger.factory';
 import { WalletLedgerDocument } from '@core/schema/wallet-ledger.schema';
 import { WalletLedgerRepository } from '@core/repositories/implementations/wallet-ledger.repository';
+import { WalletDocument } from '@core/schema/wallet.schema';
+import { WalletRepository } from '@core/repositories/implementations/wallet.repository';
 
 export const adminRepositoryProviders: Provider[] = [
     {
@@ -72,5 +76,11 @@ export const adminRepositoryProviders: Provider[] = [
         useFactory: (settingsModel: Model<AdminSettingsDocument>) =>
             new AdminSettingsRepository(settingsModel, new LoggerFactory()),
         inject: [getModelToken(ADMIN_SETTINGS_MODEL_NAME)]
+    },
+    {
+        provide: WALLET_REPOSITORY_NAME,
+        useFactory: (walletModel: Model<WalletDocument>) =>
+            new WalletRepository(new LoggerFactory(), walletModel),
+        inject: [getModelToken(WALLET_MODEL_NAME)]
     }
 ];

@@ -1,5 +1,5 @@
 import { WALLET_LEDGER_MODEL_NAME } from "@core/constants/model.constant";
-import { ICustomerTransactionData, IProviderTransactionData, IProviderTransactionOverview, IWalletTransactionFilter } from "@core/entities/interfaces/wallet-ledger.entity.interface";
+import { ICustomerTransactionData, IProviderTransactionData, IProviderTransactionOverview, ITransactionStats, IWalletTransactionFilter } from "@core/entities/interfaces/wallet-ledger.entity.interface";
 import { PaymentDirection, TransactionType } from "@core/enum/transaction.enum";
 import { BaseRepository } from "@core/repositories/base/implementations/base.repository";
 import { SortQuery } from "@core/repositories/implementations/slot-rule.repository";
@@ -22,7 +22,7 @@ export class WalletLedgerRepository extends BaseRepository<WalletLedgerDocument>
         return input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
 
-    private _buildTransactionFilterQuery(filters: IWalletTransactionFilter, userId: string): { match: FilterQuery<WalletLedgerDocument>, sort: SortQuery<WalletLedgerDocument> } {
+    private _buildTransactionFilterQuery(filters: IWalletTransactionFilter, userId?: string): { match: FilterQuery<WalletLedgerDocument>, sort: SortQuery<WalletLedgerDocument> } {
         const match: FilterQuery<WalletLedgerDocument> = {};
 
         if (userId) {
@@ -118,6 +118,10 @@ export class WalletLedgerRepository extends BaseRepository<WalletLedgerDocument>
         }
 
         return { match, sort };
+    }
+
+    async count(): Promise<number> {
+        return this._walletLedgerModel.countDocuments();
     }
 
     async getTotalLedgerCountByUserId(userId: string): Promise<number> {
@@ -254,4 +258,143 @@ export class WalletLedgerRepository extends BaseRepository<WalletLedgerDocument>
         return result[0] ?? { totalCredit: 0, totalDebit: 0, netGain: 0 };
     }
 
+    async getAdminTransactionLists(filters: IWalletTransactionFilter, options: { page: number; limit: number }): Promise<WalletLedgerDocument[]> {
+        const page = options?.page && options.page > 0 ? options.page : 1;
+        const limit = options?.limit && options.limit > 0 ? options.limit : 10;
+        const skip = (page - 1) * limit;
+
+        const { match, sort } = this._buildTransactionFilterQuery(filters);
+
+        return await this._walletLedgerModel
+            .find(match)
+            .sort(sort)
+            .skip(skip)
+            .limit(limit)
+            .lean();
+    }
+
+    async getTransactionStats(): Promise<Omit<ITransactionStats, "balance">> {
+        const pipeline: PipelineStage[] = [
+            {
+                $group: {
+                    _id: null,
+                    grossPayments: {
+                        $sum: {
+                            $cond: [
+                                {
+                                    $and: [
+                                        { $eq: ["$userRole", 'customer'] },
+                                        { $eq: ["$direction", PaymentDirection.DEBIT] },
+                                    ]
+                                },
+                                "$amount",
+
+                                0
+                            ]
+                        }
+                    },
+                    providerPayouts: {
+                        $sum: {
+                            $cond: [
+                                {
+                                    $and: [
+                                        { $eq: ["$userRole", 'provider'] },
+                                        { $eq: ["$direction", PaymentDirection.CREDIT] },
+                                    ]
+                                },
+                                "$amount",
+                                0
+                            ]
+                        }
+                    },
+                    platformCommission: {
+                        $sum: {
+                            $cond: [
+                                {
+                                    $and: [
+                                        { $eq: ["$userRole", 'admin'] },
+                                        { $eq: ["$direction", PaymentDirection.CREDIT] },
+                                        {
+                                            $in: [
+                                                "$type",
+                                                [
+                                                    TransactionType.PROVIDER_COMMISSION,
+                                                    TransactionType.CUSTOMER_COMMISSION,
+                                                ],
+                                            ],
+                                        },
+                                    ]
+                                },
+                                "$amount",
+                                0
+                            ]
+                        }
+                    },
+                    gstCollected: {
+                        $sum:
+                        {
+                            $cond: [
+                                {
+                                    $and: [
+                                        { $eq: ["$userRole", 'admin'] },
+                                        { $eq: ["$direction", PaymentDirection.CREDIT] },
+                                        { $eq: ["$type", TransactionType.GST] }
+                                    ]
+                                },
+                                "$amount",
+                                0
+                            ]
+                        }
+                    },
+                    refundIssued: {
+                        $sum: {
+                            $cond: [
+                                {
+                                    $and: [
+                                        { $eq: ["$userRole", 'admin'] },
+                                        { $eq: ["$direction", PaymentDirection.DEBIT] },
+                                        { $eq: ["$type", TransactionType.BOOKING_REFUND] },
+                                    ]
+                                },
+                                "$amount",
+                                0
+                            ]
+                        }
+                    },
+                },
+            },
+            {
+                $addFields: {
+                    netProfit: {
+                        $subtract: [
+                            "$platformCommission",
+                            { $add: ["$gstCollected", "$refundIssued"] },
+                        ],
+                    },
+
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    netProfit: { $divide: ["$netProfit", 100] },
+                    providerPayouts: { $divide: ["$providerPayouts", 100] },
+                    grossPayments: { $divide: ["$grossPayments", 100] },
+                    platformCommission: { $divide: ["$platformCommission", 100] },
+                    gstCollected: { $divide: ["$gstCollected", 100] },
+                    refundIssued: { $divide: ["$refundIssued", 100] },
+                }
+            }
+        ];
+
+        const result = await this._walletLedgerModel.aggregate(pipeline);
+        return result[0] || {
+            netProfit: 0,
+            providerPayouts: 0,
+            grossPayments: 0,
+            platformCommission: 0,
+            gstCollected: 0,
+            refundIssued: 0,
+        };
+    }
 }

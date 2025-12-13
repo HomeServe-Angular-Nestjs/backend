@@ -70,3 +70,32 @@ export interface IProviderTransactionOverview {
     totalDebit: number;
     netGain: number;
 }
+
+export interface ITransactionAdminList {
+    dateTime: string;
+    counterparty: {
+        email: string;
+        role: UserType;
+    };
+    type: TransactionType;
+    direction: PaymentDirection;
+    amount: number;
+    referenceType: string;
+    referenceId: string;
+    source: PaymentSource;
+}
+
+export interface IAdminTransactionDataWithPagination {
+    transactions: ITransactionAdminList[];
+    pagination: IPagination;
+}
+
+export interface ITransactionStats {
+    balance: number;
+    grossPayments: number;
+    providerPayouts: number;
+    platformCommission: number;
+    gstCollected: number;
+    refundIssued: number;
+    netProfit: number;
+}
