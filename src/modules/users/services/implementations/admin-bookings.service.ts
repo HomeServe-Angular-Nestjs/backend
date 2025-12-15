@@ -1,6 +1,6 @@
 import { Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME } from '@/core/constants/repository.constant';
-import { IAdminBookingDetails, IAdminBookingForTable, IBookingStats, IPaginatedBookingsResponse } from '@/core/entities/interfaces/booking.entity.interface';
+import { IAdminBookingDetails, IAdminBookingFilter, IAdminBookingList, IBookingStats, IPaginatedBookingsResponse } from '@/core/entities/interfaces/booking.entity.interface';
 import { ErrorCodes, ErrorMessage } from '@/core/enum/error.enum';
 import { IResponse } from '@/core/misc/response.util';
 import { IBookingRepository } from '@/core/repositories/interfaces/bookings-repo.interface';
@@ -12,7 +12,7 @@ import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { createBookingReportTableTemplate, IBookingTableTemplate } from '@core/services/pdf/mappers/booking-report.mapper';
 import { IPdfService } from '@core/services/pdf/pdf.interface';
-import { BookingReportDownloadDto, GetBookingsFilter } from '@modules/users/dtos/admin-user.dto';
+import { BookingReportDownloadDto, AdminBookingFilterDto } from '@modules/users/dtos/admin-user.dto';
 import { IAdminBookingService } from '@modules/users/services/interfaces/admin-bookings-service.interface';
 import { BOOKING_MAPPER, CUSTOMER_MAPPER, PROVIDER_MAPPER } from '@core/constants/mappers.constant';
 import { IBookingMapper } from '@core/dto-mapper/interface/bookings.mapper.interface';
@@ -20,6 +20,8 @@ import { ICustomerMapper } from '@core/dto-mapper/interface/customer.mapper..int
 import { IProviderMapper } from '@core/dto-mapper/interface/provider.mapper.interface';
 import { ClientUserType } from '@core/entities/interfaces/user.entity.interface';
 import { TransactionStatus, TransactionType } from '@core/enum/transaction.enum';
+import { UPLOAD_UTILITY_NAME } from '@core/constants/utility.constant';
+import { IUploadsUtility } from '@core/utilities/interface/upload.utility.interface';
 
 @Injectable()
 export class AdminBookingService implements IAdminBookingService {
@@ -42,6 +44,8 @@ export class AdminBookingService implements IAdminBookingService {
         private readonly _customerMapper: ICustomerMapper,
         @Inject(PROVIDER_MAPPER)
         private readonly _providerMapper: IProviderMapper,
+        @Inject(UPLOAD_UTILITY_NAME)
+        private readonly _uploadUtility: IUploadsUtility,
     ) {
         this.logger = this.loggerFactory.createLogger(AdminBookingService.name)
     }
@@ -88,95 +92,60 @@ export class AdminBookingService implements IAdminBookingService {
         };
     }
 
-    async fetchBookings(getBookingsFilter: GetBookingsFilter): Promise<IResponse<IPaginatedBookingsResponse>> {
-        const page = getBookingsFilter.page || 1;
+    async fetchBookings(filter: AdminBookingFilterDto): Promise<IResponse<IPaginatedBookingsResponse>> {
+        const page = filter.page || 1;
         const limit = 10;
-        const skip = (page - 1) * limit;
 
-        let bookingFilter: any = {};
+        const filters: IAdminBookingFilter = {};
 
-        // Search by Customer name/email (partial match)
-        if (getBookingsFilter.search && getBookingsFilter.searchBy === 'customer') {
-            const customers = await this._customerRepository.find({
-                $or: [
-                    { username: { $regex: getBookingsFilter.search, $options: 'i' } },
-                    { email: { $regex: getBookingsFilter.search, $options: 'i' } },
-                ],
-            }); //todo
-
-            const customerIds = customers.map((c) => c.id);
-            bookingFilter.customerId = { $in: customerIds };
+        if (filter.bookingStatus) {
+            filters.bookingStatus = filter.bookingStatus;
         }
 
-        // Filter by booking status
-        if (getBookingsFilter.bookingStatus) {
-            bookingFilter.bookingStatus = getBookingsFilter.bookingStatus;
+        if (filter.paymentStatus) {
+            filters.paymentStatus = filter.paymentStatus;
         }
 
-        // Filter by payment status
-        if (getBookingsFilter.paymentStatus) {
-            bookingFilter.paymentStatus = getBookingsFilter.paymentStatus;
+        if (filter.search) {
+            filters.search = filter.search;
         }
 
-        // Fetch bookings and total count
         const [bookings, total] = await Promise.all([
-            this._bookingRepository.find(bookingFilter, {
-                skip,
-                limit,
-                sort: { createdAt: -1 },
-            }),
-            this._bookingRepository.count(bookingFilter),
+            this._bookingRepository.fetchFilteredBookingsWithPagination(filters, { page, limit }),
+            this._bookingRepository.count(filters),
         ]);
 
-        // Build response
-        const bookingResponseData: IAdminBookingForTable[] = await Promise.all(
+        const bookingResponseData: IAdminBookingList[] = await Promise.all(
             bookings.map(async (booking) => {
-                const [customer, provider] = await Promise.all([
-                    this._customerRepository.findById(booking.customerId),
-                    this._providerRepository.findById(booking.providerId),
-                ]);
-
-                if (!customer) {
-                    throw new NotFoundException(`${ErrorMessage.CUSTOMER_NOT_FOUND_WITH_ID, booking.customerId}`);
-                }
-
-                if (!provider) {
-                    throw new NotFoundException(`${ErrorMessage.PROVIDER_NOT_FOUND, booking.providerId}`);
-                }
+                const customerAvatar = this._uploadUtility.getSignedImageUrl(booking.customer.avatar);
+                const providerAvatar = this._uploadUtility.getSignedImageUrl(booking.provider.avatar);
 
                 return {
-                    bookingId: booking.id,
+                    bookingId: booking.bookingId,
                     customer: {
-                        avatar: customer.avatar,
-                        id: customer.id,
-                        username: customer.username,
-                        email: customer.email,
+                        avatar: customerAvatar,
+                        id: booking.customer.id,
+                        username: booking.customer.username,
+                        email: booking.customer.email,
                     },
                     provider: {
-                        avatar: provider.avatar,
-                        id: provider.id,
-                        username: provider.username,
-                        email: provider.email,
+                        avatar: providerAvatar,
+                        id: booking.provider.id,
+                        username: booking.provider.username,
+                        email: booking.provider.email,
                     },
-                    date: booking.createdAt as Date,
-                    status: booking.bookingStatus,
+                    date: booking.date,
+                    status: booking.status,
                     paymentStatus: booking.paymentStatus,
                 };
             }),
         );
 
-        let filteredBookings = bookingResponseData;
-        if (getBookingsFilter.search && getBookingsFilter.searchBy === 'id') {
-            filteredBookings = filteredBookings.filter(b =>
-                b.bookingId.toLowerCase().includes(getBookingsFilter.search.toLowerCase())
-            );
-        }
-
         return {
             success: true,
             message: 'Booking data fetched successfully',
             data: {
-                bookingData: filteredBookings,
+                bookingData: bookingResponseData,
                 pagination: {
                     total,
                     page,

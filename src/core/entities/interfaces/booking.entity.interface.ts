@@ -176,7 +176,7 @@ export interface IBookingDetailProvider extends IBookingDetailsBase {
     };
 }
 
-export interface IAdminBookingForTable {
+export interface IAdminBookingList {
     bookingId: string;
     customer: {
         avatar: string;
@@ -196,7 +196,7 @@ export interface IAdminBookingForTable {
 }
 
 export interface IPaginatedBookingsResponse {
-    bookingData: IAdminBookingForTable[];
+    bookingData: IAdminBookingList[];
     pagination: IPagination;
 }
 
@@ -426,4 +426,11 @@ export interface IAdminBookingDetails {
         commissionEarned: number;
         gst: number;
     }
+}
+
+export interface IAdminBookingFilter {
+    page?: number;
+    search?: string;
+    bookingStatus?: BookingStatus | 'all';
+    paymentStatus?: PaymentStatus | 'all';
 }

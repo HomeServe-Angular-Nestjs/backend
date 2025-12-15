@@ -73,7 +73,7 @@ export class RemoveUserDto {
     role: RoleType;
 }
 
-export class GetBookingsFilter extends PageDto {
+export class AdminBookingFilterDto extends PageDto {
     @IsOptional()
     @IsString()
     search: string;

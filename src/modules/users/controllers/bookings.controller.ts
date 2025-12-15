@@ -4,7 +4,7 @@ import { ErrorMessage } from '@core/enum/error.enum';
 import { CustomLogger } from '@core/logger/implementation/custom-logger';
 import { IResponse } from '@core/misc/response.util';
 import { isValidIdPipe } from '@core/pipes/is-valid-id.pipe';
-import { BookingReportDownloadDto, GetBookingsFilter } from '@modules/users/dtos/admin-user.dto';
+import { BookingReportDownloadDto, AdminBookingFilterDto } from '@modules/users/dtos/admin-user.dto';
 import { IAdminBookingService } from '@modules/users/services/interfaces/admin-bookings-service.interface';
 import { Body, Controller, Get, Inject, InternalServerErrorException, Param, Post, Query, Res } from '@nestjs/common';
 import { Response } from 'express';
@@ -19,7 +19,7 @@ export class AdminBookingController {
     ) { }
 
     @Get('')
-    async getBookings(@Query() getBookingsFilterDto: GetBookingsFilter): Promise<IResponse<IPaginatedBookingsResponse>> {
+    async getBookings(@Query() getBookingsFilterDto: AdminBookingFilterDto): Promise<IResponse<IPaginatedBookingsResponse>> {
         return await this._adminBookingService.fetchBookings(getBookingsFilterDto);
     }
 
