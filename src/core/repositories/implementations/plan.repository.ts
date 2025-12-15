@@ -31,7 +31,11 @@ export class PlanRepository extends BaseRepository<PlanDocument> implements IPla
         return this._planModel.findOne({ _id: planId });
     }
 
-    async updatePlan(filter: Partial<IPlan>, updateData: Partial<IPlan>, options?: { new?: boolean }): Promise<PlanDocument | null> {
-        return this._planModel.findOneAndUpdate(filter, updateData, options);
+    async updatePlanByPlanId(planId: string, updateData: Partial<IPlan>, options?: { new?: boolean }): Promise<PlanDocument | null> {
+        return this._planModel.findOneAndUpdate({ _id: planId }, updateData, options);
+    }
+
+    async isPlanExists(filter: Partial<Omit<IPlan, 'id'>>): Promise<boolean> {
+        return !!await this._planModel.exists(filter);
     }
 }

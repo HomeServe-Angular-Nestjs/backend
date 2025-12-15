@@ -3,12 +3,13 @@ import { Plan } from "@core/entities/implementation/plans.entity";
 import { IPlan } from "@core/entities/interfaces/plans.entity.interface";
 import { PlanDocument } from "@core/schema/plans.schema";
 import { Injectable } from "@nestjs/common";
+import { Types } from "mongoose";
 
 @Injectable()
 export class PlanMapper implements IPlanMapper {
     toEntity(doc: PlanDocument): IPlan {
         return new Plan({
-            id: doc.id,
+            id: (doc._id as Types.ObjectId).toString(),
             name: doc.name,
             price: doc.price,
             duration: doc.duration,
