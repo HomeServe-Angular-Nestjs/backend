@@ -1,7 +1,7 @@
 import { Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME } from '@/core/constants/repository.constant';
-import { IAdminBookingForTable, IBookingStats, IPaginatedBookingsResponse } from '@/core/entities/interfaces/booking.entity.interface';
-import { ErrorMessage } from '@/core/enum/error.enum';
+import { IAdminBookingDetails, IAdminBookingForTable, IBookingStats, IPaginatedBookingsResponse } from '@/core/entities/interfaces/booking.entity.interface';
+import { ErrorCodes, ErrorMessage } from '@/core/enum/error.enum';
 import { IResponse } from '@/core/misc/response.util';
 import { IBookingRepository } from '@/core/repositories/interfaces/bookings-repo.interface';
 import { ICustomerRepository } from '@/core/repositories/interfaces/customer-repo.interface';
@@ -14,6 +14,12 @@ import { createBookingReportTableTemplate, IBookingTableTemplate } from '@core/s
 import { IPdfService } from '@core/services/pdf/pdf.interface';
 import { BookingReportDownloadDto, GetBookingsFilter } from '@modules/users/dtos/admin-user.dto';
 import { IAdminBookingService } from '@modules/users/services/interfaces/admin-bookings-service.interface';
+import { BOOKING_MAPPER, CUSTOMER_MAPPER, PROVIDER_MAPPER } from '@core/constants/mappers.constant';
+import { IBookingMapper } from '@core/dto-mapper/interface/bookings.mapper.interface';
+import { ICustomerMapper } from '@core/dto-mapper/interface/customer.mapper..interface';
+import { IProviderMapper } from '@core/dto-mapper/interface/provider.mapper.interface';
+import { ClientUserType } from '@core/entities/interfaces/user.entity.interface';
+import { TransactionStatus, TransactionType } from '@core/enum/transaction.enum';
 
 @Injectable()
 export class AdminBookingService implements IAdminBookingService {
@@ -30,6 +36,12 @@ export class AdminBookingService implements IAdminBookingService {
         private readonly _providerRepository: IProviderRepository,
         @Inject(PDF_SERVICE)
         private readonly _pdfService: IPdfService,
+        @Inject(BOOKING_MAPPER)
+        private readonly _bookingMapper: IBookingMapper,
+        @Inject(CUSTOMER_MAPPER)
+        private readonly _customerMapper: ICustomerMapper,
+        @Inject(PROVIDER_MAPPER)
+        private readonly _providerMapper: IProviderMapper,
     ) {
         this.logger = this.loggerFactory.createLogger(AdminBookingService.name)
     }
@@ -184,6 +196,121 @@ export class AdminBookingService implements IAdminBookingService {
             success: true,
             message: 'Booking stats fetched.',
             data: bookingStats
+        }
+    }
+
+    async getBookingDetails(bookingId: string): Promise<IResponse<IAdminBookingDetails>> {
+        const bookingDoc = await this._bookingRepository.findById(bookingId);
+        if (!bookingDoc) {
+            throw new NotFoundException({
+                code: ErrorCodes.NOT_FOUND,
+                message: 'Booking not found.',
+            });
+        }
+
+        const [customerDoc, providerDoc] = await Promise.all([
+            this._customerRepository.findById(bookingDoc.customerId),
+            this._providerRepository.findById(bookingDoc.providerId),
+        ]);
+
+        if (!customerDoc) {
+            throw new NotFoundException({
+                code: ErrorCodes.NOT_FOUND,
+                message: 'Customer not found.',
+            });
+        }
+
+        if (!providerDoc) {
+            throw new NotFoundException({
+                code: ErrorCodes.NOT_FOUND,
+                message: 'Provider not found.',
+            });
+        }
+
+        const booking = this._bookingMapper.toEntity(bookingDoc);
+        const customer = this._customerMapper.toEntity(customerDoc);
+        const provider = this._providerMapper.toEntity(providerDoc);
+
+        const transactionHistory = await Promise.all(
+            booking.transactionHistory.map(async tnx => {
+                const [customerDoc, providerDoc] = await Promise.all([
+                    this._customerRepository.findById(tnx.userId),
+                    this._providerRepository.findById(tnx.userId),
+                ]);
+
+                let user: ClientUserType | null = null;
+                if (customerDoc) user = 'customer';
+                else if (providerDoc) user = 'provider';
+
+                if (!user) {
+                    throw new InternalServerErrorException({
+                        code: ErrorCodes.INTERNAL_SERVER_ERROR,
+                        message: 'User not found.',
+                    });
+                }
+
+                return {
+                    date: tnx.createdAt?.toISOString() as string,
+                    user: user,
+                    type: tnx.transactionType,
+                    direction: tnx.direction,
+                    amount: tnx.amount / 100,
+                    status: tnx.status,
+                }
+            })
+        );
+
+        const breakdownTxn = booking.transactionHistory
+            .filter(tnx => tnx.transactionType === TransactionType.BOOKING_PAYMENT && tnx.status === TransactionStatus.SUCCESS)
+            .sort((a, b) => (b.createdAt as Date).getTime() - (a.createdAt as Date).getTime())[0];
+
+        const breakdown = breakdownTxn
+            ? {
+                providerAmount: breakdownTxn.metadata?.breakup?.providerAmount ?? 0,
+                commissionEarned: breakdownTxn.metadata?.breakup?.commission ?? 0,
+                gst: breakdownTxn.metadata?.breakup?.gst ?? 0,
+            }
+            : {
+                providerAmount: 0,
+                commissionEarned: 0,
+                gst: 0,
+            };
+
+        const bookingResponse: IAdminBookingDetails = {
+            bookingId: booking.id,
+            totalAmount: booking.totalAmount / 100,
+            expectedArrival: booking.expectedArrivalTime,
+            actualArrival: booking.actualArrivalTime,
+            bookingStatus: booking.bookingStatus,
+            paymentStatus: booking.paymentStatus,
+            createdAt: booking.createdAt?.toISOString() as string,
+            customer: {
+                phone: customer.phone,
+                role: 'customer',
+                email: customer.email,
+            },
+            provider: {
+                phone: provider.phone,
+                role: 'provider',
+                email: provider.email,
+            },
+            location: {
+                address: booking.location.address,
+                coordinates: booking.location.coordinates,
+            },
+            transactionHistory: transactionHistory,
+            breakdown: {
+                customerPaid: booking.totalAmount / 100,
+                providerAmount: breakdown.providerAmount / 100,
+                commissionEarned: breakdown.commissionEarned / 100,
+                gst: breakdown.gst / 100,
+            }
+        }
+
+        return {
+            success: true,
+            message: 'Booking details fetched.',
+            data: bookingResponse
         }
     }
 

@@ -2,8 +2,9 @@ import { ITransaction } from '@core/entities/interfaces/transaction.entity.inter
 import { BookingStatus, CancelStatus, PaymentStatus } from '../../enum/bookings.enum';
 import { IEntity } from '../base/interfaces/base-entity.entity.interface';
 import { SlotStatusEnum } from '@core/enum/slot.enum';
-import { PaymentSource, TransactionType } from '@core/enum/transaction.enum';
+import { PaymentDirection, PaymentSource, TransactionStatus, TransactionType } from '@core/enum/transaction.enum';
 import { ServiceDocument } from '@core/schema/service.schema';
+import { ClientUserType } from '@core/entities/interfaces/user.entity.interface';
 
 export type RevenueChartView = 'monthly' | 'quarterly' | 'yearly';
 
@@ -387,4 +388,42 @@ export interface IReviewFilter {
     rating?: 'all' | 1 | 2 | 3 | 4 | 5;
     sort?: 'asc' | 'desc';
     time?: 'all' | 'last_6_months' | 'last_year';
+}
+
+export interface IAdminBookingDetails {
+    bookingId: string;
+    totalAmount: number;
+    expectedArrival: Date;
+    actualArrival: Date | null;
+    bookingStatus: BookingStatus;
+    paymentStatus: PaymentStatus;
+    createdAt: string;
+    customer: {
+        phone: string;
+        role: ClientUserType;
+        email: string;
+    };
+    provider: {
+        phone: string;
+        role: ClientUserType;
+        email: string;
+    };
+    location: {
+        address: string;
+        coordinates: [number, number];
+    };
+    transactionHistory: {
+        date: string;
+        user: ClientUserType;
+        type: TransactionType;
+        direction: PaymentDirection;
+        amount: number;
+        status: TransactionStatus;
+    }[]
+    breakdown: {
+        customerPaid: number;
+        providerAmount: number;
+        commissionEarned: number;
+        gst: number;
+    }
 }
