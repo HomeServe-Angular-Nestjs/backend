@@ -2,6 +2,7 @@ import { BookingStatus, CancelStatus, PaymentStatus } from '@core/enum/bookings.
 import { BaseEntity } from '@core/entities/base/implementation/base.entity';
 import { IBookedSlot, IBooking, IReview } from '@core/entities/interfaces/booking.entity.interface';
 import { SlotStatusEnum } from '@core/enum/slot.enum';
+import { ITransaction } from '@core/entities/interfaces/transaction.entity.interface';
 
 export class Booking extends BaseEntity implements IBooking {
     customerId: string;
@@ -23,7 +24,7 @@ export class Booking extends BaseEntity implements IBooking {
     }[];
     paymentStatus: PaymentStatus;
     cancelStatus: CancelStatus | null;
-    transactionId: string | null;
+   transactionHistory: ITransaction[];
     review: IReview | null;
     respondedAt: Date | null;
 

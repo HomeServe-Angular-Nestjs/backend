@@ -1,9 +1,9 @@
-import { TRANSACTION_MODEL_NAME, WALLET_MODEL_NAME } from "@core/constants/model.constant";
-import { TRANSACTION_REPOSITORY_NAME, WALLET_REPOSITORY_NAME } from "@core/constants/repository.constant";
+import { WALLET_LEDGER_MODEL_NAME, WALLET_MODEL_NAME } from "@core/constants/model.constant";
+import { WALLET_LEDGER_REPOSITORY_NAME, WALLET_REPOSITORY_NAME } from "@core/constants/repository.constant";
 import { LoggerFactory } from "@core/logger/implementation/logger.factory";
-import { TransactionRepository } from "@core/repositories/implementations/transaction.repository";
+import { WalletLedgerRepository } from "@core/repositories/implementations/wallet-ledger.repository";
 import { WalletRepository } from "@core/repositories/implementations/wallet.repository";
-import { TransactionDocument } from "@core/schema/transaction.schema";
+import { WalletLedgerDocument } from "@core/schema/wallet-ledger.schema";
 import { WalletDocument } from "@core/schema/wallet.schema";
 import { Provider } from "@nestjs/common";
 import { getModelToken } from "@nestjs/mongoose";
@@ -17,10 +17,9 @@ export const walletRepositoryProviders: Provider[] = [
         inject: [getModelToken(WALLET_MODEL_NAME)]
     },
     {
-        provide: TRANSACTION_REPOSITORY_NAME,
-        useFactory: (transactionModel: Model<TransactionDocument>) =>
-            new TransactionRepository(transactionModel),
-        inject: [getModelToken(TRANSACTION_MODEL_NAME)]
+        provide: WALLET_LEDGER_REPOSITORY_NAME,
+        useFactory: (walletLedgerModel: Model<WalletLedgerDocument>) =>
+            new WalletLedgerRepository(walletLedgerModel),
+        inject: [getModelToken(WALLET_LEDGER_MODEL_NAME)]
     },
-
 ];

@@ -29,7 +29,6 @@ export class RazorpayController {
         return req.user as IPayload;
     }
 
-    @UseGuards(OngoingPaymentGuard)
     @Post('create_order')
     async createOrder(@Req() req: Request, @Body() { amount }: CreateOrderDto): Promise<IRazorpayOrder> {
         try {

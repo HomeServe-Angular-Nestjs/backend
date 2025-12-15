@@ -34,7 +34,9 @@ export enum ErrorMessage {
     SLOT_RESERVATION_FAILED = 'Slot already reserved. Please select another.',
     PAYMENT_IN_PROGRESS = 'Payment already in progress.',
     PAYMENT_VERIFICATION_FAILED = 'Payment verification failed.',
-    BOOKING_ALREADY_CANCELLED = 'Booking is already cancelled.'
+    BOOKING_ALREADY_CANCELLED = 'Booking has already been cancelled.',
+    INSUFFICIENT_BALANCE = 'You have insufficient balance in your wallet.',
+    BOOKING_ALREADY_COMPLETED = 'Booking has already been completed.',
 }
 
 export enum ErrorCodes {
@@ -48,6 +50,7 @@ export enum ErrorCodes {
     CONFLICT = 'CONFLICT',
     NOT_FOUND = 'NOT_FOUND',
     NO_ACTIVE_SUBSCRIPTION = 'NO_ACTIVE_SUBSCRIPTION',
+    INTERNAL_SERVER_ERROR = 'INTERNAL_SERVER_ERROR',
 
     INVALID_CREDENTIALS = 'INVALID_CREDENTIALS',
     RESOURCE_NOT_FOUND = 'RESOURCE_NOT_FOUND',

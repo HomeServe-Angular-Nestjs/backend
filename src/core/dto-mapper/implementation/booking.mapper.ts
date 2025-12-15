@@ -2,11 +2,18 @@ import { Types } from 'mongoose';
 import { IBookingMapper } from '@core/dto-mapper/interface/bookings.mapper.interface';
 import { BookedSlot, Booking, Review } from '@core/entities/implementation/bookings.entity';
 import { IBookedSlot, IBooking, IReview } from '@core/entities/interfaces/booking.entity.interface';
-import { BookingDocument, ReviewDocument, SlotDocument } from '@core/schema/bookings.schema';
-import { Injectable } from '@nestjs/common';
+import { BookingDocument, ReviewDocument, SlotDocument, TransactionDocument } from '@core/schema/bookings.schema';
+import { Inject, Injectable } from '@nestjs/common';
+import { TRANSACTION_MAPPER } from '@core/constants/mappers.constant';
+import { ITransactionMapper } from '@core/dto-mapper/interface/transaction.mapper.interface';
 
 @Injectable()
 export class BookingMapper implements IBookingMapper {
+    constructor(
+        @Inject(TRANSACTION_MAPPER)
+        private readonly _transactionMapper: ITransactionMapper
+    ) { }
+
     toEntity(doc: BookingDocument): IBooking {
         return new Booking({
             id: (doc._id as Types.ObjectId).toString(),
@@ -26,7 +33,7 @@ export class BookingMapper implements IBookingMapper {
             cancellationReason: doc.cancellationReason,
             cancelStatus: doc.cancelStatus,
             cancelledAt: doc.cancelledAt,
-            transactionId: doc.transactionId?.toString(),
+            transactionHistory: (doc.transactionHistory ?? []).map(tx => this._transactionMapper.toEntity(tx)),
             createdAt: doc.createdAt,
             updatedAt: doc.updatedAt,
             review: doc.review ? this.toReviewEntities(doc.review) : null,
@@ -73,9 +80,7 @@ export class BookingMapper implements IBookingMapper {
                 status: entity.slot.status,
             },
             bookingStatus: entity.bookingStatus,
-            transactionId: entity.transactionId
-                ? new Types.ObjectId(entity.transactionId)
-                : null,
+            transactionHistory: (entity.transactionHistory ?? []).map(tnx => this._transactionMapper.toDocument(tnx) as TransactionDocument),
             paymentStatus: entity.paymentStatus,
             cancellationReason: entity.cancellationReason,
             cancelStatus: entity.cancelStatus,

@@ -1,6 +1,6 @@
 import { BaseEntity } from '@core/entities/base/implementation/base.entity';
 import { IGatewayDetails, ITransaction, ITransactionMetadata, ITxUserDetails } from '@core/entities/interfaces/transaction.entity.interface';
-import { PaymentDirection, PaymentSource, TransactionStatus, TransactionType } from '@core/enum/transaction.enum';
+import { CurrencyType, PaymentDirection, PaymentSource, TransactionStatus, TransactionType } from '@core/enum/transaction.enum';
 
 export class Transaction extends BaseEntity implements ITransaction {
     userId: string;
@@ -9,7 +9,7 @@ export class Transaction extends BaseEntity implements ITransaction {
     source: PaymentSource;
     status: TransactionStatus;
     amount: number;
-    currency: string;
+    currency: CurrencyType;
     gateWayDetails: IGatewayDetails | null;
     userDetails: ITxUserDetails | null;
     metadata?: ITransactionMetadata | null;

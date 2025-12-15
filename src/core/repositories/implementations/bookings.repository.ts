@@ -2,7 +2,7 @@ import { FilterQuery, Model, PipelineStage, Types } from 'mongoose';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { BOOKINGS_MODEL_NAME } from '@core/constants/model.constant';
-import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData, ILocationRevenue, ITopAreaRevenue, IUnderperformingArea, IPeakServiceTime, IRevenueBreakdown, IBookingsBreakdown, IReviewDetails, IReviewDetailsRaw, IReviewFilter } from '@core/entities/interfaces/booking.entity.interface';
+import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData, ILocationRevenue, ITopAreaRevenue, IUnderperformingArea, IPeakServiceTime, IRevenueBreakdown, IBookingsBreakdown, IReviewDetailsRaw, IReviewFilter, IAdminBookingFilter, IAdminBookingList } from '@core/entities/interfaces/booking.entity.interface';
 import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderRevenueOverview, IResponseTimeChartData, ITopProviders, ITotalReviewAndAvgRating } from '@core/entities/interfaces/user.entity.interface';
 import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
 import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
@@ -10,6 +10,7 @@ import { IBookingRepository } from '@core/repositories/interfaces/bookings-repo.
 import { IBookingReportData, IReportCustomerMatrix, IReportDownloadBookingData, IReportProviderMatrix } from '@core/entities/interfaces/admin.entity.interface';
 import { SlotStatusEnum } from '@core/enum/slot.enum';
 import { BookingStatus, CancelStatus, PaymentStatus } from '@core/enum/bookings.enum';
+import { UpdateQuery } from 'mongoose';
 
 @Injectable()
 export class BookingRepository extends BaseRepository<BookingDocument> implements IBookingRepository {
@@ -18,6 +19,10 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
         private readonly _bookingModel: Model<BookingDocument>
     ) {
         super(_bookingModel);
+    }
+
+    private _escapeRegex(input: string): string {
+        return input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
 
     async findBookingsByCustomerIdWithPagination(customerId: string | Types.ObjectId, skip: number, limit: number): Promise<BookingDocument[]> {
@@ -31,9 +36,100 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
 
     async findBookingsByProviderId(providerId: string | Types.ObjectId): Promise<BookingDocument[]> {
         return await this._bookingModel
-            .find({ providerId: this._toObjectId(providerId) })
+            .find({ providerId: this._toObjectId(providerId), paymentStatus: { $ne: PaymentStatus.UNPAID } })
             .sort({ createdAt: -1 })
             .lean();
+    }
+
+    async findPaidBookings(bookingId: string): Promise<BookingDocument | null> {
+        return this._bookingModel.findOne({ _id: bookingId, paymentStatus: { $ne: PaymentStatus.UNPAID } });
+    }
+
+    async fetchFilteredBookingsWithPagination(filter: IAdminBookingFilter, option?: { page: number; limit: number; }): Promise<IAdminBookingList[]> {
+        const page = option?.page ?? 1;
+        const limit = option?.limit ?? 10;
+        const skip = (page - 1) * limit;
+
+        const match: FilterQuery<BookingDocument> = {};
+
+        const pipeline: PipelineStage[] = [];
+
+        pipeline.push(
+            {
+                $lookup: {
+                    from: 'customers',
+                    localField: 'customerId',
+                    foreignField: '_id',
+                    as: 'customer'
+                }
+            },
+            { $unwind: '$customer' },
+            {
+                $lookup: {
+                    from: 'providers',
+                    localField: 'providerId',
+                    foreignField: '_id',
+                    as: 'provider'
+                }
+            },
+            { $unwind: '$provider' },
+        );
+
+        if (filter.search) {
+            const escaped = this._escapeRegex(filter.search);
+            const searchRegex = new RegExp(escaped, 'i');
+
+            match.$or = [
+                {
+                    $expr: {
+                        $regexMatch: {
+                            input: { $toString: '$_id' },
+                            regex: searchRegex
+                        }
+                    }
+                },
+                { 'customer.email': searchRegex },
+                { 'provider.email': searchRegex },
+                { 'customer.username': searchRegex },
+                { 'provider.username': searchRegex },
+            ];
+        }
+
+        if (filter.bookingStatus && filter.bookingStatus !== 'all') {
+            match.bookingStatus = filter.bookingStatus;
+        }
+
+        if (filter.paymentStatus && filter.paymentStatus !== 'all') {
+            match.paymentStatus = filter.paymentStatus;
+        }
+
+        pipeline.push({ $match: match });
+        pipeline.push({ $sort: { createdAt: -1 } });
+        pipeline.push({ $skip: skip });
+        pipeline.push({ $limit: limit });
+        pipeline.push({
+            $project: {
+                _id: 0,
+                bookingId: '$_id',
+                customer: {
+                    id: '$customer._id',
+                    avatar: '$customer.avatar',
+                    username: '$customer.username',
+                    email: '$customer.email',
+                },
+                provider: {
+                    id: '$provider._id',
+                    avatar: '$provider.avatar',
+                    username: '$provider.username',
+                    email: '$provider.email',
+                },
+                date: '$createdAt',
+                status: '$bookingStatus',
+                paymentStatus: '$paymentStatus',
+            }
+        });
+
+        return await this._bookingModel.aggregate(pipeline);
     }
 
     async count(filter?: FilterQuery<BookingDocument>): Promise<number> {
@@ -350,17 +446,18 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
     async isAlreadyRequestedForCancellation(bookingId: string): Promise<boolean> {
         return await this._bookingModel.exists({
             _id: bookingId,
-            cancelStatus: { $exists: true, $ne: null }
+            cancelStatus: CancelStatus.IN_PROGRESS
         }).then(Boolean);
     }
 
-    async markBookingCancelledByCustomer(bookingId: string, reason: string, cancelStatus: CancelStatus, bookingStatus: BookingStatus): Promise<BookingDocument | null> {
+    async markBookingCancelledByCustomer(customerId: string, bookingId: string, reason: string, cancelStatus: CancelStatus, bookingStatus: BookingStatus): Promise<BookingDocument | null> {
         const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
         const now = new Date();
 
         return await this._bookingModel.findOneAndUpdate(
             {
                 _id: bookingId,
+                customerId: this._toObjectId(customerId),
                 bookingStatus: { $nin: [BookingStatus.CANCELLED, BookingStatus.COMPLETED] },
                 createdAt: {
                     $gte: new Date(now.getTime() - TWENTY_FOUR_HOURS)
@@ -371,40 +468,32 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                     bookingStatus,
                     cancellationReason: reason,
                     cancelStatus,
-                    cancelledAt: now,
                 }
             },
             { new: true }
         );
     }
 
-    async updatePaymentStatus(bookingId: string, status: PaymentStatus, transactionId: string): Promise<BookingDocument | null> {
+    async updatePaymentStatus(bookingId: string, status: PaymentStatus): Promise<BookingDocument | null> {
         return this._bookingModel.findOneAndUpdate(
             { _id: bookingId },
-            {
-                $set: {
-                    paymentStatus: status,
-                    transactionId: this._toObjectId(transactionId)
-                }
-            },
+            { $set: { paymentStatus: status } },
+            { new: true }
+        ).lean();
+    }
+
+    async updateBookingStatus(bookingId: string, newStatus: BookingStatus): Promise<BookingDocument | null> {
+        return await this._bookingModel.findOneAndUpdate(
+            { _id: bookingId },
+            { $set: { bookingStatus: newStatus } },
             { new: true }
         );
     }
 
-    async updateBookingStatus(bookingId: string, newStatus: BookingStatus): Promise<boolean> {
-        const update = await this._bookingModel.updateOne(
-            { _id: bookingId },
-            { $set: { bookingStatus: newStatus } }
-        );
-
-        return update.modifiedCount > 0;
-    }
-
-
-    async markBookingCancelledByProvider(bookingId: string, bookingStatus: BookingStatus, cancelStatus: CancelStatus, reason?: string): Promise<BookingDocument | null> {
+    async markBookingCancelledByProvider(providerId: string, bookingId: string, bookingStatus: BookingStatus, cancelStatus: CancelStatus, reason?: string): Promise<BookingDocument | null> {
         const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
         const now = new Date();
-        const updateData: Record<string, string | Date> = {
+        const updateData: UpdateQuery<BookingDocument> = {
             bookingStatus,
             cancelStatus,
             cancelledAt: now,
@@ -418,8 +507,9 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
         return await this._bookingModel.findOneAndUpdate(
             {
                 _id: bookingId,
+                providerId: this._toObjectId(providerId),
                 bookingStatus: { $nin: [BookingStatus.CANCELLED, BookingStatus.COMPLETED] },
-                cancelStatus: { $exists: true, $ne: CancelStatus.CANCELLED },
+                cancelStatus: { $ne: CancelStatus.CANCELLED },
                 createdAt: {
                     $gte: new Date(now.getTime() - TWENTY_FOUR_HOURS)
                 }
@@ -2212,7 +2302,7 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
             }
         ]);
 
-        return result?.[0]?.completionRate ?? 0; 
+        return result?.[0]?.completionRate ?? 0;
     }
 
 }

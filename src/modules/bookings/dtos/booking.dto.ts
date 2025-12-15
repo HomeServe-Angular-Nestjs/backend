@@ -106,9 +106,9 @@ export class BookingDto {
     @Type(() => SelectedServiceType)
     serviceIds: SelectedServiceType[];
 
-    @IsOptional()
-    @Transform(({ value }) => typeof value === 'string' ? value : null)
-    transactionId: string | null;
+    // @IsOptional()
+    // @Transform(({ value }) => typeof value === 'string' ? value : null)
+    // transactionId: string | null;
 }
 
 
@@ -160,10 +160,16 @@ export class BookingIdDto {
 
 export class CancelBookingDto extends BookingIdDto {
     @IsNotEmpty()
-    @IsString()
+    @IsString({ message: 'Reason must be a string.' })
+    @Matches(/^[A-Za-z0-9 ,.!?-]+$/, { message: 'Enter a valid reason.' })
+    @MinLength(10, { message: 'Minimum length should be 10 characters.' })
+    @MaxLength(100, { message: 'Maximum length should be 100 characters.' })
+    @Transform(({ value }) => {
+        const trimmed = value?.trim();
+        return !trimmed ? undefined : trimmed;
+    })
     reason: string
 }
-
 
 export class UpdateBookingDto {
     @IsNotEmpty()

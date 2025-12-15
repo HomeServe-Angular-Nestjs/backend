@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { IOtpRepository } from '@core/repositories/interfaces/otp-repo.interface';
 import { REDIS_CLIENT } from '@configs/redis/redis.module';
 import Redis from 'ioredis';
-import { OtpDocument } from '@core/schema/otp.schema';
+import { IOtp } from '@core/entities/interfaces/otp.entity.interface';
 
 @Injectable()
 export class OtpRepository implements IOtpRepository {
@@ -19,7 +19,7 @@ export class OtpRepository implements IOtpRepository {
     await this._redis.del(this._getKey(email));
   }
 
-  async create(data: { email: string; code: string }): Promise<OtpDocument | null> {
+  async create(data: { email: string; code: string }): Promise<IOtp | null> {
     const key = this._getKey(data.email);
 
     console.log(key);
@@ -31,10 +31,10 @@ export class OtpRepository implements IOtpRepository {
     return {
       email: data.email,
       code: data.code,
-    } as unknown as OtpDocument;
+    } as unknown as IOtp;
   }
 
-  async findOtp(email: string): Promise<OtpDocument | null> {
+  async findOtp(email: string): Promise<IOtp | null> {
     const key = this._getKey(email);
     const code = await this._redis.get(key);
 
@@ -43,6 +43,6 @@ export class OtpRepository implements IOtpRepository {
     return {
       email,
       code,
-    } as unknown as OtpDocument;
+    } as unknown as IOtp;
   }
 }

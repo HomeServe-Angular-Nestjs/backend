@@ -4,4 +4,6 @@ export interface IAdminSettings extends IEntity {
     gstPercentage: number;
     providerCommission: number;
     customerCommission: number;
+    cancellationFee: number;
+    providerCancellationFine: number;
 }

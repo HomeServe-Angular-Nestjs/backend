@@ -1,9 +1,10 @@
 import {
     BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME,
-    SUBSCRIPTION_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME
+    SUBSCRIPTION_REPOSITORY_NAME,
+    WALLET_LEDGER_REPOSITORY_NAME
 } from '@/core/constants/repository.constant';
 import {
-    IAdminDashboardOverview, IAdminDashboardRevenue, IAdminDashboardSubscription,
+    IAdminDashboardOverview, IAdminDashboardSubscription,
     IAdminDashboardUserStats
 } from '@/core/entities/interfaces/admin.entity.interface';
 import { ITopProviders } from '@/core/entities/interfaces/user.entity.interface';
@@ -14,9 +15,9 @@ import { IProviderRepository } from '@/core/repositories/interfaces/provider-rep
 import {
     ISubscriptionRepository
 } from '@/core/repositories/interfaces/subscription-repo.interface';
-import { ITransactionRepository } from '@/core/repositories/interfaces/transaction-repo.interface';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
+import { IWalletLedgerRepository } from '@core/repositories/interfaces/wallet-ledger.repo.interface';
 import {
     IAdminDashboardOverviewService
 } from '@modules/users/services/interfaces/admin-dashboard-overview-service.interface';
@@ -35,10 +36,10 @@ export class AdminDashboardOverviewService implements IAdminDashboardOverviewSer
         private readonly _customerRepository: ICustomerRepository,
         @Inject(BOOKING_REPOSITORY_NAME)
         private readonly _bookingRepository: IBookingRepository,
-        @Inject(TRANSACTION_REPOSITORY_NAME)
-        private readonly _transactionRepository: ITransactionRepository,
         @Inject(SUBSCRIPTION_REPOSITORY_NAME)
         private readonly _subscriptionRepository: ISubscriptionRepository,
+        @Inject(WALLET_LEDGER_REPOSITORY_NAME)
+        private readonly _walletLedgerRepository: IWalletLedgerRepository,
     ) {
         this.logger = this.loggerFactory.createLogger(AdminDashboardOverviewService.name)
     }
@@ -79,7 +80,7 @@ export class AdminDashboardOverviewService implements IAdminDashboardOverviewSer
 
         const newUsersThisWeek = newCustomersThisWeek + newProvidersThisWeek;
 
-        const weeklyTransactions = await this._transactionRepository.getTotalRevenue(sevenDaysAgo);
+        const weeklyTransactions = await this._walletLedgerRepository.getTotalRevenueForAdmin(sevenDaysAgo);
 
         return {
             success: true,
@@ -97,19 +98,19 @@ export class AdminDashboardOverviewService implements IAdminDashboardOverviewSer
         };
     }
 
-    async getDashBoardRevenue(): Promise<IResponse<IAdminDashboardRevenue[]>> {
-        const transactions = await this._transactionRepository.find({});
-        const revenueData = transactions.map(tx => ({
-            amount: tx.amount,
-            createdAt: tx.createdAt?.toString() || ''
-        }));
+    // async getDashBoardRevenue(): Promise<IResponse<IAdminDashboardRevenue[]>> {
+    //     const transactions = await this._transactionRepository.find({});
+    //     const revenueData = transactions.map(tx => ({
+    //         amount: tx.amount,
+    //         createdAt: tx.createdAt?.toString() || ''
+    //     }));
 
-        return {
-            success: true,
-            message: "Dashboard revenue data fetched successfully",
-            data: revenueData
-        }
-    }
+    //     return {
+    //         success: true,
+    //         message: "Dashboard revenue data fetched successfully",
+    //         data: revenueData
+    //     }
+    // }
 
     async getSubscriptionData(): Promise<IResponse<IAdminDashboardSubscription>> {
         const subscriptionData = await this._subscriptionRepository.getSubscriptionChartData();

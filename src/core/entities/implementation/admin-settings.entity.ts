@@ -5,6 +5,8 @@ export class AdminSettings extends BaseEntity implements IAdminSettings {
     gstPercentage: number;
     providerCommission: number;
     customerCommission: number;
+    cancellationFee: number;
+    providerCancellationFine: number;
 
     constructor(partial: Partial<IAdminSettings>) {
         super(partial);

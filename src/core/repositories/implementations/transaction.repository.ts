@@ -1,141 +1,73 @@
-import { FilterQuery, Model, PipelineStage, SortOrder } from 'mongoose';
-
-import { TRANSACTION_MODEL_NAME } from '@core/constants/model.constant';
-import { PaymentStatus } from '@core/enum/bookings.enum';
+import { FilterQuery, Model, PipelineStage } from 'mongoose';
 import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
 import { ITransactionRepository } from '@core/repositories/interfaces/transaction-repo.interface';
-import { TransactionDocument } from '@core/schema/transaction.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import { IReportDownloadTransactionData, IReportTransactionData } from '@core/entities/interfaces/admin.entity.interface';
-import { ITransactionFilter, ITransactionStats } from '@core/entities/interfaces/transaction.entity.interface';
 import { Injectable } from '@nestjs/common';
-import { PaymentDirection, TransactionStatus } from '@core/enum/transaction.enum';
-import { SortQuery } from '@core/repositories/implementations/slot-rule.repository';
+import { TransactionStatus } from '@core/enum/transaction.enum';
+import { BookingDocument, TransactionDocument } from '@core/schema/bookings.schema';
+import { BOOKINGS_MODEL_NAME } from '@core/constants/model.constant';
 
 @Injectable()
-export class TransactionRepository extends BaseRepository<TransactionDocument> implements ITransactionRepository {
+export class TransactionRepository extends BaseRepository<BookingDocument> implements ITransactionRepository {
     constructor(
-        @InjectModel(TRANSACTION_MODEL_NAME)
-        private readonly _transactionModel: Model<TransactionDocument>
+        @InjectModel(BOOKINGS_MODEL_NAME)
+        private readonly _bookingModel: Model<BookingDocument>
     ) {
-        super(_transactionModel);
+        super(_bookingModel);
     }
 
-    private _buildTransactionFilterQuery(filters: ITransactionFilter, userId?: string): { match: FilterQuery<TransactionDocument>, sort: SortQuery<TransactionDocument> } {
-        const match: Record<string, any> = {};
-
-        if (userId) {
-            const searchRegex = new RegExp(userId, 'i');
-            match.$expr = {
-                $regexMatch: {
-                    input: { $toString: "$userId" },
-                    regex: searchRegex
-                }
-            };
-        }
-
-        if (filters.search) {
-            const searchRegex = new RegExp(filters.search, 'i');
-
-            match.$or = [
-                { $expr: { $regexMatch: { input: { $toString: "$_id" }, regex: searchRegex } } },
-                { 'gateWayDetails.paymentId': searchRegex },
-                { 'userDetails.email': searchRegex },
-            ];
-        }
-
-        if (filters.date && filters.date !== 'all') {
-            const now = new Date();
-            let start: Date;
-
-            switch (filters.date) {
-                case 'last_six_months':
-                    start = new Date();
-                    start.setMonth(start.getMonth() - 6);
-                    break;
-
-                case 'last_year':
-                    start = new Date();
-                    start.setFullYear(start.getFullYear() - 1);
-                    break;
+    async createNewTransaction(bookingId: string, transaction: Partial<TransactionDocument>): Promise<TransactionDocument | null> {
+        const result = await this._bookingModel.findOneAndUpdate(
+            { _id: bookingId },
+            { $push: { transactionHistory: transaction } },
+            {
+                new: true,
+                runValidators: true,
+                projection: { transactionHistory: 1 }
             }
+        );
 
-            match.createdAt = { $gte: start, $lte: now };
-        }
+        if (!result || result.transactionHistory.length < 1) return null;
 
-        if (filters.method && filters.method !== 'all') {
-            match.direction = filters.method;
-        }
+        const history = result.transactionHistory;
 
-        if (filters.type && filters.type !== 'all') {
-            match.transactionType = filters.type;
-        }
-
-        const sort: Record<string, SortOrder> = {};
-
-        switch (filters.sort) {
-            case 'newest':
-                sort.createdAt = -1;
-                break;
-
-            case 'oldest':
-                sort.createdAt = 1;
-                break;
-
-            case 'high':
-                sort.amount = -1;
-                break;
-
-            case 'low':
-                console.log(filters.sort)
-                sort.amount = 1;
-                break;
-
-            default:
-                sort.createdAt = -1;
-                break;
-        }
-
-        return { match, sort };
+        return history.slice(-1)[0];
     }
 
-    async findTransactionById(id: string): Promise<TransactionDocument | null> {
-        return await this._transactionModel
-            .findById(id)
-            .lean();
+    async findTransactionById(bookingId: string, transactionId: string): Promise<TransactionDocument | null> {
+        const result = await this._bookingModel.findOne(
+            {
+                _id: bookingId,
+                'transactionHistory._id': transactionId
+            },
+            { 'transactionHistory.$': 1 }
+        ).lean();
+
+        if (!result || !result.transactionHistory?.length) {
+            return null;
+        }
+
+        return result.transactionHistory[0];
     }
 
     async count(): Promise<number> {
-        return await this._transactionModel.countDocuments();
+        const pipeline: PipelineStage[] = [
+            { $unwind: '$transactionHistory' },
+            { $count: 'count' }
+        ]
+        const res = await this._bookingModel.aggregate(pipeline).allowDiskUse(true);
+        return res[0]?.count || 0;
     }
 
     async countByUserId(userId: string): Promise<number> {
-        return await this._transactionModel.countDocuments({ userId: this._toObjectId(userId) });
-    }
-
-    async getTotalRevenue(date: Date): Promise<number> {
-        const result = await this._transactionModel.aggregate([
-            {
-                $match: {
-                    createdAt: { $gte: date },
-                    method: { $ne: PaymentStatus.REFUNDED }
-                }
-            },
-            {
-                $group: {
-                    _id: null,
-                    total: { $sum: "$amount" }
-                }
-            },
-            {
-                $project: {
-                    _id: 0,
-                    total: { $divide: ['$total', 100] }
-                }
-            }
-        ]);
-
-        return result[0]?.total || 0;
+        const pipeline: PipelineStage[] = [
+            { $match: { userId: this._toObjectId(userId) } },
+            { $unwind: '$transactionHistory' },
+            { $count: 'count' }
+        ]
+        const res = await this._bookingModel.aggregate(pipeline).allowDiskUse(true);
+        return res[0]?.count || 0;
     }
 
     async getReportDetails(filter: IReportDownloadTransactionData): Promise<IReportTransactionData[]> {
@@ -178,91 +110,14 @@ export class TransactionRepository extends BaseRepository<TransactionDocument> i
             }
         );
 
-        return await this._transactionModel.aggregate(pipeline).exec();
-    }
-
-    async getTransactionStats(): Promise<ITransactionStats> {
-        const pipeline: PipelineStage[] = [
-            {
-                $group: {
-                    _id: null,
-                    totalTransactions: { $sum: 1 },
-                    totalRevenue: {
-                        $sum: {
-                            $cond: [{ $eq: ['$direction', PaymentDirection.CREDIT] }, "$amount", 0]
-                        }
-                    }
-                }
-            },
-            {
-                $addFields: {
-                    successRate: 100, // all are paid
-                    avgTransactionValue: {
-                        $cond: [
-                            { $eq: ["$totalTransactions", 0] },
-                            0,
-                            { $divide: ["$totalRevenue", "$totalTransactions"] }
-                        ]
-                    }
-                }
-            },
-            {
-                $project: {
-                    _id: 0,
-                    totalTransactions: 1,
-                    totalRevenue: 1,
-                    successRate: 1,
-                    avgTransactionValue: 1
-                }
-            }
-        ];
-
-        const result = await this._transactionModel.aggregate(pipeline);
-        return result[0] || {
-            totalRevenue: 0,
-            successRate: 0,
-            avgTransactionValue: 0
-        };
-    }
-
-    async fetchTransactionsByAdminWithPagination(filters: ITransactionFilter, options?: { page?: number, limit?: number }): Promise<TransactionDocument[]> {
-        const page = options?.page || 1;
-        const limit = options?.limit || 10;
-        const skip = (page - 1) * limit;
-
-        const { match, sort } = this._buildTransactionFilterQuery(filters);
-
-        return await this._transactionModel
-            .find(match)
-            .sort(sort)
-            .skip(skip)
-            .limit(limit)
-            .lean();
+        return await this._bookingModel.aggregate(pipeline).exec();
     }
 
     async updateStatus(txId: string, status: TransactionStatus): Promise<boolean> {
-        return !!(await this._transactionModel.findOneAndUpdate(
+        return !!(await this._bookingModel.findOneAndUpdate(
             { _id: txId },
             { $set: { status } },
             { new: true }
         ));
-    }
-
-    async getFilteredTransactionByUserIdWithPagination(userId: string, filters: ITransactionFilter, options?: { page?: number, limit?: number }): Promise<TransactionDocument[]> {
-        const page = options?.page || 1;
-        const limit = options?.limit || 10;
-        const skip = (page - 1) * limit;
-
-        const { match, sort } = this._buildTransactionFilterQuery(filters, userId);
-
-        const result = await this._transactionModel
-            .find(match)
-            .select('_id amount source transactionType createdAt direction userDetails.email gateWayDetails.paymentId')
-            .sort(sort)
-            .skip(skip)
-            .limit(limit)
-            .lean();
-
-        return result;
     }
 }

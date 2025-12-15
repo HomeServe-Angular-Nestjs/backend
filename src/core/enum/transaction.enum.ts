@@ -5,13 +5,14 @@ export enum TransactionStatus {
 }
 
 export enum TransactionType {
-    BOOKING = 'booking',
-    SUBSCRIPTION = 'subscription',
+    BOOKING_PAYMENT = 'booking_payment',
+    BOOKING_RELEASE = 'booking_release',
+    BOOKING_REFUND = 'booking_refund',
+    CANCELLATION_FEE = 'cancellation_fee',
     CUSTOMER_COMMISSION = 'customer_commission',
     PROVIDER_COMMISSION = 'provider_commission',
-    REFUND = 'refund',
-    BOOKING_RELEASE = 'booking_release',
-    TAX = 'tax',
+    GST = 'gst',
+    SUBSCRIPTION_PAYMENT = 'subscription_payment',
 }
 
 export enum PaymentDirection {
@@ -21,5 +22,10 @@ export enum PaymentDirection {
 
 export enum PaymentSource {
     RAZORPAY = 'razorpay',
-    INTERNAL = 'internal', // for wallet/commission transfers
+    WALLET = 'wallet',
+    INTERNAL = 'internal', // commission transfers
+}
+
+export enum CurrencyType {
+    INR = 'INR',
 }

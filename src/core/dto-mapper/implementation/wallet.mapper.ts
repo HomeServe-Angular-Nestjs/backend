@@ -15,7 +15,8 @@ export class WalletMapper implements IWalletMapper {
             currency: doc.currency,
             type: doc.type,
             lastTransactionDate: doc.lastTransactionDate,
-            createdAt: doc.createdAt
+            createdAt: doc.createdAt,
+            updatedAt: doc.updatedAt,
         });
     }
 

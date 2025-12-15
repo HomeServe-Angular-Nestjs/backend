@@ -9,8 +9,8 @@ export interface IProviderBookingService {
     fetchOverviewData(bookingId: string): Promise<IBookingOverviewData>;
     fetchBookingDetails(bookingId: string): Promise<IBookingDetailProvider>;
     updateBookingStatus(bookingId: string, newStatus: BookingStatus): Promise<IResponse>;
-    markBookingCancelledByProvider(bookingId: string, reason?: string): Promise<IResponse<IBookingDetailProvider>>;
-    fetchBookedSlots(providerId: string): Promise<IResponse>;
+    markBookingCancelledByProvider(providerId: string, bookingId: string, reason?: string): Promise<IResponse<IBookingDetailProvider>>;
     downloadBookingInvoice(bookingId: string, userType: UserType): Promise<Buffer>;
     getReviewData(providerId: string, filters: ReviewFilterDto): Promise<IResponse<IReviewWithPagination>>;
+    completeBooking(bookingId: string): Promise<IResponse<IBookingDetailProvider>>;
 }

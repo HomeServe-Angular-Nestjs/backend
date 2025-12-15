@@ -5,9 +5,8 @@ import { WalletDocument } from "@core/schema/wallet.schema";
 
 export interface IWalletRepository extends IBaseRepository<WalletDocument> {
     findWallet(userId: string): Promise<WalletDocument | null>;
+    getAdminWallet(): Promise<WalletDocument | null>;
     updateAdminAmount(amount: number): Promise<boolean>;
     updateUserAmount(userId: string, type: UserType, amount: number): Promise<boolean>;
-    updateProviderBalance(providerId: string, amount: number): Promise<boolean>;
     updateCustomerBalance(customerId: string, amount: number): Promise<boolean>;
-    bulkUpdate(transaction: ITransaction): Promise<void>
 }

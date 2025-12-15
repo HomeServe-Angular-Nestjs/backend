@@ -1,18 +1,19 @@
 export const ADMIN_SETTINGS_MODEL_NAME = 'AdminSettings';
-export const NOTIFICATION_MODEL_NAME = 'Notification';
+export const WALLET_LEDGER_MODEL_NAME = 'WalletLedger';
 export const SUBSCRIPTION_MODEL_NAME = 'Subscription';
-export const TRANSACTION_MODEL_NAME = 'Transactions';
+export const NOTIFICATION_MODEL_NAME = 'Notification';
 export const SERVICE_OFFERED_MODEL_NAME = 'Services';
 export const RESERVATION_MODEL_NAME = 'Reservation';
 export const SCHEDULES_MODEL_NAME = 'Schedules';
 export const SLOT_RULE_MODEL_NAME = 'SlotRule';
 export const BOOKINGS_MODEL_NAME = 'Bookings';
-export const CUSTOMER_MODEL_NAME = 'Customer';
 export const PROVIDER_MODEL_NAME = 'Provider';
+export const CUSTOMER_MODEL_NAME = 'Customer';
 export const MESSAGE_MODEL_NAME = 'Message';
 export const WALLET_MODEL_NAME = 'Wallet';
 export const REPORT_MODEL_NAME = 'Report';
 export const ADMIN_MODEL_NAME = 'Admin';
 export const CHAT_MODEL_NAME = 'Chat';
 export const PLAN_MODEL_NAME = 'Plan';
-export const OTP_MODEL_NAME = 'Otp';
+
+ 

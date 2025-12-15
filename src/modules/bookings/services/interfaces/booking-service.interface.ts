@@ -5,9 +5,9 @@ import { IResponse } from '@core/misc/response.util';
 export interface IBookingService {
     preparePriceBreakup(serviceDto: SelectedServiceDto[]): Promise<IPriceBreakupDto>;
     createBooking(customerId: string, bookingData: BookingDto): Promise<IResponse>;
-    fetchBookings(bookingId: string, page: number): Promise<IBookingWithPagination>;
+    fetchBookings(customerId: string, page: number): Promise<IBookingWithPagination>;
     fetchBookingDetails(bookingId: string): Promise<IBookingDetailCustomer>;
-    markBookingCancelledByCustomer(bookingId: string, reason: string): Promise<IResponse>;
+    markBookingCancelledByCustomer(customerId: string, bookingId: string, reason: string): Promise<IResponse<IBookingResponse>>;
     updateBooking(bookingDto: UpdateBookingDto): Promise<IResponse<IBookingResponse>>;
     updateBookingPaymentStatus(bookingDto: UpdateBookingPaymentStatusDto): Promise<IResponse<boolean>>;
     addReview(reviewDto: AddReviewDto): Promise<IResponse>;

@@ -1,7 +1,7 @@
 import { Model } from 'mongoose';
 
 import {
-  ADMIN_MODEL_NAME, CUSTOMER_MODEL_NAME, OTP_MODEL_NAME, PROVIDER_MODEL_NAME,
+  ADMIN_MODEL_NAME, CUSTOMER_MODEL_NAME, PROVIDER_MODEL_NAME,
   WALLET_MODEL_NAME
 } from '@core/constants/model.constant';
 import {
@@ -15,7 +15,6 @@ import { OtpRepository } from '@core/repositories/implementations/otp.repository
 import { ProviderRepository } from '@core/repositories/implementations/provider.repository';
 import { AdminDocument } from '@core/schema/admin.schema';
 import { CustomerDocument } from '@core/schema/customer.schema';
-import { OtpDocument } from '@core/schema/otp.schema';
 import { ProviderDocument } from '@core/schema/provider.schema';
 import { Provider } from '@nestjs/common';
 import { getModelToken } from '@nestjs/mongoose';

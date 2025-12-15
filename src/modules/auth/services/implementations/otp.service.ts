@@ -1,7 +1,5 @@
-import { OTP_MAPPER } from '@core/constants/mappers.constant';
 import { OTP_REPOSITORY_INTERFACE_NAME } from '@core/constants/repository.constant';
 import { MAILER_UTILITY_INTERFACE_NAME } from '@core/constants/utility.constant';
-import { IOtpMapper } from '@core/dto-mapper/interface/otp.mapper';
 import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
 import { IOtpRepository } from '@core/repositories/interfaces/otp-repo.interface';
 import { IMailerUtility } from '@core/utilities/interface/mailer.utility.interface';
@@ -13,12 +11,8 @@ export class OtpService implements IOtpService {
   constructor(
     @Inject(OTP_REPOSITORY_INTERFACE_NAME)
     private readonly otpRepository: IOtpRepository,
-
     @Inject(MAILER_UTILITY_INTERFACE_NAME)
     private readonly mailerService: IMailerUtility,
-
-    @Inject(OTP_MAPPER)
-    private readonly otpMapper: IOtpMapper,
   ) { }
 
   private generateOtp(): string {

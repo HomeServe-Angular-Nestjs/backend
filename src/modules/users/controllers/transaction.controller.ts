@@ -1,7 +1,9 @@
 import { ADMIN_TRANSACTION_SERVICE_NAME } from "@core/constants/service.constant";
-import { ITransactionStats, ITransactionDataWithPagination } from "@core/entities/interfaces/transaction.entity.interface";
+import { User } from "@core/decorators/extract-user.decorator";
+import { IAdminTransactionDataWithPagination, ITransactionStats } from "@core/entities/interfaces/wallet-ledger.entity.interface";
 import { ICustomLogger } from "@core/logger/interface/custom-logger.interface";
 import { ILoggerFactory, LOGGER_FACTORY } from "@core/logger/interface/logger-factory.interface";
+import { IPayload } from "@core/misc/payload.interface";
 import { IResponse } from "@core/misc/response.util";
 import { TransactionReportDownloadDto } from "@modules/users/dtos/admin-user.dto";
 import { IAdminTransactionService } from "@modules/users/services/interfaces/admin-transaction-service.interface";
@@ -42,8 +44,8 @@ export class AdminTransactionController {
         return await this._adminTransactionService.getTransactionStats();
     }
 
-    @Get('table_data')
-    async getTransactionTableData(@Query() filters: ProviderWalletFilterDto): Promise<IResponse<ITransactionDataWithPagination>> {
-        return await this._adminTransactionService.getTransactionTableData(filters);
+    @Get('lists')
+    async getTransactionLists(@User() user: IPayload, @Query() filters: ProviderWalletFilterDto): Promise<IResponse<IAdminTransactionDataWithPagination>> {
+        return await this._adminTransactionService.getTransactionLists(user.sub, filters);
     }
 }

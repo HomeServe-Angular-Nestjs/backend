@@ -1,6 +1,7 @@
 import { IEntity } from '@core/entities/base/interfaces/base-entity.entity.interface';
 import { IPagination } from '@core/entities/interfaces/booking.entity.interface';
-import { PaymentDirection, PaymentSource, TransactionStatus, TransactionType } from '@core/enum/transaction.enum';
+import { UserType } from '@core/entities/interfaces/user.entity.interface';
+import { CurrencyType, PaymentDirection, PaymentSource, TransactionStatus, TransactionType } from '@core/enum/transaction.enum';
 
 export interface ITransaction extends IEntity {
     userId: string;
@@ -9,7 +10,7 @@ export interface ITransaction extends IEntity {
     source: PaymentSource;
     status: TransactionStatus;
     amount: number;
-    currency: string;
+    currency: CurrencyType;
     gateWayDetails: IGatewayDetails | null;
     userDetails: ITxUserDetails | null;
     metadata?: ITransactionMetadata | null;
@@ -62,40 +63,4 @@ export interface IVerifiedSubscriptionPayment {
     verified: boolean;
     subscriptionId: string;
     transaction: ITransaction;
-}
-
-export interface ITransactionStats {
-    totalTransactions: number;
-    totalRevenue: number;
-    successRate: number;
-    avgTransactionValue: number;
-}
-
-export interface ITransactionTableData {
-    transactionId: string;
-    paymentId: string | null;
-    amount: number;
-    method: string;
-    source: PaymentSource,
-    transactionType: string;
-    createdAt: Date;
-}
-
-export interface ITransactionDataWithPagination {
-    tableData: ITransactionTableData[];
-    pagination: IPagination;
-}
-
-export interface ITransactionUserTableData {
-    transactions: (ITransactionTableData & { email: string })[];
-    pagination: IPagination;
-}
-
-export interface ITransactionFilter {
-    page?: number;
-    search?: string;
-    sort?: 'newest' | 'oldest' | 'high' | 'low';
-    type?: TransactionType | 'all';
-    date?: 'all' | 'last_six_months' | 'last_year';
-    method?: PaymentDirection | 'all';
 }

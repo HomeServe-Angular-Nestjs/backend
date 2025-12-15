@@ -138,7 +138,6 @@ export class LoginService implements ILoginService {
       );
     }
 
-
     const repository =
       user.type === 'customer'
         ? this._customerRepository
@@ -147,9 +146,11 @@ export class LoginService implements ILoginService {
     const existingUser = await repository.findByEmail(user.email);
 
     if (existingUser) {
+      let responseUser = this._mappedUser(user.type, existingUser);
+
       if (existingUser.googleId) {
-        await this._createWallet(existingUser.id, user.type);
-        return this._mappedUser(user.type, existingUser);
+        await this._createWallet(responseUser.id, user.type);
+        return responseUser;
       }
 
       const updatedUser = await repository.updateGoogleId(existingUser.email, user.googleId);
@@ -158,8 +159,10 @@ export class LoginService implements ILoginService {
         throw new InternalServerErrorException('Failed to update user with Google ID');
       }
 
-      await this._createWallet(updatedUser.id, user.type);
-      return this._mappedUser(user.type, updatedUser);
+      responseUser = this._mappedUser(user.type, updatedUser);
+
+      await this._createWallet(responseUser.id, user.type);
+      return responseUser;
     }
 
     let newUserDocument: CustomerDocument | ProviderDocument;
