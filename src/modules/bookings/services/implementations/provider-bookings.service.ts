@@ -513,7 +513,7 @@ export class ProviderBookingService implements IProviderBookingService {
     async fetchOverviewData(providerId: string): Promise<IBookingOverviewData> {
         const bookings = await this._bookingRepository.findBookingsByProviderId(providerId)
         const now = new Date();
-        
+
         const getMonthRange = (date: Date) => ({
             start: new Date(date.getFullYear(), date.getMonth(), 1),
             end: new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999),
@@ -586,7 +586,7 @@ export class ProviderBookingService implements IProviderBookingService {
     }
 
     async fetchBookingDetails(bookingId: string): Promise<IBookingDetailProvider> {
-        const bookingDoc = await this._bookingRepository.findById(bookingId);
+        const bookingDoc = await this._bookingRepository.findPaidBookings(bookingId);
         if (!bookingDoc) {
             throw new InternalServerErrorException(`Booking with ID ${bookingId} not found.`);
         }
@@ -611,16 +611,16 @@ export class ProviderBookingService implements IProviderBookingService {
                 location: booking.location.address,
             },
             orderedServices,
-            transaction: {
+            transaction: transaction ? {
                 id: transaction.id,
                 paymentDate: transaction.createdAt as Date,
                 paymentMethod: transaction.source
-            }
+            } : null,
         }
     }
 
     async markBookingCancelledByProvider(providerId: string, bookingId: string, reason?: string): Promise<IResponse<IBookingDetailProvider>> {
-        const bookingDoc = await this._bookingRepository.findById(bookingId);
+        const bookingDoc = await this._bookingRepository.findPaidBookings(bookingId);
         if (!bookingDoc) {
             throw new InternalServerErrorException(`Booking with ID ${bookingId} not found.`);
         }

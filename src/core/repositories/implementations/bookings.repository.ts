@@ -36,9 +36,13 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
 
     async findBookingsByProviderId(providerId: string | Types.ObjectId): Promise<BookingDocument[]> {
         return await this._bookingModel
-            .find({ providerId: this._toObjectId(providerId) })
+            .find({ providerId: this._toObjectId(providerId), paymentStatus: { $ne: PaymentStatus.UNPAID } })
             .sort({ createdAt: -1 })
             .lean();
+    }
+
+    async findPaidBookings(bookingId: string): Promise<BookingDocument | null> {
+        return this._bookingModel.findOne({ _id: bookingId, paymentStatus: { $ne: PaymentStatus.UNPAID } });
     }
 
     async fetchFilteredBookingsWithPagination(filter: IAdminBookingFilter, option?: { page: number; limit: number; }): Promise<IAdminBookingList[]> {
