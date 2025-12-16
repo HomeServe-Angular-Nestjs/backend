@@ -25,7 +25,7 @@ export enum ErrorMessage {
     USER_BLOCKED = 'You are blocked by the admin.',
     INTERNAL_SERVER_ERROR = 'An unexpected error occurred. Please try again later',
     DOCUMENT_CREATION_ERROR = 'Error creating document',
-    DOCUMENT_ALREADY_EXISTS = 'Already exists',
+    DOCUMENT_ALREADY_EXISTS = 'already exists',
     SOCKET_CONNECTION_REJECTED = 'Socket connection rejected: ',
     NO_TOKEN_FOUND = 'No token provided.',
     INVALID_REFRESH_TOKEN = 'Invalid or expired refresh token.',

@@ -1,8 +1,8 @@
-import { ISubscription } from '@core/entities/interfaces/subscription.entity.interface';
+import { IAdminFilteredSubscriptionListWithPagination, ISubscription, ISubscriptionFilters } from '@core/entities/interfaces/subscription.entity.interface';
 import { UserType } from '@core/entities/interfaces/user.entity.interface';
 import { PlanRoleEnum } from '@core/enum/subscription.enum';
 import { IResponse } from '@core/misc/response.util';
-import { CreateSubscriptionDto, UpdatePaymentStatusDto } from '@modules/subscriptions/dto/subscription.dto';
+import { CreateSubscriptionDto, SubscriptionFiltersDto, UpdatePaymentStatusDto } from '@modules/subscriptions/dto/subscription.dto';
 
 export interface ISubscriptionService {
     createSubscription(userId: string, userType: string, createSubscriptionDto: CreateSubscriptionDto): Promise<IResponse<ISubscription>>;
@@ -11,4 +11,7 @@ export interface ISubscriptionService {
     upgradeSubscription(userId: string, userTye: string, createSubscriptionDto: CreateSubscriptionDto): Promise<IResponse<ISubscription>>;
     updatePaymentStatus(userId: string, userType: string, data: UpdatePaymentStatusDto): Promise<IResponse>;
     removeSubscription(subscriptionId: string): Promise<IResponse>;
+    hasActiveSubscription(userId: string, role: PlanRoleEnum): Promise<IResponse<ISubscription>>;
+    fetchSubscriptionList(filters: SubscriptionFiltersDto): Promise<IResponse<IAdminFilteredSubscriptionListWithPagination>>;
+    updateSubscriptionStatus(subscriptionId: string, status: boolean): Promise<IResponse>; 
 }

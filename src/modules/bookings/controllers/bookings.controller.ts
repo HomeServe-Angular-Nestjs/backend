@@ -27,16 +27,11 @@ export class BookingsController {
 
     @Post('price_breakup')
     async calcPriceBreakup(@Body() selectedServiceDto: SelectedServiceDto[]) {
-        try {
-            if (!selectedServiceDto || selectedServiceDto.length === 0) {
-                throw new BadRequestException(ErrorMessage.MISSING_FIELDS);
-            }
-
-            return await this._bookingService.preparePriceBreakup(selectedServiceDto);
-        } catch (err) {
-            this.logger.error(`Error while price calculation: ${err}`);
-            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+        if (!selectedServiceDto || selectedServiceDto.length === 0) {
+            throw new BadRequestException(ErrorMessage.MISSING_FIELDS);
         }
+
+        return await this._bookingService.preparePriceBreakup(selectedServiceDto);
     }
 
     @UseGuards(OngoingPaymentGuard)

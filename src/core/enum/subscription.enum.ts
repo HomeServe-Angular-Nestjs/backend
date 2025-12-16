@@ -1,4 +1,4 @@
-export enum SubsDurationType {
+export enum SubsDurationEnum {
     Monthly = 'monthly',
     Yearly = 'yearly',
 }

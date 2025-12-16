@@ -1,7 +1,7 @@
 import { Transform } from 'class-transformer';
 import { IsArray, IsBoolean, IsIn, IsNotEmpty, IsNumber, IsString, Min } from 'class-validator';
 
-import { PlanDurationType} from '@core/entities/interfaces/plans.entity.interface';
+import { PlanDurationType } from '@core/entities/interfaces/plans.entity.interface';
 import { PlanRoleEnum } from '@core/enum/subscription.enum';
 
 export class SavePlanDto {
@@ -20,6 +20,10 @@ export class SavePlanDto {
     @IsString()
     @IsIn(Object.values(PlanRoleEnum))
     role: PlanRoleEnum;
+
+    @IsNotEmpty()
+    @IsBoolean()
+    isActive: boolean;
 
     @IsNotEmpty()
     @IsString()
@@ -52,3 +56,4 @@ export class GetOnePlanDto {
     @IsString()
     planId: string;
 }
+

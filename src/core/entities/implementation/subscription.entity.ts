@@ -1,26 +1,24 @@
 import { BaseEntity } from '@core/entities/base/implementation/base.entity';
 import { ISubscription } from '@core/entities/interfaces/subscription.entity.interface';
+import { ITransaction } from '@core/entities/interfaces/transaction.entity.interface';
 import { PaymentStatus } from '@core/enum/bookings.enum';
-import { PlanRoleEnum, RenewalEnum, SubsDurationType } from '@core/enum/subscription.enum';
+import { PlanRoleEnum, RenewalEnum, SubsDurationEnum } from '@core/enum/subscription.enum';
 
 export class Subscription extends BaseEntity implements ISubscription {
     userId: string;
-    transactionId: string;
     planId: string;
-
     name: string;
-    duration: SubsDurationType;
+    duration: SubsDurationEnum;
     role: PlanRoleEnum;
     features: string[];
     price: number;
-
     startTime: Date;
     endDate: Date;
     isActive: boolean;
     isDeleted: boolean;
-
     paymentStatus: PaymentStatus;
     cancelledAt: Date | null;
+    transactionHistory: ITransaction[];
     renewalType?: RenewalEnum;
     metadata?: Record<string, any>;
 

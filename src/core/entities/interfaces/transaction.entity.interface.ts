@@ -1,6 +1,4 @@
 import { IEntity } from '@core/entities/base/interfaces/base-entity.entity.interface';
-import { IPagination } from '@core/entities/interfaces/booking.entity.interface';
-import { UserType } from '@core/entities/interfaces/user.entity.interface';
 import { CurrencyType, PaymentDirection, PaymentSource, TransactionStatus, TransactionType } from '@core/enum/transaction.enum';
 
 export interface ITransaction extends IEntity {
