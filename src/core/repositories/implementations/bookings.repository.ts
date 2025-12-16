@@ -141,52 +141,57 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
     }
 
     async bookingStatus(): Promise<IBookingStats | null> {
-        const result = await this._bookingModel.aggregate([
-            {
-                $group: {
-                    _id: null,
-                    total: { $sum: 1 },
-                    completed: {
-                        $sum: {
-                            $cond: [{ $eq: ["$bookingStatus", BookingStatus.COMPLETED] }, 1, 0]
-                        }
-                    },
-                    pending: {
-                        $sum: {
-                            $cond: [{ $eq: ["$bookingStatus", BookingStatus.PENDING] }, 1, 0]
-                        }
-                    },
-                    cancelled: {
-                        $sum: {
-                            $cond: [{ $eq: ["$bookingStatus", BookingStatus.CANCELLED] }, 1, 0]
-                        }
-                    },
-                    unpaid: {
-                        $sum: {
-                            $cond: [{ $eq: ["$paymentStatus", PaymentStatus.UNPAID] }, 1, 0]
-                        }
-                    },
-                    refunded: {
-                        $sum: {
-                            $cond: [{ $eq: ["$paymentStatus", PaymentStatus.REFUNDED] }, 1, 0]
+        try {
+            const result = await this._bookingModel.aggregate([
+                {
+                    $group: {
+                        _id: null,
+                        total: { $sum: 1 },
+                        completed: {
+                            $sum: {
+                                $cond: [{ $eq: ["$bookingStatus", BookingStatus.COMPLETED] }, 1, 0]
+                            }
+                        },
+                        pending: {
+                            $sum: {
+                                $cond: [{ $eq: ["$bookingStatus", BookingStatus.PENDING] }, 1, 0]
+                            }
+                        },
+                        cancelled: {
+                            $sum: {
+                                $cond: [{ $eq: ["$bookingStatus", BookingStatus.CANCELLED] }, 1, 0]
+                            }
+                        },
+                        unpaid: {
+                            $sum: {
+                                $cond: [{ $eq: ["$paymentStatus", PaymentStatus.UNPAID] }, 1, 0]
+                            }
+                        },
+                        refunded: {
+                            $sum: {
+                                $cond: [{ $eq: ["$paymentStatus", PaymentStatus.REFUNDED] }, 1, 0]
+                            }
                         }
                     }
+                },
+                {
+                    $project: {
+                        _id: 0,
+                        total: 1,
+                        completed: 1,
+                        pending: 1,
+                        cancelled: 1,
+                        unpaid: 1,
+                        refunded: 1
+                    }
                 }
-            },
-            {
-                $project: {
-                    _id: 0,
-                    total: 1,
-                    completed: 1,
-                    pending: 1,
-                    cancelled: 1,
-                    unpaid: 1,
-                    refunded: 1
-                }
-            }
-        ]);
+            ]);
 
-        return result ? result[0] : null;
+            return result ? result[0] : null;
+        } catch (err) {
+            console.log(err);
+            return null;
+        }
     }
 
     async getTopProviders(): Promise<ITopProviders[]> {
