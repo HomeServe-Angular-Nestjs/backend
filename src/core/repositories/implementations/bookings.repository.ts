@@ -140,7 +140,7 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
         return await this._bookingModel.countDocuments({ customerId: this._toObjectId(customerId) });
     }
 
-    async bookingStatus(): Promise<IBookingStats | null> {
+    async bookingStatus(): Promise<IBookingStats> {
         const result = await this._bookingModel.aggregate([
             {
                 $group: {
