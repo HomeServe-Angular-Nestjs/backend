@@ -157,12 +157,6 @@ export class AdminBookingService implements IAdminBookingService {
 
     async getBookingStats(): Promise<IResponse<IBookingStats>> {
         const bookingStats = await this._bookingRepository.bookingStatus();
-        if (!bookingStats) {
-            return {
-                success: false,
-                message: 'Booking stats failed to fetch.',
-            }
-        }
 
         return {
             success: true,

@@ -14,7 +14,7 @@ export interface IBookingRepository extends IBaseRepository<BookingDocument> {
     findPaidBookings(bookingId: string): Promise<BookingDocument | null>;
     count(filter?: FilterQuery<BookingDocument>): Promise<number>;
     countDocumentsByCustomer(customerId: string | Types.ObjectId): Promise<number>;
-    bookingStatus(): Promise<IBookingStats | null>;
+    bookingStatus(): Promise<IBookingStats>;
     getTopProviders(): Promise<ITopProviders[]>;
     generateBookingReport(data: Partial<IReportDownloadBookingData>): Promise<IBookingReportData[]>;
     getCustomerReportMatrix(id: string): Promise<IReportCustomerMatrix>;
