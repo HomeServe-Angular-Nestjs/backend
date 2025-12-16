@@ -21,7 +21,8 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "console": "pnpm exec nest start --entryFile console --watch",
-    "seed:admin": "pnpm exec ts-node -r tsconfig-paths/register src/main.ts seed:admin"
+    "seed:admin": "pnpm exec ts-node -r tsconfig-paths/register src/main.ts seed:admin",
+    "seed_admin:prod": "pnpm exec cross-env NODE_ENV=production node dist/src/main.js seed:admin"
   },
   "dependencies": {
     "@nestjs-modules/mailer": "^2.0.2",

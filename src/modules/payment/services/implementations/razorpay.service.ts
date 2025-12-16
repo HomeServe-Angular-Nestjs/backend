@@ -98,10 +98,10 @@ export class RazorPaymentService implements IRazorPaymentService {
                 user = this._providerMapper.toEntity(userDoc as ProviderDocument);
                 break;
             default:
-                this.logger.error('Tried to access this route by an unidentified user type.')
+                this.logger.error('Tried to access this route by an unidentified user.')
                 throw new BadRequestException({
-                    code: ErrorCodes.BAD_REQUEST,
-                    message: 'Invalid user type.'
+                    code: ErrorCodes.UNAUTHORIZED_ACCESS,
+                    message: ErrorMessage.UNAUTHORIZED_ACCESS
                 });
         }
 
@@ -165,8 +165,8 @@ export class RazorPaymentService implements IRazorPaymentService {
     }
 
     private async _settleSubscriptionPayment(userDetails: ITxUserDetails & { id: string }, subscription: ISubscription, orderData: SubscriptionOrderData, verifyData: RazorpayVerifyData): Promise<ITransaction | null> {
-        const subscriptionTnx = await this._transactionRepository.createNewTransaction(
-            subscription.id, //todo: change this
+        const subscriptionTnx = await this._subscriptionRepository.createNewTransactionBySubscriptionId(
+            subscription.id,
             this._transactionMapper.toDocument({
                 userId: userDetails.id,
                 transactionType: TransactionType.SUBSCRIPTION_PAYMENT,
@@ -196,7 +196,7 @@ export class RazorPaymentService implements IRazorPaymentService {
         return subscriptionTnx ? this._transactionMapper.toEntity(subscriptionTnx) : null;
     }
 
-    private async _applyPaymentWalletMovements(userId: string, role: UserType, orderData: BookingOrderData, transaction: ITransaction, verifyData: RazorpayVerifyData): Promise<void> {
+    private async _applyBookingPaymentWalletMovements(userId: string, role: UserType, orderData: BookingOrderData, transaction: ITransaction, verifyData: RazorpayVerifyData): Promise<void> {
         const adminWalletDoc = await this._walletRepository.getAdminWallet();
 
         if (!adminWalletDoc) {
@@ -289,6 +289,80 @@ export class RazorPaymentService implements IRazorPaymentService {
         }
     }
 
+    private async _applySubscriptionPaymentWalletMovements(userId: string, role: UserType, orderData: SubscriptionOrderData, transaction: ITransaction, verifyData: RazorpayVerifyData): Promise<void> {
+        const adminWalletDoc = await this._walletRepository.getAdminWallet();
+
+        if (!adminWalletDoc) {
+            this.logger.error('Failed to get admin wallet.');
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+        }
+
+        const adminWallet = this._walletMapper.toEntity(adminWalletDoc);
+        const journalId = uuid();
+
+        // Admin Credit
+        await this._walletLedgerRepository.create(
+            this._walletLedgerMapper.toDocument({
+                walletId: adminWallet.id,
+                userId: adminWallet.userId,
+                userRole: 'admin',
+                direction: PaymentDirection.CREDIT,
+                type: TransactionType.SUBSCRIPTION_PAYMENT,
+                amount: transaction.amount,
+                currency: CurrencyType.INR,
+                balanceBefore: adminWallet.balance,
+                balanceAfter: adminWallet.balance + transaction.amount,
+                journalId,
+                bookingId: null,
+                bookingTransactionId: null,
+                subscriptionId: orderData.subscriptionId,
+                subscriptionTransactionId: transaction.id,
+                gatewayOrderId: orderData.id,
+                gatewayPaymentId: verifyData.razorpay_payment_id,
+                source: orderData.source,
+            }),
+        );
+
+        const adminWalletUpdated = await this._walletRepository.updateAdminAmount(transaction.amount);
+
+        if (!adminWalletUpdated) {
+            this.logger.error('Failed to update admin wallet.');
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+        }
+
+        const userWalletDoc = await this._walletRepository.findWallet(userId);
+
+        if (!userWalletDoc) {
+            this.logger.error('Failed to get user wallet.');
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+        }
+
+        const userWallet = this._walletMapper.toEntity(userWalletDoc);
+
+        // User Debit
+        await this._walletLedgerRepository.create(
+            this._walletLedgerMapper.toDocument({
+                walletId: userWallet.id,
+                userId: userWallet.userId,
+                userRole: role,
+                direction: PaymentDirection.DEBIT,
+                type: TransactionType.SUBSCRIPTION_PAYMENT,
+                amount: transaction.amount,
+                currency: CurrencyType.INR,
+                balanceBefore: userWallet.balance,
+                balanceAfter: userWallet.balance,
+                journalId,
+                bookingId: null,
+                bookingTransactionId: null,
+                subscriptionId: orderData.subscriptionId,
+                subscriptionTransactionId: transaction.id,
+                gatewayOrderId: orderData.id,
+                gatewayPaymentId: verifyData.razorpay_payment_id,
+                source: orderData.source,
+            }),
+        );
+    }
+
     async createOrder(userId: string, role: UserType, amount: number, currency: string = 'INR'): Promise<IRazorpayOrder> {
         return await this._paymentService.createOrder(amount, currency);
     }
@@ -332,7 +406,7 @@ export class RazorPaymentService implements IRazorPaymentService {
                 throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
             }
 
-            await this._applyPaymentWalletMovements(
+            await this._applyBookingPaymentWalletMovements(
                 userId,
                 role,
                 orderData,
@@ -356,7 +430,13 @@ export class RazorPaymentService implements IRazorPaymentService {
 
     async handleSubscriptionPayment(userId: string, role: ClientUserType, verifyData: RazorpayVerifyData, orderData: SubscriptionOrderData): Promise<IVerifiedSubscriptionPayment> {
         const key = this._paymentLockingUtility.generatePaymentKey(userId, role);
+        
         try {
+            const [subscription, user] = await Promise.all([
+                this._getSubscription(orderData.subscriptionId),
+                this._getUser(userId, role)
+            ]);
+
             const verified = this._paymentService.verifySignature(
                 verifyData.razorpay_order_id,
                 verifyData.razorpay_payment_id,
@@ -368,26 +448,32 @@ export class RazorPaymentService implements IRazorPaymentService {
                 message: ErrorMessage.PAYMENT_VERIFICATION_FAILED
             });
 
-            const user = await this._getUser(userId, role);
-            const subscription = await this._getSubscription(orderData.subscriptionId);
+            const transaction = await this._settleSubscriptionPayment(
+                { id: user.id, contact: user.phone, email: user.email, role },
+                subscription,
+                orderData,
+                verifyData
+            )
 
-            let transaction: ITransaction | null = null;
-            if (orderData.transactionType === TransactionType.SUBSCRIPTION_PAYMENT) {
-                transaction = await this._settleSubscriptionPayment(
-                    { id: user.id, contact: user.phone, email: user.email, role },
-                    subscription,
-                    orderData,
-                    verifyData
-                );
-            }
+            console.log(transaction)
 
             if (!transaction) {
-                this.logger.error('Transaction could not be created.');
-                throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR)
+                this.logger.error('Subscription transaction document failed to create.');
+                throw new InternalServerErrorException({
+                    code: ErrorCodes.INTERNAL_SERVER_ERROR,
+                    message: ErrorMessage.INTERNAL_SERVER_ERROR
+                });
             }
 
-            // await this._walletRepository.bulkUpdate(transaction);
-            return { verified, subscriptionId: subscription.id, transaction };
+            const updatePaymentStatus = await this._subscriptionRepository.updatePaymentStatus(orderData.subscriptionId, PaymentStatus.PAID);
+            if (!updatePaymentStatus) {
+                this.logger.error('Failed to update payment status for subscription payment.');
+                throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+            }
+
+            return { verified, subscriptionId: orderData.subscriptionId, transaction };
+        } catch (error) {
+            throw error;
         } finally {
             await this._paymentLockingUtility.releaseLock(key);
         }
