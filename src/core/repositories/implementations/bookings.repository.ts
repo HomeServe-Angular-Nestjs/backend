@@ -186,7 +186,7 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
             }
         ]);
 
-        return result ? result[0] : {
+        return result && result[0] ? result[0] : {
             total: 0,
             completed: 0,
             pending: 0,
