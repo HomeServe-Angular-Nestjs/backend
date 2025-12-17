@@ -13,4 +13,6 @@ export interface IProviderBookingService {
     downloadBookingInvoice(bookingId: string, userType: UserType): Promise<Buffer>;
     getReviewData(providerId: string, filters: ReviewFilterDto): Promise<IResponse<IReviewWithPagination>>;
     completeBooking(bookingId: string): Promise<IResponse<IBookingDetailProvider>>;
+    canStartVideoCall(providerId: string, customerId: string): Promise<IResponse>;
+
 }

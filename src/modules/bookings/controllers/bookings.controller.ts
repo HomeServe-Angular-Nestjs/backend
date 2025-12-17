@@ -78,4 +78,9 @@ export class BookingsController {
     async addReview(@Body() body: AddReviewDto): Promise<IResponse> {
         return this._bookingService.addReview(body);
     }
+
+    @Post('call')
+    async canStartVideoCall(@User() user: IPayload, @Query() { providerId }: { providerId: string }): Promise<IResponse> {
+        return this._bookingService.canStartVideoCall(user.sub, providerId);
+    }
 }

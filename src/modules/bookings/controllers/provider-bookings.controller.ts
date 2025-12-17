@@ -74,4 +74,9 @@ export class ProviderBookingsController {
         const user = req.user as IPayload;
         return await this._providerBookingService.getReviewData(user.sub, reviewDto);
     }
+
+    @Post('call')
+    async canStartVideoCall(@User() user: IPayload, @Query() { customerId }: { customerId: string }): Promise<IResponse> {
+        return this._providerBookingService.canStartVideoCall(user.sub, customerId);
+    }
 }

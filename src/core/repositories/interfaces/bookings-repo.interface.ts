@@ -32,6 +32,7 @@ export interface IBookingRepository extends IBaseRepository<BookingDocument> {
     getReviews(providerId: string, filter: IReviewFilter, options?: { page?: number, limit?: number }): Promise<IReviewDetailsRaw[]>;
     countReviews(providerId: string): Promise<number>;
     isAlreadyRequestedForCancellation(bookingId: string): Promise<boolean>;
+    isAnyBookingOngoing(customerId: string, providerId: string): Promise<boolean>
 
     getPerformanceSummary(providerId: string): Promise<any>;
     getAvgRatingAndTotalReviews(providerId?: string): Promise<ITotalReviewAndAvgRating[]>;
