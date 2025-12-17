@@ -97,7 +97,7 @@ export class AdminTransactionService implements IAdminTransactionService {
 
         const [total, transactionDocs] = await Promise.all([
             this._walletLedgerRepository.count(),
-            this._walletLedgerRepository.getAdminTransactionLists(filters, { page, limit })
+            this._walletLedgerRepository.getAdminTransactionLists(adminId, filters, { page, limit })
         ]);
 
         const enrichedTransaction: ITransactionAdminList[] = await Promise.all(

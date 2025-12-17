@@ -258,7 +258,7 @@ export class WalletLedgerRepository extends BaseRepository<WalletLedgerDocument>
         return result[0] ?? { totalCredit: 0, totalDebit: 0, netGain: 0 };
     }
 
-    async getAdminTransactionLists(filters: IWalletTransactionFilter, options: { page: number; limit: number }): Promise<WalletLedgerDocument[]> {
+    async getAdminTransactionLists(adminId: string, filters: IWalletTransactionFilter, options: { page: number; limit: number }): Promise<WalletLedgerDocument[]> {
         const page = options?.page && options.page > 0 ? options.page : 1;
         const limit = options?.limit && options.limit > 0 ? options.limit : 10;
         const skip = (page - 1) * limit;

@@ -9,7 +9,7 @@ export interface IWalletLedgerRepository extends IBaseRepository<WalletLedgerDoc
     getFilteredProviderLedgersByUserIdWithPagination(userId: string, filters: IWalletTransactionFilter, options: { page: number; limit: number }): Promise<IProviderTransactionData[]>;
     getTotalLedgerCountByUserId(userId: string): Promise<number>;
     getProviderTransactionOverview(providerId: string): Promise<Omit<IProviderTransactionOverview, 'balance'>>;
-    getAdminTransactionLists(filters: IWalletTransactionFilter, options: { page: number; limit: number }): Promise<WalletLedgerDocument[]>;
+    getAdminTransactionLists(adminId: string, filters: IWalletTransactionFilter, options: { page: number; limit: number }): Promise<WalletLedgerDocument[]>;
     count(): Promise<number>;
     getTransactionStats(): Promise<Omit<ITransactionStats, "balance">>;
 }
