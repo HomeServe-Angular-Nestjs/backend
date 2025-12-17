@@ -10,6 +10,7 @@ import { IResponse } from '@core/misc/response.util';
 import { isValidIdPipe } from '@core/pipes/is-valid-id.pipe';
 import { User } from '@core/decorators/extract-user.decorator';
 import { OngoingPaymentGuard } from '@core/guards/ongoing-payment.guard';
+import { CustomerIdDto } from '@modules/customer/dtos/customer.dto';
 
 @Controller('provider/bookings')
 export class ProviderBookingsController {
@@ -21,16 +22,13 @@ export class ProviderBookingsController {
     ) { }
 
     @Get('')
-    async fetchBookings(@Req() req: Request, @Query() paginationDto: BookingPaginationFilterDto): Promise<IResponseProviderBookingLists> {
-        const user = req.user as IPayload;
+    async fetchBookings(@User() user: IPayload, @Query() paginationDto: BookingPaginationFilterDto): Promise<IResponseProviderBookingLists> {
         const { page, ...filters } = paginationDto;
-
         return await this._providerBookingService.fetchBookingsList(user.sub, page, filters);
     }
 
     @Get('overview_data')
-    async getOverviewData(@Req() req: Request) {
-        const user = req.user as IPayload;
+    async getOverviewData(@User() user: IPayload) {
         return await this._providerBookingService.fetchOverviewData(user.sub);
     }
 
@@ -56,8 +54,7 @@ export class ProviderBookingsController {
     }
 
     @Post('download_invoice')
-    async downloadInvoice(@Body() { bookingId }: BookingIdDto, @Req() req: Request, @Res() res: Response) {
-        const user = req.user as IPayload;
+    async downloadInvoice(@Body() { bookingId }: BookingIdDto, @User() user: IPayload, @Res() res: Response) {
         const pdfBuffer = await this._providerBookingService.downloadBookingInvoice(bookingId, user.type);
 
         res.set({
@@ -70,13 +67,12 @@ export class ProviderBookingsController {
     }
 
     @Get('review_data')
-    async getReviewData(@Req() req: Request, @Query() reviewDto: ReviewFilterDto): Promise<IResponse> {
-        const user = req.user as IPayload;
+    async getReviewData(@User() user: IPayload, @Query() reviewDto: ReviewFilterDto): Promise<IResponse> {
         return await this._providerBookingService.getReviewData(user.sub, reviewDto);
     }
 
     @Post('call')
-    async canStartVideoCall(@User() user: IPayload, @Query() { customerId }: { customerId: string }): Promise<IResponse> {
+    async canStartVideoCall(@User() user: IPayload, @Body() { customerId }: CustomerIdDto): Promise<IResponse> {
         return this._providerBookingService.canStartVideoCall(user.sub, customerId);
     }
 }

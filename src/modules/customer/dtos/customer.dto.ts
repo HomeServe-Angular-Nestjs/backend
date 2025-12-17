@@ -6,9 +6,15 @@ import {
 } from 'class-validator';
 
 export class ProviderIdDto {
-    @IsNotEmpty()
-    @IsString()
+    @IsNotEmpty({ message: 'providerId is required' })
+    @IsString({ message: 'providerId must be a string' })
     providerId: string;
+}
+
+export class CustomerIdDto {
+    @IsNotEmpty({ message: 'customerId is required' })
+    @IsString({ message: 'customerId must be a string' })
+    customerId: string;
 }
 
 export class AddressDto {
