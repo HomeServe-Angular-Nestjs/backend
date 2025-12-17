@@ -1,5 +1,5 @@
 import { Request } from 'express';
-import { BadRequestException, Body, Controller, Get, Inject, InternalServerErrorException, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Inject, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { CUSTOMER_SERVICE_NAME } from '../../../core/constants/service.constant';
 import { IBookingDetailCustomer, IBookingResponse, IBookingWithPagination } from '../../../core/entities/interfaces/booking.entity.interface';
 import { ErrorMessage } from '../../../core/enum/error.enum';
@@ -11,6 +11,7 @@ import { AddReviewDto, BookingDto, BookingIdDto, BookingPaginationFilterDto, Can
 import { IBookingService } from '../services/interfaces/booking-service.interface';
 import { User } from '@core/decorators/extract-user.decorator';
 import { OngoingPaymentGuard } from '@core/guards/ongoing-payment.guard';
+import { ProviderIdDto } from '@modules/customer/dtos/customer.dto';
 
 @Controller('booking')
 export class BookingsController {
@@ -55,7 +56,6 @@ export class BookingsController {
 
     @Get('view_details')
     async getBookingDetails(@Query() { bookingId }: BookingIdDto): Promise<IBookingDetailCustomer> {
-        this.logger.debug(bookingId);
         return await this._bookingService.fetchBookingDetails(bookingId);
     }
 
@@ -80,7 +80,7 @@ export class BookingsController {
     }
 
     @Post('call')
-    async canStartVideoCall(@User() user: IPayload, @Query() { providerId }: { providerId: string }): Promise<IResponse> {
+    async canStartVideoCall(@User() user: IPayload, @Body() { providerId }: ProviderIdDto): Promise<IResponse> {
         return this._bookingService.canStartVideoCall(user.sub, providerId);
     }
 }
