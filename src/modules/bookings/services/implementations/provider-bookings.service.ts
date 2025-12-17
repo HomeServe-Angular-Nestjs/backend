@@ -1195,4 +1195,12 @@ export class ProviderBookingService implements IProviderBookingService {
             await this._paymentLockingUtility.releaseLock(key);
         }
     }
+
+    async canStartVideoCall(providerId: string, customerId: string): Promise<IResponse> {
+        const hasOngoingBooking = await this._bookingRepository.isAnyBookingOngoing(customerId, providerId);
+        return {
+            success: hasOngoingBooking,
+            message: hasOngoingBooking ? "OK to call" : 'No ongoing booking found.'
+        }
+    }
 }

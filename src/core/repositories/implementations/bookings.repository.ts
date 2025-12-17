@@ -2312,4 +2312,19 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
         return result?.[0]?.completionRate ?? 0;
     }
 
+    async isAnyBookingOngoing(customerId: string, providerId: string): Promise<boolean> {
+        const exists = await this._bookingModel.exists({
+            customerId: this._toObjectId(customerId),
+            providerId: this._toObjectId(providerId),
+            bookingStatus: {
+                $in: [
+                    BookingStatus.PENDING,
+                    BookingStatus.CONFIRMED,
+                    BookingStatus.IN_PROGRESS,
+                ]
+            },
+        });
+        return Boolean(exists);
+    }
+
 }
