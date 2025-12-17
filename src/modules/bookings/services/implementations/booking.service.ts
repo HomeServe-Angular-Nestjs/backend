@@ -480,7 +480,7 @@ export class BookingService implements IBookingService {
     async canStartVideoCall(customerId: string, providerId: string): Promise<IResponse> {
         const hasOngoingBooking = await this._bookingRepository.isAnyBookingOngoing(customerId, providerId);
         return {
-            success: hasOngoingBooking,
+            success: !hasOngoingBooking,
             message: hasOngoingBooking ? "OK to call" : 'No ongoing booking found.'
         }
     }
