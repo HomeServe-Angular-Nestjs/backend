@@ -1,12 +1,13 @@
 import { Connection, ConnectionStates } from 'mongoose';
 
 import {
-  ADMIN_MODEL_NAME, ADMIN_SETTINGS_MODEL_NAME, BOOKINGS_MODEL_NAME, CHAT_MODEL_NAME, CUSTOMER_MODEL_NAME, MESSAGE_MODEL_NAME,
+  ADMIN_MODEL_NAME, ADMIN_SETTINGS_MODEL_NAME, BOOKINGS_MODEL_NAME, CHAT_MODEL_NAME, CUSTOMER_MODEL_NAME, DATE_OVERRIDE_MODEL_NAME, MESSAGE_MODEL_NAME,
   NOTIFICATION_MODEL_NAME,
   PLAN_MODEL_NAME, PROVIDER_MODEL_NAME, REPORT_MODEL_NAME, RESERVATION_MODEL_NAME, SCHEDULES_MODEL_NAME,
   SERVICE_OFFERED_MODEL_NAME, SLOT_RULE_MODEL_NAME, SUBSCRIPTION_MODEL_NAME,
   WALLET_LEDGER_MODEL_NAME,
-  WALLET_MODEL_NAME
+  WALLET_MODEL_NAME,
+  WEEKLY_AVAILABILITY_MODEL_NAME
 } from '@core/constants/model.constant';
 import { AdminSchema } from '@core/schema/admin.schema';
 import { BookingSchema } from '@core/schema/bookings.schema';
@@ -28,6 +29,8 @@ import { ReportSchema } from '@core/schema/report.schema';
 import { AdminSettingSchema } from '@core/schema/admin-settings.schema';
 import { WalletLedgerSchema } from '@core/schema/wallet-ledger.schema';
 import { PlanSchema } from '@core/schema/plans.schema';
+import { DateOverrideSchema } from '@core/schema/date-overrides.schema';
+import { WeeklyAvailabilitySchema } from '@core/schema/weekly-availability.schema';
 
 @Global()
 @Module({
@@ -61,8 +64,10 @@ import { PlanSchema } from '@core/schema/plans.schema';
     }),
 
     MongooseModule.forFeature([
+      { name: WEEKLY_AVAILABILITY_MODEL_NAME, schema: WeeklyAvailabilitySchema },
       { name: ADMIN_SETTINGS_MODEL_NAME, schema: AdminSettingSchema },
       { name: WALLET_LEDGER_MODEL_NAME, schema: WalletLedgerSchema },
+      { name: DATE_OVERRIDE_MODEL_NAME, schema: DateOverrideSchema },
       { name: SUBSCRIPTION_MODEL_NAME, schema: SubscriptionSchema },
       { name: NOTIFICATION_MODEL_NAME, schema: NotificationSchema },
       { name: SERVICE_OFFERED_MODEL_NAME, schema: ServiceSchema },

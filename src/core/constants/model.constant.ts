@@ -1,4 +1,6 @@
+export const WEEKLY_AVAILABILITY_MODEL_NAME = 'WeeklyAvailability';
 export const ADMIN_SETTINGS_MODEL_NAME = 'AdminSettings';
+export const DATE_OVERRIDE_MODEL_NAME = 'DateOverride';
 export const WALLET_LEDGER_MODEL_NAME = 'WalletLedger';
 export const SUBSCRIPTION_MODEL_NAME = 'Subscription';
 export const NOTIFICATION_MODEL_NAME = 'Notification';
