@@ -102,7 +102,7 @@ export class AvailabilityMapper implements IAvailabilityMapper {
             id: (doc._id as Types.ObjectId).toString(),
             providerId: (doc.providerId as Types.ObjectId).toString(),
             date: doc.date,
-            reason: doc.reason ?? '',
+            reason: doc.reason,
             timeRanges: (doc.timeRanges ?? []).map(range => ({
                 startTime: range.startTime,
                 endTime: range.endTime,

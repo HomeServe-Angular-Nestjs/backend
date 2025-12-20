@@ -121,6 +121,7 @@ export class AvailabilityService implements IAvailabilityService {
             date: new Date(dateOverrideDto.date),
             timeRanges: dateOverrideDto.timeRanges,
             isAvailable: dateOverrideDto.isAvailable,
+            reason: dateOverrideDto.reason,
             providerId,
         });
 
