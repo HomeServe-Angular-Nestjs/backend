@@ -1,5 +1,10 @@
 import { Type } from 'class-transformer';
-import { IsArray, IsBoolean, IsString, Matches, ValidateNested } from 'class-validator';
+import { ArrayMinSize, IsArray, IsBoolean, IsDateString, IsOptional, IsString, Matches, MaxLength, MinLength, ValidateIf, ValidateNested } from 'class-validator';
+
+export class DateDto {
+    @IsString()
+    date: string;
+}
 
 export class TimeRangeDto {
     @IsString()
@@ -59,4 +64,21 @@ export class UpdateWeeklyAvailabilityDto {
     @ValidateNested()
     @Type(() => WeeklyAvailabilityDto)
     week: WeeklyAvailabilityDto;
+}
+
+export class CreateDateOverrideDto extends DateDto {
+    @IsBoolean()
+    isAvailable: boolean;
+
+    @ValidateIf(o => o.isAvailable === true)
+    @ArrayMinSize(1, { message: 'At least one time range is required' })
+    @ValidateNested({ each: true })
+    @Type(() => TimeRangeDto)
+    timeRanges: TimeRangeDto[];
+
+    @IsOptional()
+    @IsString()
+    @MinLength(10, { message: 'Reason must be at least 10 characters' })
+    @MaxLength(120, { message: 'Reason cannot exceed 120 characters' })
+    reason?: string;
 }

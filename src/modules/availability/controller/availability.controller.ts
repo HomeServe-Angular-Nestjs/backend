@@ -1,11 +1,13 @@
 import { User } from "@core/decorators/extract-user.decorator";
 import { IPayload } from "@core/misc/payload.interface";
-import { Body, Controller, Get, Inject, Post, Put } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Inject, Post, Put, Query } from "@nestjs/common";
 import { IAvailabilityService } from "@modules/availability/services/interface/availability-service.interface";
 import { AVAILABILITY_SERVICE_NAME } from "@core/constants/service.constant";
 import { IWeeklyAvailability } from "@core/entities/interfaces/weekly-availability.entity.interface";
 import { IResponse } from "@core/misc/response.util";
-import { UpdateWeeklyAvailabilityDto } from "@modules/availability/dto/availability.dto";
+import { CreateDateOverrideDto, UpdateWeeklyAvailabilityDto } from "@modules/availability/dto/availability.dto";
+import { IDateOverride } from "@core/entities/interfaces/date-override.entity.interface";
+import { DateDto } from "@modules/slots/dtos/slot.rule.dto";
 
 @Controller('availability')
 export class AvailabilityController {
@@ -22,5 +24,20 @@ export class AvailabilityController {
     @Put('')
     async updateWeeklyAvailability(@User() user: IPayload, @Body() updateWeeklyAvailabilityDto: UpdateWeeklyAvailabilityDto): Promise<IResponse<IWeeklyAvailability>> {
         return await this._availabilityService.updateWeeklyAvailability(user.sub, updateWeeklyAvailabilityDto);
+    }
+
+    @Get('overrides')
+    async fetchDateOverrides(@User() user: IPayload): Promise<IResponse<IDateOverride[]>> {
+        return await this._availabilityService.fetchDateOverrides(user.sub);
+    }
+
+    @Post('overrides')
+    async createDateOverrides(@User() user: IPayload, @Body() createDateOverrideDto: CreateDateOverrideDto): Promise<IResponse<IDateOverride>> {
+        return await this._availabilityService.createDateOverride(user.sub, createDateOverrideDto);
+    }
+
+    @Delete('overrides')
+    async deleteDateOverrides(@User() user: IPayload, @Query() { date }: DateDto): Promise<IResponse> {
+        return await this._availabilityService.deleteDateOverride(user.sub, date);
     }
 }

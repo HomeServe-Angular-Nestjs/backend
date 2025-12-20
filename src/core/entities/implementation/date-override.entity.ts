@@ -4,6 +4,7 @@ import { IDateOverride } from "@core/entities/interfaces/date-override.entity.in
 export class DateOverride extends BaseEntity implements IDateOverride {
     providerId: string;
     date: Date;
+    reason?: string;
     timeRanges: {
         startTime: string;
         endTime: string

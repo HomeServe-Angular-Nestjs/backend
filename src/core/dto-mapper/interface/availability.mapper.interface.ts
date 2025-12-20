@@ -7,5 +7,5 @@ export interface IAvailabilityMapper {
     toWeeklyAvailabilityEntity(doc: WeeklyAvailabilityDocument): IWeeklyAvailability;
     toWeeklyAvailabilityDocument(entity: IWeeklyAvailability): Partial<WeeklyAvailabilityDocument>;
     toDateOverrideEntity(doc: DateOverrideDocument): IDateOverride;
-    toDateOverrideDocument(entity: IDateOverride): Partial<DateOverrideDocument>;
+    toDateOverrideDocument(entity: Omit<IDateOverride, 'id'>): Partial<DateOverrideDocument>;
 }

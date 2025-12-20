@@ -44,7 +44,7 @@ export class WeeklyAvailabilityRepository extends BaseRepository<WeeklyAvailabil
                 new: true,
                 upsert: true,
             }
-        );
+        ).lean();
     }
 
     async updateWeekByProviderId(providerId: string, week: IWeeklyAvailability['week']): Promise<WeeklyAvailabilityDocument> {
@@ -58,6 +58,6 @@ export class WeeklyAvailabilityRepository extends BaseRepository<WeeklyAvailabil
                 new: true,
                 upsert: true,
             }
-        );
+        ).lean();
     }
 }

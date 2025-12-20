@@ -24,6 +24,9 @@ export class DateOverrideDocument extends Document {
     @Prop({ type: Boolean, default: false })
     isAvailable: boolean;
 
+    @Prop({ type: String, default: '' })
+    reason?: string;
+
     @Prop({ type: Date })
     createdAt: Date;
 

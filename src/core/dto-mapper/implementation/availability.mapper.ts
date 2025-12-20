@@ -48,31 +48,6 @@ export class AvailabilityMapper implements IAvailabilityMapper {
         });
     }
 
-    toDateOverrideDocument(entity: IDateOverride): Partial<DateOverrideDocument> {
-        const date = new Date(entity.date);
-        date.setHours(0, 0, 0, 0);
-
-        return {
-            providerId: new Types.ObjectId(entity.providerId),
-            date,
-            timeRanges: entity.timeRanges,
-            isAvailable: entity.isAvailable,
-        }
-    }
-
-    toDateOverrideEntity(doc: DateOverrideDocument): IDateOverride {
-        return new DateOverride({
-            id: (doc._id as Types.ObjectId).toString(),
-            providerId: (doc.providerId as Types.ObjectId).toString(),
-            date: doc.date,
-            timeRanges: (doc.timeRanges ?? []).map(range => ({
-                startTime: range.startTime,
-                endTime: range.endTime,
-            })),
-            isAvailable: doc.isAvailable,
-        });
-    }
-
     toWeeklyAvailabilityDocument(entity: IWeeklyAvailability): Partial<WeeklyAvailabilityDocument> {
         return {
             providerId: new Types.ObjectId(entity.providerId),
@@ -108,4 +83,34 @@ export class AvailabilityMapper implements IAvailabilityMapper {
             }
         };
     }
+
+    toDateOverrideDocument(entity: Omit<IDateOverride, 'id'>): Partial<DateOverrideDocument> {
+        const date = new Date(entity.date);
+        date.setHours(0, 0, 0, 0);
+
+        return {
+            providerId: new Types.ObjectId(entity.providerId),
+            date,
+            reason: entity.reason ?? '',
+            timeRanges: entity.timeRanges,
+            isAvailable: entity.isAvailable,
+        }
+    }
+
+    toDateOverrideEntity(doc: DateOverrideDocument): IDateOverride {
+        return new DateOverride({
+            id: (doc._id as Types.ObjectId).toString(),
+            providerId: (doc.providerId as Types.ObjectId).toString(),
+            date: doc.date,
+            reason: doc.reason ?? '',
+            timeRanges: (doc.timeRanges ?? []).map(range => ({
+                startTime: range.startTime,
+                endTime: range.endTime,
+            })),
+            isAvailable: doc.isAvailable,
+            createdAt: doc.createdAt,
+            updatedAt: doc.updatedAt,
+        });
+    }
+
 }
