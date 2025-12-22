@@ -17,5 +17,6 @@ export const REPORT_MODEL_NAME = 'Report';
 export const ADMIN_MODEL_NAME = 'Admin';
 export const CHAT_MODEL_NAME = 'Chat';
 export const PLAN_MODEL_NAME = 'Plan';
+export const PROFESSION_MODEL_NAME = 'Profession';
+export const SERVICE_CATEGORY_MODEL_NAME = 'ServiceCategory';
 
- 

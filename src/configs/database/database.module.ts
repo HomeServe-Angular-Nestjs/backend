@@ -3,7 +3,8 @@ import { Connection, ConnectionStates } from 'mongoose';
 import {
   ADMIN_MODEL_NAME, ADMIN_SETTINGS_MODEL_NAME, BOOKINGS_MODEL_NAME, CHAT_MODEL_NAME, CUSTOMER_MODEL_NAME, DATE_OVERRIDE_MODEL_NAME, MESSAGE_MODEL_NAME,
   NOTIFICATION_MODEL_NAME,
-  PLAN_MODEL_NAME, PROVIDER_MODEL_NAME, REPORT_MODEL_NAME, RESERVATION_MODEL_NAME, SCHEDULES_MODEL_NAME,
+  PLAN_MODEL_NAME, PROFESSION_MODEL_NAME, PROVIDER_MODEL_NAME, REPORT_MODEL_NAME, RESERVATION_MODEL_NAME, SCHEDULES_MODEL_NAME,
+  SERVICE_CATEGORY_MODEL_NAME,
   SERVICE_OFFERED_MODEL_NAME, SLOT_RULE_MODEL_NAME, SUBSCRIPTION_MODEL_NAME,
   WALLET_LEDGER_MODEL_NAME,
   WALLET_MODEL_NAME,
@@ -31,6 +32,8 @@ import { WalletLedgerSchema } from '@core/schema/wallet-ledger.schema';
 import { PlanSchema } from '@core/schema/plans.schema';
 import { DateOverrideSchema } from '@core/schema/date-overrides.schema';
 import { WeeklyAvailabilitySchema } from '@core/schema/weekly-availability.schema';
+import { ProfessionSchema } from '@core/schema/profession.schema';
+import { ServiceCategorySchema } from '@core/schema/service-category';
 
 @Global()
 @Module({
@@ -65,6 +68,7 @@ import { WeeklyAvailabilitySchema } from '@core/schema/weekly-availability.schem
 
     MongooseModule.forFeature([
       { name: WEEKLY_AVAILABILITY_MODEL_NAME, schema: WeeklyAvailabilitySchema },
+      { name: SERVICE_CATEGORY_MODEL_NAME, schema: ServiceCategorySchema },
       { name: ADMIN_SETTINGS_MODEL_NAME, schema: AdminSettingSchema },
       { name: WALLET_LEDGER_MODEL_NAME, schema: WalletLedgerSchema },
       { name: DATE_OVERRIDE_MODEL_NAME, schema: DateOverrideSchema },
@@ -72,6 +76,7 @@ import { WeeklyAvailabilitySchema } from '@core/schema/weekly-availability.schem
       { name: NOTIFICATION_MODEL_NAME, schema: NotificationSchema },
       { name: SERVICE_OFFERED_MODEL_NAME, schema: ServiceSchema },
       { name: RESERVATION_MODEL_NAME, schema: ReservationSchema },
+      { name: PROFESSION_MODEL_NAME, schema: ProfessionSchema },
       { name: SCHEDULES_MODEL_NAME, schema: SchedulesSchema },
       { name: SLOT_RULE_MODEL_NAME, schema: SlotRuleSchema },
       { name: CUSTOMER_MODEL_NAME, schema: CustomerSchema },
