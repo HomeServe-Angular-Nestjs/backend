@@ -5,3 +5,8 @@ export interface IProfession extends IEntity {
     isDeleted: boolean;
     isActive: boolean;
 }
+
+export interface IProfessionFilter {
+    search?: string;
+    isActive?: string;
+}

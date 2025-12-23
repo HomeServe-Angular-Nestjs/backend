@@ -23,6 +23,7 @@ import { SlotModule } from '@modules/slots/slots.module';
 import { WalletModule } from '@modules/wallet/wallet.module';
 import { ReportModule } from '@modules/reports/report.module';
 import { AvailabilityModule } from '@modules/availability/availability.module';
+import { CategoryModule } from '@modules/category/category.module';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { AvailabilityModule } from '@modules/availability/availability.module';
     WalletModule,
     ReportModule,
     AvailabilityModule,
+    CategoryModule,
   ],
   controllers: [AppController],
   providers: [

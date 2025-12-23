@@ -33,6 +33,7 @@ export const REPORT_SERVICE_NAME = Symbol('REPORT_SERVICE_NAME');
 export const PROVIDER_ANALYTICS_SERVICE_NAME = Symbol('PROVIDER_ANALYTICS_SERVICE_NAME');
 export const VIDEO_CALL_SERVICE_NAME = Symbol('VideoCallService');
 export const AVAILABILITY_SERVICE_NAME = Symbol('AVAILABILITY_SERVICE_NAME');
+export const CATEGORY_SERVICE_NAME = Symbol('CATEGORY_SERVICE_NAME');
 
 export const AUTH_SOCKET_SERVICE_NAME = 'IAuthSocketService';
 export const CHAT_SOCKET_SERVICE_NAME = 'IChatSocketService';
