@@ -25,9 +25,14 @@ export class CategoryController {
         return await this._categoryService.updateProfession(updateProfessionDto, professionId);
     }
 
-    @Put('service')
-    async createOrUpdateServiceCategory(@Body() createServiceCategoryDto: CreateServiceCategoryDto): Promise<IResponse<ServiceCategory>> {
-        return await this._categoryService.createOrUpdateServiceCategory(createServiceCategoryDto);
+    @Post('service')
+    async createServiceCategory(@Body() createServiceCategoryDto: CreateServiceCategoryDto): Promise<IResponse<ServiceCategory>> {
+        return await this._categoryService.createServiceCategory(createServiceCategoryDto);
+    }
+
+    @Put('service/:id')
+    async updateServiceCategory(@Body() createServiceCategoryDto: CreateServiceCategoryDto, @Param('id', new isValidIdPipe()) serviceCategoryId: string): Promise<IResponse<ServiceCategory>> {
+        return await this._categoryService.updateServiceCategory(createServiceCategoryDto, serviceCategoryId);
     }
 
     @Get('profession')

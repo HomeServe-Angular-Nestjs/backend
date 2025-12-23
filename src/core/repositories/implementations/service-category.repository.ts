@@ -16,14 +16,6 @@ export class ServiceCategoryRepository extends BaseRepository<ServiceCategoryDoc
         super(_serviceCategoryModel);
     }
 
-    async updateOrCreate(update: Partial<ServiceCategoryDocument>, serviceCategoryId?: string): Promise<ServiceCategoryDocument | null> {
-        return this._serviceCategoryModel.findOneAndUpdate(
-            { _id: serviceCategoryId },
-            update,
-            { upsert: true, new: true }
-        );
-    }
-
     async findAllWithFilterWithPagination(filter: IServiceCategoryFilter, options?: { page: number, limit: number }): Promise<ServiceCategoryDocument[]> {
         const page = options?.page || 1;
         const limit = options?.limit || 10;
@@ -38,12 +30,18 @@ export class ServiceCategoryRepository extends BaseRepository<ServiceCategoryDoc
         }
 
         if (filter.isActive && filter.isActive !== 'all') {
-            query.isActive = filter.isActive;
+            query.isActive = filter.isActive === 'true';
         }
 
         if (filter.profession && filter.profession !== 'all') {
-            query.profession = filter.profession;
+            query.$expr = {
+                $eq: [
+                    { $toString: '$professionId' },
+                    filter.profession
+                ]
+            };
         }
+
 
         const docs = await this._serviceCategoryModel.aggregate([
             {
@@ -64,7 +62,7 @@ export class ServiceCategoryRepository extends BaseRepository<ServiceCategoryDoc
     }
 
     async updateCategoryService(serviceCategoryId: string, update: Partial<ServiceCategoryDocument>): Promise<ServiceCategoryDocument | null> {
-        return await this._serviceCategoryModel.findByIdAndUpdate(serviceCategoryId, update, { new: true });
+        return await this._serviceCategoryModel.findByIdAndUpdate(serviceCategoryId, update, { new: true }).lean();
     }
 
     async toggleStatus(serviceCategoryId: string): Promise<boolean> {
@@ -72,7 +70,7 @@ export class ServiceCategoryRepository extends BaseRepository<ServiceCategoryDoc
             { _id: serviceCategoryId },
             [{ $set: { isActive: { $not: "$isActive" } } }],
             { new: true }
-        )
+        ).lean();
         return !!result;
     }
 

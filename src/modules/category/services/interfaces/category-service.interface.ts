@@ -10,7 +10,8 @@ export interface ICategoryService {
     toggleProfessionStatus(professionId: string): Promise<IResponse>;
     deleteProfession(professionId: string): Promise<IResponse>;
 
-    createOrUpdateServiceCategory(createServiceCategoryDto: CreateServiceCategoryDto): Promise<IResponse<IServiceCategory>>;
+    createServiceCategory(createServiceCategoryDto: CreateServiceCategoryDto): Promise<IResponse<IServiceCategory>>;
+    updateServiceCategory(updateServiceCategoryDto: CreateServiceCategoryDto, serviceCategoryId: string): Promise<IResponse<IServiceCategory>>;
     findAllServiceCategories(serviceCategoryFilter: CategoryServiceFilterDto): Promise<IResponse<IServiceCategoryWithPagination>>;
     toggleServiceCategoryStatus(serviceCategoryId: string): Promise<IResponse>;
     deleteServiceCategory(serviceCategoryId: string): Promise<IResponse>;

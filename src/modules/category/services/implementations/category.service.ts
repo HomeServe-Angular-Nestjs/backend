@@ -119,7 +119,7 @@ export class CategoryService implements ICategoryService {
         };
     }
 
-    async createOrUpdateServiceCategory(dto: CreateServiceCategoryDto): Promise<IResponse<IServiceCategory>> {
+    async createServiceCategory(dto: CreateServiceCategoryDto): Promise<IResponse<IServiceCategory>> {
         const serviceCategory = new ServiceCategory({
             name: dto.name,
             professionId: dto.professionId,
@@ -128,7 +128,7 @@ export class CategoryService implements ICategoryService {
             isDeleted: false
         });
         const doc = this._serviceCategoryMapper.toDocument(serviceCategory);
-        const saved = await this._serviceCategoryRepository.updateOrCreate(doc);
+        const saved = await this._serviceCategoryRepository.create(doc);
 
         if (!saved) throw new InternalServerErrorException({
             code: ErrorCodes.INTERNAL_SERVER_ERROR,
@@ -138,6 +138,29 @@ export class CategoryService implements ICategoryService {
         return {
             success: true,
             message: 'Service category created successfully',
+            data: this._serviceCategoryMapper.toEntity(saved)
+        }
+    }
+
+    async updateServiceCategory(dto: CreateServiceCategoryDto, serviceCategoryId: string): Promise<IResponse<IServiceCategory>> {
+        const serviceCategory = new ServiceCategory({
+            name: dto.name,
+            professionId: dto.professionId,
+            keywords: dto.keywords ?? [],
+            isActive: dto.isActive ?? true,
+            isDeleted: false
+        });
+        const doc = this._serviceCategoryMapper.toDocument(serviceCategory);
+        const saved = await this._serviceCategoryRepository.updateCategoryService(serviceCategoryId, doc);
+
+        if (!saved) throw new InternalServerErrorException({
+            code: ErrorCodes.INTERNAL_SERVER_ERROR,
+            message: 'Service category update failed'
+        });
+
+        return {
+            success: true,
+            message: 'Service category updated successfully',
             data: this._serviceCategoryMapper.toEntity(saved)
         }
     }

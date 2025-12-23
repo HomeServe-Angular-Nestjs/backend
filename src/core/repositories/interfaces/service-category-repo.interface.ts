@@ -4,7 +4,6 @@ import { ServiceCategoryDocument } from "@core/schema/service-category";
 import { FilterQuery } from "mongoose";
 
 export interface IServiceCategoryRepository extends IBaseRepository<ServiceCategoryDocument> {
-    updateOrCreate(update: Partial<ServiceCategoryDocument>, serviceCategoryId?: string): Promise<ServiceCategoryDocument | null>;
     findAllWithFilterWithPagination(filter: IServiceCategoryFilter, options?: { page: number, limit: number }): Promise<ServiceCategoryDocument[]>;
     updateCategoryService(serviceCategoryId: string, update: Partial<ServiceCategoryDocument>): Promise<ServiceCategoryDocument | null>;
     toggleStatus(serviceCategoryId: string): Promise<boolean>;
