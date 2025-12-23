@@ -22,6 +22,7 @@ import morgan from 'morgan';
 import { ConfigService } from '@nestjs/config';
 import { RedisIoAdapter } from '@configs/redis/redis-io-adaptor';
 import passport from 'passport';
+import { GlobalExceptionFilter } from '@core/exception-filters/global-exception.filter';
 
 async function bootstrap() {
   if (process.argv.includes('seed:admin')) {
@@ -89,6 +90,7 @@ async function bootstrap() {
   const customerRepository = app.get<ICustomerRepository>(CUSTOMER_REPOSITORY_INTERFACE_NAME);
   const providerRepository = app.get<IProviderRepository>(PROVIDER_REPOSITORY_INTERFACE_NAME);
   app.useGlobalGuards(new BlockGuard(loggerFactory, customerRepository, providerRepository));
+  app.useGlobalFilters(new GlobalExceptionFilter(loggerFactory));
 
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,

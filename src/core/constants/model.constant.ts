@@ -1,4 +1,6 @@
+export const WEEKLY_AVAILABILITY_MODEL_NAME = 'WeeklyAvailability';
 export const ADMIN_SETTINGS_MODEL_NAME = 'AdminSettings';
+export const DATE_OVERRIDE_MODEL_NAME = 'DateOverride';
 export const WALLET_LEDGER_MODEL_NAME = 'WalletLedger';
 export const SUBSCRIPTION_MODEL_NAME = 'Subscription';
 export const NOTIFICATION_MODEL_NAME = 'Notification';
@@ -15,5 +17,6 @@ export const REPORT_MODEL_NAME = 'Report';
 export const ADMIN_MODEL_NAME = 'Admin';
 export const CHAT_MODEL_NAME = 'Chat';
 export const PLAN_MODEL_NAME = 'Plan';
+export const PROFESSION_MODEL_NAME = 'Profession';
+export const SERVICE_CATEGORY_MODEL_NAME = 'ServiceCategory';
 
- 

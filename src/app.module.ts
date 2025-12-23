@@ -22,6 +22,8 @@ import { AdminModule } from './modules/users/admin.module';
 import { SlotModule } from '@modules/slots/slots.module';
 import { WalletModule } from '@modules/wallet/wallet.module';
 import { ReportModule } from '@modules/reports/report.module';
+import { AvailabilityModule } from '@modules/availability/availability.module';
+import { CategoryModule } from '@modules/category/category.module';
 
 @Module({
   imports: [
@@ -53,6 +55,8 @@ import { ReportModule } from '@modules/reports/report.module';
     SlotModule,
     WalletModule,
     ReportModule,
+    AvailabilityModule,
+    CategoryModule,
   ],
   controllers: [AppController],
   providers: [

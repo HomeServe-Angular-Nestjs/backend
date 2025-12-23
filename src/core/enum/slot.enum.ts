@@ -1,11 +1,11 @@
 export enum WeekEnum {
-    SUN = 'Sun',
-    MON = 'Mon',
-    TUE = 'Tue',
-    WED = 'Wed',
-    THU = 'Thu',
-    FRI = 'Fri',
-    SAT = 'Sat',
+    SUN = 'sun',
+    MON = 'mon',
+    TUE = 'tue',
+    WED = 'wed',
+    THU = 'thu',
+    FRI = 'fri',
+    SAT = 'sat',
 }
 
 export enum RuleSortEnum {
