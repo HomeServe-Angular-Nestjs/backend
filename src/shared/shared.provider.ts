@@ -1,4 +1,4 @@
-import { ADMIN_MAPPER, ADMIN_SETTINGS_MAPPER, AVAILABILITY_MAPPER, BOOKING_MAPPER, CHAT_MAPPER, CUSTOMER_MAPPER, MESSAGE_MAPPER, NOTIFICATION_MAPPER, PLAN_MAPPER, PROFESSION_MAPPER, PROVIDER_MAPPER, REPORT_MAPPER, RESERVATION_MAPPER, SCHEDULES_MAPPER, SERVICE_CATEGORY_MAPPER, SERVICE_OFFERED_MAPPER, SLOT_RULE_MAPPER, SUBSCRIPTION_MAPPER, TRANSACTION_MAPPER, WALLET_LEDGER_MAPPER, WALLET_MAPPER } from '@core/constants/mappers.constant';
+import { ADMIN_MAPPER, ADMIN_SETTINGS_MAPPER, AVAILABILITY_MAPPER, BOOKING_MAPPER, CHAT_MAPPER, CUSTOMER_MAPPER, MESSAGE_MAPPER, NOTIFICATION_MAPPER, PLAN_MAPPER, PROFESSION_MAPPER, PROVIDER_MAPPER, PROVIDER_SERVICE_MAPPER, REPORT_MAPPER, RESERVATION_MAPPER, SCHEDULES_MAPPER, SERVICE_CATEGORY_MAPPER, SERVICE_OFFERED_MAPPER, SLOT_RULE_MAPPER, SUBSCRIPTION_MAPPER, TRANSACTION_MAPPER, WALLET_LEDGER_MAPPER, WALLET_MAPPER } from '@core/constants/mappers.constant';
 import { SUBSCRIPTION_REPOSITORY_NAME } from '@core/constants/repository.constant';
 import { AdminSettingsMapper } from '@core/dto-mapper/implementation/admin-settings.mapper';
 import { AdminMapper } from '@core/dto-mapper/implementation/admin.mapper';
@@ -10,6 +10,7 @@ import { MessageMapper } from '@core/dto-mapper/implementation/message.mapper';
 import { NotificationMapper } from '@core/dto-mapper/implementation/notification.mapper';
 import { PlanMapper } from '@core/dto-mapper/implementation/plan.mapper';
 import { ProfessionMapper } from '@core/dto-mapper/implementation/profession.mapper';
+import { ProviderServiceMapper } from '@core/dto-mapper/implementation/provider-service.mapper';
 import { ProviderMapper } from '@core/dto-mapper/implementation/provider.mapper';
 import { ReportMapper } from '@core/dto-mapper/implementation/report.mapper';
 import { ReservationMapper } from '@core/dto-mapper/implementation/reservation.mapper';
@@ -29,6 +30,10 @@ import { SubscriptionRepository } from '@core/repositories/implementations/subsc
 import { Provider } from '@nestjs/common';
 
 export const sharedProviders: Provider[] = [
+    {
+        provide: PROVIDER_SERVICE_MAPPER,
+        useClass: ProviderServiceMapper
+    },
     {
         provide: CUSTOM_LOGGER,
         useClass: CustomLogger,

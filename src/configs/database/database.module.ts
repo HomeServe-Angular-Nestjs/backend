@@ -3,7 +3,7 @@ import { Connection, ConnectionStates } from 'mongoose';
 import {
   ADMIN_MODEL_NAME, ADMIN_SETTINGS_MODEL_NAME, BOOKINGS_MODEL_NAME, CHAT_MODEL_NAME, CUSTOMER_MODEL_NAME, DATE_OVERRIDE_MODEL_NAME, MESSAGE_MODEL_NAME,
   NOTIFICATION_MODEL_NAME,
-  PLAN_MODEL_NAME, PROFESSION_MODEL_NAME, PROVIDER_MODEL_NAME, REPORT_MODEL_NAME, RESERVATION_MODEL_NAME, SCHEDULES_MODEL_NAME,
+  PLAN_MODEL_NAME, PROFESSION_MODEL_NAME, PROVIDER_MODEL_NAME, PROVIDER_SERVICE_MODEL_NAME, REPORT_MODEL_NAME, RESERVATION_MODEL_NAME, SCHEDULES_MODEL_NAME,
   SERVICE_CATEGORY_MODEL_NAME,
   SERVICE_OFFERED_MODEL_NAME, SLOT_RULE_MODEL_NAME, SUBSCRIPTION_MODEL_NAME,
   WALLET_LEDGER_MODEL_NAME,
@@ -34,6 +34,7 @@ import { DateOverrideSchema } from '@core/schema/date-overrides.schema';
 import { WeeklyAvailabilitySchema } from '@core/schema/weekly-availability.schema';
 import { ProfessionSchema } from '@core/schema/profession.schema';
 import { ServiceCategorySchema } from '@core/schema/service-category';
+import { ProviderServiceSchema } from '@core/schema/provider-service.schema';
 
 @Global()
 @Module({
@@ -69,6 +70,7 @@ import { ServiceCategorySchema } from '@core/schema/service-category';
     MongooseModule.forFeature([
       { name: WEEKLY_AVAILABILITY_MODEL_NAME, schema: WeeklyAvailabilitySchema },
       { name: SERVICE_CATEGORY_MODEL_NAME, schema: ServiceCategorySchema },
+      {name:PROVIDER_SERVICE_MODEL_NAME, schema:ProviderServiceSchema},
       { name: ADMIN_SETTINGS_MODEL_NAME, schema: AdminSettingSchema },
       { name: WALLET_LEDGER_MODEL_NAME, schema: WalletLedgerSchema },
       { name: DATE_OVERRIDE_MODEL_NAME, schema: DateOverrideSchema },
@@ -84,7 +86,7 @@ import { ServiceCategorySchema } from '@core/schema/service-category';
       { name: BOOKINGS_MODEL_NAME, schema: BookingSchema },
       { name: MESSAGE_MODEL_NAME, schema: MessageSchema },
       { name: REPORT_MODEL_NAME, schema: ReportSchema },
-      { name: WALLET_MODEL_NAME, schema: WalletSchema },
+      { name: WALLET_MODEL_NAME, schema: WalletSchema }, 
       { name: ADMIN_MODEL_NAME, schema: AdminSchema },
       { name: CHAT_MODEL_NAME, schema: ChatSchema },
       { name: PLAN_MODEL_NAME, schema: PlanSchema },

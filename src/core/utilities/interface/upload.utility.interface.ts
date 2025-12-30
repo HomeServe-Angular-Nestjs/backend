@@ -7,4 +7,5 @@ export interface IUploadsUtility {
   uploadsImage(file: Express.Multer.File, publicId: string): Promise<UploadApiResponse>;
   getSignedImageUrl(publicId: string, expiresIn?: number): string;
   getPublicId(userType: UserType, userId: string, uploadType: UploadsType, uniqueId: string): string;
+  deleteImageByPublicId(publicId: string): Promise<boolean>;
 }

@@ -7,6 +7,8 @@ export enum ErrorMessage {
     INVALID_OTP = 'Invalid OTP. Please try again.',
     OTP_EXPIRED = 'OTP expired. Please try again.',
     DOCUMENT_NOT_FOUND = 'Document not found',
+    FILE_UPLOAD_FAILED = 'File upload failed',
+    SERVICE_ALREADY_EXISTS = 'Service already exists',
 
     PROVIDER_NOT_FOUND = 'Provider not found',
     SERVICE_NOT_FOUND = 'Service not found',
@@ -17,7 +19,6 @@ export enum ErrorMessage {
     SERVICE_NOT_FOUND_WITH_ID = 'Service not found with ID: ',
     INVALID_INPUT = 'Invalid input data',
     MISSING_FIELDS = 'Required fields are missing',
-    FILE_UPLOAD_FAILED = 'File upload failed',
     INVALID_CREDENTIALS = 'Invalid email or password',
     MUST_BE_STRING = 'must be a string',
     SHOULD_NOT_BE_EMPTY = 'should not be empty',

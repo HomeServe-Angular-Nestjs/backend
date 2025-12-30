@@ -30,7 +30,10 @@ export class ProfessionRepository extends BaseRepository<ProfessionDocument> imp
         if (filter.search) {
             query.name = { $regex: filter.search, $options: 'i' };
         }
-        if (filter.isActive !== 'all') {
+
+        if (filter.isActive === undefined) {
+            query.isActive = true;
+        } else if (filter.isActive !== 'all') {
             query.isActive = filter.isActive === 'true';
         }
 

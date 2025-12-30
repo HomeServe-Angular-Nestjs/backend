@@ -31,7 +31,8 @@ export class CloudinaryService {
           public_id: public_id,
           folder: 'homeserve',
           overwrite: true,
-          type: 'authenticated'
+          type: 'authenticated',
+          invalidate: true,
         },
         (err, result) => {
           if (err) return reject(err instanceof Error ? err : new Error(String(err)));
@@ -42,6 +43,10 @@ export class CloudinaryService {
 
       Readable.from(file.buffer).pipe(stream);
     });
+  }
+
+  async delete(publicId: string) {
+    return await this._cloudinary.uploader.destroy(publicId);
   }
 
   generateSignedUrl(publicId: string, expiresIn = 300): string {
