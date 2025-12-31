@@ -35,6 +35,8 @@ import { WeeklyAvailabilitySchema } from '@core/schema/weekly-availability.schem
 import { ProfessionSchema } from '@core/schema/profession.schema';
 import { ServiceCategorySchema } from '@core/schema/service-category';
 import { ProviderServiceSchema } from '@core/schema/provider-service.schema';
+import { CART_MODEL_NAME } from '@core/constants/model.constant';
+import { CartSchema } from '@core/schema/cart.schema';
 
 @Global()
 @Module({
@@ -70,7 +72,7 @@ import { ProviderServiceSchema } from '@core/schema/provider-service.schema';
     MongooseModule.forFeature([
       { name: WEEKLY_AVAILABILITY_MODEL_NAME, schema: WeeklyAvailabilitySchema },
       { name: SERVICE_CATEGORY_MODEL_NAME, schema: ServiceCategorySchema },
-      {name:PROVIDER_SERVICE_MODEL_NAME, schema:ProviderServiceSchema},
+      { name: PROVIDER_SERVICE_MODEL_NAME, schema: ProviderServiceSchema },
       { name: ADMIN_SETTINGS_MODEL_NAME, schema: AdminSettingSchema },
       { name: WALLET_LEDGER_MODEL_NAME, schema: WalletLedgerSchema },
       { name: DATE_OVERRIDE_MODEL_NAME, schema: DateOverrideSchema },
@@ -86,10 +88,11 @@ import { ProviderServiceSchema } from '@core/schema/provider-service.schema';
       { name: BOOKINGS_MODEL_NAME, schema: BookingSchema },
       { name: MESSAGE_MODEL_NAME, schema: MessageSchema },
       { name: REPORT_MODEL_NAME, schema: ReportSchema },
-      { name: WALLET_MODEL_NAME, schema: WalletSchema }, 
+      { name: WALLET_MODEL_NAME, schema: WalletSchema },
       { name: ADMIN_MODEL_NAME, schema: AdminSchema },
       { name: CHAT_MODEL_NAME, schema: ChatSchema },
       { name: PLAN_MODEL_NAME, schema: PlanSchema },
+      { name: CART_MODEL_NAME, schema: CartSchema },
     ]),
   ],
   exports: [MongooseModule],

@@ -35,11 +35,14 @@ export class BookingsController {
         return await this._bookingService.preparePriceBreakup(selectedServiceDto);
     }
 
+    @Get('price_breakup')
+    async fetchPriceBreakup(@User() user: IPayload) {
+        return await this._bookingService.fetchPriceBreakup(user.sub);
+    }
+
     @UseGuards(OngoingPaymentGuard)
     @Post('confirm')
-    async handleBooking(@Req() req: Request, @Body() bookingDto: BookingDto) {
-        const user = req.user as IPayload;
-
+    async handleBooking(@User() user: IPayload, @Body() bookingDto: BookingDto) {
         if (!Array.isArray(bookingDto.serviceIds) || bookingDto.serviceIds.some(s => !s.id || !Array.isArray(s.selectedIds))) {
             throw new BadRequestException('Invalid serviceIds format');
         }
@@ -48,8 +51,7 @@ export class BookingsController {
     }
 
     @Get('fetch')
-    async fetchBooking(@Req() req: Request, @Query() bookingDto: BookingPaginationFilterDto): Promise<IBookingWithPagination> {
-        const user = req.user as IPayload;
+    async fetchBooking(@User() user: IPayload, @Query() bookingDto: BookingPaginationFilterDto): Promise<IBookingWithPagination> {
         const { page } = bookingDto;
         return await this._bookingService.fetchBookings(user.sub, page);
     }

@@ -1,11 +1,11 @@
 import { Model } from 'mongoose';
 
 import {
-  ADMIN_MODEL_NAME, CUSTOMER_MODEL_NAME, PROVIDER_MODEL_NAME,
+  ADMIN_MODEL_NAME, CART_MODEL_NAME, CUSTOMER_MODEL_NAME, PROVIDER_MODEL_NAME,
   WALLET_MODEL_NAME
 } from '@core/constants/model.constant';
 import {
-  ADMIN_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME,
+  ADMIN_REPOSITORY_NAME, CART_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME,
   OTP_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME,
   WALLET_REPOSITORY_NAME
 } from '@core/constants/repository.constant';
@@ -23,8 +23,16 @@ import { WalletRepository } from '@core/repositories/implementations/wallet.repo
 import { LoggerFactory } from '@core/logger/implementation/logger.factory';
 import Redis from 'ioredis';
 import { REDIS_CLIENT } from '@configs/redis/redis.module';
+import { CartDocument } from '@core/schema/cart.schema';
+import { CartRepository } from '@core/repositories/implementations/cart.repository';
 
 export const repositoryProvider: Provider[] = [
+  {
+    provide: CART_REPOSITORY_NAME,
+    useFactory: (cartModel: Model<CartDocument>) =>
+      new CartRepository(cartModel),
+    inject: [getModelToken(CART_MODEL_NAME)],
+  },
   {
     provide: CUSTOMER_REPOSITORY_INTERFACE_NAME,
     useFactory: (customerModel: Model<CustomerDocument>) =>
@@ -41,7 +49,7 @@ export const repositoryProvider: Provider[] = [
     useFactory: (providerModel: Model<ProviderDocument>) =>
       new ProviderRepository(providerModel),
     inject: [getModelToken(PROVIDER_MODEL_NAME)],
-  },
+  }, 
   {
     provide: ADMIN_REPOSITORY_NAME,
     useFactory: (adminModel: Model<AdminDocument>) =>
