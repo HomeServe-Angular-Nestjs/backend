@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, ForbiddenException, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
-import { BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SERVICE_OFFERED_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME, WALLET_REPOSITORY_NAME } from '@core/constants/repository.constant';
+import { BOOKING_REPOSITORY_NAME, CART_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, PROVIDER_SERVICE_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME, WALLET_REPOSITORY_NAME } from '@core/constants/repository.constant';
 import { IBooking, IBookingDetailCustomer, IBookingResponse, IBookingWithPagination } from '@core/entities/interfaces/booking.entity.interface';
 import { BookingStatus, CancelStatus, PaymentStatus } from '@core/enum/bookings.enum';
 import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
@@ -8,9 +8,9 @@ import { IResponse } from '@core/misc/response.util';
 import { IBookingRepository } from '@core/repositories/interfaces/bookings-repo.interface';
 import { ICustomerRepository } from '@core/repositories/interfaces/customer-repo.interface';
 import { IProviderRepository } from '@core/repositories/interfaces/provider-repo.interface';
-import { IServiceOfferedRepository } from '@core/repositories/interfaces/serviceOffered-repo.interface';
+import { IProviderServiceRepository } from '@core/repositories/interfaces/provider-service-repo.interface';
 import { ITransactionRepository } from '@core/repositories/interfaces/transaction-repo.interface';
-import { AddReviewDto, BookingDto, SelectedServiceDto, UpdateBookingDto, UpdateBookingPaymentStatusDto } from '@modules/bookings/dtos/booking.dto';
+import { AddReviewDto, BookingDto, IPriceBreakupDto, SelectedServiceDto, UpdateBookingDto, UpdateBookingPaymentStatusDto } from '@modules/bookings/dtos/booking.dto';
 import { IBookingService } from '@modules/bookings/services/interfaces/booking-service.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { SlotStatusEnum } from '@core/enum/slot.enum';
@@ -24,6 +24,7 @@ import { ITimeUtility } from '@core/utilities/interface/time.utility.interface';
 import { IWalletRepository } from '@core/repositories/interfaces/wallet-repo.interface';
 import { TransactionStatus, TransactionType } from '@core/enum/transaction.enum';
 import { IPaymentLockingUtility } from '@core/utilities/interface/payment-locking.utility';
+import { ICartRepository } from '@core/repositories/interfaces/cart-repo.interface';
 
 @Injectable()
 export class BookingService implements IBookingService {
@@ -32,8 +33,8 @@ export class BookingService implements IBookingService {
     constructor(
         @Inject(LOGGER_FACTORY)
         private readonly _loggerFactor: ILoggerFactory,
-        @Inject(SERVICE_OFFERED_REPOSITORY_NAME)
-        private readonly _serviceOfferedRepository: IServiceOfferedRepository,
+        @Inject(PROVIDER_SERVICE_REPOSITORY_NAME)
+        private readonly _providerServiceRepository: IProviderServiceRepository,
         @Inject(BOOKING_REPOSITORY_NAME)
         private readonly _bookingRepository: IBookingRepository,
         @Inject(CUSTOMER_REPOSITORY_INTERFACE_NAME)
@@ -56,17 +57,19 @@ export class BookingService implements IBookingService {
         private readonly _transactionMapper: ITransactionMapper,
         @Inject(PAYMENT_LOCKING_UTILITY_NAME)
         private readonly _paymentLockingUtility: IPaymentLockingUtility,
+        @Inject(CART_REPOSITORY_NAME)
+        private readonly _cartRepository: ICartRepository,
     ) {
         this.logger = this._loggerFactor.createLogger(BookingService.name);
     }
 
-    // Calculates the detailed price breakup for a list of selected services and subServices.
+    // Calculates the detailed price breakup for a list of selected services.
     async preparePriceBreakup(serviceDto: SelectedServiceDto[]): Promise<IPricingBreakup> {
-        const subServiceIds = serviceDto.flatMap(ids => ids.subServiceIds);
-        const subServiceDocuments = await this._serviceOfferedRepository.findSubServicesByIds(subServiceIds);
+        const providerServiceIds = serviceDto.flatMap(ids => ids.subServiceIds);
+        const providerServices = await this._providerServiceRepository.findByIds(providerServiceIds);
 
-        const prices = subServiceDocuments.flatMap(sub => {
-            const price = Number(sub.price);
+        const prices = providerServices.map(service => {
+            const price = Number(service.price);
             if (isNaN(price)) throw new BadRequestException({
                 code: ErrorCodes.BAD_REQUEST,
                 message: 'Invalid price'
@@ -75,6 +78,26 @@ export class BookingService implements IBookingService {
         });
 
         return await this._pricingUtility.computeBreakup(prices);
+    }
+
+    async fetchPriceBreakup(customerId: string): Promise<IResponse<IPriceBreakupDto>> {
+        const cart = await this._cartRepository.findAndPopulateByCustomerId(customerId);
+        if (!cart) throw new NotFoundException({
+            code: ErrorCodes.NOT_FOUND,
+            message: 'Cart not found'
+        });
+
+        const totals = cart.items.map(service => service.price);
+        const breakup = await this._pricingUtility.computeBreakup(totals);
+        return {
+            success: true,
+            message: 'Price breakup fetched successfully',
+            data: {
+                total: breakup.total,
+                subTotal: breakup.subTotal,
+                tax: breakup.tax,
+            }
+        }
     }
 
     async createBooking(customerId: string, data: BookingDto): Promise<IResponse<IBooking>> {
@@ -180,18 +203,14 @@ export class BookingService implements IBookingService {
                 }
 
                 const services = await Promise.all(
-                    booking.services.map(async (s) => {
-                        const service = await this._serviceOfferedRepository.findById(s.serviceId);
-                        if (!service) {
-                            throw new InternalServerErrorException(`Service with ID ${s.serviceId} not found.`);
-                        }
-
-                        return {
-                            id: service.id,
-                            name: service.title
-                        };
+                    booking.services.flatMap(async (s) => {
+                        const providerServices = await this._providerServiceRepository.findByIds(s.subserviceIds);
+                        return providerServices.map(ps => ({
+                            id: ps.id,
+                            name: ps.description // or some other display name
+                        }));
                     })
-                );
+                ).then(results => results.flat());
 
                 const transaction = booking.transactionHistory
                     .find(t => t.transactionType === TransactionType.BOOKING_PAYMENT && t.status === TransactionStatus.SUCCESS);
@@ -246,18 +265,13 @@ export class BookingService implements IBookingService {
         const orderedServices = (
             await Promise.all(
                 booking.services.map(async (s) => {
-                    const service = await this._serviceOfferedRepository.findById(s.serviceId);
-                    if (!service) {
-                        throw new InternalServerErrorException(`Service with ID ${s.serviceId} not found.`);
-                    }
+                    const providerServices = await this._providerServiceRepository.findByIds(s.subserviceIds);
 
-                    return service.subService
-                        .filter(sub => sub.id && s.subserviceIds.includes(sub.id))
-                        .map(sub => ({
-                            title: sub.title as string,
-                            price: sub.price as string,
-                            estimatedTime: sub.estimatedTime as string
-                        }));
+                    return providerServices.map(ps => ({
+                        title: ps.description,
+                        price: ps.price.toString(),
+                        estimatedTime: ps.estimatedTimeInMinutes.toString() + ' mins'
+                    }));
                 })
             )
         ).flat();
@@ -315,18 +329,14 @@ export class BookingService implements IBookingService {
         }
 
         const services = await Promise.all(
-            updatedBooking.services.map(async (s) => {
-                const service = await this._serviceOfferedRepository.findById(s.serviceId);
-                if (!service) {
-                    throw new InternalServerErrorException(`Service with ID ${s.serviceId} not found.`);
-                }
-
-                return {
-                    id: service.id,
-                    name: service.title
-                };
+            updatedBooking.services.flatMap(async (s) => {
+                const providerServices = await this._providerServiceRepository.findByIds(s.subserviceIds);
+                return providerServices.map(ps => ({
+                    id: ps.id,
+                    name: ps.description
+                }));
             })
-        );
+        ).then(results => results.flat());
 
         const transaction = updatedBooking.transactionHistory
             .filter(t => t.transactionType === TransactionType.BOOKING_PAYMENT && t.status === TransactionStatus.SUCCESS)
@@ -384,20 +394,14 @@ export class BookingService implements IBookingService {
         }
 
         const services = await Promise.all(
-            updatedBooking.services.map(async (s) => {
-                const service = await this._serviceOfferedRepository.findById(s.serviceId);
-                if (!service) {
-                    throw new InternalServerErrorException(`Service with ID ${s.serviceId} not found.`);
-                }
-
-                return {
-                    id: service.id,
-                    name: service.title
-                };
+            updatedBooking.services.flatMap(async (s) => {
+                const providerServices = await this._providerServiceRepository.findByIds(s.subserviceIds.map(String));
+                return providerServices.map(ps => ({
+                    id: ps.id,
+                    name: ps.description
+                }));
             })
-        );
-
-        // let transaction: ITransaction | null = await this._getTransactionData(updatedBooking.transactionId?.toString());
+        ).then(results => results.flat());
 
         const updatedData: IBookingResponse = {
             bookingId: updatedBooking.id,

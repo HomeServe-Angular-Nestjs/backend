@@ -78,4 +78,11 @@ export class ProviderServiceRepository extends BaseRepository<ProviderServiceDoc
         );
         return deleted?.isDeleted ?? false;
     }
+
+    async findByIds(ids: string[]): Promise<ProviderServiceDocument[]> {
+        return await this._providerServiceModel.find({
+            _id: { $in: ids.map(id => new Types.ObjectId(id)) },
+            isDeleted: false
+        }).exec();
+    }
 }

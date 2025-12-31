@@ -20,4 +20,6 @@ export const PLAN_MODEL_NAME = 'Plan';
 export const PROFESSION_MODEL_NAME = 'Profession';
 export const SERVICE_CATEGORY_MODEL_NAME = 'ServiceCategory';
 export const PROVIDER_SERVICE_MODEL_NAME = 'ProviderService';
+export const CART_MODEL_NAME = 'Cart';
+
 

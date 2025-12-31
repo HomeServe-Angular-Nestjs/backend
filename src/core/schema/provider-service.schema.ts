@@ -36,7 +36,7 @@ export class ProviderServiceDocument extends Document {
         default: 0,
         required: true
     })
-    price: Number;
+    price: number;
 
     @Prop({
         type: String,

@@ -42,3 +42,4 @@ export const USER_SOCKET_STORE_SERVICE_NAME = 'IUserSocketStoreService';
 
 export const PDF_SERVICE = 'IPdfService';
 export const PROVIDER_DASHBOARD_SERVICE_NAME = Symbol('IProviderDashboardService');
+export const CART_SERVICE_NAME = Symbol('CART_SERVICE_NAME');

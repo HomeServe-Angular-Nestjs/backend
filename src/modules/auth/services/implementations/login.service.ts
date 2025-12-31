@@ -1,6 +1,6 @@
 import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException, UnauthorizedException } from '@nestjs/common';
-import { ADMIN_MAPPER, CUSTOMER_MAPPER, PROVIDER_MAPPER, WALLET_MAPPER } from '@core/constants/mappers.constant';
-import { ADMIN_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, WALLET_REPOSITORY_NAME } from '@core/constants/repository.constant';
+import { ADMIN_MAPPER, CART_MAPPER, CUSTOMER_MAPPER, PROVIDER_MAPPER, WALLET_MAPPER } from '@core/constants/mappers.constant';
+import { ADMIN_REPOSITORY_NAME, CART_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, WALLET_REPOSITORY_NAME } from '@core/constants/repository.constant';
 import { OTP_SERVICE_INTERFACE_NAME } from '@core/constants/service.constant';
 import { ARGON_UTILITY_NAME } from '@core/constants/utility.constant';
 import { IAdminMapper } from '@core/dto-mapper/interface/admin.mapper.interface';
@@ -25,6 +25,8 @@ import { ILoginService } from '@modules/auth/services/interfaces/login-service.i
 import { IOtpService } from '@modules/auth/services/interfaces/otp-service.interface';
 import { IResponse } from '@core/misc/response.util';
 import { AuthLoginDto, ChangePasswordDto, EmailAndTypeDto, GoogleLoginDto } from '@modules/auth/dtos/login.dto';
+import { ICartMapper } from '@core/dto-mapper/interface/cart-mapper.interface';
+import { ICartRepository } from '@core/repositories/interfaces/cart-repo.interface';
 
 @Injectable()
 export class LoginService implements ILoginService {
@@ -41,6 +43,8 @@ export class LoginService implements ILoginService {
     private _adminRepository: IAdminRepository,
     @Inject(WALLET_REPOSITORY_NAME)
     private readonly _walletRepository: IWalletRepository,
+    @Inject(CART_REPOSITORY_NAME)
+    private readonly _cartRepository: ICartRepository,
     @Inject(OTP_SERVICE_INTERFACE_NAME)
     private readonly _otpService: IOtpService,
     @Inject(ARGON_UTILITY_NAME)
@@ -53,6 +57,8 @@ export class LoginService implements ILoginService {
     private readonly _customerMapper: ICustomerMapper,
     @Inject(WALLET_MAPPER)
     private readonly _walletMapper: IWalletMapper,
+    @Inject(CART_MAPPER)
+    private readonly _cartMapper: ICartMapper,
   ) {
     this.logger = this.loggerFactory.createLogger(LoginService.name);
   }
@@ -91,6 +97,19 @@ export class LoginService implements ILoginService {
     await this._walletRepository.create(this._walletMapper.toDocument({ userId, type }));
   }
 
+  private async createCart(userId: string, userType: UserType) {
+    if (userType !== 'customer') return;
+
+    const cart = await this._cartRepository.isExists(userId);
+    if (cart) return;
+
+    const cartDoc = this._cartMapper.toDocument({
+      customerId: userId,
+      items: []
+    })
+    await this._cartRepository.create(cartDoc);
+  }
+
   async validateUserCredentials(loginDto: AuthLoginDto): Promise<IUser> {
     const repository = this._findRepo(loginDto.type);
     const userDocument = await repository.findByEmail(loginDto.email);
@@ -125,7 +144,8 @@ export class LoginService implements ILoginService {
         ? await this._customerRepository.updateLastLogin(loginDto.email)
         : await this._providerRepository.updateLastLogin(loginDto.email);
 
-      this._createWallet(user.id, loginDto.type as UserType)
+      await this._createWallet(user.id, loginDto.type as UserType)
+      await this.createCart(user.id, loginDto.type as UserType);
     }
 
     return user;
@@ -150,6 +170,7 @@ export class LoginService implements ILoginService {
 
       if (existingUser.googleId) {
         await this._createWallet(responseUser.id, user.type);
+        await this.createCart(responseUser.id, user.type);
         return responseUser;
       }
 
@@ -162,6 +183,7 @@ export class LoginService implements ILoginService {
       responseUser = this._mappedUser(user.type, updatedUser);
 
       await this._createWallet(responseUser.id, user.type);
+      await this.createCart(responseUser.id, user.type);
       return responseUser;
     }
 
@@ -192,6 +214,7 @@ export class LoginService implements ILoginService {
 
     const newUser = this._mappedUser(user.type, newUserDocument);
     await this._createWallet(newUser.id, user.type);
+    await this.createCart(newUser.id, user.type);
     return newUser;
   }
 

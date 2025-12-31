@@ -11,4 +11,5 @@ export interface IProviderServiceRepository extends IBaseRepository<ProviderServ
     count(filter?: any): Promise<number>;
     isServiceExist(serviceId: string): Promise<boolean>;
     isServiceExistByCategoryId(categoryId: string): Promise<boolean>;
+    findByIds(ids: string[]): Promise<ProviderServiceDocument[]>;
 }

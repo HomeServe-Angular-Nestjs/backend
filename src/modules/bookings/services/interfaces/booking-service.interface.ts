@@ -12,5 +12,6 @@ export interface IBookingService {
     updateBookingPaymentStatus(bookingDto: UpdateBookingPaymentStatusDto): Promise<IResponse<boolean>>;
     addReview(reviewDto: AddReviewDto): Promise<IResponse>;
     canStartVideoCall(customerId: string, providerId: string): Promise<IResponse>;
+    fetchPriceBreakup(customerId: string): Promise<IResponse<IPriceBreakupDto>>;
 }
 

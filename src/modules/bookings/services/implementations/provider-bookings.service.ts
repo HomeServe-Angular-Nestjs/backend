@@ -19,8 +19,8 @@ import { IServiceOfferedMapper } from '@core/dto-mapper/interface/serviceOffered
 import { IProviderBookingService } from '@modules/bookings/services/interfaces/provider-booking-service.interface';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
-import { ADMIN_SETTINGS_REPOSITORY_NAME, BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SERVICE_OFFERED_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME, WALLET_LEDGER_REPOSITORY_NAME, WALLET_REPOSITORY_NAME } from '@core/constants/repository.constant';
-import { IServiceOfferedRepository } from '@core/repositories/interfaces/serviceOffered-repo.interface';
+import { ADMIN_SETTINGS_REPOSITORY_NAME, BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, PROVIDER_SERVICE_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME, WALLET_LEDGER_REPOSITORY_NAME, WALLET_REPOSITORY_NAME } from '@core/constants/repository.constant';
+import { IProviderServiceRepository } from '@core/repositories/interfaces/provider-service-repo.interface';
 import { IBookingRepository } from '@core/repositories/interfaces/bookings-repo.interface';
 import { ICustomerRepository } from '@core/repositories/interfaces/customer-repo.interface';
 import { ITransactionRepository } from '@core/repositories/interfaces/transaction-repo.interface';
@@ -43,8 +43,8 @@ export class ProviderBookingService implements IProviderBookingService {
     constructor(
         @Inject(LOGGER_FACTORY)
         private readonly _loggerFactory: ILoggerFactory,
-        @Inject(SERVICE_OFFERED_REPOSITORY_NAME)
-        private readonly _serviceOfferedRepository: IServiceOfferedRepository,
+        @Inject(PROVIDER_SERVICE_REPOSITORY_NAME)
+        private readonly _providerServiceRepository: IProviderServiceRepository,
         @Inject(BOOKING_REPOSITORY_NAME)
         private readonly _bookingRepository: IBookingRepository,
         @Inject(CUSTOMER_REPOSITORY_INTERFACE_NAME)
@@ -288,18 +288,13 @@ export class ProviderBookingService implements IProviderBookingService {
         return (
             await Promise.all(
                 services.map(async (s) => {
-                    const service = await this._serviceOfferedRepository.findById(s.serviceId);
-                    if (!service) {
-                        throw new InternalServerErrorException(`Service with ID ${s.serviceId} not found.`);
-                    }
+                    const providerServices = await this._providerServiceRepository.findByIds(s.subserviceIds);
 
-                    return service.subService
-                        .filter(sub => sub.id && s.subserviceIds.includes(sub.id))
-                        .map(sub => ({
-                            title: sub.title as string,
-                            price: sub.price as string,
-                            estimatedTime: sub.estimatedTime as string
-                        }));
+                    return providerServices.map(ps => ({
+                        title: ps.description,
+                        price: ps.price.toString(),
+                        estimatedTime: ps.estimatedTimeInMinutes.toString() + ' mins'
+                    }));
                 })
             )
         ).flat();
@@ -342,24 +337,7 @@ export class ProviderBookingService implements IProviderBookingService {
         }
 
         const customer = this._customerMapper.toEntity(customerDoc);
-        const orderedServices = (
-            await Promise.all(
-                booking.services.map(async (s) => {
-                    const service = await this._serviceOfferedRepository.findById(s.serviceId);
-                    if (!service) {
-                        throw new InternalServerErrorException(`Service with ID ${s.serviceId} not found.`);
-                    }
-
-                    return service.subService
-                        .filter(sub => sub.id && s.subserviceIds.includes(sub.id))
-                        .map(sub => ({
-                            title: sub.title as string,
-                            price: sub.price as string,
-                            estimatedTime: sub.estimatedTime as string
-                        }));
-                })
-            )
-        ).flat();
+        const orderedServices = await this._getBookedServices(booking.services);
 
         return {
             customer: {
@@ -418,12 +396,15 @@ export class ProviderBookingService implements IProviderBookingService {
                 if (!customer) throw new InternalServerErrorException(`Customer not found: ${booking.customerId}`);
 
                 const services = await Promise.all(
-                    booking.services.map(async (s) => {
-                        const service = await this._serviceOfferedRepository.findById(s.serviceId);
-                        if (!service) throw new InternalServerErrorException(`Service not found: ${s.serviceId}`);
-                        return { id: service.id, title: service.title, image: service.image };
+                    booking.services.flatMap(async (s) => {
+                        const providerServices = await this._providerServiceRepository.findByIds(s.subserviceIds);
+                        return providerServices.map(ps => ({
+                            id: ps.id,
+                            title: ps.description,
+                            image: ps.image
+                        }));
                     })
-                );
+                ).then(results => results.flat());
 
                 return {
                     services,

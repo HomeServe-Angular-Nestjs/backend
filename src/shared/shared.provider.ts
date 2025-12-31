@@ -1,9 +1,10 @@
-import { ADMIN_MAPPER, ADMIN_SETTINGS_MAPPER, AVAILABILITY_MAPPER, BOOKING_MAPPER, CHAT_MAPPER, CUSTOMER_MAPPER, MESSAGE_MAPPER, NOTIFICATION_MAPPER, PLAN_MAPPER, PROFESSION_MAPPER, PROVIDER_MAPPER, PROVIDER_SERVICE_MAPPER, REPORT_MAPPER, RESERVATION_MAPPER, SCHEDULES_MAPPER, SERVICE_CATEGORY_MAPPER, SERVICE_OFFERED_MAPPER, SLOT_RULE_MAPPER, SUBSCRIPTION_MAPPER, TRANSACTION_MAPPER, WALLET_LEDGER_MAPPER, WALLET_MAPPER } from '@core/constants/mappers.constant';
+import { ADMIN_MAPPER, ADMIN_SETTINGS_MAPPER, AVAILABILITY_MAPPER, BOOKING_MAPPER, CART_MAPPER, CHAT_MAPPER, CUSTOMER_MAPPER, MESSAGE_MAPPER, NOTIFICATION_MAPPER, PLAN_MAPPER, PROFESSION_MAPPER, PROVIDER_MAPPER, PROVIDER_SERVICE_MAPPER, REPORT_MAPPER, RESERVATION_MAPPER, SCHEDULES_MAPPER, SERVICE_CATEGORY_MAPPER, SERVICE_OFFERED_MAPPER, SLOT_RULE_MAPPER, SUBSCRIPTION_MAPPER, TRANSACTION_MAPPER, WALLET_LEDGER_MAPPER, WALLET_MAPPER } from '@core/constants/mappers.constant';
 import { SUBSCRIPTION_REPOSITORY_NAME } from '@core/constants/repository.constant';
 import { AdminSettingsMapper } from '@core/dto-mapper/implementation/admin-settings.mapper';
 import { AdminMapper } from '@core/dto-mapper/implementation/admin.mapper';
 import { AvailabilityMapper } from '@core/dto-mapper/implementation/availability.mapper';
 import { BookingMapper } from '@core/dto-mapper/implementation/booking.mapper';
+import { CartMapper } from '@core/dto-mapper/implementation/cart.mapper';
 import { ChatMapper } from '@core/dto-mapper/implementation/chat.mapper';
 import { CustomerMapper } from '@core/dto-mapper/implementation/customer.mapper';
 import { MessageMapper } from '@core/dto-mapper/implementation/message.mapper';
@@ -30,6 +31,10 @@ import { SubscriptionRepository } from '@core/repositories/implementations/subsc
 import { Provider } from '@nestjs/common';
 
 export const sharedProviders: Provider[] = [
+    {
+        provide: CART_MAPPER,
+        useClass: CartMapper
+    },
     {
         provide: PROVIDER_SERVICE_MAPPER,
         useClass: ProviderServiceMapper
