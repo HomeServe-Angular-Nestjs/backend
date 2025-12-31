@@ -24,6 +24,7 @@ import { WalletModule } from '@modules/wallet/wallet.module';
 import { ReportModule } from '@modules/reports/report.module';
 import { AvailabilityModule } from '@modules/availability/availability.module';
 import { CategoryModule } from '@modules/category/category.module';
+import { ProviderServiceModule } from '@modules/provider-service/provider-service.module';
 
 @Module({
   imports: [
@@ -57,6 +58,7 @@ import { CategoryModule } from '@modules/category/category.module';
     ReportModule,
     AvailabilityModule,
     CategoryModule,
+    ProviderServiceModule,
   ],
   controllers: [AppController],
   providers: [

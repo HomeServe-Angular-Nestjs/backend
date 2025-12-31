@@ -40,3 +40,4 @@ export class ServiceDocument extends Document {
 }
 
 export const ServiceSchema = SchemaFactory.createForClass(ServiceDocument);
+

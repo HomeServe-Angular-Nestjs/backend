@@ -95,4 +95,25 @@ export class UploadsUtility implements IUploadsUtility {
     if (isGoogleImage || isCloudinaryUrl) return publicId;
     return this._cloudinaryService.generateSignedUrl(publicId, expiresIn);
   }
+
+  async deleteImageByPublicId(publicId: string): Promise<boolean> {
+    try {
+      const res = await this._cloudinaryService.delete(publicId);
+
+      if (res.result === 'ok') {
+        this.logger.log('Image deleted successfully');
+        return true;
+      }
+
+      if (res.result === 'not found') {
+        this.logger.warn('Image not found on Cloudinary');
+        return false;
+      }
+
+      return false;
+    } catch (err) {
+      this.logger.error('Cloudinary deletion error:', err);
+      return false;
+    }
+  }
 }
