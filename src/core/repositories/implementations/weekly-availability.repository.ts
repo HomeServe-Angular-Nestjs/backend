@@ -60,4 +60,8 @@ export class WeeklyAvailabilityRepository extends BaseRepository<WeeklyAvailabil
             }
         ).lean();
     }
+
+    async findByProviderId(providerId: string): Promise<WeeklyAvailabilityDocument[]> {
+        return this._weeklyAvailabilityModel.find({ providerId: this._toObjectId(providerId) }).lean();
+    }
 }

@@ -20,4 +20,11 @@ export enum SlotStatusEnum {
     PENDING = 'pending',
     COMPLETED = 'completed',
     CANCELLED = 'cancelled',
-} 
+}
+
+export enum AvailabilityEnum {
+    MORNING = 'morning',
+    AFTERNOON = 'afternoon',
+    EVENING = 'evening',
+    NIGHT = 'night',
+}

@@ -1,9 +1,11 @@
 import { Types } from 'mongoose';
+import { DateOverrideDocument } from '@core/schema/date-overrides.schema';
+import { IDateOverride } from '@core/entities/interfaces/date-override.entity.interface';
 import { v4 as uuidv4 } from 'uuid';
 
 import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 
-import { BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SERVICE_OFFERED_REPOSITORY_NAME } from '@core/constants/repository.constant';
+import { BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, DATE_OVERRIDES_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SERVICE_OFFERED_REPOSITORY_NAME, WEEKLY_AVAILABILITY_REPOSITORY_INTERFACE_NAME } from '@core/constants/repository.constant';
 import { ARGON_UTILITY_NAME, UPLOAD_UTILITY_NAME } from '@core/constants/utility.constant';
 import { CloudinaryService } from '@configs/cloudinary/cloudinary.service';
 import { IDisplayReviews, IFilterFetchProviders, IProvider, IProviderCardView, IProviderCardWithPagination, UserType } from '@core/entities/interfaces/user.entity.interface';
@@ -25,6 +27,10 @@ import { ICustomerMapper } from '@core/dto-mapper/interface/customer.mapper..int
 import { IReview } from '@core/entities/interfaces/booking.entity.interface';
 import { IArgonUtility } from '@core/utilities/interface/argon.utility.interface';
 import { IServiceOfferedMapper } from '@core/dto-mapper/interface/serviceOffered.mapper.interface';
+import { AvailabilityEnum } from '@core/enum/slot.enum';
+import { IWeeklyAvailabilityRepository } from '@core/repositories/interfaces/weekly-availability-repo.interface';
+import { IDateOverridesRepository } from '@core/repositories/interfaces/date-overrides.repo.interface';
+import { IWeeklyAvailability } from '@core/entities/interfaces/weekly-availability.entity.interface';
 
 @Injectable()
 export class ProviderServices implements IProviderServices {
@@ -52,50 +58,146 @@ export class ProviderServices implements IProviderServices {
     private readonly _argon: IArgonUtility,
     @Inject(SERVICE_OFFERED_MAPPER)
     private readonly _serviceOfferedMapper: IServiceOfferedMapper,
+    @Inject(WEEKLY_AVAILABILITY_REPOSITORY_INTERFACE_NAME)
+    private readonly _availabilityRepository: IWeeklyAvailabilityRepository,
+    @Inject(DATE_OVERRIDES_REPOSITORY_INTERFACE_NAME)
+    private readonly _dateOverridesRepository: IDateOverridesRepository
 
   ) {
     this.logger = this.loggerFactory.createLogger(ProviderServices.name);
   }
 
-  async getProviders(customerId: string, filters: FilterDto): Promise<IResponse<IProviderCardWithPagination>> {
-    const filter: IFilterFetchProviders = {
-      status: 'all',
-      isCertified: false,
-    };
-
-    const limit = 10;
-    const page = filters.page || 1;
-
-    if (filters.search) {
-      filter.search = filters.search;
-    }
-
-    if (filters.status && filters.status !== 'all') {
-      filter.status = filters.status;
-    }
-
-    if (filters.isCertified) {
-      filter.isCertified = filters.isCertified;
-    }
-
-    if (filters.status === 'nearest') {
-      const customer = await this._customerRepository.findById(customerId);
-
-      if (!customer) {
-        throw new NotFoundException({
-          code: ErrorCodes.UNAUTHORIZED_ACCESS,
-          message: 'Requestor not found'
+  private async getTimeDurationWindow(selectedAvailableTime: AvailabilityEnum) {
+    switch (selectedAvailableTime) {
+      case AvailabilityEnum.MORNING:
+        return {
+          start: '05:00',
+          end: '11:59'
+        };
+      case AvailabilityEnum.AFTERNOON:
+        return {
+          start: '12:00',
+          end: '16:59'
+        };
+      case AvailabilityEnum.EVENING:
+        return {
+          start: '17:00',
+          end: '20:59'
+        };
+      case AvailabilityEnum.NIGHT:
+        return {
+          start: '21:00',
+          end: '04:59'
+        };
+      default:
+        throw new BadRequestException({
+          code: ErrorCodes.INVALID_AVAILABILITY_TIME,
+          message: 'Invalid availability time'
         });
+    }
+  }
+
+  // Check if a provider has availability in the requested time window
+  private checkProviderAvailability(week: IWeeklyAvailability['week'], requestedStart: string, requestedEnd: string): boolean {
+    const days = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
+
+    // Check each day of the week
+    for (const day of days) {
+      const dayAvailability = week[day];
+
+      // Skip if day is not available
+      if (!dayAvailability?.isAvailable || !dayAvailability.timeRanges?.length) {
+        continue;
       }
 
-      const [lng, lat] = customer.location.coordinates;
-      filter.lng = lng;
-      filter.lat = lat;
+      // Check each time range for this day
+      for (const timeRange of dayAvailability.timeRanges) {
+        if (this.timeRangesOverlap(
+          timeRange.startTime,
+          timeRange.endTime,
+          requestedStart,
+          requestedEnd
+        )) {
+          return true;
+        }
+      }
     }
+
+    return false;
+  }
+
+
+  // Check if two time ranges overlap
+  private timeRangesOverlap(start1: string, end1: string, start2: string, end2: string): boolean {
+    const toMinutes = (time: string): number => {
+      const [hours, minutes] = time.split(':').map(Number);
+      return hours * 60 + minutes;
+    };
+
+    let start1Min = toMinutes(start1);
+    let end1Min = toMinutes(end1);
+    let start2Min = toMinutes(start2);
+    let end2Min = toMinutes(end2);
+
+    // Handle overnight ranges (e.g., 21:00 to 04:59)
+    // If end time is less than start time, it crosses midnight
+    if (end1Min < start1Min) {
+      end1Min += 24 * 60; // Add 24 hours
+    }
+    if (end2Min < start2Min) {
+      end2Min += 24 * 60; // Add 24 hours
+    }
+
+    // Check for overlap
+    // Two ranges overlap if: start1 < end2 AND start2 < end1
+    return start1Min < end2Min && start2Min < end1Min;
+  }
+
+  // Check if a provider is available on a specific date, considering overrides
+  private checkProviderAvailabilityOnDate(
+    week: IWeeklyAvailability['week'],
+    overrides: DateOverrideDocument[],
+    targetDate: Date,
+    requestedStart: string,
+    requestedEnd: string
+  ): boolean {
+    const dateString = targetDate.toISOString().split('T')[0];
+
+    // Check for override
+    const override = overrides.find(o => {
+      const oDate = new Date(o.date).toISOString().split('T')[0];
+      return oDate === dateString;
+    });
+
+    if (override) {
+      if (!override.isAvailable) return false;
+      if (!override.timeRanges?.length) return false;
+
+      return override.timeRanges.some(range =>
+        this.timeRangesOverlap(range.startTime, range.endTime, requestedStart, requestedEnd)
+      );
+    }
+
+    // Default to weekly schedule
+    const days = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
+    const dayName = days[targetDate.getDay()];
+    const dayAvailability = week[dayName];
+
+    if (!dayAvailability?.isAvailable || !dayAvailability.timeRanges?.length) {
+      return false;
+    }
+
+    return dayAvailability.timeRanges.some(range =>
+      this.timeRangesOverlap(range.startTime, range.endTime, requestedStart, requestedEnd)
+    );
+  }
+
+  async getProviders(customerId: string, filters: FilterDto): Promise<IResponse<IProviderCardWithPagination>> {
+    const { page = 1, limit = 10, availability, date, ...filter } = filters;
 
     const [providerDocs, totalProviders] = await Promise.all([
       this._providerRepository.fetchProvidersByFilterWithPagination(filter, { page, limit }),
-      this._providerRepository.count()
+      this._providerRepository.count(),
     ]);
 
     let providers = (providerDocs || []).map(provider => {
@@ -103,6 +205,49 @@ export class ProviderServices implements IProviderServices {
       provider.avatar = avatar;
       return this._providerMapper.toEntity(provider);
     });
+
+    // Filter by availability if specified
+    if (availability && availability !== 'all') {
+      const timeWindow = await this.getTimeDurationWindow(availability as AvailabilityEnum);
+      const providerIds = providers.map(p => p.id);
+
+      // Fetch weekly availability and overrides for all providers
+      const [availabilityDocs, overridesResults] = await Promise.all([
+        Promise.all(providerIds.map(id => this._availabilityRepository.findOneByProviderId(id))),
+        Promise.all(providerIds.map(id => this._dateOverridesRepository.fetchOverridesByProviderId(id)))
+      ]);
+
+      // Create maps for quick lookup
+      const availabilityMap = new Map<string, IWeeklyAvailability['week'] | null>();
+      const overridesMap = new Map<string, DateOverrideDocument[]>();
+
+      providerIds.forEach((id, index) => {
+        availabilityMap.set(id, availabilityDocs[index]?.week || null);
+        overridesMap.set(id, overridesResults[index] || []);
+      });
+
+      // Filter providers
+      providers = providers.filter(p => {
+        const week = availabilityMap.get(p.id);
+        const overrides = overridesMap.get(p.id) || [];
+
+        if (!week) return false;
+
+        if (date) {
+          // Check availability on specific date
+          return this.checkProviderAvailabilityOnDate(
+            week,
+            overrides,
+            new Date(date),
+            timeWindow.start,
+            timeWindow.end
+          );
+        } else {
+          // Check general weekly availability
+          return this.checkProviderAvailability(week, timeWindow.start, timeWindow.end);
+        }
+      });
+    }
 
     const stats = await this._bookingRepository.getAvgRatingAndTotalReviews();
 
@@ -123,7 +268,7 @@ export class ProviderServices implements IProviderServices {
       isCertified: p.isCertified,
       ...statsMap[p.id]
     }));
-
+    
     return {
       success: true,
       message: 'Providers fetched successfully.',
@@ -132,7 +277,7 @@ export class ProviderServices implements IProviderServices {
         pagination: {
           page,
           limit,
-          total: totalProviders
+          total: availability && availability !== 'all' ? mappedProviders.length : totalProviders
         }
       }
     }

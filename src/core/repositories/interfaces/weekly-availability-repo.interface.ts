@@ -5,4 +5,5 @@ import { WeeklyAvailabilityDocument } from "@core/schema/weekly-availability.sch
 export interface IWeeklyAvailabilityRepository extends IBaseRepository<WeeklyAvailabilityDocument> {
     findOneByProviderId(providerId: string): Promise<WeeklyAvailabilityDocument>;
     updateWeekByProviderId(providerId: string, week: IWeeklyAvailability['week']): Promise<WeeklyAvailabilityDocument>;
+    findByProviderId(providerId: string): Promise<WeeklyAvailabilityDocument[]>;
 }

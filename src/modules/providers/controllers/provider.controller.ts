@@ -32,13 +32,13 @@ export class ProviderController {
     @Get('fetch_providers')
     async fetchProviders(@Req() req: Request, @Query() providerLocationWithFilterDto: FilterDto & GetProvidersFromLocationSearch) {
         const user = this._getUser(req);
-        const { lat, lng, title, page, ...filter } = providerLocationWithFilterDto;
+        const { lat, lng, title, page, limit, ...filter } = providerLocationWithFilterDto;
 
         if (lat && lng && title) {
             const locationSearch = { lat, lng, title };
-            return await this._providerServices.getProvidersLocationBasedSearch({ ...locationSearch, page: Number(page) });
+            return await this._providerServices.getProvidersLocationBasedSearch({ ...locationSearch, page: Number(page), limit: Number(limit) });
         } else {
-            return await this._providerServices.getProviders(user.sub, { ...filter, page: Number(page) });
+            return await this._providerServices.getProviders(user.sub, { ...filter, page: Number(page), limit: Number(limit) });
         }
     }
 

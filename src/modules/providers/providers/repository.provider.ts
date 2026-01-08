@@ -1,22 +1,23 @@
-import { Model } from 'mongoose';
-
 import {
   BOOKINGS_MODEL_NAME,
-  CUSTOMER_MODEL_NAME, PROVIDER_MODEL_NAME, REPORT_MODEL_NAME, SERVICE_OFFERED_MODEL_NAME,
-  SLOT_RULE_MODEL_NAME
+  CUSTOMER_MODEL_NAME, DATE_OVERRIDE_MODEL_NAME, PROVIDER_MODEL_NAME, REPORT_MODEL_NAME, SERVICE_OFFERED_MODEL_NAME,
+  SLOT_RULE_MODEL_NAME,
+  WEEKLY_AVAILABILITY_MODEL_NAME
 } from '@core/constants/model.constant';
+
 import {
   BOOKING_REPOSITORY_NAME,
-  CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME,
+  CUSTOMER_REPOSITORY_INTERFACE_NAME, DATE_OVERRIDES_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME,
   REPORT_REPOSITORY_NAME,
   SERVICE_OFFERED_REPOSITORY_NAME,
-  SLOT_RULE_REPOSITORY_NAME
+  SLOT_RULE_REPOSITORY_NAME,
+  WEEKLY_AVAILABILITY_REPOSITORY_INTERFACE_NAME
 } from '@core/constants/repository.constant';
+
+import { Model } from 'mongoose';
 import { CustomerRepository } from '@core/repositories/implementations/customer.repository';
 import { ProviderRepository } from '@core/repositories/implementations/provider.repository';
-import {
-  ServiceOfferedRepository
-} from '@core/repositories/implementations/serviceOffered.repository';
+import { ServiceOfferedRepository } from '@core/repositories/implementations/serviceOffered.repository';
 import { CustomerDocument } from '@core/schema/customer.schema';
 import { ProviderDocument } from '@core/schema/provider.schema';
 import { ServiceDocument } from '@core/schema/service.schema';
@@ -28,8 +29,24 @@ import { ReportDocument } from '@core/schema/report.schema';
 import { ReportRepository } from '@core/repositories/implementations/report.repository';
 import { SlotRuleDocument } from '@core/schema/slot-rule.schema';
 import { SlotRuleRepository } from '@core/repositories/implementations/slot-rule.repository';
+import { WeeklyAvailabilityDocument } from '@core/schema/weekly-availability.schema';
+import { WeeklyAvailabilityRepository } from '@core/repositories/implementations/weekly-availability.repository';
+import { DateOverridesRepository } from '@core/repositories/implementations/date-overrides.repository';
+import { DateOverrideDocument } from '@core/schema/date-overrides.schema';
 
 export const repositoryProviders: Provider[] = [
+  {
+    provide: DATE_OVERRIDES_REPOSITORY_INTERFACE_NAME,
+    useFactory: (dateOverridesModel: Model<DateOverrideDocument>) =>
+      new DateOverridesRepository(dateOverridesModel),
+    inject: [getModelToken(DATE_OVERRIDE_MODEL_NAME)],
+  },
+  {
+    provide: WEEKLY_AVAILABILITY_REPOSITORY_INTERFACE_NAME,
+    useFactory: (weeklyAvailabilityModel: Model<WeeklyAvailabilityDocument>) =>
+      new WeeklyAvailabilityRepository(weeklyAvailabilityModel),
+    inject: [getModelToken(WEEKLY_AVAILABILITY_MODEL_NAME)],
+  },
   {
     provide: PROVIDER_REPOSITORY_INTERFACE_NAME,
     useFactory: (providerModel: Model<ProviderDocument>) =>

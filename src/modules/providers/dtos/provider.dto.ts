@@ -2,6 +2,7 @@ import { Transform, Type } from 'class-transformer';
 import { IsBoolean, IsDefined, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator';
 import { UploadsType } from '@core/enum/uploads.enum';
 import { FilterStatusType } from '@core/entities/interfaces/user.entity.interface';
+import { AvailabilityEnum } from '@core/enum/slot.enum';
 
 export class SlotDto {
     @IsNotEmpty()
@@ -21,10 +22,19 @@ export class UpdateDefaultSlotsDto {
 }
 
 export class PageDto {
-    @IsNotEmpty()
-    @Transform(({ value }) => Number(value))
+    @Transform(({ value }) => {
+        const page = Number(value);
+        return Number.isFinite(page) && page > 0 ? page : 1;
+    })
     @IsNumber()
     page: number;
+
+    @Transform(({ value }) => {
+        const limit = Number(value);
+        return Number.isFinite(limit) && limit > 0 ? limit : 10;
+    })
+    @IsNumber()
+    limit: number;
 }
 
 export class FilterDto extends PageDto {
@@ -38,9 +48,13 @@ export class FilterDto extends PageDto {
     status: FilterStatusType;
 
     @IsOptional()
-    @Transform(({ value }) => value === 'true' || value === true)
-    @IsBoolean()
-    isCertified: boolean;
+    @IsString()
+    @IsIn([...Object.values(AvailabilityEnum), 'all'])
+    availability?: AvailabilityEnum | 'all';
+
+    @IsOptional()
+    @IsString()
+    date?: string;
 }
 
 class ExpertiseDto {
@@ -96,7 +110,7 @@ export class RemoveCertificateDto {
     docId: string;
 }
 
-export class GetProvidersFromLocationSearch extends PageDto{
+export class GetProvidersFromLocationSearch extends PageDto {
     @IsNotEmpty()
     @IsNumber()
     @Transform(({ value }) => {

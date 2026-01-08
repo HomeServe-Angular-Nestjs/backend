@@ -1,5 +1,5 @@
 import { AVAILABILITY_MAPPER } from "@core/constants/mappers.constant";
-import { DATE_OVERRIDES_REPOSITORY_NAME, WEEKLY_AVAILABILITY_REPOSITORY_NAME } from "@core/constants/repository.constant";
+import { DATE_OVERRIDES_REPOSITORY_INTERFACE_NAME, WEEKLY_AVAILABILITY_REPOSITORY_INTERFACE_NAME } from "@core/constants/repository.constant";
 import { TIME_UTILITY_NAME } from "@core/constants/utility.constant";
 import { IAvailabilityMapper } from "@core/dto-mapper/interface/availability.mapper.interface";
 import { IDateOverride } from "@core/entities/interfaces/date-override.entity.interface";
@@ -16,13 +16,13 @@ import { BadRequestException, Inject, Injectable, InternalServerErrorException }
 @Injectable()
 export class AvailabilityService implements IAvailabilityService {
     constructor(
-        @Inject(WEEKLY_AVAILABILITY_REPOSITORY_NAME)
+        @Inject(WEEKLY_AVAILABILITY_REPOSITORY_INTERFACE_NAME)
         private readonly _weeklyAvailabilityRepository: IWeeklyAvailabilityRepository,
         @Inject(AVAILABILITY_MAPPER)
         private readonly _availabilityMapper: IAvailabilityMapper,
         @Inject(TIME_UTILITY_NAME)
         private readonly _timeUtility: ITimeUtility,
-        @Inject(DATE_OVERRIDES_REPOSITORY_NAME)
+        @Inject(DATE_OVERRIDES_REPOSITORY_INTERFACE_NAME)
         private readonly _dateOverrideRepository: IDateOverridesRepository,
     ) { }
 
