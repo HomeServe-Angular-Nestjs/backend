@@ -1,5 +1,5 @@
 import { Transform, Type } from 'class-transformer';
-import { IsBoolean, IsDefined, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator';
+import { IsDefined, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator';
 import { UploadsType } from '@core/enum/uploads.enum';
 import { FilterStatusType } from '@core/entities/interfaces/user.entity.interface';
 import { AvailabilityEnum } from '@core/enum/slot.enum';
@@ -165,4 +165,10 @@ export class UpdatePasswordDto {
     @IsNotEmpty()
     @IsString()
     currentPassword: string;
+}
+
+export class UpdateBufferTimeDto {
+    @IsNotEmpty()
+    @IsNumber()
+    bufferTime: number;
 }

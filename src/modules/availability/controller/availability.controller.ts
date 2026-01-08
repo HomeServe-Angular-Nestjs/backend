@@ -21,14 +21,14 @@ export class AvailabilityController {
         return await this._availabilityService.fetchWeeklyAvailability(user.sub);
     }
 
-    @Put('')
-    async updateWeeklyAvailability(@User() user: IPayload, @Body() updateWeeklyAvailabilityDto: UpdateWeeklyAvailabilityDto): Promise<IResponse<IWeeklyAvailability>> {
-        return await this._availabilityService.updateWeeklyAvailability(user.sub, updateWeeklyAvailabilityDto);
-    }
-
     @Get('overrides')
     async fetchDateOverrides(@User() user: IPayload): Promise<IResponse<IDateOverride[]>> {
         return await this._availabilityService.fetchDateOverrides(user.sub);
+    }
+
+    @Put('')
+    async updateWeeklyAvailability(@User() user: IPayload, @Body() updateWeeklyAvailabilityDto: UpdateWeeklyAvailabilityDto): Promise<IResponse<IWeeklyAvailability>> {
+        return await this._availabilityService.updateWeeklyAvailability(user.sub, updateWeeklyAvailabilityDto);
     }
 
     @Post('overrides')

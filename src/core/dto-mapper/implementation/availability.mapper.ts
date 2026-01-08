@@ -44,7 +44,9 @@ export class AvailabilityMapper implements IAvailabilityMapper {
                     isAvailable: doc.week.sat.isAvailable,
                     timeRanges: doc.week.sat.timeRanges
                 },
-            }
+            },
+            createdAt: doc.createdAt,
+            updatedAt: doc.updatedAt,
         });
     }
 

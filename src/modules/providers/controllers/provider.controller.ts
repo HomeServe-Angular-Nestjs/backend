@@ -1,5 +1,5 @@
-import { BadRequestException, Body, Controller, Get, Inject, Patch, Put, Query, Req, UploadedFile, UseInterceptors } from '@nestjs/common';
-import { FilterDto, GetProvidersFromLocationSearch, GetReviewsDto, RemoveCertificateDto, SlotDto, UpdateBioDto, UpdatePasswordDto, UploadCertificateDto, UploadGalleryImageDto } from '@modules/providers/dtos/provider.dto';
+import { BadRequestException, Body, Controller, Get, Inject, Param, Patch, Put, Query, Req, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { FilterDto, GetProvidersFromLocationSearch, GetReviewsDto, RemoveCertificateDto, SlotDto, UpdateBioDto, UpdateBufferTimeDto, UpdatePasswordDto, UploadCertificateDto, UploadGalleryImageDto } from '@modules/providers/dtos/provider.dto';
 import { Request } from 'express';
 import { PROVIDER_SERVICE_NAME } from '@core/constants/service.constant';
 import { IProvider } from '@core/entities/interfaces/user.entity.interface';
@@ -10,6 +10,9 @@ import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { IResponse } from '@core/misc/response.util';
 import { IProviderServices } from '@modules/providers/services/interfaces/provider-service.interface';
+import { User } from '@core/decorators/extract-user.decorator';
+import { isValidIdPipe } from '@core/pipes/is-valid-id.pipe';
+import { DateDto } from '@modules/availability/dto/availability.dto';
 
 @Controller('provider')
 export class ProviderController {
@@ -25,13 +28,8 @@ export class ProviderController {
         this.logger = this._loggerFactory.createLogger(ProviderController.name);
     }
 
-    private _getUser(req: Request): IPayload {
-        return req.user as IPayload;
-    }
-
     @Get('fetch_providers')
-    async fetchProviders(@Req() req: Request, @Query() providerLocationWithFilterDto: FilterDto & GetProvidersFromLocationSearch) {
-        const user = this._getUser(req);
+    async fetchProviders(@User() user: IPayload, @Query() providerLocationWithFilterDto: FilterDto & GetProvidersFromLocationSearch) {
         const { lat, lng, title, page, limit, ...filter } = providerLocationWithFilterDto;
 
         if (lat && lng && title) {
@@ -43,8 +41,7 @@ export class ProviderController {
     }
 
     @Get('fetch_one_provider')
-    async fetchOneProvider(@Req() req: Request, @Query() query: { providerId: string | null }): Promise<IProvider> {
-        const user = this._getUser(req);
+    async fetchOneProvider(@User() user: IPayload, @Query() query: { providerId: string | null }): Promise<IProvider> {
         let userId = user.sub;
 
         if (query && query.providerId !== null && query.providerId !== 'null') {
@@ -59,15 +56,13 @@ export class ProviderController {
     }
 
     @Put('bio')
-    async updateBio(@Req() req: Request, @Body() updateBioDto: UpdateBioDto) {
-        const user = this._getUser(req);
+    async updateBio(@User() user: IPayload, @Body() updateBioDto: UpdateBioDto) {
         return await this._providerServices.updateBio(user.sub, updateBioDto);
     }
 
     @Put('cert_upload')
     @UseInterceptors(FileInterceptor('doc'))
-    async uploadCertificate(@Req() req: Request, @Body() { label }: UploadCertificateDto, @UploadedFile() file: Express.Multer.File) {
-        const user = this._getUser(req);
+    async uploadCertificate(@User() user: IPayload, @Body() { label }: UploadCertificateDto, @UploadedFile() file: Express.Multer.File) {
 
         if (!label || !file) {
             throw new BadRequestException({
@@ -82,10 +77,8 @@ export class ProviderController {
     // Performs a bulk update of provider data, including optional avatar upload.
     @Patch('update_provider')
     @UseInterceptors(FileInterceptor('providerAvatar'))
-    async bulkUpdateProvider(@Req() req: Request, @Body('providerData') providerDetailsDto: string, @UploadedFile() file: Express.Multer.File,): Promise<IProvider> {
-        const user = this._getUser(req);
+    async bulkUpdateProvider(@User() user: IPayload, @Body('providerData') providerDetailsDto: string, @UploadedFile() file: Express.Multer.File,): Promise<IProvider> {
         const updateData = JSON.parse(providerDetailsDto);
-
         return await this._providerServices.bulkUpdateProvider(user.sub, updateData, file);
     }
 
@@ -104,8 +97,7 @@ export class ProviderController {
     }
 
     @Patch('default_slots') //!TODO
-    async updateDefaultSlot(@Req() req: Request, @Body() dto: SlotDto): Promise<IProvider> {
-        const user = req.user as IPayload;
+    async updateDefaultSlot(@User() user: IPayload, @Body() dto: SlotDto): Promise<IProvider> {
         return await this._providerServices.updateDefaultSlot(dto, user.sub)
     }
 
@@ -120,22 +112,28 @@ export class ProviderController {
     }
 
     @Get('work_images')
-    async getWorkImage(@Req() req: Request) {
-        const user = this._getUser(req);
+    async getWorkImage(@User() user: IPayload,) {
         return await this._providerServices.getWorkImages(user.sub);
     }
 
     @Patch('gallery_upload')
     @UseInterceptors(FileInterceptor('gallery_image'))
-    async uploadWorkImage(@Req() req: Request, @Body() uploadImageDto: UploadGalleryImageDto, @UploadedFile() file: Express.Multer.File) {
-        const user = this._getUser(req);
+    async uploadWorkImage(@User() user: IPayload, @Body() uploadImageDto: UploadGalleryImageDto, @UploadedFile() file: Express.Multer.File) {
         return await this._providerServices.uploadWorkImage(user.sub, user.type, uploadImageDto.type, file);
     }
 
     @Patch('update_password')
-    async updatePassword(@Req() req: Request, @Body() { currentPassword, newPassword }: UpdatePasswordDto): Promise<IResponse> {
-        const user = this._getUser(req);
+    async updatePassword(@User() user: IPayload, @Body() { currentPassword, newPassword }: UpdatePasswordDto): Promise<IResponse> {
         return await this._providerServices.updatePassword(user.sub, currentPassword, newPassword);
     }
 
+    @Get('available-slots/:id')
+    async fetchAvailabilitySlots(@User() user: IPayload, @Param('id', new isValidIdPipe()) providerId: string, @Query() { date }: DateDto): Promise<IResponse> {
+        return this._providerServices.fetchAvailableSlotsByProviderId(user.sub, providerId, new Date(date));
+    }
+
+    @Patch('buffer')
+    async updateBufferTime(@User() user: IPayload, @Body() { bufferTime }: UpdateBufferTimeDto): Promise<IResponse<IProvider>> {
+        return this._providerServices.updateBufferTime(user.sub, bufferTime);
+    }
 }

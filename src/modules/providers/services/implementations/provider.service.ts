@@ -1,14 +1,11 @@
 import { Types } from 'mongoose';
 import { DateOverrideDocument } from '@core/schema/date-overrides.schema';
-import { IDateOverride } from '@core/entities/interfaces/date-override.entity.interface';
 import { v4 as uuidv4 } from 'uuid';
-
 import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
-
 import { BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, DATE_OVERRIDES_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SERVICE_OFFERED_REPOSITORY_NAME, WEEKLY_AVAILABILITY_REPOSITORY_INTERFACE_NAME } from '@core/constants/repository.constant';
 import { ARGON_UTILITY_NAME, UPLOAD_UTILITY_NAME } from '@core/constants/utility.constant';
 import { CloudinaryService } from '@configs/cloudinary/cloudinary.service';
-import { IDisplayReviews, IFilterFetchProviders, IProvider, IProviderCardView, IProviderCardWithPagination, UserType } from '@core/entities/interfaces/user.entity.interface';
+import { IDisplayReviews, IProvider, IProviderCardView, IProviderCardWithPagination, UserType } from '@core/entities/interfaces/user.entity.interface';
 import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
 import { UploadsType } from '@core/enum/uploads.enum';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
@@ -19,18 +16,19 @@ import { IServiceOfferedRepository } from '@core/repositories/interfaces/service
 import { IUploadsUtility } from '@core/utilities/interface/upload.utility.interface';
 import { FilterDto, GetProvidersFromLocationSearch, SlotDto, UpdateBioDto } from '@modules/providers/dtos/provider.dto';
 import { IProviderServices } from '@modules/providers/services/interfaces/provider-service.interface';
-import { CUSTOMER_MAPPER, PROVIDER_MAPPER, SERVICE_OFFERED_MAPPER } from '@core/constants/mappers.constant';
+import { AVAILABILITY_MAPPER, CUSTOMER_MAPPER, PROVIDER_MAPPER, SERVICE_OFFERED_MAPPER } from '@core/constants/mappers.constant';
 import { IProviderMapper } from '@core/dto-mapper/interface/provider.mapper.interface';
 import { IBookingRepository } from '@core/repositories/interfaces/bookings-repo.interface';
 import { ICustomerRepository } from '@core/repositories/interfaces/customer-repo.interface';
 import { ICustomerMapper } from '@core/dto-mapper/interface/customer.mapper..interface';
-import { IReview } from '@core/entities/interfaces/booking.entity.interface';
 import { IArgonUtility } from '@core/utilities/interface/argon.utility.interface';
 import { IServiceOfferedMapper } from '@core/dto-mapper/interface/serviceOffered.mapper.interface';
 import { AvailabilityEnum } from '@core/enum/slot.enum';
 import { IWeeklyAvailabilityRepository } from '@core/repositories/interfaces/weekly-availability-repo.interface';
 import { IDateOverridesRepository } from '@core/repositories/interfaces/date-overrides.repo.interface';
 import { IWeeklyAvailability } from '@core/entities/interfaces/weekly-availability.entity.interface';
+import { IAvailabilityMapper } from '@core/dto-mapper/interface/availability.mapper.interface';
+import { DateOverride } from '@core/entities/implementation/date-override.entity';
 
 @Injectable()
 export class ProviderServices implements IProviderServices {
@@ -61,8 +59,9 @@ export class ProviderServices implements IProviderServices {
     @Inject(WEEKLY_AVAILABILITY_REPOSITORY_INTERFACE_NAME)
     private readonly _availabilityRepository: IWeeklyAvailabilityRepository,
     @Inject(DATE_OVERRIDES_REPOSITORY_INTERFACE_NAME)
-    private readonly _dateOverridesRepository: IDateOverridesRepository
-
+    private readonly _dateOverridesRepository: IDateOverridesRepository,
+    @Inject(AVAILABILITY_MAPPER)
+    private readonly _availabilityMapper: IAvailabilityMapper,
   ) {
     this.logger = this.loggerFactory.createLogger(ProviderServices.name);
   }
@@ -125,7 +124,6 @@ export class ProviderServices implements IProviderServices {
 
     return false;
   }
-
 
   // Check if two time ranges overlap
   private timeRangesOverlap(start1: string, end1: string, start2: string, end2: string): boolean {
@@ -190,6 +188,29 @@ export class ProviderServices implements IProviderServices {
     return dayAvailability.timeRanges.some(range =>
       this.timeRangesOverlap(range.startTime, range.endTime, requestedStart, requestedEnd)
     );
+  }
+
+  private _isSameDate(a: Date, b: Date): boolean {
+    return a.toDateString() === b.toDateString();
+  }
+
+  private _resolveAvailability(selectedDate: Date, weeklyAvailability: IWeeklyAvailability['week'], overrides: DateOverride[]) {
+    const override = overrides.find(o => this._isSameDate(new Date(o.date), selectedDate));
+
+    if (override) {
+      if (!override.isAvailable) return [];
+      return override.timeRanges;
+    }
+
+    const day = selectedDate
+      .toLocaleDateString('en-US', { weekday: 'short' })
+      .toLowerCase();
+
+    const weeklyDay = weeklyAvailability[day];
+
+    if (!weeklyDay?.isAvailable) return [];
+
+    return weeklyDay.timeRanges;
   }
 
   async getProviders(customerId: string, filters: FilterDto): Promise<IResponse<IProviderCardWithPagination>> {
@@ -268,7 +289,7 @@ export class ProviderServices implements IProviderServices {
       isCertified: p.isCertified,
       ...statsMap[p.id]
     }));
-    
+
     return {
       success: true,
       message: 'Providers fetched successfully.',
@@ -631,6 +652,60 @@ export class ProviderServices implements IProviderServices {
     return {
       success: isPasswordUpdated,
       message: isPasswordUpdated ? 'Password updated successfully.' : 'Failed to update password.',
+    }
+  }
+
+  async fetchAvailableSlotsByProviderId(customerId: string, providerId: string, selectedDate: Date): Promise<IResponse> {
+    const [weeklyAvailabilityDocs, overrideDocs] = await Promise.all([
+      this._availabilityRepository.findOneByProviderId(providerId),
+      this._dateOverridesRepository.fetchOverridesByProviderId(providerId),
+    ]);
+
+    if (!weeklyAvailabilityDocs) throw new NotFoundException({
+      code: ErrorCodes.NOT_FOUND,
+      message: 'Weekly availability not found.'
+    });
+
+    if (!overrideDocs) throw new NotFoundException({
+      code: ErrorCodes.NOT_FOUND,
+      message: 'Date overrides not found.'
+    });
+
+    const weeklyAvailability = this._availabilityMapper.toWeeklyAvailabilityEntity(weeklyAvailabilityDocs);
+    const dateOverrides = (overrideDocs ?? []).map(doc => this._availabilityMapper.toDateOverrideEntity(doc));
+
+    console.log("weeklyAvailability: ", JSON.stringify(weeklyAvailability, null, 2));
+    console.log("dateOverrides: ", JSON.stringify(dateOverrides, null, 2));
+
+    const baseRanges = this._resolveAvailability(selectedDate, weeklyAvailability.week, dateOverrides);
+
+    if (!baseRanges.length) {
+      return {
+        success: true,
+        message: 'No available slots',
+        data: []
+      };
+    }
+
+    console.log("baseRanges: ", JSON.stringify(baseRanges, null, 2));
+
+    return {
+      success: true,
+      message: 'Available slots fetched successfully.',
+    }
+  }
+
+  async updateBufferTime(providerId: string, bufferTime: number): Promise<IResponse<IProvider>> {
+    const updatedProviderDoc = await this._providerRepository.updateBufferTime(providerId, bufferTime);
+    if (!updatedProviderDoc) throw new NotFoundException({
+      code: ErrorCodes.NOT_FOUND,
+      message: 'Provider not found.'
+    });
+
+    return {
+      success: true,
+      message: 'Buffer time updated successfully.',
+      data: this._providerMapper.toEntity(updatedProviderDoc)
     }
   }
 }

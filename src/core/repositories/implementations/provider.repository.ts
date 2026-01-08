@@ -272,4 +272,11 @@ export class ProviderRepository extends BaseRepository<ProviderDocument> impleme
     return provider?.availability ?? null;
   }
 
+  async updateBufferTime(providerId: string, bufferTime: number): Promise<ProviderDocument | null> {
+    return await this._providerModel.findOneAndUpdate(
+      { _id: providerId },
+      { $set: { bufferTime } },
+      { new: true }
+    );
+  }
 }

@@ -40,7 +40,7 @@ import { sharedProviders } from '@shared/shared.provider';
         PROFESSION_MAPPER,
         SERVICE_CATEGORY_MAPPER,
         PROVIDER_SERVICE_MAPPER,
-        CART_MAPPER
+        CART_MAPPER,
     ]
 })
 export class SharedModule { }
