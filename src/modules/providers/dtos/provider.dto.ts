@@ -1,5 +1,5 @@
 import { Transform, Type } from 'class-transformer';
-import { IsDefined, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator';
+import { IsDefined, IsIn, isNotEmpty, IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator';
 import { UploadsType } from '@core/enum/uploads.enum';
 import { FilterStatusType } from '@core/entities/interfaces/user.entity.interface';
 import { AvailabilityEnum } from '@core/enum/slot.enum';

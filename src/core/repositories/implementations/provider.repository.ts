@@ -279,4 +279,11 @@ export class ProviderRepository extends BaseRepository<ProviderDocument> impleme
       { new: true }
     );
   }
+
+  async getBufferTime(providerId: string): Promise<number> {
+    const provider = await this._providerModel.findById(providerId)
+      .select('bufferTime')
+      .lean();
+    return provider?.bufferTime ?? 0;
+  }
 }

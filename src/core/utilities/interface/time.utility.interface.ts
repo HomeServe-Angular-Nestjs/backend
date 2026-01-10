@@ -7,4 +7,5 @@ export interface ITimeUtility {
     nowUTC(): Date;
     isWithinHoursFrom(referenceUTCDate: Date, hours: number): boolean;
     timeToMinutes(time: string): number;
+    minutesToTime(minutes: number): string;
 }

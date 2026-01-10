@@ -1,13 +1,16 @@
 import {
   BOOKINGS_MODEL_NAME,
-  CUSTOMER_MODEL_NAME, DATE_OVERRIDE_MODEL_NAME, PROVIDER_MODEL_NAME, REPORT_MODEL_NAME, SERVICE_OFFERED_MODEL_NAME,
+  CART_MODEL_NAME,
+  CUSTOMER_MODEL_NAME, DATE_OVERRIDE_MODEL_NAME, PROVIDER_MODEL_NAME, PROVIDER_SERVICE_MODEL_NAME, REPORT_MODEL_NAME, SERVICE_OFFERED_MODEL_NAME,
   SLOT_RULE_MODEL_NAME,
   WEEKLY_AVAILABILITY_MODEL_NAME
 } from '@core/constants/model.constant';
 
 import {
   BOOKING_REPOSITORY_NAME,
+  CART_REPOSITORY_NAME,
   CUSTOMER_REPOSITORY_INTERFACE_NAME, DATE_OVERRIDES_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME,
+  PROVIDER_SERVICE_REPOSITORY_NAME,
   REPORT_REPOSITORY_NAME,
   SERVICE_OFFERED_REPOSITORY_NAME,
   SLOT_RULE_REPOSITORY_NAME,
@@ -33,8 +36,24 @@ import { WeeklyAvailabilityDocument } from '@core/schema/weekly-availability.sch
 import { WeeklyAvailabilityRepository } from '@core/repositories/implementations/weekly-availability.repository';
 import { DateOverridesRepository } from '@core/repositories/implementations/date-overrides.repository';
 import { DateOverrideDocument } from '@core/schema/date-overrides.schema';
+import { ProviderServiceDocument } from '@core/schema/provider-service.schema';
+import { ProviderServiceRepository } from '@core/repositories/implementations/provider-service.repository';
+import { CartDocument } from '@core/schema/cart.schema';
+import { CartRepository } from '@core/repositories/implementations/cart.repository';
 
 export const repositoryProviders: Provider[] = [
+  {
+    provide: CART_REPOSITORY_NAME,
+    useFactory: (cartModel: Model<CartDocument>) =>
+      new CartRepository(cartModel),
+    inject: [getModelToken(CART_MODEL_NAME)],
+  },
+  {
+    provide: PROVIDER_SERVICE_REPOSITORY_NAME,
+    useFactory: (providerServiceModel: Model<ProviderServiceDocument>) =>
+      new ProviderServiceRepository(providerServiceModel),
+    inject: [getModelToken(PROVIDER_SERVICE_MODEL_NAME)],
+  },
   {
     provide: DATE_OVERRIDES_REPOSITORY_INTERFACE_NAME,
     useFactory: (dateOverridesModel: Model<DateOverrideDocument>) =>

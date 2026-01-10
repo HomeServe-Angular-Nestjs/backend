@@ -2,8 +2,8 @@ import { Types } from 'mongoose';
 import { DateOverrideDocument } from '@core/schema/date-overrides.schema';
 import { v4 as uuidv4 } from 'uuid';
 import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
-import { BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, DATE_OVERRIDES_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SERVICE_OFFERED_REPOSITORY_NAME, WEEKLY_AVAILABILITY_REPOSITORY_INTERFACE_NAME } from '@core/constants/repository.constant';
-import { ARGON_UTILITY_NAME, UPLOAD_UTILITY_NAME } from '@core/constants/utility.constant';
+import { BOOKING_REPOSITORY_NAME, CART_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, DATE_OVERRIDES_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, PROVIDER_SERVICE_REPOSITORY_NAME, SERVICE_OFFERED_REPOSITORY_NAME, WEEKLY_AVAILABILITY_REPOSITORY_INTERFACE_NAME } from '@core/constants/repository.constant';
+import { ARGON_UTILITY_NAME, TIME_UTILITY_NAME, UPLOAD_UTILITY_NAME } from '@core/constants/utility.constant';
 import { CloudinaryService } from '@configs/cloudinary/cloudinary.service';
 import { IDisplayReviews, IProvider, IProviderCardView, IProviderCardWithPagination, UserType } from '@core/entities/interfaces/user.entity.interface';
 import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
@@ -16,7 +16,7 @@ import { IServiceOfferedRepository } from '@core/repositories/interfaces/service
 import { IUploadsUtility } from '@core/utilities/interface/upload.utility.interface';
 import { FilterDto, GetProvidersFromLocationSearch, SlotDto, UpdateBioDto } from '@modules/providers/dtos/provider.dto';
 import { IProviderServices } from '@modules/providers/services/interfaces/provider-service.interface';
-import { AVAILABILITY_MAPPER, CUSTOMER_MAPPER, PROVIDER_MAPPER, SERVICE_OFFERED_MAPPER } from '@core/constants/mappers.constant';
+import { AVAILABILITY_MAPPER, CART_MAPPER, CUSTOMER_MAPPER, PROVIDER_MAPPER, SERVICE_OFFERED_MAPPER } from '@core/constants/mappers.constant';
 import { IProviderMapper } from '@core/dto-mapper/interface/provider.mapper.interface';
 import { IBookingRepository } from '@core/repositories/interfaces/bookings-repo.interface';
 import { ICustomerRepository } from '@core/repositories/interfaces/customer-repo.interface';
@@ -29,6 +29,10 @@ import { IDateOverridesRepository } from '@core/repositories/interfaces/date-ove
 import { IWeeklyAvailability } from '@core/entities/interfaces/weekly-availability.entity.interface';
 import { IAvailabilityMapper } from '@core/dto-mapper/interface/availability.mapper.interface';
 import { DateOverride } from '@core/entities/implementation/date-override.entity';
+import { ITimeUtility } from '@core/utilities/interface/time.utility.interface';
+import { IProviderServiceRepository } from '@core/repositories/interfaces/provider-service-repo.interface';
+import { ICartRepository } from '@core/repositories/interfaces/cart-repo.interface';
+import { ICartMapper } from '@core/dto-mapper/interface/cart-mapper.interface';
 
 @Injectable()
 export class ProviderServices implements IProviderServices {
@@ -62,6 +66,14 @@ export class ProviderServices implements IProviderServices {
     private readonly _dateOverridesRepository: IDateOverridesRepository,
     @Inject(AVAILABILITY_MAPPER)
     private readonly _availabilityMapper: IAvailabilityMapper,
+    @Inject(TIME_UTILITY_NAME)
+    private readonly _timeUtility: ITimeUtility,
+    @Inject(PROVIDER_SERVICE_REPOSITORY_NAME)
+    private readonly _providerServiceRepository: IProviderServiceRepository,
+    @Inject(CART_REPOSITORY_NAME)
+    private readonly _cartRepository: ICartRepository,
+    @Inject(CART_MAPPER)
+    private readonly _cartMapper: ICartMapper
   ) {
     this.logger = this.loggerFactory.createLogger(ProviderServices.name);
   }
@@ -194,12 +206,22 @@ export class ProviderServices implements IProviderServices {
     return a.toDateString() === b.toDateString();
   }
 
+  private _roundUpToStep(minutes: number, step: number): number {
+    return Math.ceil(minutes / step) * step;
+  }
+
+  private _isToday(date: Date): boolean {
+    const today = new Date();
+    return date.toDateString() === today.toDateString();
+  }
+
   private _resolveAvailability(selectedDate: Date, weeklyAvailability: IWeeklyAvailability['week'], overrides: DateOverride[]) {
-    const override = overrides.find(o => this._isSameDate(new Date(o.date), selectedDate));
+    const override = overrides.find(o =>
+      this._isSameDate(new Date(o.date), selectedDate)
+    );
 
     if (override) {
-      if (!override.isAvailable) return [];
-      return override.timeRanges;
+      return override.isAvailable ? override.timeRanges : [];
     }
 
     const day = selectedDate
@@ -211,6 +233,56 @@ export class ProviderServices implements IProviderServices {
     if (!weeklyDay?.isAvailable) return [];
 
     return weeklyDay.timeRanges;
+  }
+
+  private _generateSlotsForRange(
+    rangeStartStr: string,
+    rangeEndStr: string,
+    serviceDuration: number,
+    buffer: number,
+    unavailable: { start: number; end: number }[],
+    stepMinutes = 30,
+    selectedDate?: Date
+  ): { from: string; to: string }[] {
+
+    const slots: { from: string; to: string }[] = [];
+
+    const rangeStart = this._timeUtility.timeToMinutes(rangeStartStr);
+    const rangeEnd = this._timeUtility.timeToMinutes(rangeEndStr);
+
+    const totalBusyTime = serviceDuration + buffer;
+
+    let cursor = rangeStart;
+
+    // past-time validation (only for today)
+    if (selectedDate && this._isToday(selectedDate)) {
+      const now = new Date();
+      const nowMinutes = now.getHours() * 60 + now.getMinutes();
+      const earliestAllowed = this._roundUpToStep(nowMinutes, stepMinutes);
+
+      cursor = Math.max(cursor, earliestAllowed);
+    }
+
+    while (cursor + totalBusyTime <= rangeEnd) {
+      const slotStart = cursor;
+      const slotEnd = slotStart + serviceDuration;
+      const slotBusyUntil = slotEnd + buffer;
+
+      const hasCollision = unavailable.some(u =>
+        slotStart < u.end && slotBusyUntil > u.start
+      );
+
+      if (!hasCollision) {
+        slots.push({
+          from: this._timeUtility.minutesToTime(slotStart),
+          to: this._timeUtility.minutesToTime(slotEnd)
+        });
+      }
+
+      cursor += stepMinutes;
+    }
+
+    return slots;
   }
 
   async getProviders(customerId: string, filters: FilterDto): Promise<IResponse<IProviderCardWithPagination>> {
@@ -310,7 +382,7 @@ export class ProviderServices implements IProviderServices {
 
     const [providerDocs, serviceDocs, totalProviders] = await Promise.all([
       this._providerRepository.getProvidersBasedOnLocation(lng, lat, { page, limit }),
-      this._serviceOfferedRepository.searchServiceByTitle(searchData.title),
+      this._serviceOfferedRepository.searchServiceByTitle(searchData.title), //todo
       this._providerRepository.count(),
     ]);
 
@@ -656,29 +728,52 @@ export class ProviderServices implements IProviderServices {
   }
 
   async fetchAvailableSlotsByProviderId(customerId: string, providerId: string, selectedDate: Date): Promise<IResponse> {
-    const [weeklyAvailabilityDocs, overrideDocs] = await Promise.all([
+    const [
+      weeklyAvailabilityDocs,
+      overrideDocs,
+      bufferTime,
+      cartDoc,
+      // bookingDocs
+    ] = await Promise.all([
       this._availabilityRepository.findOneByProviderId(providerId),
       this._dateOverridesRepository.fetchOverridesByProviderId(providerId),
+      this._providerRepository.getBufferTime(providerId),
+      this._cartRepository.findAndPopulateByCustomerId(customerId),
+      // this._bookingRepository.findBookingsByProviderId(providerId)
     ]);
 
-    if (!weeklyAvailabilityDocs) throw new NotFoundException({
-      code: ErrorCodes.NOT_FOUND,
-      message: 'Weekly availability not found.'
-    });
+    if (!weeklyAvailabilityDocs) {
+      throw new NotFoundException({
+        code: ErrorCodes.NOT_FOUND,
+        message: 'Weekly availability not found.'
+      });
+    }
 
-    if (!overrideDocs) throw new NotFoundException({
-      code: ErrorCodes.NOT_FOUND,
-      message: 'Date overrides not found.'
-    });
+    if (!overrideDocs) {
+      throw new NotFoundException({
+        code: ErrorCodes.NOT_FOUND,
+        message: 'Date overrides not found.'
+      });
+    }
+
+    if (!cartDoc) {
+      throw new NotFoundException({
+        code: ErrorCodes.NOT_FOUND,
+        message: 'Cart not found.'
+      });
+    }
 
     const weeklyAvailability = this._availabilityMapper.toWeeklyAvailabilityEntity(weeklyAvailabilityDocs);
-    const dateOverrides = (overrideDocs ?? []).map(doc => this._availabilityMapper.toDateOverrideEntity(doc));
+    const dateOverrides = overrideDocs.map(doc => this._availabilityMapper.toDateOverrideEntity(doc));
+    const populatedCart = this._cartMapper.toPopulatedEntity(cartDoc);
 
-    console.log("weeklyAvailability: ", JSON.stringify(weeklyAvailability, null, 2));
-    console.log("dateOverrides: ", JSON.stringify(dateOverrides, null, 2));
+    // console.log("Weekly availability: ", JSON.stringify(weeklyAvailability, null, 2));
+    // console.log("Date overrides: ", JSON.stringify(dateOverrides, null, 2));
+    // console.log("Populated cart: ", JSON.stringify(populatedCart, null, 2));
 
     const baseRanges = this._resolveAvailability(selectedDate, weeklyAvailability.week, dateOverrides);
 
+    console.log("Base ranges: ", JSON.stringify(baseRanges, null, 2));
     if (!baseRanges.length) {
       return {
         success: true,
@@ -687,12 +782,50 @@ export class ProviderServices implements IProviderServices {
       };
     }
 
-    console.log("baseRanges: ", JSON.stringify(baseRanges, null, 2));
+    const totalDurationInMinutes = populatedCart.items.reduce(
+      (acc, item) => acc + item.estimatedTimeInMinutes,
+      0
+    );
+
+    console.log("Total duration in minutes: ", totalDurationInMinutes);
+
+    // const dayBookings = (bookingDocs || []).filter(b =>
+    //   b.slot &&
+    //   this._isSameDate(new Date(b.slot.date), selectedDate)
+    // );
+
+    const effectiveBuffer = Math.max(0, bufferTime ?? 0);
+
+    console.log("Effective buffer: ", effectiveBuffer);
+
+    const unavailableIntervals = [];
+    // dayBookings
+    //   .map(b => {
+    //     const start = this._timeUtility.timeToMinutes(b.slot.from);
+    //     const end = this._timeUtility.timeToMinutes(b.slot.to);
+    //     return { start, end: end + effectiveBuffer };
+    //   })
+    //   .sort((a, b) => a.start - b.start);
+
+    const availableSlots = baseRanges.flatMap(range =>
+      this._generateSlotsForRange(
+        range.startTime,
+        range.endTime,
+        totalDurationInMinutes,
+        effectiveBuffer,
+        unavailableIntervals,
+        30,
+        selectedDate
+      )
+    );
+
+    console.log("Available slots: ", JSON.stringify(availableSlots, null, 2));
 
     return {
       success: true,
       message: 'Available slots fetched successfully.',
-    }
+      data: availableSlots
+    };
   }
 
   async updateBufferTime(providerId: string, bufferTime: number): Promise<IResponse<IProvider>> {

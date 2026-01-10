@@ -23,4 +23,5 @@ export interface IProviderRepository extends IBaseRepository<ProviderDocument> {
   updatePasswordById(providerId: string, password: string): Promise<boolean>;
   getWorkingHours(providerId: string): Promise<Availability | null>;
   updateBufferTime(providerId: string, bufferTime: number): Promise<ProviderDocument | null>;
+  getBufferTime(providerId: string): Promise<number>;
 }
