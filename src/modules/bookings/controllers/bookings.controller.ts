@@ -26,14 +26,14 @@ export class BookingsController {
         this.logger = this.loggerFactory.createLogger(BookingsController.name);
     }
 
-    @Post('price_breakup')
-    async calcPriceBreakup(@Body() selectedServiceDto: SelectedServiceDto[]) {
-        if (!selectedServiceDto || selectedServiceDto.length === 0) {
-            throw new BadRequestException(ErrorMessage.MISSING_FIELDS);
-        }
+    // @Post('price_breakup')
+    // async calcPriceBreakup(@Body() selectedServiceDto: SelectedServiceDto[]) {
+    //     if (!selectedServiceDto || selectedServiceDto.length === 0) {
+    //         throw new BadRequestException(ErrorMessage.MISSING_FIELDS);
+    //     }
 
-        return await this._bookingService.preparePriceBreakup(selectedServiceDto);
-    }
+    //     return await this._bookingService.preparePriceBreakup(selectedServiceDto);
+    // }
 
     @Get('price_breakup')
     async fetchPriceBreakup(@User() user: IPayload) {
