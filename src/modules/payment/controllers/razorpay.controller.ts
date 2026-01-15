@@ -1,6 +1,6 @@
 import { Request } from 'express';
 
-import { RAZORPAYMENT_SERVICE_NAME } from '@core/constants/service.constant';
+import { PAYMENT_SERVICE_NAME } from '@core/constants/service.constant';
 import { IRazorpayOrder, IVerifiedBookingsPayment } from '@core/entities/interfaces/transaction.entity.interface';
 import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
@@ -11,6 +11,7 @@ import { IRazorPaymentService } from '@modules/payment/services/interfaces/razor
 import { BadRequestException, Body, Controller, Inject, InternalServerErrorException, Post, Req, UnauthorizedException, UseGuards, } from '@nestjs/common';
 import { OngoingPaymentGuard } from '@core/guards/ongoing-payment.guard';
 import { ClientUserType } from '@core/entities/interfaces/user.entity.interface';
+import { User } from '@core/decorators/extract-user.decorator';
 
 @Controller('payment')
 export class RazorpayController {
@@ -19,7 +20,7 @@ export class RazorpayController {
     constructor(
         @Inject(LOGGER_FACTORY)
         private readonly _loggerFactory: ILoggerFactory,
-        @Inject(RAZORPAYMENT_SERVICE_NAME)
+        @Inject(PAYMENT_SERVICE_NAME)
         private readonly _paymentService: IRazorPaymentService
     ) {
         this.logger = this._loggerFactory.createLogger(RazorpayController.name);
@@ -47,27 +48,25 @@ export class RazorpayController {
     }
 
     @Post('verify_booking')
-    async handleBookingPaymentVerification(@Req() req: Request, @Body() bookingPaymentVerifyDto: BookingPaymentVerifyDto) {
-        const user = req.user as IPayload;
-
-        const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = bookingPaymentVerifyDto.verifyData;
-
-        if (![razorpay_order_id, razorpay_payment_id, razorpay_signature].every(v => v?.trim())) {
-            this.logger.warn(`Missing payment fields: orderId=${razorpay_order_id}, paymentId=${razorpay_payment_id}`);
-            throw new BadRequestException({
-                code: ErrorCodes.BAD_REQUEST,
-                message: ErrorMessage.PAYMENT_VERIFICATION_FAILED
-            });
-        }
-
-        return await this._paymentService.handleBookingPayment(user.sub, user.type as ClientUserType, bookingPaymentVerifyDto.verifyData, bookingPaymentVerifyDto.orderData);
+    async handleBookingPaymentVerification(@User() user: IPayload, @Body() { verifyData, orderData }: BookingPaymentVerifyDto) {
+        this._validateRazorpayData(verifyData);
+        return await this._paymentService.handleBookingPayment(user.sub, user.type as ClientUserType, verifyData, orderData);
     }
 
     @Post('verify_subscription')
-    async handleSubscriptionPaymentVerification(@Req() req: Request, @Body() subscriptionPaymentDto: SubscriptionPaymentVerifyDto) {
-        const user = req.user as IPayload;
+    async handleSubscriptionPaymentVerification(@User() user: IPayload, @Body() { verifyData, orderData }: SubscriptionPaymentVerifyDto) {
+        this._validateRazorpayData(verifyData);
+        return await this._paymentService.handleSubscriptionPayment(user.sub, user.type as ClientUserType, verifyData, orderData);
+    }
 
-        const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = subscriptionPaymentDto.verifyData;
+    @Post('release_lock')
+    async releaseLock(@User() user: IPayload) {
+        await this._paymentService.releasePaymentLock(user.sub, user.type as ClientUserType);
+        return { success: true };
+    }
+
+    private _validateRazorpayData(verifyData: any) {
+        const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = verifyData;
 
         if (![razorpay_order_id, razorpay_payment_id, razorpay_signature].every(v => v?.trim())) {
             this.logger.warn(`Missing payment fields: orderId=${razorpay_order_id}, paymentId=${razorpay_payment_id}`);
@@ -76,14 +75,5 @@ export class RazorpayController {
                 message: ErrorMessage.PAYMENT_VERIFICATION_FAILED
             });
         }
-
-        return await this._paymentService.handleSubscriptionPayment(user.sub, user.type as ClientUserType, subscriptionPaymentDto.verifyData, subscriptionPaymentDto.orderData);
-    }
-
-    @Post('release_lock')
-    async releaseLock(@Req() req: Request) {
-        const user = req.user as IPayload;
-        await this._paymentService.releasePaymentLock(user.sub, user.type as ClientUserType);
-        return { success: true };
     }
 }

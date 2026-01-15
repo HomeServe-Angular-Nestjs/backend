@@ -1,4 +1,4 @@
-import { RAZORPAYMENT_SERVICE_NAME, TOKEN_SERVICE_NAME } from '@core/constants/service.constant';
+import { PAYMENT_SERVICE_NAME, TOKEN_SERVICE_NAME } from '@core/constants/service.constant';
 import { TokenService } from '@modules/auth/services/implementations/token.service';
 import { RazorPaymentService } from '@modules/payment/services/implementations/razorpay.service';
 import { Provider } from '@nestjs/common';
@@ -9,7 +9,7 @@ export const paymentServiceProviders: Provider[] = [
         useClass: TokenService
     },
     {
-        provide: RAZORPAYMENT_SERVICE_NAME,
+        provide: PAYMENT_SERVICE_NAME,
         useClass: RazorPaymentService
     }
 ]
