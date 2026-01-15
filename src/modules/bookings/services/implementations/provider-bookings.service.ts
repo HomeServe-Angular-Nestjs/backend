@@ -279,25 +279,28 @@ export class ProviderBookingService implements IProviderBookingService {
                     }
                 }
             }
-
-
         }
     }
 
-    private async _getBookedServices(services: { serviceId: string; subserviceIds: string[]; }[]): Promise<IBookedService[]> {
+    private async _getBookedServices(servicesIds: string[]): Promise<IBookedService[]> {
         return (
             await Promise.all(
-                services.map(async (s) => {
-                    const providerServices = await this._providerServiceRepository.findByIds(s.subserviceIds);
+                servicesIds.map(async (s) => {
+                    const service = await this._providerServiceRepository.findOneAndPopulateById(s);
 
-                    return providerServices.map(ps => ({
-                        title: ps.description,
-                        price: ps.price.toString(),
-                        estimatedTime: ps.estimatedTimeInMinutes.toString() + ' mins'
-                    }));
+                    if (!service) throw new InternalServerErrorException({
+                        code: ErrorCodes.INTERNAL_SERVER_ERROR,
+                        message: ErrorMessage.INTERNAL_SERVER_ERROR
+                    });
+
+                    return {
+                        title: service.description,
+                        price: service.price,
+                        estimatedTime: service.estimatedTimeInMinutes
+                    };
                 })
             )
-        ).flat();
+        );
     }
 
     private _computeRefund(totalPaid: number, adminSettings: IAdminSettings): { refundAmount: number; customerFine: number; providerFine: number } {
@@ -328,8 +331,8 @@ export class ProviderBookingService implements IProviderBookingService {
     }
 
     private async _getCustomerAndService(booking: IBooking): Promise<{
-        customer: { id: string, name: string, email: string, phone: string };
-        service: { title: string, price: string, estimatedTime: string }[];
+        customer: { id: string, name: string, email: string, phone: string, address: string };
+        service: { title: string, price: number, estimatedTime: number }[];
     }> {
         const customerDoc = await this._customerRepository.findById(booking.customerId);
         if (!customerDoc) {
@@ -337,7 +340,7 @@ export class ProviderBookingService implements IProviderBookingService {
         }
 
         const customer = this._customerMapper.toEntity(customerDoc);
-        // const orderedServices = await this._getBookedServices(booking.services);//todo-today
+        const orderedServices = await this._getBookedServices(booking.services);
 
         return {
             customer: {
@@ -345,8 +348,9 @@ export class ProviderBookingService implements IProviderBookingService {
                 name: customer.fullname || customer.username,
                 email: customer.email,
                 phone: customer.phone,
+                address: customer.address,
             },
-            service: [] //oderedservices//todo-today,
+            service: orderedServices,
         };
     }
 

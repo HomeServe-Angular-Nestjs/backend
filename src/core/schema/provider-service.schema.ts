@@ -55,7 +55,7 @@ export class ProviderServiceDocument extends Document {
         type: Number,
         required: true
     })
-    estimatedTimeInMinutes: Number;
+    estimatedTimeInMinutes: number;
 
     @Prop({
         type: Boolean,

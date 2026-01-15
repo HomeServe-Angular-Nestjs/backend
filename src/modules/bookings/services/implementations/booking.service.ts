@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, ForbiddenException, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { BOOKING_REPOSITORY_NAME, CART_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, PROVIDER_SERVICE_REPOSITORY_NAME, RESERVATION_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME, WALLET_REPOSITORY_NAME } from '@core/constants/repository.constant';
-import { IBooking, IBookingDetailCustomer, IBookingResponse, IBookingWithPagination } from '@core/entities/interfaces/booking.entity.interface';
+import { IBookedService, IBooking, IBookingDetailCustomer, IBookingResponse, IBookingWithPagination } from '@core/entities/interfaces/booking.entity.interface';
 import { BookingStatus, CancelStatus, PaymentStatus } from '@core/enum/bookings.enum';
 import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
@@ -319,16 +319,18 @@ export class BookingService implements IBookingService {
                     throw new InternalServerErrorException(`Provider with ID ${booking.providerId} not found.`);
                 }
 
-                const services = []//todo-today
-                //  await Promise.all(
-                //     booking.services.flatMap(async (s) => {
-                //         const providerServices = await this._providerServiceRepository.findByIds(s.subserviceIds);
-                //         return providerServices.map(ps => ({
-                //             id: ps.id,
-                //             name: ps.description // or some other display name
-                //         }));
-                //     })
-                // ).then(results => results.flat());//todo-today
+                const services = await Promise.all(
+                    booking.services.map(async serviceId => {
+                        const service = await this._providerServiceRepository.findOneAndPopulateById(serviceId);
+
+                        if (!service) throw new InternalServerErrorException({
+                            code: ErrorCodes.INTERNAL_SERVER_ERROR,
+                            message: ErrorMessage.INTERNAL_SERVER_ERROR
+                        });
+
+                        return service.categoryId.name;
+                    })
+                );
 
                 const transaction = booking.transactionHistory
                     .find(t => t.transactionType === TransactionType.BOOKING_PAYMENT && t.status === TransactionStatus.SUCCESS);
@@ -375,25 +377,31 @@ export class BookingService implements IBookingService {
 
         const booking = this._bookingMapper.toEntity(bookingDoc);
 
-        const provider = await this._providerRepository.findById(booking.providerId.toString());
+        const [provider] = await Promise.all([
+            this._providerRepository.findById(booking.providerId),
+            this._customerRepository.findById(booking.customerId),
+        ]);
+
         if (!provider) {
             throw new InternalServerErrorException(`Provider with ID ${booking.providerId} not found.`);
         }
 
-        const orderedServices = []//todo-today
-        //  (
-        //     await Promise.all(
-        //         booking.services.map(async (s) => {
-        //             const providerServices = await this._providerServiceRepository.findByIds(s.subserviceIds);
+        const orderedServices: IBookedService[] = (await Promise.all(
+            booking.services.map(async serviceId => {
+                const service = await this._providerServiceRepository.findOneAndPopulateById(serviceId);
 
-        //             return providerServices.map(ps => ({
-        //                 title: ps.description,
-        //                 price: ps.price.toString(),
-        //                 estimatedTime: ps.estimatedTimeInMinutes.toString() + ' mins'
-        //             }));
-        //         })
-        //     )
-        // ).flat();   //todo-today
+                if (!service) throw new InternalServerErrorException({
+                    code: ErrorCodes.INTERNAL_SERVER_ERROR,
+                    message: ErrorMessage.INTERNAL_SERVER_ERROR
+                });
+
+                return {
+                    title: service.categoryId.name,
+                    price: service.price,
+                    estimatedTime: service.estimatedTimeInMinutes,
+                }
+            })
+        ))
 
         const transaction = booking.transactionHistory
             .filter(t => t.transactionType === TransactionType.BOOKING_PAYMENT && t.status === TransactionStatus.SUCCESS)
@@ -412,7 +420,8 @@ export class BookingService implements IBookingService {
             provider: {
                 name: provider.fullname || provider.username,
                 email: provider.email,
-                phone: provider.phone
+                phone: provider.phone,
+                location: provider.address
             },
             orderedServices,
             transaction: transaction ? {

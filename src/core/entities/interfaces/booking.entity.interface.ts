@@ -16,10 +16,7 @@ export interface IBookingResponse {
         email: string;
         phone: string;
     };
-    services: {
-        id: string;
-        name: string;
-    }[];
+    services: string[];
     expectedArrivalTime: Date | string;
     bookingStatus: BookingStatus;
     paymentStatus: PaymentStatus;
@@ -171,8 +168,8 @@ export interface IBookingDetailsBase {
 
 export interface IBookedService {
     title: string;
-    price: string;
-    estimatedTime: string;
+    price: number;
+    estimatedTime: number;
 }
 
 export interface IBookingDetailCustomer extends IBookingDetailsBase {
@@ -180,6 +177,7 @@ export interface IBookingDetailCustomer extends IBookingDetailsBase {
         name: string;
         email: string;
         phone: string;
+        location: string;
     };
 }
 
