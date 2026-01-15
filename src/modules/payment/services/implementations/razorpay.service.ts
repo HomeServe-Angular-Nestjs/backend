@@ -430,7 +430,7 @@ export class RazorPaymentService implements IRazorPaymentService {
 
     async handleSubscriptionPayment(userId: string, role: ClientUserType, verifyData: RazorpayVerifyData, orderData: SubscriptionOrderData): Promise<IVerifiedSubscriptionPayment> {
         const key = this._paymentLockingUtility.generatePaymentKey(userId, role);
-        
+
         try {
             const [subscription, user] = await Promise.all([
                 this._getSubscription(orderData.subscriptionId),
@@ -477,5 +477,10 @@ export class RazorPaymentService implements IRazorPaymentService {
         } finally {
             await this._paymentLockingUtility.releaseLock(key);
         }
+    }
+
+    async releasePaymentLock(userId: string, role: ClientUserType): Promise<void> {
+        const key = this._paymentLockingUtility.generatePaymentKey(userId, role);
+        await this._paymentLockingUtility.releaseLock(key);
     }
 }

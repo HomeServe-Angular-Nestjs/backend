@@ -4,7 +4,6 @@ import { IAdminSettingsRepository } from '@core/repositories/interfaces/admin-se
 import { IBookingRepository } from '@core/repositories/interfaces/bookings-repo.interface';
 import { PaymentLockingUtility } from '@core/utilities/implementations/payment-locking.utility';
 import { PricingUtility } from '@core/utilities/implementations/pricing.utility';
-import { SlotUtility } from '@core/utilities/implementations/slot.utility';
 import { TimeUtility } from '@core/utilities/implementations/time.utility';
 import { UploadsUtility } from '@core/utilities/implementations/upload.utility';
 import { Provider } from '@nestjs/common';
@@ -15,12 +14,6 @@ export const bookingsUtilityProviders: Provider[] = [
         useFactory: (adminSettingsRepository: IAdminSettingsRepository) =>
             new PricingUtility(adminSettingsRepository),
         inject: [ADMIN_SETTINGS_REPOSITORY_NAME]
-    },
-    {
-        provide: SLOT_UTILITY_NAME,
-        useFactory: (bookingRepository: IBookingRepository) =>
-            new SlotUtility(bookingRepository),
-        inject: [BOOKING_REPOSITORY_NAME]
     },
     {
         provide: TIME_UTILITY_NAME,

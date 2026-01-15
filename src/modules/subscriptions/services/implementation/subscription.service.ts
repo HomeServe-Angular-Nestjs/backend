@@ -144,55 +144,60 @@ export class SubscriptionService implements ISubscriptionService {
             });
         }
 
-        const isSubscriptionExists = await this._subscriptionRepository.findActiveSubscriptionByUserId(userId, userType);
+        try {
+            const isSubscriptionExists = await this._subscriptionRepository.findActiveSubscriptionByUserId(userId, userType);
 
-        if (isSubscriptionExists) {
-            throw new ConflictException({
-                code: ErrorCodes.CONFLICT,
-                message: `Subscription ${ErrorMessage.DOCUMENT_ALREADY_EXISTS}`
+            if (isSubscriptionExists) {
+                throw new ConflictException({
+                    code: ErrorCodes.CONFLICT,
+                    message: `Subscription ${ErrorMessage.DOCUMENT_ALREADY_EXISTS}`
+                });
+            }
+
+            const planDoc = await this._planRepository.findById(createSubscriptionDto.planId);
+            if (!planDoc) throw new NotFoundException({
+                code: ErrorCodes.NOT_FOUND,
+                message: 'Failed to find the plan.'
             });
-        }
 
-        const planDoc = await this._planRepository.findById(createSubscriptionDto.planId);
-        if (!planDoc) throw new NotFoundException({
-            code: ErrorCodes.NOT_FOUND,
-            message: 'Failed to find the plan.'
-        });
+            const plan = this._planMapper.toEntity(planDoc);
 
-        const plan = this._planMapper.toEntity(planDoc);
+            const { endDate, startTime } = this._getSubscriptionEndDateAndStartDate(plan.duration)
 
-        const { endDate, startTime } = this._getSubscriptionEndDateAndStartDate(plan.duration)
+            const newSubscription = await this._subscriptionRepository.create(
+                this._subscriptionMapper.toDocument({
+                    userId,
+                    planId: plan.id,
+                    name: plan.name,
+                    role: plan.role,
+                    price: plan.price,
+                    duration: createSubscriptionDto.duration,
+                    features: plan.features,
+                    isActive: false,
+                    isDeleted: false,
+                    transactionHistory: [],
+                    paymentStatus: PaymentStatus.UNPAID,
+                    cancelledAt: null,
+                    startTime,
+                    endDate,
+                })
+            );
 
-        const newSubscription = await this._subscriptionRepository.create(
-            this._subscriptionMapper.toDocument({
-                userId,
-                planId: plan.id,
-                name: plan.name,
-                role: plan.role,
-                price: plan.price,
-                duration: createSubscriptionDto.duration,
-                features: plan.features,
-                isActive: false,
-                isDeleted: false,
-                transactionHistory: [],
-                paymentStatus: PaymentStatus.UNPAID,
-                cancelledAt: null,
-                startTime,
-                endDate,
-            })
-        );
+            if (!newSubscription) {
+                throw new InternalServerErrorException({
+                    code: ErrorCodes.INTERNAL_SERVER_ERROR,
+                    message: 'Failed to create the subscription.'
+                });
+            }
 
-        if (!newSubscription) {
-            throw new InternalServerErrorException({
-                code: ErrorCodes.INTERNAL_SERVER_ERROR,
-                message: 'Failed to create the subscription.'
-            });
-        }
-
-        return {
-            success: true,
-            message: 'Subscription created successfully.',
-            data: this._subscriptionMapper.toEntity(newSubscription)
+            return {
+                success: true,
+                message: 'Subscription created successfully.',
+                data: this._subscriptionMapper.toEntity(newSubscription)
+            }
+        } catch (error) {
+            await this._paymentLockingUtility.releaseLock(key);
+            throw error;
         }
     }
 
@@ -250,58 +255,76 @@ export class SubscriptionService implements ISubscriptionService {
         }
     }
 
-    async upgradeSubscription(userId: string, userType: string, createSubscriptionDto: CreateSubscriptionDto): Promise<IResponse<ISubscription>> {
-        const isSubscriptionExists = await this._subscriptionRepository.findActiveSubscriptionByUserId(userId, userType);
-        if (!isSubscriptionExists) {
-            throw new BadRequestException({
-                code: ErrorCodes.BAD_REQUEST,
-                message: 'You are not subscribed to any plans. Please subscribe a plan to upgrade.'
+    async upgradeSubscription(userId: string, userType: UserType, createSubscriptionDto: CreateSubscriptionDto): Promise<IResponse<ISubscription>> {
+        const key = this._paymentLockingUtility.generatePaymentKey(userId, userType);
+
+        const acquired = await this._paymentLockingUtility.acquireLock(key, 300);
+        if (!acquired) {
+            const ttl = await this._paymentLockingUtility.getTTL(key);
+
+            throw new ConflictException({
+                code: ErrorCodes.PAYMENT_IN_PROGRESS,
+                message: `We are still processing your previous payment. Please try again in ${ttl} seconds.`,
+                ttl
             });
         }
 
-        const plan = await this._planRepository.findById(createSubscriptionDto.planId);
-        if (!plan) {
-            throw new NotFoundException(ErrorMessage.DOCUMENT_NOT_FOUND);
-        }
+        try {
+            const isSubscriptionExists = await this._subscriptionRepository.findActiveSubscriptionByUserId(userId, userType);
+            if (!isSubscriptionExists) {
+                throw new BadRequestException({
+                    code: ErrorCodes.BAD_REQUEST,
+                    message: 'You are not subscribed to any plans. Please subscribe a plan to upgrade.'
+                });
+            }
 
-        const cancelled = await this._subscriptionRepository.cancelSubscriptionByUserId(userId, userType);
-        if (!cancelled) throw new NotFoundException({
-            code: ErrorCodes.NOT_FOUND,
-            message: 'Failed to cancel subscription.'
-        });
+            const plan = await this._planRepository.findById(createSubscriptionDto.planId);
+            if (!plan) {
+                throw new NotFoundException(ErrorMessage.DOCUMENT_NOT_FOUND);
+            }
 
-        const { startTime, endDate } = this._getSubscriptionEndDateAndStartDate(plan.duration);
-        const newSubscription = await this._subscriptionRepository.create(
-            this._subscriptionMapper.toDocument({
-                userId,
-                planId: plan.id,
-                name: plan.name,
-                role: plan.role,
-                price: plan.price,
-                duration: createSubscriptionDto.duration,
-                features: plan.features,
-                isActive: false,
-                isDeleted: false,
-                transactionHistory: [],
-                paymentStatus: PaymentStatus.UNPAID,
-                cancelledAt: null,
-                endDate,
-                startTime,
-            })
-        );
+            const cancelled = await this._subscriptionRepository.cancelSubscriptionByUserId(userId, userType);
+            if (!cancelled) throw new NotFoundException({
+                code: ErrorCodes.NOT_FOUND,
+                message: 'Failed to cancel subscription.'
+            });
 
-        if (!newSubscription) {
-            throw new InternalServerErrorException(ErrorMessage.DOCUMENT_CREATION_ERROR);
-        }
+            const { startTime, endDate } = this._getSubscriptionEndDateAndStartDate(plan.duration);
+            const newSubscription = await this._subscriptionRepository.create(
+                this._subscriptionMapper.toDocument({
+                    userId,
+                    planId: plan.id,
+                    name: plan.name,
+                    role: plan.role,
+                    price: plan.price,
+                    duration: createSubscriptionDto.duration,
+                    features: plan.features,
+                    isActive: false,
+                    isDeleted: false,
+                    transactionHistory: [],
+                    paymentStatus: PaymentStatus.UNPAID,
+                    cancelledAt: null,
+                    endDate,
+                    startTime,
+                })
+            );
 
-        return {
-            success: true,
-            message: 'Subscription created successfully.',
-            data: this._subscriptionMapper.toEntity(newSubscription)
+            if (!newSubscription) {
+                throw new InternalServerErrorException(ErrorMessage.DOCUMENT_CREATION_ERROR);
+            }
+
+            return {
+                success: true,
+                message: 'Subscription created successfully.',
+                data: this._subscriptionMapper.toEntity(newSubscription)
+            }
+        } catch (error) {
+            await this._paymentLockingUtility.releaseLock(key);
+            throw error;
         }
     }
 
-    async updatePaymentStatus(userId: string, userType: string, data: UpdatePaymentStatusDto): Promise<IResponse> {
+    async updatePaymentStatus(userId: string, userType: UserType, data: UpdatePaymentStatusDto): Promise<IResponse> {
         const subscriptionDoc = await this._subscriptionRepository.findSubscriptionById(data.subscriptionId);
 
         if (!subscriptionDoc) throw new NotFoundException({

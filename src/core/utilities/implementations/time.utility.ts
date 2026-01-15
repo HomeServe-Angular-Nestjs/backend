@@ -48,4 +48,11 @@ export class TimeUtility implements ITimeUtility {
         return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
     }
 
+    apply24hTime(baseDate: Date, timeStr: string): Date {
+        const [hours, minutes] = timeStr.split(":").map(Number);
+        const date = new Date(baseDate);
+        date.setHours(hours, minutes, 0, 0);
+        return date;
+    }
+
 }

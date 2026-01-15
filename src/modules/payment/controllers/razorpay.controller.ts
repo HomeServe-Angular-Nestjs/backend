@@ -79,4 +79,11 @@ export class RazorpayController {
 
         return await this._paymentService.handleSubscriptionPayment(user.sub, user.type as ClientUserType, subscriptionPaymentDto.verifyData, subscriptionPaymentDto.orderData);
     }
+
+    @Post('release_lock')
+    async releaseLock(@Req() req: Request) {
+        const user = req.user as IPayload;
+        await this._paymentService.releasePaymentLock(user.sub, user.type as ClientUserType);
+        return { success: true };
+    }
 }

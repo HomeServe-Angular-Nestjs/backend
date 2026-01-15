@@ -3,7 +3,8 @@ import {
   CART_MODEL_NAME,
   CUSTOMER_MODEL_NAME, DATE_OVERRIDE_MODEL_NAME, PROVIDER_MODEL_NAME, PROVIDER_SERVICE_MODEL_NAME, REPORT_MODEL_NAME, SERVICE_OFFERED_MODEL_NAME,
   SLOT_RULE_MODEL_NAME,
-  WEEKLY_AVAILABILITY_MODEL_NAME
+  WEEKLY_AVAILABILITY_MODEL_NAME,
+  RESERVATION_MODEL_NAME
 } from '@core/constants/model.constant';
 
 import {
@@ -14,7 +15,8 @@ import {
   REPORT_REPOSITORY_NAME,
   SERVICE_OFFERED_REPOSITORY_NAME,
   SLOT_RULE_REPOSITORY_NAME,
-  WEEKLY_AVAILABILITY_REPOSITORY_INTERFACE_NAME
+  WEEKLY_AVAILABILITY_REPOSITORY_INTERFACE_NAME,
+  RESERVATION_REPOSITORY_NAME
 } from '@core/constants/repository.constant';
 
 import { Model } from 'mongoose';
@@ -38,8 +40,10 @@ import { DateOverridesRepository } from '@core/repositories/implementations/date
 import { DateOverrideDocument } from '@core/schema/date-overrides.schema';
 import { ProviderServiceDocument } from '@core/schema/provider-service.schema';
 import { ProviderServiceRepository } from '@core/repositories/implementations/provider-service.repository';
-import { CartDocument } from '@core/schema/cart.schema';
 import { CartRepository } from '@core/repositories/implementations/cart.repository';
+import { ReservationDocument } from '@core/schema/reservation.schema';
+import { ReservationRepository } from '@core/repositories/implementations/reservation.repository';
+import { CartDocument } from '@core/schema/cart.schema';
 
 export const repositoryProviders: Provider[] = [
   {
@@ -101,5 +105,11 @@ export const repositoryProviders: Provider[] = [
     useFactory: (ruleModel: Model<SlotRuleDocument>) =>
       new SlotRuleRepository(ruleModel),
     inject: [getModelToken(SLOT_RULE_MODEL_NAME)]
+  },
+  {
+    provide: RESERVATION_REPOSITORY_NAME,
+    useFactory: (reservationModel: Model<ReservationDocument>) =>
+      new ReservationRepository(reservationModel),
+    inject: [getModelToken(RESERVATION_MODEL_NAME)]
   }
 ];

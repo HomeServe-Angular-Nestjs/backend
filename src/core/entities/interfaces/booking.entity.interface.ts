@@ -77,7 +77,6 @@ export interface IResponseProviderBookingLists {
 }
 
 export interface IBookedSlot {
-    ruleId: string;
     date: Date;
     from: string;
     to: string;
@@ -107,15 +106,33 @@ export interface IBooking extends IEntity {
         coordinates: [number, number];
     };
     slot: IBookedSlot;
-    services: {
-        serviceId: string;
-        subserviceIds: string[];
-    }[];
+    services: string[];
     transactionHistory: ITransaction[];
     paymentStatus: PaymentStatus;
     review: IReview | null;
     respondedAt: Date | null;
 }
+
+// export interface IBooking extends IEntity {
+//     customerId: string;
+//     totalAmount: number;
+//     expectedArrivalTime: Date;
+//     actualArrivalTime: Date | null;
+//     bookingStatus: BookingStatus;
+//     cancellationReason: string | null;
+//     cancelStatus: CancelStatus | null;
+//     cancelledAt: Date | null;
+//     location: {
+//         address: string;
+//         coordinates: [number, number];
+//     };
+//     slot: IBookedSlot;
+//     services: string[];
+//     transactionHistory: ITransaction[];
+//     paymentStatus: PaymentStatus;
+//     review: IReview | null;
+//     respondedAt: Date | null;
+// }
 
 export interface IBookingOverviewChanges {
     totalBookingsChange: number;

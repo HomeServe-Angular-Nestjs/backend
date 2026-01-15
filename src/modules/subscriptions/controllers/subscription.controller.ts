@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { SUBSCRIPTION_SERVICE_NAME } from '@core/constants/service.constant';
 import { IAdminFilteredSubscriptionListWithPagination, ISubscription, ISubscriptionFilters } from '@core/entities/interfaces/subscription.entity.interface';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
@@ -10,6 +10,7 @@ import { PlanRoleEnum } from '@core/enum/subscription.enum';
 import { isValidIdPipe } from '@core/pipes/is-valid-id.pipe';
 import { CreateSubscriptionDto, SubscriptionFiltersDto, UpdatePaymentStatusDto, UpdateSubscriptionStatusDto } from '@modules/subscriptions/dto/subscription.dto';
 import { User } from '@core/decorators/extract-user.decorator';
+import { OngoingPaymentGuard } from '@core/guards/ongoing-payment.guard';
 
 @Controller('subscription')
 export class SubscriptionController {
@@ -24,6 +25,7 @@ export class SubscriptionController {
         this.logger = this._loggerFactory.createLogger(SubscriptionController.name);
     }
 
+    @UseGuards(OngoingPaymentGuard)
     @Post('')
     async createSubscription(@User() user: IPayload, @Body() createSubscriptionDto: CreateSubscriptionDto): Promise<IResponse<ISubscription>> {
         return await this._subscriptionService.createSubscription(user.sub, user.type, createSubscriptionDto);
@@ -50,6 +52,7 @@ export class SubscriptionController {
         return await this._subscriptionService.getUpgradeAmount(user.type, subscriptionId);
     }
 
+    @UseGuards(OngoingPaymentGuard)
     @Post('upgrade')
     async upgradeSubscription(@User() user: IPayload, @Body() createSubscriptionDto: CreateSubscriptionDto): Promise<IResponse<ISubscription>> {
         return await this._subscriptionService.upgradeSubscription(user.sub, user.type, createSubscriptionDto);

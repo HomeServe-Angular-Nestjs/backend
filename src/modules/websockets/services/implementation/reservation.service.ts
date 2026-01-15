@@ -22,7 +22,6 @@ export class ReservationService implements IReservationService {
             from: data.from,
             to: data.to,
             date: data.date,
-            ruleId: data.ruleId,
             providerId: data.providerId,
             customerId: data.customerId,
         }));

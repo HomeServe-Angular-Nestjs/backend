@@ -62,8 +62,9 @@ export class ProviderServiceRepository extends BaseRepository<ProviderServiceDoc
         return !!result;
     }
 
-    async isServiceExistByCategoryId(categoryId: string): Promise<boolean> {
+    async isServiceExistByCategoryId(providerId: string, categoryId: string): Promise<boolean> {
         const result = await this._providerServiceModel.exists({
+            providerId: new Types.ObjectId(providerId),
             categoryId: new Types.ObjectId(categoryId),
             isDeleted: false
         });

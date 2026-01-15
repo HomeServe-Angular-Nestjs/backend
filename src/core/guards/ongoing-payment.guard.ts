@@ -4,7 +4,7 @@ import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { IPayload } from '@core/misc/payload.interface';
 import { IPaymentLockingUtility } from '@core/utilities/interface/payment-locking.utility';
-import { CanActivate, ExecutionContext, ForbiddenException, Inject, Injectable } from '@nestjs/common';
+import { CanActivate, ConflictException, ExecutionContext, Inject, Injectable } from '@nestjs/common';
 
 @Injectable()
 export class OngoingPaymentGuard implements CanActivate {
@@ -29,7 +29,7 @@ export class OngoingPaymentGuard implements CanActivate {
     if (isLocked) {
       const ttl = await this._paymentLockingUtility.getTTL(key);
       this.logger.warn(`User ${user.sub} has an ongoing payment. TTL remaining: ${ttl}s`);
-      throw new ForbiddenException({
+      throw new ConflictException({
         code: ErrorCodes.PAYMENT_IN_PROGRESS,
         message: `We are still processing your previous payment. Please try again in ${ttl} seconds.`,
         ttl,

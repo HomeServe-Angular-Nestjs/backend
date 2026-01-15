@@ -16,10 +16,8 @@ export enum RuleSortEnum {
 }
 
 export enum SlotStatusEnum {
-    AVAILABLE = 'available',
-    PENDING = 'pending',
-    COMPLETED = 'completed',
-    CANCELLED = 'cancelled',
+    ON_HOLD = 'on_hold',
+    RELEASED = 'released',
 }
 
 export enum AvailabilityEnum {

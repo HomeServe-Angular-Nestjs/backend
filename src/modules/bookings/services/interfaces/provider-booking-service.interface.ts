@@ -5,14 +5,13 @@ import { IResponse } from '@core/misc/response.util';
 import { FilterFields, ReviewFilterDto } from '@modules/bookings/dtos/booking.dto';
 
 export interface IProviderBookingService {
-    fetchBookingsList(bookingId: string, page: number, bookingFilters: FilterFields): Promise<IResponseProviderBookingLists>;
-    fetchOverviewData(bookingId: string): Promise<IBookingOverviewData>;
+    fetchBookingsList(providerId: string, page: number, bookingFilters: FilterFields): Promise<IResponseProviderBookingLists>;
+    fetchOverviewData(providerId: string): Promise<IBookingOverviewData>;
     fetchBookingDetails(bookingId: string): Promise<IBookingDetailProvider>;
     updateBookingStatus(bookingId: string, newStatus: BookingStatus): Promise<IResponse>;
     markBookingCancelledByProvider(providerId: string, bookingId: string, reason?: string): Promise<IResponse<IBookingDetailProvider>>;
-    downloadBookingInvoice(bookingId: string, userType: UserType): Promise<Buffer>;
+    // downloadBookingInvoice(bookingId: string, userType: UserType): Promise<Buffer>;//todo-today
     getReviewData(providerId: string, filters: ReviewFilterDto): Promise<IResponse<IReviewWithPagination>>;
-    completeBooking(bookingId: string): Promise<IResponse<IBookingDetailProvider>>;
+    completeBooking(providerId: string, bookingId: string): Promise<IResponse<IBookingDetailProvider>>;
     canStartVideoCall(providerId: string, customerId: string): Promise<IResponse>;
-
 }

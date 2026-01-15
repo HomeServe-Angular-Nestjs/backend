@@ -20,10 +20,9 @@ export interface IBookingRepository extends IBaseRepository<BookingDocument> {
     getCustomerReportMatrix(id: string): Promise<IReportCustomerMatrix>;
     getProviderReportMatrix(id: string): Promise<IReportProviderMatrix>;
     findSlotsByDate(date: Date): Promise<SlotDocument[]>;
-    findBookedSlots(ruleId: string): Promise<SlotDocument[]>;
-    isAlreadyBooked(ruleId: string, from: string, to: string, dateISO: string): Promise<boolean>;
+    findBookedSlots(ruleId: string): Promise<SlotDocument[]>; //todo-today
+    isAlreadyBooked(ruleId: string, from: string, to: string, dateISO: string): Promise<boolean>;//todo-today
     updateBookingStatus(bookingId: string, newStatus: BookingStatus): Promise<BookingDocument | null>;
-    updateSlotStatus(ruleId: string, from: string, to: string, dateISO: string, status: SlotStatusEnum): Promise<boolean>;
     markBookingCancelledByCustomer(customerId: string, bookingId: string, reason: string, cancelStatus: CancelStatus, bookingStatus: BookingStatus): Promise<BookingDocument | null>;
     updatePaymentStatus(bookingId: string, status: PaymentStatus): Promise<BookingDocument | null>;
     markBookingCancelledByProvider(providerId: string, bookingId: string, bookingStatus: BookingStatus, cancelStatus: CancelStatus, reason?: string): Promise<BookingDocument | null>;
@@ -32,7 +31,9 @@ export interface IBookingRepository extends IBaseRepository<BookingDocument> {
     getReviews(providerId: string, filter: IReviewFilter, options?: { page?: number, limit?: number }): Promise<IReviewDetailsRaw[]>;
     countReviews(providerId: string): Promise<number>;
     isAlreadyRequestedForCancellation(bookingId: string): Promise<boolean>;
-    isAnyBookingOngoing(customerId: string, providerId: string): Promise<boolean>
+    isAnyBookingOngoing(customerId: string, providerId: string): Promise<boolean>;
+    fetchBookingsByProviderOnSameDate(customerId: string, providerId: string, date: Date | string): Promise<BookingDocument[]>;
+    findAllBookingsByProviderOnSameDate(providerId: string, date: Date | string): Promise<BookingDocument[]>;
 
     getPerformanceSummary(providerId: string): Promise<any>;
     getAvgRatingAndTotalReviews(providerId?: string): Promise<ITotalReviewAndAvgRating[]>;

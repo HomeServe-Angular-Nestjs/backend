@@ -7,22 +7,26 @@ import { Types } from "mongoose";
 @Injectable()
 export class ReservationMapper {
     toEntity(doc: ReservationDocument): IReservation {
+        const formattedDate = new Date(doc.date);
+        formattedDate.setHours(0, 0, 0, 0);
+
         return new Reservation({
             from: doc.from,
             to: doc.to,
-            ruleId: String(doc.ruleId),
-            date: new Date(doc.date),
+            date: formattedDate,
             providerId: String(doc.providerId),
             customerId: String(doc.customerId),
         });
     }
 
     toDocument(entity: Partial<IReservation>): Partial<ReservationDocument> {
+        const formattedDate = new Date(entity.date as string);
+        formattedDate.setHours(0, 0, 0, 0);
+
         return {
             from: entity.from,
             to: entity.to,
-            ruleId: new Types.ObjectId(entity.ruleId),
-            date: new Date(entity.date as string),
+            date: formattedDate,
             providerId: new Types.ObjectId(entity.providerId),
             customerId: new Types.ObjectId(entity.customerId),
         }

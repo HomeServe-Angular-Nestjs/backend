@@ -4,8 +4,7 @@ import { IReservation } from "@core/entities/interfaces/reservation.entity.inter
 export class Reservation extends BaseEntity implements IReservation {
     from: string;
     to: string;
-    ruleId: string;
-    date: Date;
+    date: string | Date;
     providerId: string;
     customerId: string;
 

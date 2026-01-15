@@ -20,8 +20,8 @@ export class CartController {
     }
 
     @Patch('add')
-    async addItem(@User() user: IPayload, @Body() { providerServiceId }: UpdateCartItemsDto): Promise<IResponse> {
-        return await this._cartService.addItem(user.sub, providerServiceId);
+    async addItem(@User() user: IPayload, @Body() { providerServiceId, providerId }: UpdateCartItemsDto): Promise<IResponse> {
+        return await this._cartService.addItem(user.sub, providerId, providerServiceId);
     }
 
     @Patch('remove')

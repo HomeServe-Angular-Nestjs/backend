@@ -4,7 +4,7 @@ import { CART_REPOSITORY_NAME } from "@core/constants/repository.constant";
 import { ICartRepository } from "@core/repositories/interfaces/cart-repo.interface";
 import { CART_MAPPER } from "@core/constants/mappers.constant";
 import { ICartMapper } from "@core/dto-mapper/interface/cart-mapper.interface";
-import { ErrorCodes } from "@core/enum/error.enum";
+import { ErrorCodes, ErrorMessage } from "@core/enum/error.enum";
 import { IResponse } from "@core/misc/response.util";
 import { ICartPopulated } from "@core/entities/interfaces/cart.entity.interface";
 import { ILoggerFactory, LOGGER_FACTORY } from "@core/logger/interface/logger-factory.interface";
@@ -29,24 +29,15 @@ export class CartService implements ICartService {
         this.logger = this._loggerFactory.createLogger(CartService.name);
     }
 
-    private async createCart(userId: string) { //todo- remove have one in auth
-        const cartDoc = this._cartMapper.toDocument({
-            customerId: userId,
-            items: []
-        })
-
-        await this._cartRepository.create(cartDoc);
-    }
-
     async getCart(customerId: string): Promise<IResponse<ICartPopulated>> {
         let cart = await this._cartRepository.findAndPopulateByCustomerId(customerId);
-        if (!cart) await this.createCart(customerId); //todo-remove
 
-        cart = await this._cartRepository.findAndPopulateByCustomerId(customerId); //todo-remove
         if (!cart) throw new NotFoundException({
             code: ErrorCodes.NOT_FOUND,
             message: "Cart not found"
         });
+
+        console.log(cart)
 
         cart.items.forEach(item => {
             item.image = this._uploadUtility.getSignedImageUrl(item.image);
@@ -59,11 +50,18 @@ export class CartService implements ICartService {
         };
     }
 
-    async addItem(customerId: string, providerServiceId: string): Promise<IResponse> {
+    async addItem(customerId: string, providerId: string, providerServiceId: string): Promise<IResponse> {
         const isItemExists = await this._cartRepository.isItemExists(customerId, providerServiceId);
         if (isItemExists) throw new BadRequestException({
             code: ErrorCodes.BAD_REQUEST,
             message: "Item already exists in cart"
+        });
+
+        const isTheSameProviderInCart = await this._cartRepository.isTheSameProviderInCart(customerId, providerId);
+
+        if (!isTheSameProviderInCart) throw new BadRequestException({
+            code: ErrorCodes.BAD_REQUEST,
+            message: ErrorMessage.DIFFERENT_PROVIDER_IN_CART
         });
 
         const updatedCart = await this._cartRepository.addItem(customerId, providerServiceId);

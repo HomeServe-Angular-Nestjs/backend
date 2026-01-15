@@ -21,10 +21,7 @@ export class BookingMapper implements IBookingMapper {
             providerId: doc.providerId.toString(),
             totalAmount: doc.totalAmount,
             slot: this.toSlotEntity(doc.slot),
-            services: (doc.services ?? []).map(service => ({
-                serviceId: service.serviceId.toString(),
-                subserviceIds: service.subserviceIds.map(id => String(id)),
-            })),
+            services: (doc.services ?? []).map(service => service.toString()),
             bookingStatus: doc.bookingStatus,
             paymentStatus: doc.paymentStatus,
             location: doc.location,
@@ -43,7 +40,6 @@ export class BookingMapper implements IBookingMapper {
 
     toSlotEntity(doc: SlotDocument): IBookedSlot {
         return new BookedSlot({
-            ruleId: doc.ruleId.toString(),
             date: doc.date,
             from: doc.from,
             to: doc.to,
@@ -62,22 +58,21 @@ export class BookingMapper implements IBookingMapper {
     }
 
     toDocument(entity: Omit<IBooking, 'id'>): Partial<BookingDocument> {
+        const slotDate = new Date(entity.slot.date);
+        slotDate.setHours(0, 0, 0, 0);
+
         return {
             customerId: new Types.ObjectId(entity.customerId),
             providerId: new Types.ObjectId(entity.providerId),
-            totalAmount: entity.totalAmount,
+            totalAmount: entity.totalAmount * 100,
             expectedArrivalTime: new Date(entity.expectedArrivalTime),
             location: entity.location,
-            services: entity.services.map(service => ({
-                serviceId: new Types.ObjectId(service.serviceId),
-                subserviceIds: service.subserviceIds.map(id => new Types.ObjectId(id)),
-            })),
+            services: entity.services.map(service => new Types.ObjectId(service)),
             slot: {
-                ruleId: new Types.ObjectId(entity.slot.ruleId),
-                date: new Date(entity.slot.date),
+                date: slotDate,
                 from: entity.slot.from,
                 to: entity.slot.to,
-                status: entity.slot.status,
+                status: entity.slot.status
             },
             bookingStatus: entity.bookingStatus,
             transactionHistory: (entity.transactionHistory ?? []).map(tnx => this._transactionMapper.toDocument(tnx) as TransactionDocument),

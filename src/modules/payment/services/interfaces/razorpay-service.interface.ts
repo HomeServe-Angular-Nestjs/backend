@@ -5,5 +5,6 @@ import { BookingOrderData, RazorpayVerifyData, SubscriptionOrderData } from '@mo
 export interface IRazorPaymentService {
     createOrder(userId: string, role: ClientUserType, amount: number, currency?: string): Promise<IRazorpayOrder>;
     handleBookingPayment(userId: string, role: ClientUserType, verifyData: RazorpayVerifyData, orderData: BookingOrderData): Promise<IVerifiedBookingsPayment>;
-    handleSubscriptionPayment(userId: string, role: ClientUserType, verifyData: RazorpayVerifyData, orderData: SubscriptionOrderData): Promise<IVerifiedSubscriptionPayment>
+    handleSubscriptionPayment(userId: string, role: ClientUserType, verifyData: RazorpayVerifyData, orderData: SubscriptionOrderData): Promise<IVerifiedSubscriptionPayment>;
+    releasePaymentLock(userId: string, role: ClientUserType): Promise<void>;
 }

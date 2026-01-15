@@ -49,22 +49,22 @@ export class ProviderBookingsController {
 
     @UseGuards(OngoingPaymentGuard)
     @Post('complete')
-    async completeBooking(@Body() { bookingId }: BookingIdDto): Promise<IResponse<IBookingDetailProvider>> {
-        return await this._providerBookingService.completeBooking(bookingId);
+    async completeBooking(@User() user: IPayload, @Body() { bookingId }: BookingIdDto): Promise<IResponse<IBookingDetailProvider>> {
+        return await this._providerBookingService.completeBooking(user.sub, bookingId);
     }
 
-    @Post('download_invoice')
-    async downloadInvoice(@Body() { bookingId }: BookingIdDto, @User() user: IPayload, @Res() res: Response) {
-        const pdfBuffer = await this._providerBookingService.downloadBookingInvoice(bookingId, user.type);
+    // @Post('download_invoice')
+    // async downloadInvoice(@Body() { bookingId }: BookingIdDto, @User() user: IPayload, @Res() res: Response) {
+    //     const pdfBuffer = await this._providerBookingService.downloadBookingInvoice(bookingId, user.type);
 
-        res.set({
-            'Content-Type': 'application/pdf',
-            'Content-Disposition': 'attachment; filename="booking-invoice.pdf"',
-            'Content-Length': pdfBuffer.length,
-        });
+    //     res.set({
+    //         'Content-Type': 'application/pdf',
+    //         'Content-Disposition': 'attachment; filename="booking-invoice.pdf"',
+    //         'Content-Length': pdfBuffer.length,
+    //     });
 
-        res.send(pdfBuffer);
-    }
+    //     res.send(pdfBuffer);
+    // }//todo-today
 
     @Get('review_data')
     async getReviewData(@User() user: IPayload, @Query() reviewDto: ReviewFilterDto): Promise<IResponse> {

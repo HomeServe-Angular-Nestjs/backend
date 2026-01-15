@@ -434,22 +434,6 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
         return result.length !== 0;
     }
 
-    async updateSlotStatus(ruleId: string, from: string, to: string, dateISO: string, status: SlotStatusEnum): Promise<boolean> {
-        return !!(await this._bookingModel.findOneAndUpdate(
-            {
-                'slot.ruleId': this._toObjectId(ruleId),
-                'slot.from': from,
-                'slot.to': to,
-                'slot.date': new Date(dateISO),
-                'slot.status': status
-            },
-            {
-                $set: { 'slot.status': SlotStatusEnum.PENDING }
-            },
-            { new: true }
-        ));
-    }
-
     async isAlreadyRequestedForCancellation(bookingId: string): Promise<boolean> {
         return await this._bookingModel.exists({
             _id: bookingId,
@@ -504,7 +488,7 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
             bookingStatus,
             cancelStatus,
             cancelledAt: now,
-            'slot.status': SlotStatusEnum.AVAILABLE
+            'slot.status': SlotStatusEnum.RELEASED
         };
 
         if (reason) {
@@ -2325,6 +2309,29 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
             },
         });
         return Boolean(exists);
+    }
+
+    async fetchBookingsByProviderOnSameDate(customerId: string, providerId: string, date: Date | string): Promise<BookingDocument[]> {
+        const formattedDate = new Date(date);
+        formattedDate.setHours(0, 0, 0, 0);
+
+        return this._bookingModel.find({
+            customerId: this._toObjectId(customerId),
+            providerId: this._toObjectId(providerId),
+            'slot.date': formattedDate,
+        });
+    }
+
+    async findAllBookingsByProviderOnSameDate(providerId: string, date: Date | string): Promise<BookingDocument[]> {
+        const formattedDate = new Date(date);
+        formattedDate.setHours(0, 0, 0, 0);
+
+        return this._bookingModel.find({
+            providerId: this._toObjectId(providerId),
+            'slot.date': formattedDate,
+            bookingStatus: { $ne: BookingStatus.CANCELLED },
+            paymentStatus: { $ne: PaymentStatus.FAILED }
+        });
     }
 
 }

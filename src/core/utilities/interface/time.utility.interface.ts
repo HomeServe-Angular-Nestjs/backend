@@ -8,4 +8,5 @@ export interface ITimeUtility {
     isWithinHoursFrom(referenceUTCDate: Date, hours: number): boolean;
     timeToMinutes(time: string): number;
     minutesToTime(minutes: number): string;
+    apply24hTime(baseDate: Date, timeStr: string): Date;
 }

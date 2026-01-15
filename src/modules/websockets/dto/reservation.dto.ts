@@ -11,10 +11,6 @@ export class SendReservationDto {
 
     @IsNotEmpty()
     @IsString()
-    ruleId: string;
-
-    @IsNotEmpty()
-    @IsString()
     date: string;
 
     @IsNotEmpty()
