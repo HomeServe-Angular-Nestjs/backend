@@ -38,7 +38,6 @@ export class SubscriptionController {
 
     @Get('lists')
     async fetchSubscriptionList(@Query() query: SubscriptionFiltersDto): Promise<IResponse<IAdminFilteredSubscriptionListWithPagination>> {
-        console.log(query);
         return await this._subscriptionService.fetchSubscriptionList(query);
     }
 

@@ -37,7 +37,6 @@ export class CartService implements ICartService {
             message: "Cart not found"
         });
 
-        console.log(cart)
 
         cart.items.forEach(item => {
             item.image = this._uploadUtility.getSignedImageUrl(item.image);

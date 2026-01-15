@@ -93,7 +93,6 @@ export class LoginController {
 
       const googleAuthUrl = `${process.env.BACKEND_URL}/api/login/google?state=${type}`;
 
-      console.log(googleAuthUrl)
       return res.status(200).json({
         success: true,
         message: 'Google Authentication Initialized',

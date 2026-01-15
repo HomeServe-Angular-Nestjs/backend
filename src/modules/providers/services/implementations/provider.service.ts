@@ -400,7 +400,6 @@ export class ProviderServices implements IProviderServices {
     );
 
 
-    console.log(searchedProviders)
     const stats = await this._bookingRepository.getAvgRatingAndTotalReviews();
 
     const statsMap = stats.reduce((acc, s) => {

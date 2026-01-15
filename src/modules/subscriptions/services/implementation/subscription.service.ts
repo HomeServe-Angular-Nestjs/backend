@@ -403,8 +403,6 @@ export class SubscriptionService implements ISubscriptionService {
             });
         }
 
-        console.log(subscriptionList);
-
         return {
             success: true,
             message: 'Subscription list fetched successfully.',

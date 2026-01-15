@@ -455,7 +455,6 @@ export class RazorPaymentService implements IRazorPaymentService {
                 verifyData
             )
 
-            console.log(transaction)
 
             if (!transaction) {
                 this.logger.error('Subscription transaction document failed to create.');
