@@ -19,7 +19,6 @@ import { ConfigModule } from '@nestjs/config';
 
 import { SeedsModule } from '../seed/seed.module';
 import { AdminModule } from './modules/users/admin.module';
-import { SlotModule } from '@modules/slots/slots.module';
 import { WalletModule } from '@modules/wallet/wallet.module';
 import { ReportModule } from '@modules/reports/report.module';
 import { AvailabilityModule } from '@modules/availability/availability.module';
@@ -54,7 +53,6 @@ import { CartModule } from '@modules/cart/cart.module';
     WebSocketModule,
     PlanModule,
     SubscriptionModules,
-    SlotModule,
     WalletModule,
     ReportModule,
     AvailabilityModule,

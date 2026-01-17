@@ -1,3 +1,4 @@
+import { SortOrder } from 'mongoose';
 import { ClientSession, Document, FilterQuery, QueryOptions, Types, UpdateQuery } from 'mongoose';
 
 export interface IBaseRepository<TDocument extends Document> {
@@ -8,3 +9,5 @@ export interface IBaseRepository<TDocument extends Document> {
   findOneAndUpdate(query: FilterQuery<TDocument>, update: UpdateQuery<TDocument>, options?: QueryOptions & { session?: ClientSession }): Promise<TDocument | null>;
   deleteOne(query: FilterQuery<TDocument>): Promise<{ deletedCount?: number }>;
 }
+
+export type SortQuery<TDocument> = Partial<Record<keyof TDocument, SortOrder>>;

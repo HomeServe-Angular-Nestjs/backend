@@ -5,9 +5,8 @@ import { IAvailabilityService } from "@modules/availability/services/interface/a
 import { AVAILABILITY_SERVICE_NAME } from "@core/constants/service.constant";
 import { IWeeklyAvailability } from "@core/entities/interfaces/weekly-availability.entity.interface";
 import { IResponse } from "@core/misc/response.util";
-import { CreateDateOverrideDto, UpdateWeeklyAvailabilityDto } from "@modules/availability/dto/availability.dto";
+import { CreateDateOverrideDto, DateDto, UpdateWeeklyAvailabilityDto } from "@modules/availability/dto/availability.dto";
 import { IDateOverride } from "@core/entities/interfaces/date-override.entity.interface";
-import { DateDto } from "@modules/slots/dtos/slot.rule.dto";
 
 @Controller('availability')
 export class AvailabilityController {

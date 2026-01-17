@@ -331,7 +331,7 @@ export class ProviderBookingService implements IProviderBookingService {
     }
 
     private async _getCustomerAndService(booking: IBooking): Promise<{
-        customer: { id: string, name: string, email: string, phone: string, address: string };
+        customer: { id: string, name: string, email: string, phone: string, location: string };
         service: { title: string, price: number, estimatedTime: number }[];
     }> {
         const customerDoc = await this._customerRepository.findById(booking.customerId);
@@ -348,7 +348,7 @@ export class ProviderBookingService implements IProviderBookingService {
                 name: customer.fullname || customer.username,
                 email: customer.email,
                 phone: customer.phone,
-                address: customer.address,
+                location: customer.address,
             },
             service: orderedServices,
         };
@@ -592,10 +592,7 @@ export class ProviderBookingService implements IProviderBookingService {
             cancelStatus: booking.cancelStatus,
             cancelReason: booking.cancellationReason,
             cancelledAt: booking.cancelledAt,
-            customer: {
-                ...customer,
-                location: booking.location.address,
-            },
+            customer,
             orderedServices,
             transaction: transaction ? {
                 id: transaction.id,

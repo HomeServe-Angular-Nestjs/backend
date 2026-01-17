@@ -2,7 +2,7 @@ import { WALLET_LEDGER_MODEL_NAME } from "@core/constants/model.constant";
 import { ICustomerTransactionData, IProviderTransactionData, IProviderTransactionOverview, ITransactionStats, IWalletTransactionFilter } from "@core/entities/interfaces/wallet-ledger.entity.interface";
 import { PaymentDirection, TransactionType } from "@core/enum/transaction.enum";
 import { BaseRepository } from "@core/repositories/base/implementations/base.repository";
-import { SortQuery } from "@core/repositories/implementations/slot-rule.repository";
+import { SortQuery } from "@core/repositories/base/interfaces/base-repo.interface";
 import { IWalletLedgerRepository } from "@core/repositories/interfaces/wallet-ledger.repo.interface";
 import { WalletLedgerDocument } from "@core/schema/wallet-ledger.schema";
 import { Injectable } from "@nestjs/common";
