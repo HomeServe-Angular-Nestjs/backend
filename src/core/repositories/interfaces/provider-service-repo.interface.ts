@@ -10,6 +10,7 @@ export interface IProviderServiceRepository extends IBaseRepository<ProviderServ
     deleteService(serviceId: string): Promise<boolean>;
     count(filter?: any): Promise<number>;
     isServiceExist(serviceId: string): Promise<boolean>;
-    isServiceExistByCategoryId(categoryId: string): Promise<boolean>;
+    isServiceExistByCategoryId(providerId: string, categoryId: string): Promise<boolean>;
     findByIds(ids: string[]): Promise<ProviderServiceDocument[]>;
+    findOneAndPopulateById(serviceId:string): Promise<ProviderServicePopulatedDocument|null>;
 }

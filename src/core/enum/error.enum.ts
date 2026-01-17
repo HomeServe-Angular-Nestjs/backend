@@ -38,6 +38,10 @@ export enum ErrorMessage {
     BOOKING_ALREADY_CANCELLED = 'Booking has already been cancelled.',
     INSUFFICIENT_BALANCE = 'You have insufficient balance in your wallet.',
     BOOKING_ALREADY_COMPLETED = 'Booking has already been completed.',
+    DIFFERENT_PROVIDER_IN_CART = 'This service is from a different provider. To continue, please confirm your current cart or clear it first.',
+    PROVIDER_CONFLICT_IN_CART = 'You can only book on provider\'s services at a time.',
+    SLOT_ALREADY_TAKEN = 'Slot already taken.',
+    EMPTY_CART = 'Your cart is empty.',
 }
 
 export enum ErrorCodes {
@@ -52,6 +56,7 @@ export enum ErrorCodes {
     NOT_FOUND = 'NOT_FOUND',
     NO_ACTIVE_SUBSCRIPTION = 'NO_ACTIVE_SUBSCRIPTION',
     INTERNAL_SERVER_ERROR = 'INTERNAL_SERVER_ERROR',
+    INVALID_AVAILABILITY_TIME = 'INVALID_AVAILABILITY_TIME',
 
     INVALID_CREDENTIALS = 'INVALID_CREDENTIALS',
     RESOURCE_NOT_FOUND = 'RESOURCE_NOT_FOUND',

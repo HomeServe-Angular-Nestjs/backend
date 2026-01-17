@@ -4,5 +4,9 @@ export class UpdateCartItemsDto {
     @IsNotEmpty()
     @IsString()
     providerServiceId: string;
+
+    @IsNotEmpty()
+    @IsString()
+    providerId: string;
 }
 

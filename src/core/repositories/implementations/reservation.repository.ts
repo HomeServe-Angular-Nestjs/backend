@@ -16,20 +16,26 @@ export class ReservationRepository extends BaseRepository<ReservationDocument> i
     }
 
     async isReserved(providerId: string, from: string, to: string, date: string | Date): Promise<boolean> {
+        const formattedDate = new Date(date);
+        formattedDate.setHours(0, 0, 0, 0);
+
         const isExists = await this._reservationModel.findOne({
             providerId: this._toObjectId(providerId),
             from,
             to,
-            date: new Date(date)
+            date: formattedDate
         });
 
         return !!isExists;
     }
 
     async findAllForDate(providerId: string, date: string | Date): Promise<ReservationDocument[]> {
+        const formattedDate = new Date(date);
+        formattedDate.setHours(0, 0, 0, 0);
+
         return await this._reservationModel.find({
             providerId: this._toObjectId(providerId),
-            date: new Date(date)
+            date: formattedDate
         });
     }
 }

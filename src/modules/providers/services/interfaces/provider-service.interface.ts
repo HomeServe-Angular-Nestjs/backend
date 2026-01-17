@@ -18,4 +18,6 @@ export interface IProviderServices {
   getWorkImages(providerId: string): Promise<IResponse<string[]>>;
   uploadWorkImage(providerId: string, userType: UserType, uploadType: UploadsType, file: Express.Multer.File): Promise<IResponse<string>>;
   updatePassword(providerId: string, currentPassword: string, newPassword: string): Promise<IResponse>;
+  fetchAvailableSlotsByProviderId(customerId: string, providerId: string, selectedDate: Date): Promise<IResponse>;
+  updateBufferTime(providerId: string, bufferTime: number): Promise<IResponse<IProvider>>;
 }

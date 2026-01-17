@@ -17,12 +17,6 @@ export class ReservationDocument extends Document {
     to: string;
 
     @Prop({
-        type: Types.ObjectId,
-        required: true,
-    })
-    ruleId: Types.ObjectId;
-
-    @Prop({
         type: Date,
         required: true,
     })
@@ -48,4 +42,15 @@ export class ReservationDocument extends Document {
 }
 
 export const ReservationSchema = SchemaFactory.createForClass(ReservationDocument);
-ReservationSchema.index({ from: 1, to: 1, date: 1, providerId: 1 }); 
+ReservationSchema.index(
+    {
+        'from': 1,
+        'to': 1,
+        'date': 1,
+        'providerId': 1
+    },
+    {
+        unique: true,
+        name: 'uniq_reservation_slot'
+    }
+); 

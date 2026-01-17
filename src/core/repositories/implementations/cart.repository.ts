@@ -92,4 +92,41 @@ export class CartRepository extends BaseRepository<CartDocument> implements ICar
         });
         return !!result;
     }
+
+    async isTheSameProviderInCart(customerId: string, providerId: string): Promise<boolean> {
+
+        const result = await this._cartModel.aggregate([
+            { $match: { customerId: this._toObjectId(customerId) } },
+            {
+                $lookup: {
+                    from: 'providerservices',
+                    localField: 'items',
+                    foreignField: '_id',
+                    as: 'items'
+                }
+            },
+            {
+                $unwind: {
+                    path: '$items',
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+            {
+                $group: {
+                    _id: '$customerId',
+                    providers: { $addToSet: '$items.providerId' }
+                }
+            }
+        ]);
+
+        if (!result.length || result[0].providers.length === 0) {
+            return true;
+        }
+
+        return (
+            result[0].providers.length === 1 &&
+            result[0].providers[0].toString() === providerId
+        );
+    }
+
 }

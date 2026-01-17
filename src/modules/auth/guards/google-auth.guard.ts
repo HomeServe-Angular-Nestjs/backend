@@ -20,7 +20,6 @@ export class GoogleAuthGuard extends AuthGuard('google') {
   }
 
   override handleRequest(err, user, info, context) {
-    // console.log("🔥 GOOGLE HANDLE REQUEST ERROR:", { err, user, info });
     if (err || !user) throw err || new UnauthorizedException('Google login failed');
     return user;
   }

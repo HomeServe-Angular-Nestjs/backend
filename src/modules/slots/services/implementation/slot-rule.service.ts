@@ -137,7 +137,7 @@ export class SlotRuleService implements ISlotRuleService {
         return bookedSlots.some(booked =>
             booked.from === slot.from &&
             booked.to === slot.to &&
-            booked.status !== SlotStatusEnum.AVAILABLE
+            booked.status !== SlotStatusEnum.ON_HOLD
         );
     }
 

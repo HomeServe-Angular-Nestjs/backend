@@ -2,7 +2,7 @@ import { Document, Types } from 'mongoose';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { BookingStatus, CancelStatus, PaymentStatus } from '../enum/bookings.enum';
 import { SlotStatusEnum } from '@core/enum/slot.enum';
-import { CUSTOMER_MODEL_NAME, SERVICE_OFFERED_MODEL_NAME } from '@core/constants/model.constant';
+import { CUSTOMER_MODEL_NAME, PROVIDER_SERVICE_MODEL_NAME, SERVICE_OFFERED_MODEL_NAME } from '@core/constants/model.constant';
 import { CurrencyType, PaymentDirection, PaymentSource, TransactionStatus, TransactionType } from '@core/enum/transaction.enum';
 import { IGatewayDetails, ITxUserDetails } from '@core/entities/interfaces/transaction.entity.interface';
 
@@ -27,13 +27,6 @@ export class ReviewDocument {
 @Schema({ _id: false })
 export class SlotDocument {
     @Prop({
-        type: Types.ObjectId,
-        index: true,
-        required: true
-    })
-    ruleId: Types.ObjectId;
-
-    @Prop({
         type: Date,
         required: true
     })
@@ -53,7 +46,7 @@ export class SlotDocument {
 
     @Prop({
         type: String,
-        default: SlotStatusEnum.AVAILABLE,
+        default: SlotStatusEnum.ON_HOLD,
         enum: Object.values(SlotStatusEnum)
     })
     status: SlotStatusEnum
@@ -203,6 +196,7 @@ export class BookingDocument extends Document {
             address: { type: String },
             coordinates: { type: [Number], index: '2dsphere' },
         },
+        _id: false
     })
     location: {
         address: string;
@@ -216,18 +210,12 @@ export class BookingDocument extends Document {
     slot: SlotDocument;
 
     @Prop({
-        type: [
-            {
-                serviceId: { type: Types.ObjectId, ref: SERVICE_OFFERED_MODEL_NAME },
-                subserviceIds: { type: [Types.ObjectId] },
-            }
-        ],
-        required: true,
+        type: [Types.ObjectId],
+        ref: PROVIDER_SERVICE_MODEL_NAME,
+        minlength: 1,
+        required: true
     })
-    services: {
-        serviceId: Types.ObjectId;
-        subserviceIds: Types.ObjectId[];
-    }[];
+    services: Types.ObjectId[];
 
     @Prop({ type: [TransactionDocument], default: [] })
     transactionHistory: TransactionDocument[];
@@ -249,15 +237,16 @@ export class BookingDocument extends Document {
 }
 
 export const BookingSchema = SchemaFactory.createForClass(BookingDocument);
+
 BookingSchema.index(
     {
-        'slot.ruleId': 1,
+        'providerId': 1,
         'slot.date': 1,
         'slot.from': 1,
         'slot.to': 1
     },
     {
         unique: true,
-        name: 'uniq_rule_date_time'
+        name: 'uniq_booking_slot_date_time'
     }
 );

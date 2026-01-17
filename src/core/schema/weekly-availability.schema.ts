@@ -41,6 +41,12 @@ export class WeeklyAvailabilityDocument extends Document {
         required: true,
     })
     week: IWeeklyAvailability['week'];
+
+    @Prop({ type: Date })
+    createdAt?: Date;
+
+    @Prop({ type: Date })
+    updatedAt?: Date;
 }
 
 export const WeeklyAvailabilitySchema = SchemaFactory.createForClass(WeeklyAvailabilityDocument);

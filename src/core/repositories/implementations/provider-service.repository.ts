@@ -62,8 +62,9 @@ export class ProviderServiceRepository extends BaseRepository<ProviderServiceDoc
         return !!result;
     }
 
-    async isServiceExistByCategoryId(categoryId: string): Promise<boolean> {
+    async isServiceExistByCategoryId(providerId: string, categoryId: string): Promise<boolean> {
         const result = await this._providerServiceModel.exists({
+            providerId: new Types.ObjectId(providerId),
             categoryId: new Types.ObjectId(categoryId),
             isDeleted: false
         });
@@ -84,5 +85,11 @@ export class ProviderServiceRepository extends BaseRepository<ProviderServiceDoc
             _id: { $in: ids.map(id => new Types.ObjectId(id)) },
             isDeleted: false
         }).exec();
+    }
+
+    async findOneAndPopulateById(serviceId: string): Promise<ProviderServicePopulatedDocument | null> {
+        return await this._providerServiceModel.findById(serviceId)
+            .populate('professionId')
+            .populate('categoryId') as unknown as ProviderServicePopulatedDocument | null;
     }
 }

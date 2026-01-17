@@ -10,7 +10,8 @@ import {
     WALLET_LEDGER_MODEL_NAME,
     WALLET_MODEL_NAME,
     PROVIDER_SERVICE_MODEL_NAME,
-    CART_MODEL_NAME
+    CART_MODEL_NAME,
+    RESERVATION_MODEL_NAME
 } from '@core/constants/model.constant';
 import {
     ADMIN_SETTINGS_REPOSITORY_NAME,
@@ -19,7 +20,8 @@ import {
     WALLET_LEDGER_REPOSITORY_NAME,
     WALLET_REPOSITORY_NAME,
     PROVIDER_SERVICE_REPOSITORY_NAME,
-    CART_REPOSITORY_NAME
+    CART_REPOSITORY_NAME,
+    RESERVATION_REPOSITORY_NAME
 } from '@core/constants/repository.constant';
 import { BookingRepository } from '@core/repositories/implementations/bookings.repository';
 import { CustomerRepository } from '@core/repositories/implementations/customer.repository';
@@ -45,8 +47,16 @@ import { WalletLedgerRepository } from '@core/repositories/implementations/walle
 import { ProviderServiceDocument } from '@core/schema/provider-service.schema';
 import { CartDocument } from '@core/schema/cart.schema';
 import { CartRepository } from '@core/repositories/implementations/cart.repository';
+import { ReservationDocument } from '@core/schema/reservation.schema';
+import { ReservationRepository } from '@core/repositories/implementations/reservation.repository';
 
 export const repositoryProviders: Provider[] = [
+    {
+        provide: RESERVATION_REPOSITORY_NAME,
+        useFactory: (reservationModel: Model<ReservationDocument>) =>
+            new ReservationRepository(reservationModel),
+        inject: [getModelToken(RESERVATION_MODEL_NAME)]
+    },
     {
         provide: CART_REPOSITORY_NAME,
         useFactory: (cartModel: Model<CartDocument>) =>

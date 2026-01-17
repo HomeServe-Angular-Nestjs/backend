@@ -11,6 +11,7 @@ import { IReservationService } from "@modules/websockets/services/interface/rese
 import { IUserSocketStoreService } from "@modules/websockets/services/interface/user-socket-store-service.interface";
 import { Inject, InternalServerErrorException, UseFilters } from "@nestjs/common";
 import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer } from "@nestjs/websockets";
+import { fromEventPattern } from "rxjs";
 import { Server, Socket } from "socket.io";
 
 const namespace = 'reservation';
@@ -19,6 +20,7 @@ const CHECK_RESERVATION = 'reservation:check';
 const NEW_RESERVATION = 'reservation:new';
 const INFORM_RESERVATION = 'reservation:inform';
 const IS_RESERVED = 'reservation:reserved';
+const RESERVATION_ERROR = 'reservation:error';
 const JOIN_PROVIDER_ROOM = 'provider_room:join';
 const LEAVE_PROVIDER_ROOM = 'provider_room:leave';
 
@@ -70,9 +72,10 @@ export class ReservationGateway extends BaseSocketGateway {
     @SubscribeMessage(CHECK_RESERVATION)
     async handleNewReservation(@ConnectedSocket() client: Socket, @MessageBody() body: SendReservationDto) {
         await this._customDtoValidatorUtility.validateDto(SendReservationDto, body);
-        // const user = this._getClient(client);
 
-        const isReserved = await this._reservationService.isReserved(body.providerId, body.from, body.to, body.date); if (isReserved) {
+        const isReserved = await this._reservationService.isReserved(body.providerId, body.from, body.to, body.date);
+
+        if (isReserved) {
             client.emit(IS_RESERVED, {
                 from: body.from,
                 to: body.to,
@@ -83,25 +86,38 @@ export class ReservationGateway extends BaseSocketGateway {
 
     @SubscribeMessage(CREATE_RESERVATION)
     async createNewReservation(@ConnectedSocket() client: Socket, @MessageBody() body: SendReservationDto) {
-        await this._customDtoValidatorUtility.validateDto(SendReservationDto, body);
-        const user = this._getClient(client);
+        try {
+            await this._customDtoValidatorUtility.validateDto(SendReservationDto, body);
+            const user = this._getClient(client);
 
-        const newReservation = await this._reservationService.createReservation({
-            from: body.from,
-            to: body.to,
-            date: body.date,
-            ruleId: body.ruleId,
-            providerId: body.providerId,
-            customerId: user.id
-        });
+            const newReservation = await this._reservationService.createReservation({
+                from: body.from,
+                to: body.to,
+                date: body.date,
+                providerId: body.providerId,
+                customerId: user.id
+            });
 
-        if (!newReservation) throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
-        client.emit(NEW_RESERVATION, newReservation);
-        this.server.to(body.providerId).emit(INFORM_RESERVATION, {
-            from: body.from,
-            to: body.to,
-            date: body.date
-        });
+            if (!newReservation) throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+
+            client.emit(NEW_RESERVATION, newReservation);
+            this.server.to(body.providerId).emit(INFORM_RESERVATION, {
+                from: body.from,
+                to: body.to,
+                date: body.date
+            });
+        } catch (error) {
+            this.logger.error(`Failed to create reservation: ${error.message}`);
+            if (error.code === 11000 || error.message?.includes('E11000')) {
+                client.emit(IS_RESERVED, {
+                    from: body.from,
+                    to: body.to,
+                    date: body.date
+                });
+            } else {
+                client.emit(RESERVATION_ERROR, { message: ErrorMessage.INTERNAL_SERVER_ERROR });
+            }
+        }
     }
 
     @SubscribeMessage(JOIN_PROVIDER_ROOM)

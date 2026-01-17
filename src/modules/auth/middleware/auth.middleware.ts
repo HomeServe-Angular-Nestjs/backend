@@ -27,6 +27,8 @@ export class AuthMiddleware implements NestMiddleware {
             req.originalUrl.split('/').includes(route)
         );
         this.logger.debug(req.body);
+        this.logger.debug(req.query);
+        this.logger.debug(req.params);
         if (isAuthRoute) {
             return next();
         }

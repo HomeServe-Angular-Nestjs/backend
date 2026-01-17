@@ -18,13 +18,10 @@ export class Booking extends BaseEntity implements IBooking {
         coordinates: [number, number];
     };
     slot: IBookedSlot;
-    services: {
-        serviceId: string;
-        subserviceIds: string[];
-    }[];
+    services: string[];
     paymentStatus: PaymentStatus;
     cancelStatus: CancelStatus | null;
-   transactionHistory: ITransaction[];
+    transactionHistory: ITransaction[];
     review: IReview | null;
     respondedAt: Date | null;
 

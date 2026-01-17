@@ -16,10 +16,7 @@ export interface IBookingResponse {
         email: string;
         phone: string;
     };
-    services: {
-        id: string;
-        name: string;
-    }[];
+    services: string[];
     expectedArrivalTime: Date | string;
     bookingStatus: BookingStatus;
     paymentStatus: PaymentStatus;
@@ -77,7 +74,6 @@ export interface IResponseProviderBookingLists {
 }
 
 export interface IBookedSlot {
-    ruleId: string;
     date: Date;
     from: string;
     to: string;
@@ -107,15 +103,33 @@ export interface IBooking extends IEntity {
         coordinates: [number, number];
     };
     slot: IBookedSlot;
-    services: {
-        serviceId: string;
-        subserviceIds: string[];
-    }[];
+    services: string[];
     transactionHistory: ITransaction[];
     paymentStatus: PaymentStatus;
     review: IReview | null;
     respondedAt: Date | null;
 }
+
+// export interface IBooking extends IEntity {
+//     customerId: string;
+//     totalAmount: number;
+//     expectedArrivalTime: Date;
+//     actualArrivalTime: Date | null;
+//     bookingStatus: BookingStatus;
+//     cancellationReason: string | null;
+//     cancelStatus: CancelStatus | null;
+//     cancelledAt: Date | null;
+//     location: {
+//         address: string;
+//         coordinates: [number, number];
+//     };
+//     slot: IBookedSlot;
+//     services: string[];
+//     transactionHistory: ITransaction[];
+//     paymentStatus: PaymentStatus;
+//     review: IReview | null;
+//     respondedAt: Date | null;
+// }
 
 export interface IBookingOverviewChanges {
     totalBookingsChange: number;
@@ -154,8 +168,8 @@ export interface IBookingDetailsBase {
 
 export interface IBookedService {
     title: string;
-    price: string;
-    estimatedTime: string;
+    price: number;
+    estimatedTime: number;
 }
 
 export interface IBookingDetailCustomer extends IBookingDetailsBase {
@@ -163,6 +177,7 @@ export interface IBookingDetailCustomer extends IBookingDetailsBase {
         name: string;
         email: string;
         phone: string;
+        location: string;
     };
 }
 

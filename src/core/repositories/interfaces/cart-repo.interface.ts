@@ -8,4 +8,5 @@ export interface ICartRepository extends IBaseRepository<CartDocument> {
     removeItem(customerId: string, providerServiceId: string): Promise<boolean>;
     isExists(customerId: string): Promise<boolean>;
     isItemExists(customerId: string, providerServiceId: string): Promise<boolean>;
+    isTheSameProviderInCart(customerId: string, providerId: string): Promise<boolean>;
 }

@@ -37,7 +37,7 @@ export class ProviderServiceService implements IProviderServiceService {
             message: 'Image is required'
         });
 
-        const isServiceExist = await this._providerServiceRepository.isServiceExistByCategoryId(createServiceDto.categoryId);
+        const isServiceExist = await this._providerServiceRepository.isServiceExistByCategoryId(providerId, createServiceDto.categoryId);
         if (isServiceExist) throw new BadRequestException({
             code: ErrorCodes.BAD_REQUEST,
             message: ErrorMessage.SERVICE_ALREADY_EXISTS

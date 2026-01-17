@@ -1,3 +1,4 @@
+import { AvailabilityEnum } from '@core/enum/slot.enum';
 import { SlotType } from '../../../modules/bookings/dtos/booking.dto';
 import { IBaseUserEntity } from '../base/interfaces/base-user.entity.interface';
 import { IAdmin } from './admin.entity.interface';
@@ -84,10 +85,10 @@ export interface ISearchedProviders {
 
 export interface IFilterFetchProviders {
   search?: string;
-  status: FilterStatusType;
-  isCertified: boolean;
+  status?: FilterStatusType;
   lng?: number;
   lat?: number;
+  availability?: AvailabilityEnum | 'all';
 }
 
 export interface IVerificationStatusMetrics {

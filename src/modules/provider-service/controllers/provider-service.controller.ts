@@ -51,7 +51,7 @@ export class ProviderServiceController {
         return await this._service.findAllByProviderId(user.sub);
     }
 
-    @Get('provider/:providerId')
+    @Get('/:providerId')
     async getProviderServices(@Param('providerId', new isValidIdPipe()) providerId: string): Promise<IResponse<IProviderServiceUI[]>> {
         return await this._service.findAllByProviderId(providerId);
     }

@@ -3,7 +3,7 @@ import { FilterQuery } from 'mongoose';
 import { IReportDownloadUserData, IReportProviderData, IStats } from '@core/entities/interfaces/admin.entity.interface';
 import { IBaseRepository } from '@core/repositories/base/interfaces/base-repo.interface';
 import { ProviderDocument } from '@core/schema/provider.schema';
-import { Availability, IFilterFetchProviders } from '@core/entities/interfaces/user.entity.interface';
+import { Availability, IFilterFetchProviders, IProvider } from '@core/entities/interfaces/user.entity.interface';
 
 export interface IProviderRepository extends IBaseRepository<ProviderDocument> {
   findByGoogleId(id: string): Promise<ProviderDocument | null>;
@@ -22,4 +22,6 @@ export interface IProviderRepository extends IBaseRepository<ProviderDocument> {
   updateSubscriptionId(providerId: string, subscriptionId: string): Promise<boolean>;
   updatePasswordById(providerId: string, password: string): Promise<boolean>;
   getWorkingHours(providerId: string): Promise<Availability | null>;
+  updateBufferTime(providerId: string, bufferTime: number): Promise<ProviderDocument | null>;
+  getBufferTime(providerId: string): Promise<number>;
 }

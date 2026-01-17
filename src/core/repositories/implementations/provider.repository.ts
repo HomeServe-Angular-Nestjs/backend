@@ -18,7 +18,6 @@ export class ProviderRepository extends BaseRepository<ProviderDocument> impleme
     super(_providerModel);
   }
 
-
   async findByGoogleId(googleId: string): Promise<ProviderDocument | null> {
     return await this._providerModel.findOne({ googleId });
   }
@@ -60,7 +59,7 @@ export class ProviderRepository extends BaseRepository<ProviderDocument> impleme
     const limit = options.limit || 10;
     const skip = (options.page - 1) * limit;
 
-    const query: any = {
+    const query: FilterQuery<ProviderDocument> = {
       isDeleted: false,
       isActive: true,
     };
@@ -72,10 +71,6 @@ export class ProviderRepository extends BaseRepository<ProviderDocument> impleme
         { email: { $regex: filter.search, $options: 'i' } },
         { phone: { $regex: filter.search, $options: 'i' } },
       ];
-    }
-
-    if (filter.isCertified) {
-      query.isCertified = filter.isCertified;
     }
 
     if (filter.status && filter.status !== 'all') {
@@ -277,4 +272,18 @@ export class ProviderRepository extends BaseRepository<ProviderDocument> impleme
     return provider?.availability ?? null;
   }
 
+  async updateBufferTime(providerId: string, bufferTime: number): Promise<ProviderDocument | null> {
+    return await this._providerModel.findOneAndUpdate(
+      { _id: providerId },
+      { $set: { bufferTime } },
+      { new: true }
+    );
+  }
+
+  async getBufferTime(providerId: string): Promise<number> {
+    const provider = await this._providerModel.findById(providerId)
+      .select('bufferTime')
+      .lean();
+    return provider?.bufferTime ?? 0;
+  }
 }

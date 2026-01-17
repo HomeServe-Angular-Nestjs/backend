@@ -1,10 +1,9 @@
-import { IBookingDetailCustomer, IBookingResponse, IBookingWithPagination } from '@core/entities/interfaces/booking.entity.interface';
-import { AddReviewDto, BookingDto, IPriceBreakupDto, SelectedServiceDto, UpdateBookingDto, UpdateBookingPaymentStatusDto } from '@modules/bookings/dtos/booking.dto';
+import { IBooking, IBookingDetailCustomer, IBookingResponse, IBookingWithPagination } from '@core/entities/interfaces/booking.entity.interface';
+import { AddReviewDto, IPriceBreakupDto, SaveBookingDto, UpdateBookingDto, UpdateBookingPaymentStatusDto } from '@modules/bookings/dtos/booking.dto';
 import { IResponse } from '@core/misc/response.util';
 
 export interface IBookingService {
-    preparePriceBreakup(serviceDto: SelectedServiceDto[]): Promise<IPriceBreakupDto>;
-    createBooking(customerId: string, bookingData: BookingDto): Promise<IResponse>;
+    createBooking(customerId: string, bookingData: SaveBookingDto): Promise<IResponse<IBooking>>;
     fetchBookings(customerId: string, page: number): Promise<IBookingWithPagination>;
     fetchBookingDetails(bookingId: string): Promise<IBookingDetailCustomer>;
     markBookingCancelledByCustomer(customerId: string, bookingId: string, reason: string): Promise<IResponse<IBookingResponse>>;

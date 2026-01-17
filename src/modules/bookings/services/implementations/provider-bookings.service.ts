@@ -279,25 +279,28 @@ export class ProviderBookingService implements IProviderBookingService {
                     }
                 }
             }
-
-
         }
     }
 
-    private async _getBookedServices(services: { serviceId: string; subserviceIds: string[]; }[]): Promise<IBookedService[]> {
+    private async _getBookedServices(servicesIds: string[]): Promise<IBookedService[]> {
         return (
             await Promise.all(
-                services.map(async (s) => {
-                    const providerServices = await this._providerServiceRepository.findByIds(s.subserviceIds);
+                servicesIds.map(async (s) => {
+                    const service = await this._providerServiceRepository.findOneAndPopulateById(s);
 
-                    return providerServices.map(ps => ({
-                        title: ps.description,
-                        price: ps.price.toString(),
-                        estimatedTime: ps.estimatedTimeInMinutes.toString() + ' mins'
-                    }));
+                    if (!service) throw new InternalServerErrorException({
+                        code: ErrorCodes.INTERNAL_SERVER_ERROR,
+                        message: ErrorMessage.INTERNAL_SERVER_ERROR
+                    });
+
+                    return {
+                        title: service.description,
+                        price: service.price,
+                        estimatedTime: service.estimatedTimeInMinutes
+                    };
                 })
             )
-        ).flat();
+        );
     }
 
     private _computeRefund(totalPaid: number, adminSettings: IAdminSettings): { refundAmount: number; customerFine: number; providerFine: number } {
@@ -328,8 +331,8 @@ export class ProviderBookingService implements IProviderBookingService {
     }
 
     private async _getCustomerAndService(booking: IBooking): Promise<{
-        customer: { id: string, name: string, email: string, phone: string };
-        service: { title: string, price: string, estimatedTime: string }[];
+        customer: { id: string, name: string, email: string, phone: string, address: string };
+        service: { title: string, price: number, estimatedTime: number }[];
     }> {
         const customerDoc = await this._customerRepository.findById(booking.customerId);
         if (!customerDoc) {
@@ -345,6 +348,7 @@ export class ProviderBookingService implements IProviderBookingService {
                 name: customer.fullname || customer.username,
                 email: customer.email,
                 phone: customer.phone,
+                address: customer.address,
             },
             service: orderedServices,
         };
@@ -397,12 +401,13 @@ export class ProviderBookingService implements IProviderBookingService {
 
                 const services = await Promise.all(
                     booking.services.flatMap(async (s) => {
-                        const providerServices = await this._providerServiceRepository.findByIds(s.subserviceIds);
-                        return providerServices.map(ps => ({
-                            id: ps.id,
-                            title: ps.description,
-                            image: ps.image
-                        }));
+                        // const providerServices = await this._providerServiceRepository.findByIds(s.subserviceIds);//todo-today
+                        return [];
+                        //  providerServices.map(ps => ({
+                        //     id: ps.id,
+                        //     title: ps.description,
+                        //     image: ps.image
+                        // }));
                     })
                 ).then(results => results.flat());
 
@@ -434,8 +439,8 @@ export class ProviderBookingService implements IProviderBookingService {
                 return (
                     booking.bookingId.toLowerCase().includes(search) ||
                     booking.customer.name.toLowerCase().includes(search) ||
-                    booking.customer.email.toLowerCase().includes(search) ||
-                    booking.services.some((s) => s.title.toLowerCase().includes(search))
+                    booking.customer.email.toLowerCase().includes(search)
+                    // booking.services.some((s) => s.title.toLowerCase().includes(search))//todo-today
                 );
             });
         }
@@ -691,7 +696,7 @@ export class ProviderBookingService implements IProviderBookingService {
         const updatedBooking = this._bookingMapper.toEntity(updatedBookingDoc);
         transaction = this._getBookingPaymentTransactionDetail(updatedBooking.transactionHistory);
 
-        const orderedServices = await this._getBookedServices(updatedBooking.services);
+        // const orderedServices = await this._getBookedServices(updatedBooking.services);//todo-today
 
         const bookingData: IBookingDetailProvider = {
             bookingId: updatedBookingDoc.id,
@@ -710,7 +715,7 @@ export class ProviderBookingService implements IProviderBookingService {
                 phone: customer.phone,
                 location: updatedBookingDoc.location.address,
             },
-            orderedServices,
+            orderedServices: [], //todo-today
             transaction: {
                 id: transaction.id,
                 paymentDate: transaction.createdAt as Date,
@@ -725,104 +730,104 @@ export class ProviderBookingService implements IProviderBookingService {
         }
     }
 
-    async downloadBookingInvoice(bookingId: string, userType: UserType): Promise<Buffer> {
-        const bookingDoc = await this._bookingRepository.findById(bookingId);
-        if (!bookingDoc) throw new NotFoundException({
-            code: ErrorCodes.NOT_FOUND,
-            message: `Booking ${ErrorMessage.DOCUMENT_NOT_FOUND}`
-        });
+    // async downloadBookingInvoice(bookingId: string, userType: UserType): Promise<Buffer> {//todo-today
+    //     const bookingDoc = await this._bookingRepository.findById(bookingId);
+    //     if (!bookingDoc) throw new NotFoundException({
+    //         code: ErrorCodes.NOT_FOUND,
+    //         message: `Booking ${ErrorMessage.DOCUMENT_NOT_FOUND}`
+    //     });
 
-        const booking = this._bookingMapper.toEntity(bookingDoc);
+    //     const booking = this._bookingMapper.toEntity(bookingDoc);
 
-        if (booking.bookingStatus !== BookingStatus.COMPLETED) {
-            throw new BadRequestException({
-                code: ErrorCodes.BAD_REQUEST,
-                message: 'Booking is not completed.'
-            });
-        }
+    //     if (booking.bookingStatus !== BookingStatus.COMPLETED) {
+    //         throw new BadRequestException({
+    //             code: ErrorCodes.BAD_REQUEST,
+    //             message: 'Booking is not completed.'
+    //         });
+    //     }
 
-        const services = await this._getBookedServices(booking.services);
+    //     const services = await this._getBookedServices(booking.services);
 
-        let user: IProvider | ICustomer;
-        if (userType === 'customer') {
-            const customerDoc = await this._customerRepository.findById(booking.customerId);
-            if (!customerDoc) throw new NotFoundException({
-                code: ErrorCodes.NOT_FOUND,
-                message: `Customer ${ErrorMessage.DOCUMENT_NOT_FOUND}`
-            });
-            user = this._customerMapper.toEntity(customerDoc);
-        } else {
-            const providerDoc = await this._providerRepository.findById(booking.providerId);
-            if (!providerDoc) throw new NotFoundException({
-                code: ErrorCodes.NOT_FOUND,
-                message: `Provider ${ErrorMessage.DOCUMENT_NOT_FOUND}`
-            });
-            user = this._providerMapper.toEntity(providerDoc);
-        }
+    //     let user: IProvider | ICustomer;
+    //     if (userType === 'customer') {
+    //         const customerDoc = await this._customerRepository.findById(booking.customerId);
+    //         if (!customerDoc) throw new NotFoundException({
+    //             code: ErrorCodes.NOT_FOUND,
+    //             message: `Customer ${ErrorMessage.DOCUMENT_NOT_FOUND}`
+    //         });
+    //         user = this._customerMapper.toEntity(customerDoc);
+    //     } else {
+    //         const providerDoc = await this._providerRepository.findById(booking.providerId);
+    //         if (!providerDoc) throw new NotFoundException({
+    //             code: ErrorCodes.NOT_FOUND,
+    //             message: `Provider ${ErrorMessage.DOCUMENT_NOT_FOUND}`
+    //         });
+    //         user = this._providerMapper.toEntity(providerDoc);
+    //     }
 
-        const paymentTransactions = (booking.transactionHistory ?? [])
-            .filter(t =>
-                t.transactionType === TransactionType.BOOKING_PAYMENT &&
-                t.status === TransactionStatus.SUCCESS,
-            )
-            .sort((a, b) => (a.createdAt as any) - (b.createdAt as any));
+    //     const paymentTransactions = (booking.transactionHistory ?? [])
+    //         .filter(t =>
+    //             t.transactionType === TransactionType.BOOKING_PAYMENT &&
+    //             t.status === TransactionStatus.SUCCESS,
+    //         )
+    //         .sort((a, b) => (a.createdAt as any) - (b.createdAt as any));
 
-        const transaction = paymentTransactions.at(-1);
+    //     const transaction = paymentTransactions.at(-1);
 
-        const settings = await this._adminSettings.getSettings();
-        const providerAmountWithCommission = transaction?.metadata?.breakup?.providerAmount as number;
-        const providerAmount = Math.floor(providerAmountWithCommission / (1 + (settings.providerCommission) / 100));
-        const commission = providerAmountWithCommission - providerAmount;
+    //     const settings = await this._adminSettings.getSettings();
+    //     const providerAmountWithCommission = transaction?.metadata?.breakup?.providerAmount as number;
+    //     const providerAmount = Math.floor(providerAmountWithCommission / (1 + (settings.providerCommission) / 100));
+    //     const commission = providerAmountWithCommission - providerAmount;
 
-        const invoiceData: IBookingInvoice = {
-            invoiceId: booking.id,
-            transactionId: booking.transactionHistory
-                .find(t => t.transactionType === TransactionType.BOOKING_PAYMENT && t.status === TransactionStatus.SUCCESS)?.id ?? null,
-            paymentStatus: booking.paymentStatus,
-            paymentSource: transaction ? transaction.source : null,
-            transactionType: transaction ? transaction.transactionType : null,
-            currency: transaction ? transaction.currency : null,
-            userType: 'provider',
-            services,
+    //     const invoiceData: IBookingInvoice = {
+    //         invoiceId: booking.id,
+    //         transactionId: booking.transactionHistory
+    //             .find(t => t.transactionType === TransactionType.BOOKING_PAYMENT && t.status === TransactionStatus.SUCCESS)?.id ?? null,
+    //         paymentStatus: booking.paymentStatus,
+    //         paymentSource: transaction ? transaction.source : null,
+    //         transactionType: transaction ? transaction.transactionType : null,
+    //         currency: transaction ? transaction.currency : null,
+    //         userType: 'provider',
+    //         services,
 
-            user: {
-                name: user.username,
-                email: user.email,
-                contact: user?.phone,
-            },
+    //         user: {
+    //             name: user.username,
+    //             email: user.email,
+    //             contact: user?.phone,
+    //         },
 
-            bookingDetails: {
-                status: booking.bookingStatus,
-                expectedArrivalTime: booking.expectedArrivalTime.toISOString(),
-                actualArrivalTime: booking.actualArrivalTime?.toISOString() ?? null,
-                slot: {
-                    from: booking.slot.from,
-                    to: booking.slot.to,
-                },
-            },
+    //         bookingDetails: {
+    //             status: booking.bookingStatus,
+    //             expectedArrivalTime: booking.expectedArrivalTime.toISOString(),
+    //             actualArrivalTime: booking.actualArrivalTime?.toISOString() ?? null,
+    //             slot: {
+    //                 from: booking.slot.from,
+    //                 to: booking.slot.to,
+    //             },
+    //         },
 
-            location: {
-                address: user.address,
-                coordinates: user?.location?.coordinates as [number, number]
-            },
+    //         location: {
+    //             address: user.address,
+    //             coordinates: user?.location?.coordinates as [number, number]
+    //         },
 
-            paymentBreakup: {
-                gst: transaction ? transaction.metadata?.breakup?.gst as number : 0,
-                total: booking.totalAmount,
-                providerAmount,
-                commission
-            },
+    //         paymentBreakup: {
+    //             gst: transaction ? transaction.metadata?.breakup?.gst as number : 0,
+    //             total: booking.totalAmount,
+    //             providerAmount,
+    //             commission
+    //         },
 
-            paymentDetails: transaction && transaction.gateWayDetails ? {
-                orderId: transaction.gateWayDetails.orderId,
-                paymentId: transaction.gateWayDetails.paymentId,
-                receipt: transaction.gateWayDetails.receipt ?? '',
-                signature: transaction.gateWayDetails.signature
-            } : null
-        };
+    //         paymentDetails: transaction && transaction.gateWayDetails ? {
+    //             orderId: transaction.gateWayDetails.orderId,
+    //             paymentId: transaction.gateWayDetails.paymentId,
+    //             receipt: transaction.gateWayDetails.receipt ?? '',
+    //             signature: transaction.gateWayDetails.signature
+    //         } : null
+    //     };
 
-        return this._pdfService.generateBookingInvoice(invoiceData);
-    }
+    //     return this._pdfService.generateBookingInvoice(invoiceData);
+    // }
 
     async getReviewData(providerId: string, filter: ReviewFilterDto): Promise<IResponse<IReviewWithPagination>> {
         const limit = 10;
@@ -913,20 +918,27 @@ export class ProviderBookingService implements IProviderBookingService {
         }
     }
 
-    async completeBooking(bookingId: string): Promise<IResponse<IBookingDetailProvider>> {
-        const key = this._paymentLockingUtility.generatePaymentKey(bookingId, 'provider');
+    async completeBooking(providerId: string, bookingId: string): Promise<IResponse<IBookingDetailProvider>> {
+        const key = this._paymentLockingUtility.generatePaymentKey(providerId, 'provider');
         try {
             const isLocked = await this._paymentLockingUtility.acquireLock(key);
             if (!isLocked) throw new BadRequestException({
-                code: ErrorCodes.INTERNAL_SERVER_ERROR,
-                message: 'Failed to lock the payment.'
+                code: ErrorCodes.PAYMENT_IN_PROGRESS,
+                message: 'A similar operation is already in progress.'
             });
 
             const bookingDoc = await this._bookingRepository.findById(bookingId);
             if (!bookingDoc) throw new BadRequestException({
-                code: ErrorCodes.INTERNAL_SERVER_ERROR,
+                code: ErrorCodes.BAD_REQUEST,
                 message: 'Booking not found.'
             });
+
+            if (bookingDoc.providerId.toString() !== providerId) {
+                throw new BadRequestException({
+                    code: ErrorCodes.BAD_REQUEST,
+                    message: 'You are not authorized to complete this booking.'
+                });
+            }
 
             const booking = this._bookingMapper.toEntity(bookingDoc);
 

@@ -38,24 +38,6 @@ export class SelectedServiceType {
     selectedIds: string[];
 }
 
-class SlotDataType {
-    @IsString()
-    @IsNotEmpty()
-    ruleId: string;
-
-    @IsNotEmpty()
-    @IsString()
-    date: string;
-
-    @IsNotEmpty()
-    @IsString()
-    to: string;
-
-    @IsNotEmpty()
-    @IsString()
-    from: string;
-}
-
 export class SelectedServiceDto {
     @IsNotEmpty()
     @IsString()
@@ -78,39 +60,23 @@ export class IPriceBreakupDto {
     total: number;
 }
 
-export class BookingDto {
+export class SaveBookingDto {
     @IsNotEmpty()
     @IsString()
     providerId: string;
 
-    @IsNotEmpty({ message: 'Phone number is required' })
-    @Matches(/^[0-9]{10}$/, { message: 'Phone number must be 10 digits' })
+    @IsNotEmpty()
     @IsString()
-    phoneNumber: string;
+    date: string;
 
     @IsNotEmpty()
-    @IsNumber()
-    total: number;
-
-    @ValidateNested()
-    @Type(() => SlotDataType)
-    slotData: SlotDataType;
+    @IsString()
+    to: string;
 
     @IsNotEmpty()
-    @ValidateNested()
-    @Type(() => AddressType)
-    location: AddressType;
-
-    @IsArray()
-    @ValidateNested({ each: true })
-    @Type(() => SelectedServiceType)
-    serviceIds: SelectedServiceType[];
-
-    // @IsOptional()
-    // @Transform(({ value }) => typeof value === 'string' ? value : null)
-    // transactionId: string | null;
+    @IsString()
+    from: string;
 }
-
 
 export class BookingPaginationFilterDto {
     @IsOptional()

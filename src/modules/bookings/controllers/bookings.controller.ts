@@ -1,13 +1,11 @@
-import { Request } from 'express';
-import { BadRequestException, Body, Controller, Get, Inject, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { CUSTOMER_SERVICE_NAME } from '../../../core/constants/service.constant';
 import { IBookingDetailCustomer, IBookingResponse, IBookingWithPagination } from '../../../core/entities/interfaces/booking.entity.interface';
-import { ErrorMessage } from '../../../core/enum/error.enum';
 import { ICustomLogger } from '../../../core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '../../../core/logger/interface/logger-factory.interface';
 import { IPayload } from '../../../core/misc/payload.interface';
 import { IResponse } from '../../../core/misc/response.util';
-import { AddReviewDto, BookingDto, BookingIdDto, BookingPaginationFilterDto, CancelBookingDto, SelectedServiceDto, UpdateBookingDto, UpdateBookingPaymentStatusDto } from '../dtos/booking.dto';
+import { AddReviewDto, BookingIdDto, BookingPaginationFilterDto, CancelBookingDto, SaveBookingDto, UpdateBookingDto, UpdateBookingPaymentStatusDto } from '../dtos/booking.dto';
 import { IBookingService } from '../services/interfaces/booking-service.interface';
 import { User } from '@core/decorators/extract-user.decorator';
 import { OngoingPaymentGuard } from '@core/guards/ongoing-payment.guard';
@@ -26,14 +24,14 @@ export class BookingsController {
         this.logger = this.loggerFactory.createLogger(BookingsController.name);
     }
 
-    @Post('price_breakup')
-    async calcPriceBreakup(@Body() selectedServiceDto: SelectedServiceDto[]) {
-        if (!selectedServiceDto || selectedServiceDto.length === 0) {
-            throw new BadRequestException(ErrorMessage.MISSING_FIELDS);
-        }
+    // @Post('price_breakup')
+    // async calcPriceBreakup(@Body() selectedServiceDto: SelectedServiceDto[]) {
+    //     if (!selectedServiceDto || selectedServiceDto.length === 0) {
+    //         throw new BadRequestException(ErrorMessage.MISSING_FIELDS);
+    //     }
 
-        return await this._bookingService.preparePriceBreakup(selectedServiceDto);
-    }
+    //     return await this._bookingService.preparePriceBreakup(selectedServiceDto);
+    // }
 
     @Get('price_breakup')
     async fetchPriceBreakup(@User() user: IPayload) {
@@ -42,11 +40,7 @@ export class BookingsController {
 
     @UseGuards(OngoingPaymentGuard)
     @Post('confirm')
-    async handleBooking(@User() user: IPayload, @Body() bookingDto: BookingDto) {
-        if (!Array.isArray(bookingDto.serviceIds) || bookingDto.serviceIds.some(s => !s.id || !Array.isArray(s.selectedIds))) {
-            throw new BadRequestException('Invalid serviceIds format');
-        }
-
+    async handleBooking(@User() user: IPayload, @Body() bookingDto: SaveBookingDto) {
         return this._bookingService.createBooking(user.sub, bookingDto);
     }
 
