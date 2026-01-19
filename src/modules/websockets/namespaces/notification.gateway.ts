@@ -12,6 +12,7 @@ import { IAuthSocketService } from "@modules/websockets/services/interface/auth-
 import { IUserSocketStoreService } from "@modules/websockets/services/interface/user-socket-store-service.interface";
 import { NotificationType } from "@core/enum/notification.enum";
 import { INotificationService } from "@modules/websockets/services/interface/notification-service.interface";
+import { INotification } from "@core/entities/interfaces/notification.entity.interface";
 import { ErrorCodes } from "@core/enum/error.enum";
 
 const namespace = 'notification';
@@ -79,11 +80,8 @@ export class NotificationGateway extends BaseSocketGateway {
                     title: body.title,
                     message: body.message,
                 });
-            }
-
-            const senderSockets = await this._userSocketService.getSockets(user.id, namespace);
-            for (const socketId of senderSockets) {
-                this.server.to(socketId).emit(NEW_NOTIFICATION, notification);
+            } else {
+                await this.sendNotification(user.id, notification);
             }
         }
     }
@@ -127,5 +125,12 @@ export class NotificationGateway extends BaseSocketGateway {
             this.server.to(socketId).emit(MARK_AS_READ, removedNotification.id);
         }
 
+    }
+
+    public async sendNotification(userId: string, notification: INotification) {
+        const senderSockets = await this._userSocketService.getSockets(userId, namespace);
+        for (const socketId of senderSockets) {
+            this.server.to(socketId).emit(NEW_NOTIFICATION, notification);
+        }
     }
 }

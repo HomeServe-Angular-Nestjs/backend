@@ -1,7 +1,6 @@
-import { ADMIN_SETTINGS_REPOSITORY_NAME, BOOKING_REPOSITORY_NAME } from '@core/constants/repository.constant';
-import { PAYMENT_LOCKING_UTILITY_NAME, PRICING_UTILITY_NAME, SLOT_UTILITY_NAME, TIME_UTILITY_NAME, UPLOAD_UTILITY_NAME } from '@core/constants/utility.constant';
+import { ADMIN_SETTINGS_REPOSITORY_NAME } from '@core/constants/repository.constant';
+import { PAYMENT_LOCKING_UTILITY_NAME, PRICING_UTILITY_NAME, TIME_UTILITY_NAME, UPLOAD_UTILITY_NAME } from '@core/constants/utility.constant';
 import { IAdminSettingsRepository } from '@core/repositories/interfaces/admin-settings-repo.interface';
-import { IBookingRepository } from '@core/repositories/interfaces/bookings-repo.interface';
 import { PaymentLockingUtility } from '@core/utilities/implementations/payment-locking.utility';
 import { PricingUtility } from '@core/utilities/implementations/pricing.utility';
 import { TimeUtility } from '@core/utilities/implementations/time.utility';

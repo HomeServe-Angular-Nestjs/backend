@@ -32,6 +32,9 @@ import { v4 as uuid } from 'uuid';
 import { IWalletMapper } from '@core/dto-mapper/interface/wallet.mapper.interface';
 import { IBookingRepository } from '@core/repositories/interfaces/bookings-repo.interface';
 import { PaymentStatus } from '@core/enum/bookings.enum';
+import { NOTIFICATION_SERVICE_NAME } from '@core/constants/service.constant';
+import { INotificationService } from '@modules/websockets/services/interface/notification-service.interface';
+import { NotificationTemplateId, NotificationType } from '@core/enum/notification.enum';
 
 @Injectable()
 export class RazorPaymentService implements IRazorPaymentService {
@@ -72,6 +75,8 @@ export class RazorPaymentService implements IRazorPaymentService {
         private readonly _walletMapper: IWalletMapper,
         @Inject(BOOKING_REPOSITORY_NAME)
         private readonly _bookingRepository: IBookingRepository,
+        @Inject(NOTIFICATION_SERVICE_NAME)
+        private readonly _notificationService: INotificationService,
     ) {
         this.logger = this._loggerFactory.createLogger(RazorPaymentService.name);
     }
@@ -363,6 +368,30 @@ export class RazorPaymentService implements IRazorPaymentService {
         );
     }
 
+    private async _sendNotification(
+        userId: string,
+        templateId: NotificationTemplateId,
+        type: NotificationType,
+        title: string,
+        message: string,
+        entityId?: string,
+        metadata?: any
+    ) {
+        try {
+            await this._notificationService.createNotification(userId, {
+                templateId,
+                type,
+                title,
+                message,
+                entityId,
+                metadata
+            });
+        } catch (error) {
+            this.logger.error('Failed to send notification', error);
+            throw new Error('Failed to send notification');
+        }
+    }
+
     async createOrder(userId: string, role: UserType, amount: number, currency: string = 'INR'): Promise<IRazorpayOrder> {
         return await this._paymentService.createOrder(amount, currency);
     }
@@ -418,6 +447,30 @@ export class RazorPaymentService implements IRazorPaymentService {
             if (!updatePaymentStatus) {
                 this.logger.error('Failed to update payment status for booking payment.');
                 throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+            }
+
+            // Notify Customer
+            await this._sendNotification(
+                userId,
+                NotificationTemplateId.PAYMENT_SUCCESS,
+                NotificationType.EVENT,
+                'Payment Success',
+                `Your payment for booking #${orderData.bookingId.slice(-6)} has been verified.`,
+                verifyData.razorpay_payment_id,
+                { bookingId: orderData.bookingId, role }
+            );
+
+            const booking = await this._bookingRepository.findById(orderData.bookingId);
+            if (booking) {
+                await this._sendNotification(
+                    booking.providerId.toString(),
+                    NotificationTemplateId.ORDER_SUCCESS,
+                    NotificationType.EVENT,
+                    'New Order Received',
+                    `You have received a new booking #${orderData.bookingId.slice(-6)}.`,
+                    orderData.bookingId,
+                    { bookingId: orderData.bookingId, role: 'provider' }
+                );
             }
 
             return { verified, bookingId: orderData.bookingId, transaction };

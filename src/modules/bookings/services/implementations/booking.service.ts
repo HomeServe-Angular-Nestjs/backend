@@ -18,7 +18,7 @@ import { SlotStatusEnum } from '@core/enum/slot.enum';
 import { IBookingMapper } from '@core/dto-mapper/interface/bookings.mapper.interface';
 import { BOOKING_MAPPER, CART_MAPPER, CUSTOMER_MAPPER, TRANSACTION_MAPPER } from '@core/constants/mappers.constant';
 import { ITransactionMapper } from '@core/dto-mapper/interface/transaction.mapper.interface';
-import { PAYMENT_LOCKING_UTILITY_NAME, PRICING_UTILITY_NAME, SLOT_UTILITY_NAME, TIME_UTILITY_NAME } from '@core/constants/utility.constant';
+import { PAYMENT_LOCKING_UTILITY_NAME, PRICING_UTILITY_NAME, TIME_UTILITY_NAME } from '@core/constants/utility.constant';
 import { IPricingUtility } from '@core/utilities/interface/pricing.utility.interface';
 import { ITimeUtility } from '@core/utilities/interface/time.utility.interface';
 import { IWalletRepository } from '@core/repositories/interfaces/wallet-repo.interface';
@@ -27,6 +27,9 @@ import { IPaymentLockingUtility } from '@core/utilities/interface/payment-lockin
 import { ICartRepository } from '@core/repositories/interfaces/cart-repo.interface';
 import { ICustomerMapper } from '@core/dto-mapper/interface/customer.mapper..interface';
 import { ICartMapper } from '@core/dto-mapper/interface/cart-mapper.interface';
+import { NOTIFICATION_SERVICE_NAME } from '@core/constants/service.constant';
+import { INotificationService } from '@modules/websockets/services/interface/notification-service.interface';
+import { NotificationTemplateId, NotificationType } from '@core/enum/notification.enum';
 import { BookingDocument } from '@core/schema/bookings.schema';
 
 @Injectable()
@@ -66,6 +69,8 @@ export class BookingService implements IBookingService {
         private readonly _cartMapper: ICartMapper,
         @Inject(RESERVATION_REPOSITORY_NAME)
         private readonly _reservationRepository: IReservationRepository,
+        @Inject(NOTIFICATION_SERVICE_NAME)
+        private readonly _notificationService: INotificationService,
     ) {
         this.logger = this._loggerFactor.createLogger(BookingService.name);
     }
@@ -493,6 +498,28 @@ export class BookingService implements IBookingService {
             } : null,
         }
 
+        // Notify Customer
+        await this._sendNotification(
+            customerId,
+            NotificationTemplateId.BOOKING_CANCELLED,
+            NotificationType.EVENT,
+            'Booking Cancelled',
+            `Your booking #${updatedBooking.id.slice(-6)} has been cancelled.`,
+            updatedBooking.id,
+            { bookingId: updatedBooking.id, role: 'customer' }
+        );
+
+        // Notify Provider
+        await this._sendNotification(
+            updatedBooking.providerId.toString(),
+            NotificationTemplateId.BOOKING_CANCELLED,
+            NotificationType.EVENT,
+            'Booking Cancelled',
+            `Booking #${updatedBooking.id.slice(-6)} has been cancelled by the customer.`,
+            updatedBooking.id,
+            { bookingId: updatedBooking.id, role: 'provider' }
+        );
+
         return {
             success: true,
             message: 'Request for cancellation has been submitted successfully.',
@@ -591,6 +618,28 @@ export class BookingService implements IBookingService {
             updatePaymentDto.paymentStatus,
         );
 
+        if (result && updatePaymentDto.paymentStatus === PaymentStatus.PAID) {
+            await this._sendNotification(
+                bookingDoc.customerId.toString(),
+                NotificationTemplateId.BOOKING_CONFIRMED,
+                NotificationType.EVENT,
+                'Booking Confirmed',
+                `Your booking #${bookingDoc.id.slice(-6)} has been confirmed!`,
+                bookingDoc.id,
+                { bookingId: bookingDoc.id }
+            );
+
+            await this._sendNotification(
+                bookingDoc.providerId.toString(),
+                NotificationTemplateId.BOOKING_CONFIRMED,
+                NotificationType.EVENT,
+                'New Booking',
+                `You have a new confirmed booking #${bookingDoc.id.slice(-6)}!`,
+                bookingDoc.id,
+                { bookingId: bookingDoc.id }
+            );
+        }
+
         return {
             success: !!result,
             message: !!result ? 'Status updated successfully' : 'Failed to update status',
@@ -616,6 +665,29 @@ export class BookingService implements IBookingService {
         return {
             success: hasOngoingBooking,
             message: hasOngoingBooking ? "OK to call" : 'No ongoing booking found.'
+        }
+    }
+
+    private async _sendNotification(
+        userId: string,
+        templateId: NotificationTemplateId,
+        type: NotificationType,
+        title: string,
+        message: string,
+        entityId?: string,
+        metadata?: any
+    ) {
+        try {
+            await this._notificationService.createNotification(userId, {
+                templateId,
+                type,
+                title,
+                message,
+                entityId,
+                metadata
+            });
+        } catch (error) {
+            this.logger.error('Failed to send notification', error);
         }
     }
 }

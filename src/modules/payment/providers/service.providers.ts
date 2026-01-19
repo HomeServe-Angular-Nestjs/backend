@@ -11,5 +11,6 @@ export const paymentServiceProviders: Provider[] = [
     {
         provide: PAYMENT_SERVICE_NAME,
         useClass: RazorPaymentService
-    }
+    },
+    
 ]
