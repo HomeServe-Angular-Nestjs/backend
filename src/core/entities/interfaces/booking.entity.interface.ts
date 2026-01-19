@@ -42,11 +42,7 @@ export interface IBookingWithPagination {
 }
 
 export interface IProviderBookingLists {
-    services: {
-        id: string;
-        title: string;
-        image: string;
-    }[];
+    services: IProviderBookingListService[];
     customer: {
         id: string;
         name: string;
@@ -60,6 +56,12 @@ export interface IProviderBookingLists {
     paymentStatus: PaymentStatus;
     cancelStatus: CancelStatus | null;
     bookingStatus: BookingStatus;
+}
+
+export interface IProviderBookingListService {
+    id: string;
+    title: string;
+    image: string;
 }
 
 export interface IPagination {

@@ -461,17 +461,6 @@ export class BookingService implements IBookingService {
             throw new InternalServerErrorException(`Provider with ID ${updatedBooking.providerId} not found.`);
         }
 
-        const services = []//todo-today
-        //  await Promise.all(
-        //     updatedBooking.services.flatMap(async (s) => {
-        //         const providerServices = await this._providerServiceRepository.findByIds(s.subserviceIds);
-        //         return providerServices.map(ps => ({
-        //             id: ps.id,
-        //             name: ps.description
-        //         }));
-        //     })
-        // ).then(results => results.flat());//todo-today
-
         const transaction = updatedBooking.transactionHistory
             .filter(t => t.transactionType === TransactionType.BOOKING_PAYMENT && t.status === TransactionStatus.SUCCESS)
             .sort((a, b) => (b.createdAt as Date).getTime() - (a.createdAt as Date).getTime())[0];
@@ -485,7 +474,7 @@ export class BookingService implements IBookingService {
             totalAmount: updatedBooking.totalAmount / 100,
             cancelStatus: updatedBooking.cancelStatus,
             review: updatedBooking.review,
-            services,
+            services: updatedBooking.services,
             provider: {
                 id: updatedBooking.providerId,
                 name: providerDoc.fullname || providerDoc.username,
@@ -498,16 +487,6 @@ export class BookingService implements IBookingService {
             } : null,
         }
 
-        // Notify Customer
-        await this._sendNotification(
-            customerId,
-            NotificationTemplateId.BOOKING_CANCELLED,
-            NotificationType.EVENT,
-            'Booking Cancelled',
-            `Your booking #${updatedBooking.id.slice(-6)} has been cancelled.`,
-            updatedBooking.id,
-            { bookingId: updatedBooking.id, role: 'customer' }
-        );
 
         // Notify Provider
         await this._sendNotification(
@@ -573,7 +552,7 @@ export class BookingService implements IBookingService {
                 name: provider?.fullname || provider?.username,
                 phone: provider.phone
             },
-            services,
+            services: [],
             totalAmount: updatedBooking.totalAmount / 100,
             transaction: null,
             review: updatedBooking.review,
@@ -586,66 +565,67 @@ export class BookingService implements IBookingService {
         }
     }
 
-    async updateBookingPaymentStatus(updatePaymentDto: UpdateBookingPaymentStatusDto): Promise<IResponse<boolean>> {
-        const bookingDoc = await this._bookingRepository.findById(updatePaymentDto.bookingId);
+    //todo-remove
+    // async updateBookingPaymentStatus(updatePaymentDto: UpdateBookingPaymentStatusDto): Promise<IResponse<boolean>> {
+    //     const bookingDoc = await this._bookingRepository.findById(updatePaymentDto.bookingId);
 
-        if (!bookingDoc) {
-            this.logger.error('Booking not found for ' + updatePaymentDto.bookingId);
-            throw new NotFoundException({
-                code: ErrorCodes.NOT_FOUND,
-                message: 'Booking not found',
-            })
-        }
+    //     if (!bookingDoc) {
+    //         this.logger.error('Booking not found for ' + updatePaymentDto.bookingId);
+    //         throw new NotFoundException({
+    //             code: ErrorCodes.NOT_FOUND,
+    //             message: 'Booking not found',
+    //         })
+    //     }
 
-        const paymentTransactions = (bookingDoc.transactionHistory ?? [])
-            .filter(t =>
-                t.transactionType === TransactionType.BOOKING_PAYMENT &&
-                t.status === TransactionStatus.SUCCESS,
-            )
-            .sort((a, b) => (a.createdAt as any) - (b.createdAt as any));
+    //     const paymentTransactions = (bookingDoc.transactionHistory ?? [])
+    //         .filter(t =>
+    //             t.transactionType === TransactionType.BOOKING_PAYMENT &&
+    //             t.status === TransactionStatus.SUCCESS,
+    //         )
+    //         .sort((a, b) => (a.createdAt as any) - (b.createdAt as any));
 
-        const transaction = paymentTransactions
-            .map(t => this._transactionMapper.toEntity(t))
-            .at(-1);
+    //     const transaction = paymentTransactions
+    //         .map(t => this._transactionMapper.toEntity(t))
+    //         .at(-1);
 
-        if (!transaction) {
-            this.logger.error('Transaction not found for booking ' + updatePaymentDto.bookingId);
-            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
-        }
+    //     if (!transaction) {
+    //         this.logger.error('Transaction not found for booking ' + updatePaymentDto.bookingId);
+    //         throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+    //     }
 
-        const result = await this._bookingRepository.updatePaymentStatus(
-            updatePaymentDto.bookingId,
-            updatePaymentDto.paymentStatus,
-        );
+    //     const result = await this._bookingRepository.updatePaymentStatus(
+    //         updatePaymentDto.bookingId,
+    //         updatePaymentDto.paymentStatus,
+    //     );
 
-        if (result && updatePaymentDto.paymentStatus === PaymentStatus.PAID) {
-            await this._sendNotification(
-                bookingDoc.customerId.toString(),
-                NotificationTemplateId.BOOKING_CONFIRMED,
-                NotificationType.EVENT,
-                'Booking Confirmed',
-                `Your booking #${bookingDoc.id.slice(-6)} has been confirmed!`,
-                bookingDoc.id,
-                { bookingId: bookingDoc.id }
-            );
+    //     if (result && updatePaymentDto.paymentStatus === PaymentStatus.PAID) {
+    //         await this._sendNotification(
+    //             bookingDoc.customerId.toString(),
+    //             NotificationTemplateId.BOOKING_CONFIRMED,
+    //             NotificationType.EVENT,
+    //             'Booking Confirmed',
+    //             `Your booking #${bookingDoc.id.slice(-6)} has been confirmed!`,
+    //             bookingDoc.id,
+    //             { bookingId: bookingDoc.id }
+    //         );
 
-            await this._sendNotification(
-                bookingDoc.providerId.toString(),
-                NotificationTemplateId.BOOKING_CONFIRMED,
-                NotificationType.EVENT,
-                'New Booking',
-                `You have a new confirmed booking #${bookingDoc.id.slice(-6)}!`,
-                bookingDoc.id,
-                { bookingId: bookingDoc.id }
-            );
-        }
+    //         await this._sendNotification(
+    //             bookingDoc.providerId.toString(),
+    //             NotificationTemplateId.BOOKING_CONFIRMED,
+    //             NotificationType.EVENT,
+    //             'New Booking',
+    //             `You have a new confirmed booking #${bookingDoc.id.slice(-6)}!`,
+    //             bookingDoc.id,
+    //             { bookingId: bookingDoc.id }
+    //         );
+    //     }
 
-        return {
-            success: !!result,
-            message: !!result ? 'Status updated successfully' : 'Failed to update status',
-            data: !!result
-        }
-    }
+    //     return {
+    //         success: !!result,
+    //         message: !!result ? 'Status updated successfully' : 'Failed to update status',
+    //         data: !!result
+    //     }
+    // }
 
     async addReview(addReviewDto: AddReviewDto): Promise<IResponse> {
         const isAdded = await this._bookingRepository.addReview(
