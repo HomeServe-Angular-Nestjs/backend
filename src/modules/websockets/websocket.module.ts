@@ -25,5 +25,9 @@ import { VideoCallGateway } from '@modules/websockets/namespaces/video-call.gate
         ...socketRepositoryProviders,
         ...socketUtilityProviders,
     ],
+    exports: [
+        NotificationGateway,
+        ...socketServiceProviders,
+    ],
 })
 export class WebSocketModule { }

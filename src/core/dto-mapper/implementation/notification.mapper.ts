@@ -16,6 +16,8 @@ export class NotificationMapper implements INotificationMapper {
             title: doc.title,
             message: doc.message,
             isRead: doc.isRead,
+            entityId: doc.entityId,
+            metadata: doc.metadata,
             updatedAt: new Date(doc.updatedAt),
             createdAt: new Date(doc.createdAt)
         });
@@ -29,6 +31,8 @@ export class NotificationMapper implements INotificationMapper {
             templateId: entity.templateId,
             message: entity.message,
             isRead: entity.isRead,
+            entityId: entity.entityId,
+            metadata: entity.metadata,
         };
     }
 }

@@ -9,6 +9,8 @@ export class Notification extends BaseEntity implements INotification {
     title: string;
     message: string;
     isRead: boolean;
+    entityId?: string;
+    metadata?: Record<string, any>;
 
     constructor(partial: Partial<Notification>) {
         super(partial);

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Inject, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { CUSTOMER_SERVICE_NAME } from '../../../core/constants/service.constant';
 import { IBookingDetailCustomer, IBookingResponse, IBookingWithPagination } from '../../../core/entities/interfaces/booking.entity.interface';
 import { ICustomLogger } from '../../../core/logger/interface/custom-logger.interface';
@@ -23,15 +23,6 @@ export class BookingsController {
     ) {
         this.logger = this.loggerFactory.createLogger(BookingsController.name);
     }
-
-    // @Post('price_breakup')
-    // async calcPriceBreakup(@Body() selectedServiceDto: SelectedServiceDto[]) {
-    //     if (!selectedServiceDto || selectedServiceDto.length === 0) {
-    //         throw new BadRequestException(ErrorMessage.MISSING_FIELDS);
-    //     }
-
-    //     return await this._bookingService.preparePriceBreakup(selectedServiceDto);
-    // }
 
     @Get('price_breakup')
     async fetchPriceBreakup(@User() user: IPayload) {
@@ -63,11 +54,6 @@ export class BookingsController {
     @Patch('update')
     async updateBooking(@Body() bookingDto: UpdateBookingDto): Promise<IResponse<IBookingResponse>> {
         return await this._bookingService.updateBooking(bookingDto);
-    }
-
-    @Patch('payment_status')
-    async updatePaymentStatus(@Body() bookingDto: UpdateBookingPaymentStatusDto): Promise<IResponse<boolean>> {
-        return await this._bookingService.updateBookingPaymentStatus(bookingDto);
     }
 
     @Patch('add_review')

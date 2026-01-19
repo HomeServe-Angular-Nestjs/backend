@@ -1,5 +1,5 @@
 import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException, } from '@nestjs/common';
-import { ADMIN_SETTINGS_MAPPER, BOOKING_MAPPER, CUSTOMER_MAPPER, PROVIDER_MAPPER, SERVICE_OFFERED_MAPPER, TRANSACTION_MAPPER, WALLET_LEDGER_MAPPER, WALLET_MAPPER } from '@core/constants/mappers.constant';
+import { ADMIN_SETTINGS_MAPPER, BOOKING_MAPPER, CUSTOMER_MAPPER, PROVIDER_MAPPER, PROVIDER_SERVICE_MAPPER, SERVICE_OFFERED_MAPPER, TRANSACTION_MAPPER, WALLET_LEDGER_MAPPER, WALLET_MAPPER } from '@core/constants/mappers.constant';
 import { IBookingMapper } from '@core/dto-mapper/interface/bookings.mapper.interface';
 import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
 import { ITransaction } from '@core/entities/interfaces/transaction.entity.interface';
@@ -7,9 +7,9 @@ import { ITransactionMapper } from '@core/dto-mapper/interface/transaction.mappe
 import { CurrencyType, PaymentDirection, PaymentSource, TransactionStatus, TransactionType } from '@core/enum/transaction.enum';
 import { IAdminSettingsRepository } from '@core/repositories/interfaces/admin-settings-repo.interface';
 import { IWalletRepository } from '@core/repositories/interfaces/wallet-repo.interface';
-import { PDF_SERVICE } from '@core/constants/service.constant';
+import { NOTIFICATION_SERVICE_NAME, PDF_SERVICE } from '@core/constants/service.constant';
 import { IPdfService } from '@core/services/pdf/pdf.interface';
-import { ClientUserType, ICustomer, IProvider, UserType } from '@core/entities/interfaces/user.entity.interface';
+import { ClientUserType, ICustomer, IProvider } from '@core/entities/interfaces/user.entity.interface';
 import { ICustomerMapper } from '@core/dto-mapper/interface/customer.mapper..interface';
 import { IProviderMapper } from '@core/dto-mapper/interface/provider.mapper.interface';
 import { IProviderRepository } from '@core/repositories/interfaces/provider-repo.interface';
@@ -24,7 +24,7 @@ import { IProviderServiceRepository } from '@core/repositories/interfaces/provid
 import { IBookingRepository } from '@core/repositories/interfaces/bookings-repo.interface';
 import { ICustomerRepository } from '@core/repositories/interfaces/customer-repo.interface';
 import { ITransactionRepository } from '@core/repositories/interfaces/transaction-repo.interface';
-import { IBookedService, IBooking, IBookingDetailProvider, IBookingInvoice, IBookingOverviewChanges, IBookingOverviewData, IResponseProviderBookingLists, IReviewDetails, IReviewFilter, IReviewWithPagination } from '@core/entities/interfaces/booking.entity.interface';
+import { IBookedService, IBooking, IBookingDetailProvider, IBookingInvoice, IBookingOverviewChanges, IBookingOverviewData, IProviderBookingListService, IResponseProviderBookingLists, IReviewDetails, IReviewFilter, IReviewWithPagination } from '@core/entities/interfaces/booking.entity.interface';
 import { FilterFields, ReviewFilterDto } from '@modules/bookings/dtos/booking.dto';
 import { BookingStatus, CancelStatus, DateRange, PaymentStatus } from '@core/enum/bookings.enum';
 import { IResponse } from '@core/misc/response.util';
@@ -35,6 +35,9 @@ import { IAdminSettings } from '@core/entities/interfaces/admin-settings.entity.
 import { IAdminSettingMapper } from '@core/dto-mapper/interface/admin-setting.mapper.interface';
 import { IWallet } from '@core/entities/interfaces/wallet.entity.interface';
 import { IPaymentLockingUtility } from '@core/utilities/interface/payment-locking.utility';
+import { IProviderServiceMapper } from '@core/dto-mapper/interface/provider-service.mapper.interface';
+import { NotificationTemplateId, NotificationType } from '@core/enum/notification.enum';
+import { INotificationService } from '@modules/websockets/services/interface/notification-service.interface';
 
 @Injectable()
 export class ProviderBookingService implements IProviderBookingService {
@@ -81,6 +84,10 @@ export class ProviderBookingService implements IProviderBookingService {
         private readonly _adminSettingsMapper: IAdminSettingMapper,
         @Inject(PAYMENT_LOCKING_UTILITY_NAME)
         private readonly _paymentLockingUtility: IPaymentLockingUtility,
+        @Inject(PROVIDER_SERVICE_MAPPER)
+        private readonly _providerServiceMapper: IProviderServiceMapper,
+        @Inject(NOTIFICATION_SERVICE_NAME)
+        private readonly _notificationService: INotificationService,
     ) {
         this.logger = this._loggerFactory.createLogger(ProviderBookingService.name);
     }
@@ -354,6 +361,30 @@ export class ProviderBookingService implements IProviderBookingService {
         };
     }
 
+    private async _sendNotification(
+        userId: string,
+        templateId: NotificationTemplateId,
+        type: NotificationType,
+        title: string,
+        message: string,
+        entityId?: string,
+        metadata?: any
+    ) {
+        try {
+            await this._notificationService.createNotification(userId, {
+                templateId,
+                type,
+                title,
+                message,
+                entityId,
+                metadata
+            });
+        } catch (error) {
+            this.logger.error('Failed to send notification', error);
+            throw new Error('Failed to send notification');
+        }
+    }
+
     private async _getInvoiceUser(booking: IBooking, userType: ClientUserType,): Promise<IProvider | ICustomer> {
         if (userType === 'customer') {
             const customerDoc = await this._customerRepository.findById(
@@ -399,17 +430,23 @@ export class ProviderBookingService implements IProviderBookingService {
                 const customer = await this._customerRepository.findById(booking.customerId);
                 if (!customer) throw new InternalServerErrorException(`Customer not found: ${booking.customerId}`);
 
-                const services = await Promise.all(
-                    booking.services.flatMap(async (s) => {
-                        // const providerServices = await this._providerServiceRepository.findByIds(s.subserviceIds);//todo-today
-                        return [];
-                        //  providerServices.map(ps => ({
-                        //     id: ps.id,
-                        //     title: ps.description,
-                        //     image: ps.image
-                        // }));
+                const services: IProviderBookingListService[] = await Promise.all(
+                    booking.services.map(async (id) => {
+                        const serviceDoc = await this._providerServiceRepository.findOneAndPopulateById(id);
+
+                        if (!serviceDoc) throw new InternalServerErrorException({
+                            code: ErrorCodes.INTERNAL_SERVER_ERROR,
+                            message: `Service not found: ${id}`,
+                        });
+
+                        const service = this._providerServiceMapper.toPopulatedEntity(serviceDoc);
+                        return {
+                            id: service.id,
+                            title: service.category.name as string,
+                            image: service.image
+                        };
                     })
-                ).then(results => results.flat());
+                );
 
                 return {
                     services,
@@ -693,7 +730,7 @@ export class ProviderBookingService implements IProviderBookingService {
         const updatedBooking = this._bookingMapper.toEntity(updatedBookingDoc);
         transaction = this._getBookingPaymentTransactionDetail(updatedBooking.transactionHistory);
 
-        // const orderedServices = await this._getBookedServices(updatedBooking.services);//todo-today
+        const orderedServices = await this._getBookedServices(updatedBooking.services);//todo-today
 
         const bookingData: IBookingDetailProvider = {
             bookingId: updatedBookingDoc.id,
@@ -712,13 +749,24 @@ export class ProviderBookingService implements IProviderBookingService {
                 phone: customer.phone,
                 location: updatedBookingDoc.location.address,
             },
-            orderedServices: [], //todo-today
+            orderedServices,
             transaction: {
                 id: transaction.id,
                 paymentDate: transaction.createdAt as Date,
                 paymentMethod: transaction.source
             }
         }
+
+        // Notify Customer
+        await this._sendNotification(
+            booking.customerId,
+            NotificationTemplateId.BOOKING_CANCELLED,
+            NotificationType.EVENT,
+            'Booking Cancelled',
+            `Your booking #${updatedBooking.id.slice(-6)} has been cancelled.`,
+            updatedBooking.id,
+            { bookingId: updatedBooking.id, role: 'customer' }
+        );
 
         return {
             success: true,
@@ -727,104 +775,104 @@ export class ProviderBookingService implements IProviderBookingService {
         }
     }
 
-    // async downloadBookingInvoice(bookingId: string, userType: UserType): Promise<Buffer> {//todo-today
-    //     const bookingDoc = await this._bookingRepository.findById(bookingId);
-    //     if (!bookingDoc) throw new NotFoundException({
-    //         code: ErrorCodes.NOT_FOUND,
-    //         message: `Booking ${ErrorMessage.DOCUMENT_NOT_FOUND}`
-    //     });
+    async downloadBookingInvoice(bookingId: string, userType: ClientUserType): Promise<Buffer> {
+        const bookingDoc = await this._bookingRepository.findById(bookingId);
+        if (!bookingDoc) throw new NotFoundException({
+            code: ErrorCodes.NOT_FOUND,
+            message: `Booking ${ErrorMessage.DOCUMENT_NOT_FOUND}`
+        });
 
-    //     const booking = this._bookingMapper.toEntity(bookingDoc);
+        const booking = this._bookingMapper.toEntity(bookingDoc);
 
-    //     if (booking.bookingStatus !== BookingStatus.COMPLETED) {
-    //         throw new BadRequestException({
-    //             code: ErrorCodes.BAD_REQUEST,
-    //             message: 'Booking is not completed.'
-    //         });
-    //     }
+        if (booking.bookingStatus !== BookingStatus.COMPLETED) {
+            throw new BadRequestException({
+                code: ErrorCodes.BAD_REQUEST,
+                message: 'Booking is not completed.'
+            });
+        }
 
-    //     const services = await this._getBookedServices(booking.services);
+        const services = await this._getBookedServices(booking.services);
 
-    //     let user: IProvider | ICustomer;
-    //     if (userType === 'customer') {
-    //         const customerDoc = await this._customerRepository.findById(booking.customerId);
-    //         if (!customerDoc) throw new NotFoundException({
-    //             code: ErrorCodes.NOT_FOUND,
-    //             message: `Customer ${ErrorMessage.DOCUMENT_NOT_FOUND}`
-    //         });
-    //         user = this._customerMapper.toEntity(customerDoc);
-    //     } else {
-    //         const providerDoc = await this._providerRepository.findById(booking.providerId);
-    //         if (!providerDoc) throw new NotFoundException({
-    //             code: ErrorCodes.NOT_FOUND,
-    //             message: `Provider ${ErrorMessage.DOCUMENT_NOT_FOUND}`
-    //         });
-    //         user = this._providerMapper.toEntity(providerDoc);
-    //     }
+        let user: IProvider | ICustomer;
+        if (userType === 'customer') {
+            const customerDoc = await this._customerRepository.findById(booking.customerId);
+            if (!customerDoc) throw new NotFoundException({
+                code: ErrorCodes.NOT_FOUND,
+                message: `Customer ${ErrorMessage.DOCUMENT_NOT_FOUND}`
+            });
+            user = this._customerMapper.toEntity(customerDoc);
+        } else {
+            const providerDoc = await this._providerRepository.findById(booking.providerId);
+            if (!providerDoc) throw new NotFoundException({
+                code: ErrorCodes.NOT_FOUND,
+                message: `Provider ${ErrorMessage.DOCUMENT_NOT_FOUND}`
+            });
+            user = this._providerMapper.toEntity(providerDoc);
+        }
 
-    //     const paymentTransactions = (booking.transactionHistory ?? [])
-    //         .filter(t =>
-    //             t.transactionType === TransactionType.BOOKING_PAYMENT &&
-    //             t.status === TransactionStatus.SUCCESS,
-    //         )
-    //         .sort((a, b) => (a.createdAt as any) - (b.createdAt as any));
+        const paymentTransactions = (booking.transactionHistory ?? [])
+            .filter(t =>
+                t.transactionType === TransactionType.BOOKING_PAYMENT &&
+                t.status === TransactionStatus.SUCCESS,
+            )
+            .sort((a, b) => (a.createdAt as any) - (b.createdAt as any));
 
-    //     const transaction = paymentTransactions.at(-1);
+        const transaction = paymentTransactions.at(-1);
 
-    //     const settings = await this._adminSettings.getSettings();
-    //     const providerAmountWithCommission = transaction?.metadata?.breakup?.providerAmount as number;
-    //     const providerAmount = Math.floor(providerAmountWithCommission / (1 + (settings.providerCommission) / 100));
-    //     const commission = providerAmountWithCommission - providerAmount;
+        const settings = await this._adminSettings.getSettings();
+        const providerAmountWithCommission = transaction?.metadata?.breakup?.providerAmount as number;
+        const providerAmount = Math.floor(providerAmountWithCommission / (1 + (settings.providerCommission) / 100));
+        const commission = providerAmountWithCommission - providerAmount;
 
-    //     const invoiceData: IBookingInvoice = {
-    //         invoiceId: booking.id,
-    //         transactionId: booking.transactionHistory
-    //             .find(t => t.transactionType === TransactionType.BOOKING_PAYMENT && t.status === TransactionStatus.SUCCESS)?.id ?? null,
-    //         paymentStatus: booking.paymentStatus,
-    //         paymentSource: transaction ? transaction.source : null,
-    //         transactionType: transaction ? transaction.transactionType : null,
-    //         currency: transaction ? transaction.currency : null,
-    //         userType: 'provider',
-    //         services,
+        const invoiceData: IBookingInvoice = {
+            invoiceId: booking.id,
+            transactionId: booking.transactionHistory
+                .find(t => t.transactionType === TransactionType.BOOKING_PAYMENT && t.status === TransactionStatus.SUCCESS)?.id ?? null,
+            paymentStatus: booking.paymentStatus,
+            paymentSource: transaction ? transaction.source : null,
+            transactionType: transaction ? transaction.transactionType : null,
+            currency: transaction ? transaction.currency : null,
+            userType: 'provider',
+            services,
 
-    //         user: {
-    //             name: user.username,
-    //             email: user.email,
-    //             contact: user?.phone,
-    //         },
+            user: {
+                name: user.username,
+                email: user.email,
+                contact: user?.phone,
+            },
 
-    //         bookingDetails: {
-    //             status: booking.bookingStatus,
-    //             expectedArrivalTime: booking.expectedArrivalTime.toISOString(),
-    //             actualArrivalTime: booking.actualArrivalTime?.toISOString() ?? null,
-    //             slot: {
-    //                 from: booking.slot.from,
-    //                 to: booking.slot.to,
-    //             },
-    //         },
+            bookingDetails: {
+                status: booking.bookingStatus,
+                expectedArrivalTime: booking.expectedArrivalTime.toISOString(),
+                actualArrivalTime: booking.actualArrivalTime?.toISOString() ?? null,
+                slot: {
+                    from: booking.slot.from,
+                    to: booking.slot.to,
+                },
+            },
 
-    //         location: {
-    //             address: user.address,
-    //             coordinates: user?.location?.coordinates as [number, number]
-    //         },
+            location: {
+                address: user.address,
+                coordinates: user?.location?.coordinates as [number, number]
+            },
 
-    //         paymentBreakup: {
-    //             gst: transaction ? transaction.metadata?.breakup?.gst as number : 0,
-    //             total: booking.totalAmount,
-    //             providerAmount,
-    //             commission
-    //         },
+            paymentBreakup: {
+                gst: transaction ? transaction.metadata?.breakup?.gst as number : 0,
+                total: booking.totalAmount,
+                providerAmount,
+                commission
+            },
 
-    //         paymentDetails: transaction && transaction.gateWayDetails ? {
-    //             orderId: transaction.gateWayDetails.orderId,
-    //             paymentId: transaction.gateWayDetails.paymentId,
-    //             receipt: transaction.gateWayDetails.receipt ?? '',
-    //             signature: transaction.gateWayDetails.signature
-    //         } : null
-    //     };
+            paymentDetails: transaction && transaction.gateWayDetails ? {
+                orderId: transaction.gateWayDetails.orderId,
+                paymentId: transaction.gateWayDetails.paymentId,
+                receipt: transaction.gateWayDetails.receipt ?? '',
+                signature: transaction.gateWayDetails.signature
+            } : null
+        };
 
-    //     return this._pdfService.generateBookingInvoice(invoiceData);
-    // }
+        return this._pdfService.generateBookingInvoice(invoiceData);
+    }
 
     async getReviewData(providerId: string, filter: ReviewFilterDto): Promise<IResponse<IReviewWithPagination>> {
         const limit = 10;
@@ -896,22 +944,36 @@ export class ProviderBookingService implements IProviderBookingService {
         }
     }
 
-    async updateBookingStatus(bookingId: string, newStatus: BookingStatus): Promise<IResponse<IBookingDetailProvider>> {
+    async updateBookingStatus(bookingId: string, newStatus: BookingStatus): Promise<IResponse> {
         const isCancelled = await this._bookingRepository.isAlreadyRequestedForCancellation(bookingId);
         if (isCancelled) throw new BadRequestException({
             code: ErrorCodes.BAD_REQUEST,
             message: ErrorMessage.BOOKING_ALREADY_CANCELLED
         });
 
-        const updated = await this._bookingRepository.updateBookingStatus(bookingId, newStatus);
-        if (!updated) throw new BadRequestException({
+        const updatedBooking = await this._bookingRepository.updateBookingStatus(bookingId, newStatus);
+        if (!updatedBooking) throw new BadRequestException({
             code: ErrorCodes.BAD_REQUEST,
             message: ErrorMessage.BOOKING_ALREADY_CANCELLED
         });
 
+        const booking = this._bookingMapper.toEntity(updatedBooking);
+
+        // Notify Customer
+        await this._sendNotification(
+            booking.customerId,
+            NotificationTemplateId.BOOKING_STATUS_UPDATED,
+            NotificationType.EVENT,
+            'Booking Cancelled',
+            `Your booking #${updatedBooking.id.slice(-6)} has been ${newStatus}.`,
+            updatedBooking.id,
+            { bookingId: updatedBooking.id, role: 'provider' }
+        );
+
+
         return {
-            success: !!updated,
-            message: ErrorMessage.BOOKING_ALREADY_CANCELLED
+            success: !!updatedBooking,
+            message: 'Booking status updated successfully.',
         }
     }
 
@@ -1172,6 +1234,17 @@ export class ProviderBookingService implements IProviderBookingService {
                     paymentMethod: transaction.source
                 }
             }
+
+            // Notify Customer
+            await this._sendNotification(
+                booking.customerId,
+                NotificationTemplateId.BOOKING_COMPLETED,
+                NotificationType.EVENT,
+                'Booking Completed',
+                `Your booking #${updatedBooking.id.slice(-6)} has been completed.`,
+                updatedBooking.id,
+                { bookingId: updatedBooking.id, role: 'provider' }
+            );
 
             return {
                 success: true,

@@ -8,9 +8,10 @@ import { serviceProviders } from './providers/service.provider';
 import { bookingsUtilityProviders } from './providers/utility.provider';
 import { PdfModule } from '@core/services/pdf/pdf.module';
 import { CloudinaryModule } from '@configs/cloudinary/cloudinary.module';
+import { WebSocketModule } from '@modules/websockets/websocket.module';
 
 @Module({
-    imports: [CloudinaryModule.registerAsync(), JwtConfigModule, SharedModule, PdfModule,],
+    imports: [CloudinaryModule.registerAsync(), JwtConfigModule, SharedModule, PdfModule, WebSocketModule],
     controllers: [BookingsController, ProviderBookingsController],
     providers: [
         ...repositoryProviders,

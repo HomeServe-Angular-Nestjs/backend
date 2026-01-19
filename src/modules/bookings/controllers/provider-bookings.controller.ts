@@ -1,8 +1,7 @@
-import { Request, Response } from 'express';
-import { Body, Controller, Get, Inject, Param, Patch, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Param, Patch, Post, Query, Res, UseGuards } from '@nestjs/common';
 import { PROVIDER_BOOKING_SERVICE_NAME } from '../../../core/constants/service.constant';
 import { IBookingDetailProvider, IResponseProviderBookingLists } from '../../../core/entities/interfaces/booking.entity.interface';
-import { CUSTOM_LOGGER, ICustomLogger } from '../../../core/logger/interface/custom-logger.interface';
+import { ICustomLogger } from '../../../core/logger/interface/custom-logger.interface';
 import { IPayload } from '../../../core/misc/payload.interface';
 import { BookingIdDto, BookingPaginationFilterDto, CancelReasonDto, ReviewFilterDto, UpdateBookingStatusDto, } from '../dtos/booking.dto';
 import { IProviderBookingService } from '../services/interfaces/provider-booking-service.interface';
@@ -11,15 +10,22 @@ import { isValidIdPipe } from '@core/pipes/is-valid-id.pipe';
 import { User } from '@core/decorators/extract-user.decorator';
 import { OngoingPaymentGuard } from '@core/guards/ongoing-payment.guard';
 import { CustomerIdDto } from '@modules/customer/dtos/customer.dto';
+import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
+import { Response } from 'express';
+import { ClientUserType } from '@core/entities/interfaces/user.entity.interface';
 
 @Controller('provider/bookings')
 export class ProviderBookingsController {
+    private readonly logger: ICustomLogger;
+
     constructor(
-        @Inject(CUSTOM_LOGGER)
-        private readonly logger: ICustomLogger,
+        @Inject(LOGGER_FACTORY)
+        private readonly _loggerFactory: ILoggerFactory,
         @Inject(PROVIDER_BOOKING_SERVICE_NAME)
         private readonly _providerBookingService: IProviderBookingService
-    ) { }
+    ) {
+        this.logger = this._loggerFactory.createLogger(ProviderBookingsController.name);
+    }
 
     @Get('')
     async fetchBookings(@User() user: IPayload, @Query() paginationDto: BookingPaginationFilterDto): Promise<IResponseProviderBookingLists> {
@@ -53,18 +59,18 @@ export class ProviderBookingsController {
         return await this._providerBookingService.completeBooking(user.sub, bookingId);
     }
 
-    // @Post('download_invoice')
-    // async downloadInvoice(@Body() { bookingId }: BookingIdDto, @User() user: IPayload, @Res() res: Response) {
-    //     const pdfBuffer = await this._providerBookingService.downloadBookingInvoice(bookingId, user.type);
+    @Post('download_invoice')
+    async downloadInvoice(@Body() { bookingId }: BookingIdDto, @User() user: IPayload, @Res() res: Response) {
+        const pdfBuffer = await this._providerBookingService.downloadBookingInvoice(bookingId, user.type as ClientUserType);
 
-    //     res.set({
-    //         'Content-Type': 'application/pdf',
-    //         'Content-Disposition': 'attachment; filename="booking-invoice.pdf"',
-    //         'Content-Length': pdfBuffer.length,
-    //     });
+        res.set({
+            'Content-Type': 'application/pdf',
+            'Content-Disposition': 'attachment; filename="booking-invoice.pdf"',
+            'Content-Length': pdfBuffer.length,
+        });
 
-    //     res.send(pdfBuffer);
-    // }//todo-today
+        res.send(pdfBuffer);
+    }
 
     @Get('review_data')
     async getReviewData(@User() user: IPayload, @Query() reviewDto: ReviewFilterDto): Promise<IResponse> {

@@ -18,7 +18,7 @@ import { SlotStatusEnum } from '@core/enum/slot.enum';
 import { IBookingMapper } from '@core/dto-mapper/interface/bookings.mapper.interface';
 import { BOOKING_MAPPER, CART_MAPPER, CUSTOMER_MAPPER, TRANSACTION_MAPPER } from '@core/constants/mappers.constant';
 import { ITransactionMapper } from '@core/dto-mapper/interface/transaction.mapper.interface';
-import { PAYMENT_LOCKING_UTILITY_NAME, PRICING_UTILITY_NAME, SLOT_UTILITY_NAME, TIME_UTILITY_NAME } from '@core/constants/utility.constant';
+import { PAYMENT_LOCKING_UTILITY_NAME, PRICING_UTILITY_NAME, TIME_UTILITY_NAME } from '@core/constants/utility.constant';
 import { IPricingUtility } from '@core/utilities/interface/pricing.utility.interface';
 import { ITimeUtility } from '@core/utilities/interface/time.utility.interface';
 import { IWalletRepository } from '@core/repositories/interfaces/wallet-repo.interface';
@@ -27,6 +27,9 @@ import { IPaymentLockingUtility } from '@core/utilities/interface/payment-lockin
 import { ICartRepository } from '@core/repositories/interfaces/cart-repo.interface';
 import { ICustomerMapper } from '@core/dto-mapper/interface/customer.mapper..interface';
 import { ICartMapper } from '@core/dto-mapper/interface/cart-mapper.interface';
+import { NOTIFICATION_SERVICE_NAME } from '@core/constants/service.constant';
+import { INotificationService } from '@modules/websockets/services/interface/notification-service.interface';
+import { NotificationTemplateId, NotificationType } from '@core/enum/notification.enum';
 import { BookingDocument } from '@core/schema/bookings.schema';
 
 @Injectable()
@@ -66,6 +69,8 @@ export class BookingService implements IBookingService {
         private readonly _cartMapper: ICartMapper,
         @Inject(RESERVATION_REPOSITORY_NAME)
         private readonly _reservationRepository: IReservationRepository,
+        @Inject(NOTIFICATION_SERVICE_NAME)
+        private readonly _notificationService: INotificationService,
     ) {
         this.logger = this._loggerFactor.createLogger(BookingService.name);
     }
@@ -456,17 +461,6 @@ export class BookingService implements IBookingService {
             throw new InternalServerErrorException(`Provider with ID ${updatedBooking.providerId} not found.`);
         }
 
-        const services = []//todo-today
-        //  await Promise.all(
-        //     updatedBooking.services.flatMap(async (s) => {
-        //         const providerServices = await this._providerServiceRepository.findByIds(s.subserviceIds);
-        //         return providerServices.map(ps => ({
-        //             id: ps.id,
-        //             name: ps.description
-        //         }));
-        //     })
-        // ).then(results => results.flat());//todo-today
-
         const transaction = updatedBooking.transactionHistory
             .filter(t => t.transactionType === TransactionType.BOOKING_PAYMENT && t.status === TransactionStatus.SUCCESS)
             .sort((a, b) => (b.createdAt as Date).getTime() - (a.createdAt as Date).getTime())[0];
@@ -480,7 +474,7 @@ export class BookingService implements IBookingService {
             totalAmount: updatedBooking.totalAmount / 100,
             cancelStatus: updatedBooking.cancelStatus,
             review: updatedBooking.review,
-            services,
+            services: updatedBooking.services,
             provider: {
                 id: updatedBooking.providerId,
                 name: providerDoc.fullname || providerDoc.username,
@@ -492,6 +486,18 @@ export class BookingService implements IBookingService {
                 paymentSource: transaction.source,
             } : null,
         }
+
+
+        // Notify Provider
+        await this._sendNotification(
+            updatedBooking.providerId.toString(),
+            NotificationTemplateId.BOOKING_CANCELLED,
+            NotificationType.EVENT,
+            'Booking Cancelled',
+            `Booking #${updatedBooking.id.slice(-6)} has been cancelled by the customer.`,
+            updatedBooking.id,
+            { bookingId: updatedBooking.id, role: 'provider' }
+        );
 
         return {
             success: true,
@@ -546,7 +552,7 @@ export class BookingService implements IBookingService {
                 name: provider?.fullname || provider?.username,
                 phone: provider.phone
             },
-            services,
+            services: [],
             totalAmount: updatedBooking.totalAmount / 100,
             transaction: null,
             review: updatedBooking.review,
@@ -559,44 +565,67 @@ export class BookingService implements IBookingService {
         }
     }
 
-    async updateBookingPaymentStatus(updatePaymentDto: UpdateBookingPaymentStatusDto): Promise<IResponse<boolean>> {
-        const bookingDoc = await this._bookingRepository.findById(updatePaymentDto.bookingId);
+    //todo-remove
+    // async updateBookingPaymentStatus(updatePaymentDto: UpdateBookingPaymentStatusDto): Promise<IResponse<boolean>> {
+    //     const bookingDoc = await this._bookingRepository.findById(updatePaymentDto.bookingId);
 
-        if (!bookingDoc) {
-            this.logger.error('Booking not found for ' + updatePaymentDto.bookingId);
-            throw new NotFoundException({
-                code: ErrorCodes.NOT_FOUND,
-                message: 'Booking not found',
-            })
-        }
+    //     if (!bookingDoc) {
+    //         this.logger.error('Booking not found for ' + updatePaymentDto.bookingId);
+    //         throw new NotFoundException({
+    //             code: ErrorCodes.NOT_FOUND,
+    //             message: 'Booking not found',
+    //         })
+    //     }
 
-        const paymentTransactions = (bookingDoc.transactionHistory ?? [])
-            .filter(t =>
-                t.transactionType === TransactionType.BOOKING_PAYMENT &&
-                t.status === TransactionStatus.SUCCESS,
-            )
-            .sort((a, b) => (a.createdAt as any) - (b.createdAt as any));
+    //     const paymentTransactions = (bookingDoc.transactionHistory ?? [])
+    //         .filter(t =>
+    //             t.transactionType === TransactionType.BOOKING_PAYMENT &&
+    //             t.status === TransactionStatus.SUCCESS,
+    //         )
+    //         .sort((a, b) => (a.createdAt as any) - (b.createdAt as any));
 
-        const transaction = paymentTransactions
-            .map(t => this._transactionMapper.toEntity(t))
-            .at(-1);
+    //     const transaction = paymentTransactions
+    //         .map(t => this._transactionMapper.toEntity(t))
+    //         .at(-1);
 
-        if (!transaction) {
-            this.logger.error('Transaction not found for booking ' + updatePaymentDto.bookingId);
-            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
-        }
+    //     if (!transaction) {
+    //         this.logger.error('Transaction not found for booking ' + updatePaymentDto.bookingId);
+    //         throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+    //     }
 
-        const result = await this._bookingRepository.updatePaymentStatus(
-            updatePaymentDto.bookingId,
-            updatePaymentDto.paymentStatus,
-        );
+    //     const result = await this._bookingRepository.updatePaymentStatus(
+    //         updatePaymentDto.bookingId,
+    //         updatePaymentDto.paymentStatus,
+    //     );
 
-        return {
-            success: !!result,
-            message: !!result ? 'Status updated successfully' : 'Failed to update status',
-            data: !!result
-        }
-    }
+    //     if (result && updatePaymentDto.paymentStatus === PaymentStatus.PAID) {
+    //         await this._sendNotification(
+    //             bookingDoc.customerId.toString(),
+    //             NotificationTemplateId.BOOKING_CONFIRMED,
+    //             NotificationType.EVENT,
+    //             'Booking Confirmed',
+    //             `Your booking #${bookingDoc.id.slice(-6)} has been confirmed!`,
+    //             bookingDoc.id,
+    //             { bookingId: bookingDoc.id }
+    //         );
+
+    //         await this._sendNotification(
+    //             bookingDoc.providerId.toString(),
+    //             NotificationTemplateId.BOOKING_CONFIRMED,
+    //             NotificationType.EVENT,
+    //             'New Booking',
+    //             `You have a new confirmed booking #${bookingDoc.id.slice(-6)}!`,
+    //             bookingDoc.id,
+    //             { bookingId: bookingDoc.id }
+    //         );
+    //     }
+
+    //     return {
+    //         success: !!result,
+    //         message: !!result ? 'Status updated successfully' : 'Failed to update status',
+    //         data: !!result
+    //     }
+    // }
 
     async addReview(addReviewDto: AddReviewDto): Promise<IResponse> {
         const isAdded = await this._bookingRepository.addReview(
@@ -616,6 +645,29 @@ export class BookingService implements IBookingService {
         return {
             success: hasOngoingBooking,
             message: hasOngoingBooking ? "OK to call" : 'No ongoing booking found.'
+        }
+    }
+
+    private async _sendNotification(
+        userId: string,
+        templateId: NotificationTemplateId,
+        type: NotificationType,
+        title: string,
+        message: string,
+        entityId?: string,
+        metadata?: any
+    ) {
+        try {
+            await this._notificationService.createNotification(userId, {
+                templateId,
+                type,
+                title,
+                message,
+                entityId,
+                metadata
+            });
+        } catch (error) {
+            this.logger.error('Failed to send notification', error);
         }
     }
 }

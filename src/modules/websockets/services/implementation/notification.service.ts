@@ -7,7 +7,8 @@ import { IResponse } from "@core/misc/response.util";
 import { INotificationRepository } from "@core/repositories/interfaces/notification-repo.interface";
 import { SendNewNotificationDto } from "@modules/websockets/dto/notification.dto";
 import { INotificationService } from "@modules/websockets/services/interface/notification-service.interface";
-import { Inject, Injectable } from "@nestjs/common";
+import { forwardRef, Inject, Injectable } from "@nestjs/common";
+import { NotificationGateway } from "@modules/websockets/namespaces/notification.gateway";
 
 @Injectable()
 export class NotificationService implements INotificationService {
@@ -16,6 +17,8 @@ export class NotificationService implements INotificationService {
         private readonly _notificationRepository: INotificationRepository,
         @Inject(NOTIFICATION_MAPPER)
         private readonly _notificationMapper: INotificationMapper,
+        @Inject(forwardRef(() => NotificationGateway))
+        private readonly _notificationGateway: NotificationGateway,
     ) { }
 
     async createNotification(userId: string, body: SendNewNotificationDto): Promise<INotification> {
@@ -25,9 +28,15 @@ export class NotificationService implements INotificationService {
             type: body.type,
             title: body.title,
             message: body.message,
+            entityId: body.entityId,
+            metadata: body.metadata,
         }));
 
-        return this._notificationMapper.toEntity(newNotification);
+        const notificationEntity = this._notificationMapper.toEntity(newNotification);
+
+        await this._notificationGateway.sendNotification(userId, notificationEntity);
+
+        return notificationEntity;
     }
 
     async fetchAll(userId: string): Promise<IResponse<INotification[]>> {
@@ -54,3 +63,4 @@ export class NotificationService implements INotificationService {
         return deletedDoc ? this._notificationMapper.toEntity(deletedDoc) : null;
     }
 }
+

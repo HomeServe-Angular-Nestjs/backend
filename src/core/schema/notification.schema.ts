@@ -46,6 +46,12 @@ export class NotificationDocument extends Document {
 
     @Prop({ type: Date })
     updatedAt: string;
+
+    @Prop({ type: String, required: false })
+    entityId?: string;
+
+    @Prop({ type: Object, required: false })
+    metadata?: Record<string, any>;
 }
 
 export const NotificationSchema = SchemaFactory.createForClass(NotificationDocument);

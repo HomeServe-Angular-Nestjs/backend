@@ -8,11 +8,15 @@ export interface INotification extends IEntity {
     title: string;
     message: string;
     isRead: boolean;
+    entityId?: string;
+    metadata?: Record<string, any>;
 }
 
 export interface ISendNewNotification {
     type: NotificationType;
     message: string;
     title: string;
-    templateId: NotificationTemplateId,
+    templateId: NotificationTemplateId;
+    entityId?: string;
+    metadata?: Record<string, any>;
 }

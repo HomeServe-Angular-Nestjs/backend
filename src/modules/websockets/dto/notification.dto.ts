@@ -1,5 +1,5 @@
 import { NotificationTemplateId, NotificationType } from "@core/enum/notification.enum";
-import { IsEnum, IsIn, IsNotEmpty, IsString } from "class-validator";
+import { IsEnum, IsIn, IsNotEmpty, IsObject, IsOptional, IsString } from "class-validator";
 
 export class NotificationIdDto {
     @IsNotEmpty()
@@ -25,6 +25,14 @@ export class SendNewNotificationDto {
     @IsString()
     @IsIn(Object.values(NotificationTemplateId))
     templateId: NotificationTemplateId;
+
+    @IsOptional()
+    @IsString()
+    entityId?: string;
+
+    @IsOptional()
+    @IsObject()
+    metadata?: Record<string, any>;
 }
 
 export class TemplateIdDto {
