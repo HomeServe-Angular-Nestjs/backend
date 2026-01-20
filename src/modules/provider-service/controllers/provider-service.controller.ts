@@ -65,4 +65,9 @@ export class ProviderServiceController {
     async delete(@Param('id', new isValidIdPipe()) serviceId: string): Promise<IResponse> {
         return await this._service.deleteService(serviceId);
     }
+
+    @Post('can-create-service')
+    async canCreateService(@User() user: IPayload): Promise<IResponse<boolean>> {
+        return await this._service.canProviderCreateService(user.sub, user.type);
+    }
 }

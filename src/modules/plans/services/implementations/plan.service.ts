@@ -125,7 +125,7 @@ export class PlanService implements IPlanService {
     }
 
     async fetchPlans(): Promise<IResponse<IPlan[]>> {
-        const plans = await this._planRepository.find({ isDeleted: false }, { sort: { createdAt: - 1 } });
+        const plans = await this._planRepository.find({ isDeleted: false }, { sort: { price: 1 } });
 
         return {
             success: true,
@@ -140,7 +140,7 @@ export class PlanService implements IPlanService {
         if (!plan) {
             throw new NotFoundException({
                 code: ErrorCodes.NOT_FOUND,
-                message: ErrorMessage.DOCUMENT_NOT_FOUND
+                message: ErrorMessage.PLAN_UNAVAILABLE
             });
         }
 
@@ -206,6 +206,23 @@ export class PlanService implements IPlanService {
             success: !!updatedPlan,
             message: !!updatedPlan ? 'Plan updated successfully.' : 'Failed to update plan.',
             data: this._planMapper.toEntity(updatedPlan)
+        }
+    }
+
+    async deletePlan(planId: string): Promise<IResponse> {
+
+        const deletedPlan = await this._planRepository.deletePlan(planId);
+
+        if (!deletedPlan) {
+            throw new NotFoundException({
+                code: ErrorCodes.NOT_FOUND,
+                message: ErrorMessage.DOCUMENT_NOT_FOUND
+            });
+        }
+
+        return {
+            success: !!deletedPlan,
+            message: !!deletedPlan ? 'Plan deleted successfully.' : 'Failed to delete plan.'
         }
     }
 }

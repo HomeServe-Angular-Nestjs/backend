@@ -1,4 +1,5 @@
 import { BaseEntity } from '@core/entities/base/implementation/base.entity';
+import { PlanFeatures } from '@core/entities/interfaces/plans.entity.interface';
 import { ISubscription } from '@core/entities/interfaces/subscription.entity.interface';
 import { ITransaction } from '@core/entities/interfaces/transaction.entity.interface';
 import { PaymentStatus } from '@core/enum/bookings.enum';
@@ -10,7 +11,7 @@ export class Subscription extends BaseEntity implements ISubscription {
     name: string;
     duration: SubsDurationEnum;
     role: PlanRoleEnum;
-    features: string[];
+    features: PlanFeatures;
     price: number;
     startTime: Date;
     endDate: Date;

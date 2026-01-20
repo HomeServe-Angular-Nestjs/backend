@@ -10,6 +10,7 @@ export enum ErrorMessage {
     FILE_UPLOAD_FAILED = 'File upload failed',
     SERVICE_ALREADY_EXISTS = 'Service already exists',
     PLAN_ALREADY_EXISTS = 'Plan already exists',
+    PLAN_UNAVAILABLE = 'Plan not available at the moment.',
 
     PROVIDER_NOT_FOUND = 'Provider not found',
     SERVICE_NOT_FOUND = 'Service not found',

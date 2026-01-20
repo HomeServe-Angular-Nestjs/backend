@@ -1,5 +1,6 @@
 import { IEntity } from '@core/entities/base/interfaces/base-entity.entity.interface';
 import { IPagination } from '@core/entities/interfaces/booking.entity.interface';
+import { PlanFeatures } from '@core/entities/interfaces/plans.entity.interface';
 import { ITransaction } from '@core/entities/interfaces/transaction.entity.interface';
 import { PaymentStatus } from '@core/enum/bookings.enum';
 import { PlanRoleEnum, RenewalEnum, SubsDurationEnum } from '@core/enum/subscription.enum';
@@ -12,7 +13,7 @@ export interface ISubscription extends IEntity {
     name: string;
     duration: SubsDurationEnum;
     role: PlanRoleEnum;
-    features: string[];
+    features: PlanFeatures;
     price: number;
     startTime: Date;
     endDate: Date;

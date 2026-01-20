@@ -153,7 +153,7 @@ export class SubscriptionService implements ISubscriptionService {
                 });
             }
 
-            const planDoc = await this._planRepository.findById(createSubscriptionDto.planId);
+            const planDoc = await this._planRepository.findPlan(createSubscriptionDto.planId);
             if (!planDoc) throw new NotFoundException({
                 code: ErrorCodes.NOT_FOUND,
                 message: 'Failed to find the plan.'
@@ -171,7 +171,7 @@ export class SubscriptionService implements ISubscriptionService {
                     role: plan.role,
                     price: plan.price,
                     duration: createSubscriptionDto.duration,
-                    features: [],//todo-now
+                    features: plan.features,
                     isActive: false,
                     isDeleted: false,
                     transactionHistory: [],
@@ -297,7 +297,7 @@ export class SubscriptionService implements ISubscriptionService {
                     role: plan.role,
                     price: plan.price,
                     duration: createSubscriptionDto.duration,
-                    features: [],//todo-now
+                    features: plan.features,
                     isActive: false,
                     isDeleted: false,
                     transactionHistory: [],

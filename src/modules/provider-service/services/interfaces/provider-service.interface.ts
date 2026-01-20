@@ -9,4 +9,5 @@ export interface IProviderServiceService {
     findAllByProviderId(providerId: string): Promise<IResponse<IProviderServiceUI[]>>;
     toggleStatus(serviceId: string): Promise<IResponse>;
     deleteService(serviceId: string): Promise<IResponse>;
+    canProviderCreateService(providerId: string, userType: UserType): Promise<IResponse<boolean>>;
 }

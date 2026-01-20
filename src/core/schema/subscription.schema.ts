@@ -3,6 +3,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { PlanRoleEnum, RenewalEnum, SubsDurationEnum } from '@core/enum/subscription.enum';
 import { PaymentStatus } from '@core/enum/bookings.enum';
 import { TransactionDocument } from '@core/schema/bookings.schema';
+import { PlanFeatures } from '@core/entities/interfaces/plans.entity.interface';
 
 @Schema({ timestamps: true })
 export class SubscriptionDocument extends Document {
@@ -29,8 +30,11 @@ export class SubscriptionDocument extends Document {
     })
     role: PlanRoleEnum;
 
-    @Prop({ type: [String], required: true })
-    features: string[];
+    @Prop({
+        type: Object,
+        required: true
+    })
+    features: PlanFeatures;
 
     @Prop({ type: Date, required: true })
     startTime: Date;

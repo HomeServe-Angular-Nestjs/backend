@@ -43,6 +43,10 @@ export class ProviderServiceRepository extends BaseRepository<ProviderServiceDoc
     }
 
     async count(filter: FilterQuery<ProviderServiceDocument> = {}): Promise<number> {
+        if (filter.providerId) {
+            filter.providerId = this._toObjectId(filter.providerId);
+        }
+
         return await this._providerServiceModel.countDocuments({ ...filter, isDeleted: false });
     }
 
