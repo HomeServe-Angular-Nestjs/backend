@@ -12,3 +12,9 @@ export enum RenewalEnum {
     Auto = 'auto',
     Manual = 'manual',
 }
+
+export enum PlanDurationEnum {
+    Monthly = 'monthly',
+    Yearly = 'yearly',
+    Lifetime = 'lifetime',
+}

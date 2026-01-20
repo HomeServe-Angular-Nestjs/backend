@@ -1,7 +1,7 @@
-import { Document, model } from 'mongoose';
+import { Document } from 'mongoose';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { PlanDurationType } from '../entities/interfaces/plans.entity.interface';
-import { PlanRoleEnum } from '@core/enum/subscription.enum';
+import { PlanFeatures } from '../entities/interfaces/plans.entity.interface';
+import { PlanDurationEnum, PlanRoleEnum } from '@core/enum/subscription.enum';
 
 @Schema({ timestamps: true })
 export class PlanDocument extends Document {
@@ -14,16 +14,15 @@ export class PlanDocument extends Document {
     @Prop({
         type: Number,
         required: true,
-        default: 0
     })
     price: number;
 
     @Prop({
         type: String,
-        enum: ['monthly', 'yearly', 'lifetime'],
+        enum: Object.values(PlanDurationEnum),
         required: true
     })
-    duration: PlanDurationType;
+    duration: PlanDurationEnum;
 
     @Prop({
         type: String,
@@ -33,10 +32,10 @@ export class PlanDocument extends Document {
     role: PlanRoleEnum;
 
     @Prop({
-        type: [String],
-        required: true,
+        type: Object,
+        required: true
     })
-    features: string[];
+    features: PlanFeatures;
 
     @Prop({
         type: Boolean,
@@ -58,3 +57,4 @@ export class PlanDocument extends Document {
 }
 
 export const PlanSchema = SchemaFactory.createForClass(PlanDocument);
+PlanSchema.index({ name: 1, role: 1 }, { unique: true });
