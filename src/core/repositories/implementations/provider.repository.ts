@@ -58,13 +58,13 @@ export class ProviderRepository extends BaseRepository<ProviderDocument> impleme
     const limit = options.limit || 10;
     const skip = (options.page - 1) * limit;
 
-    const query: FilterQuery<ProviderDocument> = {
+    const baseMatch: FilterQuery<ProviderDocument> = {
       isDeleted: false,
       isActive: true,
     };
 
     if (filter.search) {
-      query.$or = [
+      baseMatch.$or = [
         { fullname: { $regex: filter.search, $options: 'i' } },
         { username: { $regex: filter.search, $options: 'i' } },
         { email: { $regex: filter.search, $options: 'i' } },
@@ -72,48 +72,46 @@ export class ProviderRepository extends BaseRepository<ProviderDocument> impleme
       ];
     }
 
-    if (filter.status && filter.status !== 'all') {
-      if (filter.status === 'best-rated') {
-        query.avgRating = { $gte: 3 };
-      } else if (filter.status === 'nearest' && filter.lng && filter.lat) {
-        query.location = {
-          $near: {
-            $geometry: {
-              type: 'Point',
-              coordinates: [filter.lng, filter.lat]
-            },
-            $maxDistance: 50000,
-            $minDistance: 0
-          },
-        };
-      }
+    if (filter.status === 'best-rated') {
+      baseMatch.avgRating = { $gte: 3 };
     }
 
-    return await this._providerModel
-      .find(query)
-      .skip(skip)
-      .limit(limit)
-      .lean();
-
-  }
-
-  async getProvidersBasedOnLocation(lng: number, lat: number, options: { page: number, limit: number }): Promise<ProviderDocument[]> {
-    const limit = options.limit || 10;
-    const skip = (options.page - 1) * limit;
-
-    return await this._providerModel
-      .find({
-        location: {
-          $near: {
-            $geometry: {
+    if (filter.lat && filter.lng) {
+      const pipeline: PipelineStage[] = [
+        {
+          $geoNear: {
+            near: {
               type: 'Point',
-              coordinates: [lng, lat]
+              coordinates: [filter.lng, filter.lat], // lng, lat
             },
-            $maxDistance: 50000,
-            $minDistance: 0
+            key: 'location',
+            distanceField: 'distance', // meters
+            maxDistance: 50 * 1000, // 50 km
+            spherical: true,
+            query: baseMatch,
           },
         },
-      })
+      ];
+
+      if (filter.status === 'nearest') {
+        pipeline.push({ $sort: { distance: 1 } });
+      }
+
+      pipeline.push(
+        { $skip: skip },
+        { $limit: limit },
+        {
+          $addFields: {
+            distanceKm: { $divide: ['$distance', 1000] },
+          },
+        }
+      );
+
+      return this._providerModel.aggregate(pipeline);
+    }
+
+    return this._providerModel
+      .find(baseMatch)
       .skip(skip)
       .limit(limit)
       .lean();

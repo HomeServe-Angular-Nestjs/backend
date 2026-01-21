@@ -14,7 +14,7 @@ import { IResponse } from '@core/misc/response.util';
 import { IProviderRepository } from '@core/repositories/interfaces/provider-repo.interface';
 import { IServiceOfferedRepository } from '@core/repositories/interfaces/serviceOffered-repo.interface';
 import { IUploadsUtility } from '@core/utilities/interface/upload.utility.interface';
-import { FilterDto, GetProvidersFromLocationSearch, SlotDto, UpdateBioDto } from '@modules/providers/dtos/provider.dto';
+import { FilterDto, SlotDto, UpdateBioDto } from '@modules/providers/dtos/provider.dto';
 import { IProviderServices } from '@modules/providers/services/interfaces/provider-service.interface';
 import { AVAILABILITY_MAPPER, CART_MAPPER, CUSTOMER_MAPPER, PROVIDER_MAPPER, SERVICE_OFFERED_MAPPER } from '@core/constants/mappers.constant';
 import { IProviderMapper } from '@core/dto-mapper/interface/provider.mapper.interface';
@@ -395,59 +395,59 @@ export class ProviderServices implements IProviderServices {
     }
   }
 
-  async getProvidersLocationBasedSearch(searchData: GetProvidersFromLocationSearch): Promise<IResponse<IProviderCardWithPagination>> {
-    const { page = 1, lng, lat } = searchData;
-    const limit = 10;
+  // async getProvidersLocationBasedSearch(searchData: GetProvidersFromLocationSearch): Promise<IResponse<IProviderCardWithPagination>> {
+  //   const { page = 1, lng, lat } = searchData;
+  //   const limit = 10;
 
-    const [providerDocs, serviceDocs, totalProviders] = await Promise.all([
-      this._providerRepository.getProvidersBasedOnLocation(lng, lat, { page, limit }),
-      this._serviceOfferedRepository.searchServiceByTitle(searchData.title), //todo
-      this._providerRepository.count(),
-    ]);
+  //   const [providerDocs, serviceDocs, totalProviders] = await Promise.all([
+  //     this._providerRepository.getProvidersBasedOnLocation(lng, lat, { page, limit }),
+  //     this._serviceOfferedRepository.searchServiceByTitle(searchData.title), //todo
+  //     this._providerRepository.count(),
+  //   ]);
 
-    const providers = (providerDocs ?? []).map(provider => this._providerMapper.toEntity(provider));
-    const services = (serviceDocs ?? []).map(service => this._serviceOfferedMapper.toEntity(service));
+  //   const providers = (providerDocs ?? []).map(provider => this._providerMapper.toEntity(provider));
+  //   const services = (serviceDocs ?? []).map(service => this._serviceOfferedMapper.toEntity(service));
 
-    const targetServiceIds = new Set(services.map(service => service.id));
+  //   const targetServiceIds = new Set(services.map(service => service.id));
 
-    const searchedProviders = (providers ?? []).filter(provider =>
-      provider.servicesOffered.some(id => targetServiceIds.has(id))
-    );
+  //   const searchedProviders = (providers ?? []).filter(provider =>
+  //     provider.servicesOffered.some(id => targetServiceIds.has(id))
+  //   );
 
 
-    const stats = await this._bookingRepository.getAvgRatingAndTotalReviews();
+  //   const stats = await this._bookingRepository.getAvgRatingAndTotalReviews();
 
-    const statsMap = stats.reduce((acc, s) => {
-      acc[s.providerId] = { avgRating: s.avgRating, totalReviews: s.totalReviews };
-      return acc;
-    }, {} as Record<string, { avgRating: number, totalReviews: number }>);
+  //   const statsMap = stats.reduce((acc, s) => {
+  //     acc[s.providerId] = { avgRating: s.avgRating, totalReviews: s.totalReviews };
+  //     return acc;
+  //   }, {} as Record<string, { avgRating: number, totalReviews: number }>);
 
-    let mappedProviders: IProviderCardView[] = (searchedProviders ?? []).map(p => ({
-      id: p.id,
-      fullname: p.fullname,
-      username: p.username,
-      avatar: p.avatar,
-      address: p.address,
-      profession: p.profession,
-      experience: p.experience,
-      isActive: p.isActive,
-      isCertified: p.isCertified,
-      ...statsMap[p.id]
-    }));
+  //   let mappedProviders: IProviderCardView[] = (searchedProviders ?? []).map(p => ({
+  //     id: p.id,
+  //     fullname: p.fullname,
+  //     username: p.username,
+  //     avatar: p.avatar,
+  //     address: p.address,
+  //     profession: p.profession,
+  //     experience: p.experience,
+  //     isActive: p.isActive,
+  //     isCertified: p.isCertified,
+  //     ...statsMap[p.id]
+  //   }));
 
-    return {
-      success: true,
-      message: 'Providers successfully fetched.',
-      data: {
-        providerCards: mappedProviders,
-        pagination: {
-          page,
-          limit,
-          total: totalProviders
-        }
-      }
-    }
-  }
+  //   return {
+  //     success: true,
+  //     message: 'Providers successfully fetched.',
+  //     data: {
+  //       providerCards: mappedProviders,
+  //       pagination: {
+  //         page,
+  //         limit,
+  //         total: totalProviders
+  //       }
+  //     }
+  //   }
+  // }
 
   async fetchOneProvider(providerId: string): Promise<IProvider> {
     const providerDoc = await this._providerRepository.findById(providerId);
