@@ -5,7 +5,7 @@ import { Inject, Injectable, InternalServerErrorException, NotFoundException } f
 
 import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, PROVIDER_SERVICE_REPOSITORY_NAME, SERVICE_CATEGORY_REPOSITORY_NAME } from '@core/constants/repository.constant';
 import { ARGON_UTILITY_NAME, UPLOAD_UTILITY_NAME } from '@core/constants/utility.constant';
-import { ICustomerSearchServices } from '@core/entities/interfaces/service.entity.interface';
+import { ICustomerSearchCategories } from '@core/entities/interfaces/service.entity.interface';
 import { ICustomer, ISearchedProviders } from '@core/entities/interfaces/user.entity.interface';
 import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
@@ -206,38 +206,6 @@ export class CustomerService implements ICustomerService {
             success: !!updatedCustomer,
             message: 'image updated',
             data: this._customerMapper.toEntity(updatedCustomer)
-        }
-    }
-
-    async searchServices(search: string): Promise<IResponse<ICustomerSearchServices[]>> {
-        if (!search.trim()) {
-            return {
-                success: true,
-                message: 'empty search.',
-                data: []
-            };
-        }
-
-        const categoryDocs = await this._serviceCategoryRepository.searchCategories(search);
-        if (categoryDocs.length === 0) {
-            return {
-                success: true,
-                message: 'No services matched your search.',
-                data: []
-            };
-        }
-
-        const categories = categoryDocs.map(category => this._serviceCategoryMapper.toEntity(category));
-
-        const searchResponse = categories.map(cat => ({
-            categoryId: cat.id,
-            categoryName: cat.name,
-        }));
-
-        return {
-            success: true,
-            message: 'Services fetched successfully',
-            data: searchResponse
         }
     }
 

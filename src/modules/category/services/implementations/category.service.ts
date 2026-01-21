@@ -13,6 +13,7 @@ import { ICategoryService } from "@modules/category/services/interfaces/category
 import { IResponse } from "@core/misc/response.util";
 import { ErrorCodes } from "@core/enum/error.enum";
 import { IServiceCategory, IServiceCategoryWithPagination } from "@core/entities/interfaces/service-category.entity.interface";
+import { ICustomerSearchCategories } from "@core/entities/interfaces/service.entity.interface";
 
 
 @Injectable()
@@ -206,5 +207,37 @@ export class CategoryService implements ICategoryService {
             success: deleted,
             message: 'Service category deleted successfully',
         };
+    }
+
+    async searchCategories(search: string): Promise<IResponse<ICustomerSearchCategories[]>> {
+        if (!search.trim()) {
+            return {
+                success: true,
+                message: 'empty search.',
+                data: []
+            };
+        }
+
+        const categoryDocs = await this._serviceCategoryRepository.searchCategories(search);
+        if (categoryDocs.length === 0) {
+            return {
+                success: true,
+                message: 'No services matched your search.',
+                data: []
+            };
+        }
+
+        const categories = categoryDocs.map(category => this._serviceCategoryMapper.toEntity(category));
+
+        const searchResponse = categories.map(cat => ({
+            categoryId: cat.id,
+            categoryName: cat.name,
+        }));
+
+        return {
+            success: true,
+            message: 'Services fetched successfully',
+            data: searchResponse
+        }
     }
 }

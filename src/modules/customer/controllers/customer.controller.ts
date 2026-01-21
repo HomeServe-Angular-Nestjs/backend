@@ -27,11 +27,6 @@ export class CustomerController {
         return this._customerService.searchProviders(search);
     }
 
-    @Get('search-services')
-    async searchServices(@Query() { search }: { search: string }) {
-        return this._customerService.searchServices(search);
-    }
-
     @Put('profile')
     async updateProfile(@Req() req: Request, @Body() updateProfileDto: UpdateProfileDto): Promise<IResponse<ICustomer>> {
         const user = req.user as IPayload;

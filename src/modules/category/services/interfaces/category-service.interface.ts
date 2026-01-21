@@ -2,6 +2,7 @@ import { IResponse } from "@core/misc/response.util";
 import { CategoryFilterDto, CategoryServiceFilterDto, CreateProfessionDto, CreateServiceCategoryDto } from "@modules/category/dto/category.dto";
 import { IServiceCategory, IServiceCategoryWithPagination } from "@core/entities/interfaces/service-category.entity.interface";
 import { IProfession } from "@core/entities/interfaces/profession.entity.interface";
+import { ICustomerSearchCategories } from "@core/entities/interfaces/service.entity.interface";
 
 export interface ICategoryService {
     createProfession(createProfessionDto: CreateProfessionDto): Promise<IResponse<IProfession>>;
@@ -15,4 +16,6 @@ export interface ICategoryService {
     findAllServiceCategories(serviceCategoryFilter: CategoryServiceFilterDto): Promise<IResponse<IServiceCategoryWithPagination>>;
     toggleServiceCategoryStatus(serviceCategoryId: string): Promise<IResponse>;
     deleteServiceCategory(serviceCategoryId: string): Promise<IResponse>;
+    searchCategories(search: string): Promise<IResponse<ICustomerSearchCategories[]>>;
+
 }

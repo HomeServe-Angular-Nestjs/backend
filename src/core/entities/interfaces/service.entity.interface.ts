@@ -31,7 +31,7 @@ export interface IServicesWithPagination {
   pagination: IPagination;
 }
 
-export interface ICustomerSearchServices {
+export interface ICustomerSearchCategories {
   categoryId: string;
   categoryName: string;
 }
