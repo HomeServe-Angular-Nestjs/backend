@@ -4,7 +4,7 @@ import { IResponse } from '@core/misc/response.util';
 import { FilterDto, GetProvidersFromLocationSearch, SlotDto, UpdateBioDto } from '@modules/providers/dtos/provider.dto';
 
 export interface IProviderServices {
-  getProviders(customerId: string, filter: FilterDto): Promise<IResponse<IProviderCardWithPagination>>;
+  getProviders(filter: FilterDto): Promise<IResponse<IProviderCardWithPagination>>;
   getProvidersLocationBasedSearch(searchData: GetProvidersFromLocationSearch): Promise<IResponse<IProviderCardWithPagination>>
   getReviews(providerId: string, count: number): Promise<IResponse<IDisplayReviews>>;
   fetchOneProvider(providerId: string): Promise<IProvider>;

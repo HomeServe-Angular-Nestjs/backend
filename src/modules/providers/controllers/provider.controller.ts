@@ -36,7 +36,7 @@ export class ProviderController {
             const locationSearch = { lat, lng, title };
             return await this._providerServices.getProvidersLocationBasedSearch({ ...locationSearch, page: Number(page), limit: Number(limit) });
         } else {
-            return await this._providerServices.getProviders(user.sub, { ...filter, page: Number(page), limit: Number(limit) });
+            return await this._providerServices.getProviders({ ...filter, page: Number(page), limit: Number(limit) });
         }
     }
 

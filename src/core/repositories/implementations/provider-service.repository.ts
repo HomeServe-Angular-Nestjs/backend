@@ -96,4 +96,11 @@ export class ProviderServiceRepository extends BaseRepository<ProviderServiceDoc
             .populate('professionId')
             .populate('categoryId') as unknown as ProviderServicePopulatedDocument | null;
     }
+
+    async findByCategoryId(categoryId: string): Promise<ProviderServiceDocument[]> {
+        return await this._providerServiceModel.find({
+            categoryId: new Types.ObjectId(categoryId),
+            isDeleted: false
+        }).lean();
+    }
 }

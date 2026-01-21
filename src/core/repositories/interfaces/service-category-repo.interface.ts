@@ -9,4 +9,5 @@ export interface IServiceCategoryRepository extends IBaseRepository<ServiceCateg
     toggleStatus(serviceCategoryId: string): Promise<boolean>;
     removeServiceCategory(serviceCategoryId: string): Promise<boolean>;
     count(filter?: FilterQuery<ServiceCategoryDocument>): Promise<number>;
+    searchCategories(search: string): Promise<ServiceCategoryDocument[]>;
 }

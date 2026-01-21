@@ -1,5 +1,4 @@
-import { FilterQuery, Model, PipelineStage, RootFilterQuery, Types } from 'mongoose';
-
+import { FilterQuery, Model, PipelineStage } from 'mongoose';
 import { PROVIDER_MODEL_NAME } from '@core/constants/model.constant';
 import { IReportDownloadUserData, IReportProviderData, IStats } from '@core/entities/interfaces/admin.entity.interface';
 import { BaseRepository } from '@core/repositories/base/implementations/base.repository';

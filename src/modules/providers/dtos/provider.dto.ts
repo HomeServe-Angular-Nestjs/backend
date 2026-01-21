@@ -55,6 +55,10 @@ export class FilterDto extends PageDto {
     @IsOptional()
     @IsString()
     date?: string;
+
+    @IsOptional()
+    @IsString()
+    categoryId?: string;
 }
 
 class ExpertiseDto {

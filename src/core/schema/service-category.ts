@@ -48,3 +48,5 @@ export class ServiceCategoryDocument extends Document {
 }
 
 export const ServiceCategorySchema = SchemaFactory.createForClass(ServiceCategoryDocument);
+ServiceCategorySchema.index({ name: 1 });
+ServiceCategorySchema.index({ keywords: 1 });

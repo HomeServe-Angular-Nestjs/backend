@@ -27,7 +27,7 @@ export class CustomerController {
         return this._customerService.searchProviders(search);
     }
 
-    @Get('search_services')
+    @Get('search-services')
     async searchServices(@Query() { search }: { search: string }) {
         return this._customerService.searchServices(search);
     }
