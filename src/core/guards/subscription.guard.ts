@@ -23,6 +23,7 @@ export class SubscriptionGuard implements CanActivate {
         }
 
         const subscription = await this._subscriptionRepository.findActiveSubscriptionByUserId(user.sub, user.type);
+        console.log("subscription: ", subscription)
         if (!subscription) {
             throw new ForbiddenException({
                 code: ErrorCodes.NO_ACTIVE_SUBSCRIPTION,
