@@ -1,6 +1,6 @@
 import { PricingUnitType } from "@core/entities/interfaces/provider-service.entity.interface";
 import { PartialType } from "@nestjs/mapped-types";
-import { IsBoolean, IsIn, IsNotEmpty, IsNumber, IsString, Min } from "class-validator";
+import { IsBoolean, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from "class-validator";
 import { Type, Transform } from 'class-transformer';
 
 export class CreateProviderServiceDto {
@@ -45,4 +45,26 @@ export class UpdateProviderServiceDto extends CreateProviderServiceDto {
     @IsNotEmpty()
     @IsString()
     id: string;
+}
+
+export class ProviderServiceFilterDto {
+    @IsString()
+    @IsOptional()
+    search?: string;
+
+    @IsString()
+    @IsOptional()
+    status?: string;
+
+    @IsString()
+    @IsOptional()
+    sort?: string;
+
+    @IsString()
+    @IsOptional()
+    page?: string;
+
+    @IsString()
+    @IsOptional()
+    limit?: string;
 }

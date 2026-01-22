@@ -2,7 +2,7 @@ import { FilterQuery, Model, PipelineStage, Types } from 'mongoose';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { BOOKINGS_MODEL_NAME } from '@core/constants/model.constant';
-import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData, ILocationRevenue, ITopAreaRevenue, IUnderperformingArea, IPeakServiceTime, IRevenueBreakdown, IBookingsBreakdown, IReviewDetailsRaw, IReviewFilter, IAdminBookingFilter, IAdminBookingList } from '@core/entities/interfaces/booking.entity.interface';
+import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData, ILocationRevenue, ITopAreaRevenue, IUnderperformingArea, IPeakServiceTime, IRevenueBreakdown, IBookingsBreakdown, IReviewDetailsRaw, IReviewFilter, IAdminBookingFilter, IAdminBookingList, ISlot } from '@core/entities/interfaces/booking.entity.interface';
 import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderRevenueOverview, IResponseTimeChartData, ITopProviders, ITotalReviewAndAvgRating } from '@core/entities/interfaces/user.entity.interface';
 import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
 import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
@@ -11,6 +11,7 @@ import { IBookingReportData, IReportCustomerMatrix, IReportDownloadBookingData, 
 import { SlotStatusEnum } from '@core/enum/slot.enum';
 import { BookingStatus, CancelStatus, PaymentStatus } from '@core/enum/bookings.enum';
 import { UpdateQuery } from 'mongoose';
+import { PaymentDirection, TransactionType } from '@core/enum/transaction.enum';
 
 @Injectable()
 export class BookingRepository extends BaseRepository<BookingDocument> implements IBookingRepository {
@@ -800,13 +801,43 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
         const limit = options?.limit ?? 10;
         const skip = (page - 1) * limit;
 
-        const baseMatch: Record<string, any> = {
-            providerId: this._toObjectId(providerId),
-            review: { $exists: true, $ne: null }
+        console.log(filters)
+
+        const matchStage: PipelineStage = {
+            $match: {
+                providerId: this._toObjectId(providerId),
+                review: { $exists: true, $ne: null }
+            }
         };
 
+        if (filters.search) {
+            const regex = { $regex: filters.search, $options: 'i' };
+            matchStage.$match.$or = [
+                { 'customer.email': regex },
+                { 'review.desc': regex },
+                { 'customer.username': regex },
+                { 'provider.email': regex },
+                { 'provider.username': regex },
+            ];
+        }
+
+        if (filters.rating && filters.rating !== 'all') {
+            matchStage.$match['review.rating'] = Number(filters.rating);
+        }
+
+        if (filters.time && filters.time !== 'all') {
+            const now = new Date();
+            let pastDate: Date | null = null;
+
+            if (filters.time === 'last_6_months') pastDate = new Date(now.setMonth(now.getMonth() - 6));
+            if (filters.time === 'last_year') pastDate = new Date(now.setFullYear(now.getFullYear() - 1));
+
+            if (pastDate) {
+                matchStage.$match['review.writtenAt'] = { $gte: pastDate };
+            }
+        }
+
         const pipeline: PipelineStage[] = [
-            { $match: baseMatch },
             {
                 $lookup: {
                     from: 'customers',
@@ -815,71 +846,29 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                     as: 'customer',
                 },
             },
-            { $unwind: '$customer' }
-        ];
-
-        if (filters.search) {
-            pipeline.push({
-                $match: {
-                    $or: [
-                        { 'customer.email': { $regex: filters.search, $options: 'i' } },
-                        { 'review.desc': { $regex: filters.search, $options: 'i' } }
-                    ]
-                }
-            });
-        }
-
-        if (filters.rating) {
-            pipeline.push({
-                $match: { 'review.rating': filters.rating }
-            });
-        }
-
-        if (filters.time) {
-            const now = new Date();
-            let pastDate: Date | null = null;
-
-            if (filters.time === 'last_6_months') pastDate = new Date(now.setMonth(now.getMonth() - 6));
-            if (filters.time === 'last_year') pastDate = new Date(now.setFullYear(now.getFullYear() - 1));
-
-            if (pastDate) {
-                pipeline.push({
-                    $match: { 'review.writtenAt': { $gte: pastDate } }
-                });
-            }
-        }
-
-        pipeline.push(
-            {
-                $lookup: {
-                    from: 'services',
-                    localField: 'services.serviceId',
-                    foreignField: '_id',
-                    as: 'serviceDetails',
-                },
-            },
+            { $unwind: '$customer' },
+            matchStage,
             {
                 $project: {
                     _id: 0,
-                    id: '$_id',
+                    bookingId: '$_id',
                     desc: '$review.desc',
                     rating: '$review.rating',
                     writtenAt: '$review.writtenAt',
-                    avatar: '$customer.avatar',
-                    email: '$customer.email',
-                    username: '$customer.username',
-                    services: '$services',
-                    serviceDetails: '$serviceDetails',
+                    customer: {
+                        avatar: '$customer.avatar',
+                        email: '$customer.email',
+                        username: '$customer.username',
+                    }
                 },
             },
             { $sort: { writtenAt: filters.sort === 'asc' ? 1 : -1 } },
             { $skip: skip },
             { $limit: limit }
-        );
+        ];
 
         return await this._bookingModel.aggregate(pipeline);
     }
-
 
     async countReviews(providerId: string): Promise<number> {
         return await this._bookingModel.countDocuments({
@@ -2121,7 +2110,7 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                             $group: {
                                 _id: null,
                                 completedCount: {
-                                    $sum: { $cond: [{ $eq: ['$paymentStatus', PaymentStatus.PAID] }, 1, 0] }
+                                    $sum: { $cond: [{ $eq: ['$bookingStatus', BookingStatus.COMPLETED] }, 1, 0] }
                                 },
                                 pendingCount: {
                                     $sum: {
@@ -2141,26 +2130,19 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                         }
                     ],
                     earnings: [
-                        {
-                            $lookup: {
-                                from: 'transactions',
-                                localField: 'providerId',
-                                foreignField: 'userId',
-                                as: 'transactions'
-                            }
-                        },
-                        { $unwind: '$transactions' },
+                        { $match: { providerId: providerIdObj } },
+                        { $unwind: '$transactionHistory' },
                         {
                             $match: {
-                                'transactions.transactionType': 'booking_release',
-                                'transactions.direction': 'credit',
-                                'transactions.userId': providerIdObj
+                                'transactionHistory.transactionType': TransactionType.BOOKING_RELEASE,
+                                'transactionHistory.direction': PaymentDirection.CREDIT,
+                                'paymentStatus': PaymentStatus.PAID
                             }
                         },
                         {
                             $group: {
                                 _id: null,
-                                totalEarnings: { $sum: { $divide: ['$transactions.amount', 100] } }
+                                totalEarnings: { $sum: '$totalAmount' }
                             }
                         }
                     ]
@@ -2168,9 +2150,23 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
             },
             {
                 $project: {
-                    totalEarnings: { $ifNull: [{ $arrayElemAt: ['$earnings.totalEarnings', 0] }, 0] },
-                    completedCount: { $ifNull: [{ $arrayElemAt: ['$bookings.completedCount', 0] }, 0] },
-                    pendingCount: { $ifNull: [{ $arrayElemAt: ['$bookings.pendingCount', 0] }, 0] }
+                    totalEarnings: {
+                        $ifNull: [
+                            {
+                                $divide: [
+                                    { $arrayElemAt: ['$earnings.totalEarnings', 0] },
+                                    100
+                                ]
+                            },
+                            0
+                        ]
+                    },
+                    completedCount: {
+                        $ifNull: [{ $arrayElemAt: ['$bookings.completedCount', 0] }, 0]
+                    },
+                    pendingCount: {
+                        $ifNull: [{ $arrayElemAt: ['$bookings.pendingCount', 0] }, 0]
+                    }
                 }
             }
         ]);
@@ -2339,5 +2335,38 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
             providerId: this._toObjectId(providerId),
             bookingStatus: BookingStatus.COMPLETED
         });
+    }
+
+    async getNextAvailableSlot(providerId: string): Promise<ISlot & { date: Date }> {
+        const providerObjId = this._toObjectId(providerId);
+
+        const result = await this._bookingModel.aggregate([
+            {
+                $match: {
+                    providerId: providerObjId,
+                    bookingStatus: {
+                        $in: [
+                            BookingStatus.PENDING,
+                            BookingStatus.CONFIRMED,
+                            BookingStatus.IN_PROGRESS,
+                        ]
+                    },
+                }
+            },
+            { $sort: { 'slot.date': 1 } },
+            { $limit: 1 },
+            {
+                $project: {
+                    _id: 0,
+                    slot: {
+                        from: "$slot.from",
+                        to: "$slot.to",
+                        date: '$slot.date'
+                    }
+                }
+            }
+        ]);
+
+        return result?.[0]?.slot;
     }
 }

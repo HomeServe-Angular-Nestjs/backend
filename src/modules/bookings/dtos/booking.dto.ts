@@ -1,5 +1,5 @@
 import { Transform, Type } from 'class-transformer';
-import { ArrayMaxSize, ArrayMinSize, ArrayNotEmpty, IsArray, IsEnum, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, Matches, MaxLength, Min, MinLength, ValidateNested } from 'class-validator';
+import { ArrayMaxSize, ArrayMinSize, ArrayNotEmpty, IsArray, IsDate, IsEnum, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, Matches, MaxLength, Min, MinLength, ValidateNested } from 'class-validator';
 import { BookingStatus, DateRange, PaymentStatus, SortBy } from '@core/enum/bookings.enum';
 
 export class SlotType {
@@ -90,10 +90,9 @@ export class BookingPaginationFilterDto {
     search: string;
 
     @IsOptional()
-    @IsEnum(DateRange, {
-        message: 'dateRange must be one of: ' + Object.values(DateRange).join(', ')
-    })
-    date: DateRange;
+    @Type(() => Date)
+    @IsDate()
+    date?: Date;
 
     @IsOptional()
     @IsEnum(SortBy, {
