@@ -62,14 +62,16 @@ export class VideoCallGateway extends BaseSocketGateway {
 
   protected override async onClientDisConnect(client: Socket): Promise<void> {
     this.logger.debug(`Client disconnected: ${client.id}`);
+    const user = client.data?.user;
+    if (!user) return;
 
-    const roomKey = await this._videoCallService.findRoomForClient(client.id, 'video-call');
-    if (roomKey) {
-      const parts = roomKey.split(':');
-      const namespace = parts[1];
-      const [first, second] = parts[2].split('-');
-      await this._videoCallService.removeClientFromRoom(namespace, first, second);
-      client.to(roomKey).emit(VIDEO_CALL_USER_LEFT, { socketId: client.id });
+    const partnerId = await this._videoCallService.getUserCallPartner(user.id);
+    if (partnerId) {
+      await this._videoCallService.unsetUserInCall(user.id);
+      await this._videoCallService.unsetUserInCall(partnerId);
+
+      const roomKey = this._roomKey(partnerId);
+      this.server.to(roomKey).emit(VIDEO_CALL_USER_LEFT, { socketId: client.id });
     }
   }
 
@@ -83,9 +85,28 @@ export class VideoCallGateway extends BaseSocketGateway {
     const user = this._getClient(client);
     const { callee } = body;
 
+    // Check if caller is already in a call
+    const callerPartner = await this._videoCallService.getUserCallPartner(user.id);
+    if (callerPartner) {
+      client.emit(VIDEO_CALL_UNAVAILABLE, { message: 'You are already in another call' });
+      return;
+    }
+
+    // Check if callee is already in a call
+    const calleePartner = await this._videoCallService.getUserCallPartner(callee);
+    if (calleePartner) {
+      client.emit(VIDEO_CALL_UNAVAILABLE, { message: 'User is currently busy' });
+      return;
+    }
+
     const roomKey = this._roomKey(callee);
     const socketsInRoom = await this.server.in(roomKey).fetchSockets();
     const socketIds = socketsInRoom.map((s) => s.id);
+
+    if (!socketIds.length) {
+      client.emit(VIDEO_CALL_UNAVAILABLE, { message: 'User is offline' });
+      return;
+    }
 
     for (const id of socketIds) {
       client.to(id).emit(VIDEO_CALL_RINGING, { callerId: user.id });
@@ -97,6 +118,13 @@ export class VideoCallGateway extends BaseSocketGateway {
     const { id: callee, type } = this._getClient(client);
     const { callerId } = body;
 
+    // Double check availability
+    const callerPartner = await this._videoCallService.getUserCallPartner(callerId);
+    if (callerPartner) {
+      client.emit(VIDEO_CALL_UNAVAILABLE, { message: 'Caller is no longer available' });
+      return;
+    }
+
     const roomKey = this._roomKey(callerId);
     const socketsInRoom = await this.server.in(roomKey).fetchSockets();
     const socketIds = socketsInRoom.map((s) => s.id);
@@ -106,6 +134,10 @@ export class VideoCallGateway extends BaseSocketGateway {
       return;
     }
 
+    // Set both as in-call
+    await this._videoCallService.setUserInCall(callerId, callee);
+    await this._videoCallService.setUserInCall(callee, callerId);
+
     for (const id of socketIds) {
       this.server.to(id).emit(VIDEO_CALL_ACCEPT, {
         calleeId: callee,
@@ -114,6 +146,20 @@ export class VideoCallGateway extends BaseSocketGateway {
     }
 
     this.logger.log(`Call accepted by user ${callee} for caller ${callerId}`);
+  }
+
+  @SubscribeMessage(VIDEO_CALL_USER_LEFT)
+  async handleCallLeave(@ConnectedSocket() client: Socket, @MessageBody() body: { callee: string }) {
+    const user = this._getClient(client);
+    const partnerId = body.callee || await this._videoCallService.getUserCallPartner(user.id);
+
+    if (partnerId) {
+      await this._videoCallService.unsetUserInCall(user.id);
+      await this._videoCallService.unsetUserInCall(partnerId);
+
+      const roomKey = this._roomKey(partnerId);
+      this.server.to(roomKey).emit(VIDEO_CALL_USER_LEFT, { socketId: client.id });
+    }
   }
 
   @SubscribeMessage(SIGNAL)
@@ -135,8 +181,8 @@ export class VideoCallGateway extends BaseSocketGateway {
     }
 
     const payloadToSend = { from: client.id, type, offer, answer, candidate };
-    for (const socket of socketsInRoom) {
-      this.server.to(socket.id).emit(SIGNAL, payloadToSend);
-    }
+
+    // Broadcast to others in the room (excluding sender)
+    client.to(roomKey).emit(SIGNAL, payloadToSend);
   }
 }

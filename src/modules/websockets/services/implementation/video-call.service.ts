@@ -52,4 +52,20 @@ export class VideoCallService implements IVideoCallService {
             stream.on('end', () => resolve(null));
         });
     }
+
+    private _getActiveCallKey(userId: string): string {
+        return `video-call:active:${userId}`;
+    }
+
+    async setUserInCall(userId: string, partnerId: string): Promise<void> {
+        await this._redis.set(this._getActiveCallKey(userId), partnerId);
+    }
+
+    async unsetUserInCall(userId: string): Promise<void> {
+        await this._redis.del(this._getActiveCallKey(userId));
+    }
+
+    async getUserCallPartner(userId: string): Promise<string | null> {
+        return await this._redis.get(this._getActiveCallKey(userId));
+    }
 }

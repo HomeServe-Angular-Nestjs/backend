@@ -4,4 +4,7 @@ export interface IVideoCallService {
     removeClientFromRoom(namespace: string, callerId: string, receiverId: string): Promise<string>;
     getRoomMembers(namespace: string, callerId: string, receiverId: string): Promise<string[]>;
     findRoomForClient(clientId: string, namespace: string): Promise<string | null>;
+    setUserInCall(userId: string, partnerId: string): Promise<void>;
+    unsetUserInCall(userId: string): Promise<void>;
+    getUserCallPartner(userId: string): Promise<string | null>;
 }
