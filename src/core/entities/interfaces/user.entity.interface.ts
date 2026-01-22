@@ -83,6 +83,14 @@ export interface ISearchedProviders {
   address: string;
 }
 
+export interface ICustomerProviderDetails extends IProvider {
+  avgRating: number;
+  totalReviews: number;
+  isSaved: boolean;
+  successRate: number;
+  jobsCompleted: number;
+}
+
 export interface IFilterFetchProviders {
   search?: string;
   status?: FilterStatusType;

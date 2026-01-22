@@ -2,7 +2,7 @@ import { BadRequestException, Body, Controller, Get, Inject, Param, Patch, Put, 
 import { FilterDto, GetReviewsDto, RemoveCertificateDto, SlotDto, UpdateBioDto, UpdateBufferTimeDto, UpdatePasswordDto, UploadCertificateDto, UploadGalleryImageDto } from '@modules/providers/dtos/provider.dto';
 import { Request } from 'express';
 import { PROVIDER_SERVICE_NAME } from '@core/constants/service.constant';
-import { IProvider } from '@core/entities/interfaces/user.entity.interface';
+import { ICustomerProviderDetails, IProvider } from '@core/entities/interfaces/user.entity.interface';
 import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
 import { IPayload } from '@core/misc/payload.interface';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -35,7 +35,7 @@ export class ProviderController {
     }
 
     @Get('fetch_one_provider')
-    async fetchOneProvider(@User() user: IPayload, @Query() query: { providerId: string | null }): Promise<IProvider> {
+    async fetchOneProvider(@User() user: IPayload, @Query() query: { providerId: string | null }): Promise<IResponse<ICustomerProviderDetails>> {
         let userId = user.sub;
 
         if (query && query.providerId !== null && query.providerId !== 'null') {
