@@ -35,11 +35,22 @@ export class ProviderServiceRepository extends BaseRepository<ProviderServiceDoc
             .populate('categoryId') as unknown as ProviderServicePopulatedDocument | null;
     }
 
-    async findAllAndPopulateByProviderId(providerId: string): Promise<ProviderServicePopulatedDocument[]> {
-        return await this._providerServiceModel.find({
+    async findAllAndPopulateByProviderId(providerId: string, sort?: string): Promise<ProviderServicePopulatedDocument[]> {
+        const query = this._providerServiceModel.find({
             providerId: new Types.ObjectId(providerId),
             isDeleted: false
-        }).populate('professionId').populate('categoryId') as unknown as ProviderServicePopulatedDocument[];
+        }).populate('professionId').populate('categoryId');
+
+        if (sort) {
+            switch (sort) {
+                case 'latest': query.sort({ createdAt: -1 }); break;
+                case 'oldest': query.sort({ createdAt: 1 }); break;
+                case 'price_high_to_low': query.sort({ price: -1 }); break;
+                case 'price_low_to_high': query.sort({ price: 1 }); break;
+            }
+        }
+
+        return await query.exec() as unknown as ProviderServicePopulatedDocument[];
     }
 
     async count(filter: FilterQuery<ProviderServiceDocument> = {}): Promise<number> {

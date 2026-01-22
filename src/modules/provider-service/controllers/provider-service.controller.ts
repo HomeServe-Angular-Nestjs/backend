@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, FileTypeValidator, Get, Inject, MaxFileSizeValidator, Param, ParseFilePipe, Patch, Post, Put, Req, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Delete, FileTypeValidator, Get, Inject, MaxFileSizeValidator, Param, ParseFilePipe, Patch, Post, Put, Query, Req, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { PROVIDER_OFFER_SERVICE_NAME } from "@core/constants/service.constant";
 import { IProviderServiceService } from "../services/interfaces/provider-service.interface";
 import { CreateProviderServiceDto, UpdateProviderServiceDto } from "../dto/provider-service.dto";
@@ -47,8 +47,11 @@ export class ProviderServiceController {
     }
 
     @Get('my-services')
-    async getMyServices(@User() user: IPayload): Promise<IResponse<IProviderServiceUI[]>> {
-        return await this._service.findAllByProviderId(user.sub);
+    async getMyServices(
+        @User() user: IPayload,
+        @Query('sort') sort?: string
+    ): Promise<IResponse<IProviderServiceUI[]>> {
+        return await this._service.findAllByProviderId(user.sub, sort);
     }
 
     @Get('/:providerId')

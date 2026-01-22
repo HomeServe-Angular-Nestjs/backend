@@ -139,8 +139,8 @@ export class ProviderServiceService implements IProviderServiceService {
         }
     }
 
-    async findAllByProviderId(providerId: string): Promise<IResponse<IProviderServiceUI[]>> {
-        const docs = await this._providerServiceRepository.findAllAndPopulateByProviderId(providerId);
+    async findAllByProviderId(providerId: string, sort?: string): Promise<IResponse<IProviderServiceUI[]>> {
+        const docs = await this._providerServiceRepository.findAllAndPopulateByProviderId(providerId, sort);
 
         const services: IProviderServiceUI[] = await Promise.all(
             docs.map(async doc => {
