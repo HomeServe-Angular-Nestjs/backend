@@ -8,6 +8,7 @@ import { ClientUserType } from '@core/entities/interfaces/user.entity.interface'
 
 export type RevenueChartView = 'monthly' | 'quarterly' | 'yearly';
 
+
 export interface IBookingResponse {
     bookingId: string;
     provider: {
@@ -75,10 +76,8 @@ export interface IResponseProviderBookingLists {
     paginationData: IPagination;
 }
 
-export interface IBookedSlot {
+export interface IBookedSlot extends ISlot {
     date: Date;
-    from: string;
-    to: string;
     status: SlotStatusEnum;
 }
 
@@ -112,26 +111,10 @@ export interface IBooking extends IEntity {
     respondedAt: Date | null;
 }
 
-// export interface IBooking extends IEntity {
-//     customerId: string;
-//     totalAmount: number;
-//     expectedArrivalTime: Date;
-//     actualArrivalTime: Date | null;
-//     bookingStatus: BookingStatus;
-//     cancellationReason: string | null;
-//     cancelStatus: CancelStatus | null;
-//     cancelledAt: Date | null;
-//     location: {
-//         address: string;
-//         coordinates: [number, number];
-//     };
-//     slot: IBookedSlot;
-//     services: string[];
-//     transactionHistory: ITransaction[];
-//     paymentStatus: PaymentStatus;
-//     review: IReview | null;
-//     respondedAt: Date | null;
-// }
+export interface ISlot {
+    from: string;
+    to: string;
+}
 
 export interface IBookingOverviewChanges {
     totalBookingsChange: number;
