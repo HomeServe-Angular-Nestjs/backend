@@ -42,7 +42,7 @@ export class BookingsController {
     }
 
     @Get('view_details')
-    async getBookingDetails(@Query() { bookingId }: BookingIdDto): Promise<IBookingDetailCustomer> {
+    async getBookingDetails(@Query() { bookingId }: BookingIdDto): Promise<IResponse<IBookingDetailCustomer>> {
         return await this._bookingService.fetchBookingDetails(bookingId);
     }
 
