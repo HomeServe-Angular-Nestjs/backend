@@ -476,8 +476,8 @@ export class ProviderBookingService implements IProviderBookingService {
                 return (
                     booking.bookingId.toLowerCase().includes(search) ||
                     booking.customer.name.toLowerCase().includes(search) ||
-                    booking.customer.email.toLowerCase().includes(search)
-                    // booking.services.some((s) => s.title.toLowerCase().includes(search))//todo-today
+                    booking.customer.email.toLowerCase().includes(search) ||
+                    booking.services.some((s) => s.title.toLowerCase().includes(search))
                 );
             });
         }
@@ -497,31 +497,14 @@ export class ProviderBookingService implements IProviderBookingService {
         }
 
         if (filters.date) {
-            const today = new Date();
+            const date = new Date(filters.date);
+            date.setHours(0, 0, 0, 0);
 
             filteredBookings = filteredBookings.filter((booking) => {
                 const expectedArrivalTime = new Date(booking.expectedArrivalTime);
-
-                switch (filters.date) {
-                    case DateRange.TODAY:
-                        return expectedArrivalTime.toDateString() === today.toDateString();
-                    case DateRange.THIS_WEEK: {
-                        const weekStart = new Date(today);
-                        weekStart.setDate(today.getDate() - today.getDate());
-                        const weekEnd = new Date(weekStart);
-                        weekEnd.setDate(weekStart.getDate() + 6);
-                        return expectedArrivalTime >= weekStart && expectedArrivalTime <= weekEnd;
-                    }
-                    case DateRange.THIS_MONTH:
-                        return expectedArrivalTime.getMonth() === today.getMonth() &&
-                            expectedArrivalTime.getFullYear() === today.getFullYear();
-                    case DateRange.THIS_YEAR:
-                        return expectedArrivalTime.getFullYear() === today.getFullYear();
-                    default:
-                        return true;
-                }
+                expectedArrivalTime.setHours(0, 0, 0, 0);
+                return date.getTime() === expectedArrivalTime.getTime();
             });
-
         }
 
         const total = filteredBookings.length;
