@@ -86,8 +86,8 @@ export interface ISearchedProviders {
 export interface IFilterFetchProviders {
   search?: string;
   status?: FilterStatusType;
-  lng?: number;
-  lat?: number;
+  lng: number | null;
+  lat: number | null;
   availability?: AvailabilityEnum | 'all';
 }
 

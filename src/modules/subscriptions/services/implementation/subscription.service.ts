@@ -10,12 +10,11 @@ import { ISubscriptionService } from '@modules/subscriptions/services/interface/
 import { PLAN_MAPPER, SUBSCRIPTION_MAPPER } from '@core/constants/mappers.constant';
 import { ISubscriptionMapper } from '@core/dto-mapper/interface/subscription.mapper.interface';
 import { IPlanMapper } from '@core/dto-mapper/interface/plan.mapper.interface';
-import { PlanRoleEnum } from '@core/enum/subscription.enum';
+import { PlanDurationEnum, PlanRoleEnum } from '@core/enum/subscription.enum';
 import { ICustomerRepository } from '@core/repositories/interfaces/customer-repo.interface';
 import { IProviderRepository } from '@core/repositories/interfaces/provider-repo.interface';
 import { ClientUserType, UserType } from '@core/entities/interfaces/user.entity.interface';
 import { PaymentStatus } from '@core/enum/bookings.enum';
-import { PlanDurationType } from '@core/entities/interfaces/plans.entity.interface';
 import { PAYMENT_LOCKING_UTILITY_NAME } from '@core/constants/utility.constant';
 import { IPaymentLockingUtility } from '@core/utilities/interface/payment-locking.utility';
 
@@ -95,16 +94,16 @@ export class SubscriptionService implements ISubscriptionService {
         return Math.floor(yearlyPrice - creditAmount);
     }
 
-    private _getSubscriptionEndDateAndStartDate(duration: PlanDurationType): { startTime: Date; endDate: Date } {
+    private _getSubscriptionEndDateAndStartDate(duration: PlanDurationEnum): { startTime: Date; endDate: Date } {
         const startTime = new Date();
         const endDate = new Date(startTime);
 
         switch (duration) {
-            case 'monthly':
+            case PlanDurationEnum.Monthly:
                 endDate.setMonth(endDate.getMonth() + 1);
                 break;
 
-            case 'yearly':
+            case PlanDurationEnum.Yearly:
                 endDate.setFullYear(endDate.getFullYear() + 1);
                 break;
 
@@ -154,7 +153,7 @@ export class SubscriptionService implements ISubscriptionService {
                 });
             }
 
-            const planDoc = await this._planRepository.findById(createSubscriptionDto.planId);
+            const planDoc = await this._planRepository.findPlan(createSubscriptionDto.planId);
             if (!planDoc) throw new NotFoundException({
                 code: ErrorCodes.NOT_FOUND,
                 message: 'Failed to find the plan.'

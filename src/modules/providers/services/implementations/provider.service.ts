@@ -2,7 +2,7 @@ import { Types } from 'mongoose';
 import { DateOverrideDocument } from '@core/schema/date-overrides.schema';
 import { v4 as uuidv4 } from 'uuid';
 import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
-import { BOOKING_REPOSITORY_NAME, CART_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, DATE_OVERRIDES_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, PROVIDER_SERVICE_REPOSITORY_NAME, RESERVATION_REPOSITORY_NAME, SERVICE_OFFERED_REPOSITORY_NAME, WEEKLY_AVAILABILITY_REPOSITORY_INTERFACE_NAME } from '@core/constants/repository.constant';
+import { BOOKING_REPOSITORY_NAME, CART_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, DATE_OVERRIDES_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, PROVIDER_SERVICE_REPOSITORY_NAME, RESERVATION_REPOSITORY_NAME, SERVICE_CATEGORY_REPOSITORY_NAME, SERVICE_OFFERED_REPOSITORY_NAME, WEEKLY_AVAILABILITY_REPOSITORY_INTERFACE_NAME } from '@core/constants/repository.constant';
 import { ARGON_UTILITY_NAME, TIME_UTILITY_NAME, UPLOAD_UTILITY_NAME } from '@core/constants/utility.constant';
 import { CloudinaryService } from '@configs/cloudinary/cloudinary.service';
 import { IDisplayReviews, IProvider, IProviderCardView, IProviderCardWithPagination, UserType } from '@core/entities/interfaces/user.entity.interface';
@@ -14,7 +14,7 @@ import { IResponse } from '@core/misc/response.util';
 import { IProviderRepository } from '@core/repositories/interfaces/provider-repo.interface';
 import { IServiceOfferedRepository } from '@core/repositories/interfaces/serviceOffered-repo.interface';
 import { IUploadsUtility } from '@core/utilities/interface/upload.utility.interface';
-import { FilterDto, GetProvidersFromLocationSearch, SlotDto, UpdateBioDto } from '@modules/providers/dtos/provider.dto';
+import { FilterDto, SlotDto, UpdateBioDto } from '@modules/providers/dtos/provider.dto';
 import { IProviderServices } from '@modules/providers/services/interfaces/provider-service.interface';
 import { AVAILABILITY_MAPPER, CART_MAPPER, CUSTOMER_MAPPER, PROVIDER_MAPPER, SERVICE_OFFERED_MAPPER } from '@core/constants/mappers.constant';
 import { IProviderMapper } from '@core/dto-mapper/interface/provider.mapper.interface';
@@ -34,6 +34,7 @@ import { ITimeUtility } from '@core/utilities/interface/time.utility.interface';
 import { IProviderServiceRepository } from '@core/repositories/interfaces/provider-service-repo.interface';
 import { ICartRepository } from '@core/repositories/interfaces/cart-repo.interface';
 import { ICartMapper } from '@core/dto-mapper/interface/cart-mapper.interface';
+import { IServiceCategoryRepository } from '@core/repositories/interfaces/service-category-repo.interface';
 
 @Injectable()
 export class ProviderServices implements IProviderServices {
@@ -76,12 +77,12 @@ export class ProviderServices implements IProviderServices {
     @Inject(CART_MAPPER)
     private readonly _cartMapper: ICartMapper,
     @Inject(RESERVATION_REPOSITORY_NAME)
-    private readonly _reservationRepository: IReservationRepository
+    private readonly _reservationRepository: IReservationRepository,
   ) {
     this.logger = this.loggerFactory.createLogger(ProviderServices.name);
   }
 
-  private async getTimeDurationWindow(selectedAvailableTime: AvailabilityEnum) {
+  private _getTimeDurationWindow(selectedAvailableTime: AvailabilityEnum) {
     switch (selectedAvailableTime) {
       case AvailabilityEnum.MORNING:
         return {
@@ -112,7 +113,7 @@ export class ProviderServices implements IProviderServices {
   }
 
   // Check if a provider has availability in the requested time window
-  private checkProviderAvailability(week: IWeeklyAvailability['week'], requestedStart: string, requestedEnd: string): boolean {
+  private _checkProviderAvailability(week: IWeeklyAvailability['week'], requestedStart: string, requestedEnd: string): boolean {
     const days = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
 
     // Check each day of the week
@@ -126,7 +127,7 @@ export class ProviderServices implements IProviderServices {
 
       // Check each time range for this day
       for (const timeRange of dayAvailability.timeRanges) {
-        if (this.timeRangesOverlap(
+        if (this._timeRangesOverlap(
           timeRange.startTime,
           timeRange.endTime,
           requestedStart,
@@ -141,7 +142,7 @@ export class ProviderServices implements IProviderServices {
   }
 
   // Check if two time ranges overlap
-  private timeRangesOverlap(start1: string, end1: string, start2: string, end2: string): boolean {
+  private _timeRangesOverlap(start1: string, end1: string, start2: string, end2: string): boolean {
     const toMinutes = (time: string): number => {
       const [hours, minutes] = time.split(':').map(Number);
       return hours * 60 + minutes;
@@ -167,7 +168,7 @@ export class ProviderServices implements IProviderServices {
   }
 
   // Check if a provider is available on a specific date, considering overrides
-  private checkProviderAvailabilityOnDate(
+  private _checkProviderAvailabilityOnDate(
     week: IWeeklyAvailability['week'],
     overrides: DateOverrideDocument[],
     targetDate: Date,
@@ -187,7 +188,7 @@ export class ProviderServices implements IProviderServices {
       if (!override.timeRanges?.length) return false;
 
       return override.timeRanges.some(range =>
-        this.timeRangesOverlap(range.startTime, range.endTime, requestedStart, requestedEnd)
+        this._timeRangesOverlap(range.startTime, range.endTime, requestedStart, requestedEnd)
       );
     }
 
@@ -201,7 +202,7 @@ export class ProviderServices implements IProviderServices {
     }
 
     return dayAvailability.timeRanges.some(range =>
-      this.timeRangesOverlap(range.startTime, range.endTime, requestedStart, requestedEnd)
+      this._timeRangesOverlap(range.startTime, range.endTime, requestedStart, requestedEnd)
     );
   }
 
@@ -289,23 +290,37 @@ export class ProviderServices implements IProviderServices {
     return slots;
   }
 
-  async getProviders(customerId: string, filters: FilterDto): Promise<IResponse<IProviderCardWithPagination>> {
-    const { page = 1, limit = 10, availability, date, ...filter } = filters;
+  async getProviders(filters: FilterDto): Promise<IResponse<IProviderCardWithPagination>> {
+    const { page = 1, limit = 10, availability, date, categoryId, ...filter } = filters;
 
     const [providerDocs, totalProviders] = await Promise.all([
       this._providerRepository.fetchProvidersByFilterWithPagination(filter, { page, limit }),
       this._providerRepository.count(),
     ]);
 
-    let providers = (providerDocs || []).map(provider => {
+    let providers: IProvider[] = [];
+
+    providers = (providerDocs || []).map(provider => {
       const avatar = provider?.avatar ? this._uploadsUtility.getSignedImageUrl(provider.avatar) : '';
       provider.avatar = avatar;
       return this._providerMapper.toEntity(provider);
     });
 
+    if (categoryId) {
+      const providerIds = new Set();
+
+      const providerServices = await this._providerServiceRepository.findByCategoryId(categoryId);
+
+      for (const services of providerServices) {
+        providerIds.add(services.providerId.toString());
+      }
+
+      providers = providers.filter(provider => providerIds.has(provider.id));
+    }
+
     // Filter by availability if specified
     if (availability && availability !== 'all') {
-      const timeWindow = await this.getTimeDurationWindow(availability as AvailabilityEnum);
+      const timeWindow = this._getTimeDurationWindow(availability as AvailabilityEnum);
       const providerIds = providers.map(p => p.id);
 
       // Fetch weekly availability and overrides for all providers
@@ -332,7 +347,7 @@ export class ProviderServices implements IProviderServices {
 
         if (date) {
           // Check availability on specific date
-          return this.checkProviderAvailabilityOnDate(
+          return this._checkProviderAvailabilityOnDate(
             week,
             overrides,
             new Date(date),
@@ -341,7 +356,7 @@ export class ProviderServices implements IProviderServices {
           );
         } else {
           // Check general weekly availability
-          return this.checkProviderAvailability(week, timeWindow.start, timeWindow.end);
+          return this._checkProviderAvailability(week, timeWindow.start, timeWindow.end);
         }
       });
     }
@@ -380,59 +395,59 @@ export class ProviderServices implements IProviderServices {
     }
   }
 
-  async getProvidersLocationBasedSearch(searchData: GetProvidersFromLocationSearch): Promise<IResponse<IProviderCardWithPagination>> {
-    const { page = 1, lng, lat } = searchData;
-    const limit = 10;
+  // async getProvidersLocationBasedSearch(searchData: GetProvidersFromLocationSearch): Promise<IResponse<IProviderCardWithPagination>> {
+  //   const { page = 1, lng, lat } = searchData;
+  //   const limit = 10;
 
-    const [providerDocs, serviceDocs, totalProviders] = await Promise.all([
-      this._providerRepository.getProvidersBasedOnLocation(lng, lat, { page, limit }),
-      this._serviceOfferedRepository.searchServiceByTitle(searchData.title), //todo
-      this._providerRepository.count(),
-    ]);
+  //   const [providerDocs, serviceDocs, totalProviders] = await Promise.all([
+  //     this._providerRepository.getProvidersBasedOnLocation(lng, lat, { page, limit }),
+  //     this._serviceOfferedRepository.searchServiceByTitle(searchData.title), //todo
+  //     this._providerRepository.count(),
+  //   ]);
 
-    const providers = (providerDocs ?? []).map(provider => this._providerMapper.toEntity(provider));
-    const services = (serviceDocs ?? []).map(service => this._serviceOfferedMapper.toEntity(service));
+  //   const providers = (providerDocs ?? []).map(provider => this._providerMapper.toEntity(provider));
+  //   const services = (serviceDocs ?? []).map(service => this._serviceOfferedMapper.toEntity(service));
 
-    const targetServiceIds = new Set(services.map(service => service.id));
+  //   const targetServiceIds = new Set(services.map(service => service.id));
 
-    const searchedProviders = (providers ?? []).filter(provider =>
-      provider.servicesOffered.some(id => targetServiceIds.has(id))
-    );
+  //   const searchedProviders = (providers ?? []).filter(provider =>
+  //     provider.servicesOffered.some(id => targetServiceIds.has(id))
+  //   );
 
 
-    const stats = await this._bookingRepository.getAvgRatingAndTotalReviews();
+  //   const stats = await this._bookingRepository.getAvgRatingAndTotalReviews();
 
-    const statsMap = stats.reduce((acc, s) => {
-      acc[s.providerId] = { avgRating: s.avgRating, totalReviews: s.totalReviews };
-      return acc;
-    }, {} as Record<string, { avgRating: number, totalReviews: number }>);
+  //   const statsMap = stats.reduce((acc, s) => {
+  //     acc[s.providerId] = { avgRating: s.avgRating, totalReviews: s.totalReviews };
+  //     return acc;
+  //   }, {} as Record<string, { avgRating: number, totalReviews: number }>);
 
-    let mappedProviders: IProviderCardView[] = (searchedProviders ?? []).map(p => ({
-      id: p.id,
-      fullname: p.fullname,
-      username: p.username,
-      avatar: p.avatar,
-      address: p.address,
-      profession: p.profession,
-      experience: p.experience,
-      isActive: p.isActive,
-      isCertified: p.isCertified,
-      ...statsMap[p.id]
-    }));
+  //   let mappedProviders: IProviderCardView[] = (searchedProviders ?? []).map(p => ({
+  //     id: p.id,
+  //     fullname: p.fullname,
+  //     username: p.username,
+  //     avatar: p.avatar,
+  //     address: p.address,
+  //     profession: p.profession,
+  //     experience: p.experience,
+  //     isActive: p.isActive,
+  //     isCertified: p.isCertified,
+  //     ...statsMap[p.id]
+  //   }));
 
-    return {
-      success: true,
-      message: 'Providers successfully fetched.',
-      data: {
-        providerCards: mappedProviders,
-        pagination: {
-          page,
-          limit,
-          total: totalProviders
-        }
-      }
-    }
-  }
+  //   return {
+  //     success: true,
+  //     message: 'Providers successfully fetched.',
+  //     data: {
+  //       providerCards: mappedProviders,
+  //       pagination: {
+  //         page,
+  //         limit,
+  //         total: totalProviders
+  //       }
+  //     }
+  //   }
+  // }
 
   async fetchOneProvider(providerId: string): Promise<IProvider> {
     const providerDoc = await this._providerRepository.findById(providerId);

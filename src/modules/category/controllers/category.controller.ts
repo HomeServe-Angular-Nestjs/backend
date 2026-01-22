@@ -7,6 +7,7 @@ import { IResponse } from "@core/misc/response.util";
 import { ServiceCategory } from "@core/entities/implementation/service-category.entity";
 import { isValidIdPipe } from "@core/pipes/is-valid-id.pipe";
 import { IServiceCategoryWithPagination } from "@core/entities/interfaces/service-category.entity.interface";
+import { ICustomerSearchCategories } from "@core/entities/interfaces/service.entity.interface";
 
 @Controller('category')
 export class CategoryController {
@@ -63,5 +64,10 @@ export class CategoryController {
     @Delete('service/:id')
     async deleteServiceCategory(@Param('id', new isValidIdPipe()) serviceCategoryId: string): Promise<IResponse> {
         return await this._categoryService.deleteServiceCategory(serviceCategoryId);
+    }
+
+    @Get('search')
+    async searchCategories(@Query() { search }: { search: string }): Promise<IResponse<ICustomerSearchCategories[]>> {
+        return this._categoryService.searchCategories(search);
     }
 }

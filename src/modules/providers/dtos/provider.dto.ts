@@ -55,6 +55,20 @@ export class FilterDto extends PageDto {
     @IsOptional()
     @IsString()
     date?: string;
+
+    @IsOptional()
+    @IsString()
+    categoryId?: string;
+
+    @Transform(({ value }) => value ? Number(value) : null)
+    @IsOptional()
+    // @IsNumber()
+    lat: number | null;
+
+    @Transform(({ value }) => value ? Number(value) : null)
+    @IsOptional()
+    // @IsNumber()
+    lng: number | null;
 }
 
 class ExpertiseDto {
@@ -108,38 +122,6 @@ export class RemoveCertificateDto {
     @IsDefined()
     @IsString()
     docId: string;
-}
-
-export class GetProvidersFromLocationSearch extends PageDto {
-    @IsNotEmpty()
-    @IsNumber()
-    @Transform(({ value }) => {
-        if (!value) return null;
-        const num = Number(value);
-
-        if (isNaN(num)) {
-            throw new Error('Invalid coordinates format. Expected as number.');
-        }
-        return num;
-    })
-    lng: number;
-
-    @IsNotEmpty()
-    @IsNumber()
-    @Transform(({ value }) => {
-        if (!value) return null;
-        const num = Number(value);
-
-        if (isNaN(num)) {
-            throw new Error('Invalid coordinates format. Expected as number.');
-        }
-        return num;
-    })
-    lat: number;
-
-    @IsNotEmpty()
-    @IsString()
-    title: string;
 }
 
 export class UploadGalleryImageDto {

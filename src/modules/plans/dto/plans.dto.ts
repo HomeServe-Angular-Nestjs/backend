@@ -1,8 +1,8 @@
 import { Transform } from 'class-transformer';
-import { IsArray, IsBoolean, IsIn, IsNotEmpty, IsNumber, IsString, Min } from 'class-validator';
+import { IsBoolean, IsIn, IsNotEmpty, IsNumber, IsObject, IsString, Min } from 'class-validator';
 
-import { PlanDurationType } from '@core/entities/interfaces/plans.entity.interface';
-import { PlanRoleEnum } from '@core/enum/subscription.enum';
+import { PlanDurationEnum, PlanRoleEnum } from '@core/enum/subscription.enum';
+import { PlanFeatures } from '@core/entities/interfaces/plans.entity.interface';
 
 export class SavePlanDto {
     @IsNotEmpty()
@@ -27,18 +27,21 @@ export class SavePlanDto {
 
     @IsNotEmpty()
     @IsString()
-    @IsIn(['monthly', 'yearly', 'lifetime'])
-    duration: PlanDurationType;
+    @IsIn(Object.values(PlanDurationEnum))
+    duration: PlanDurationEnum;
 
-    @IsArray()
-    @IsString({ each: true })
-    features: string[];
+    @IsNotEmpty()
+    @IsObject()
+    features: PlanFeatures;
 }
 
 export class UpdatePlanDto extends SavePlanDto {
     @IsNotEmpty()
     @IsString()
     id: string;
+
+    @IsBoolean()
+    isDeleted?: boolean;
 }
 
 export class UpdatePlanStatusDto {

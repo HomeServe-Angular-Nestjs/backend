@@ -83,4 +83,17 @@ export class ServiceCategoryRepository extends BaseRepository<ServiceCategoryDoc
         filter.isDeleted = false;
         return await this._serviceCategoryModel.countDocuments(filter);
     }
+
+    async searchCategories(text: string): Promise<ServiceCategoryDocument[]> {
+        const prefix = `^${text}`;
+
+        return this._serviceCategoryModel.find({
+            isDeleted: false,
+            isActive: true,
+            $or: [
+                { name: { $regex: prefix, $options: "i" } },
+                { keywords: { $regex: prefix, $options: "i" } }
+            ]
+        }).lean();
+    }
 }

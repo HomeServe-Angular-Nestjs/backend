@@ -31,12 +31,9 @@ export interface IServicesWithPagination {
   pagination: IPagination;
 }
 
-export interface ICustomerSearchServices {
-  id: string;
-  title: string;
-  image: string;
-  provider: string;
-  offeredServiceIds: string[];
+export interface ICustomerSearchCategories {
+  categoryId: string;
+  categoryName: string;
 }
 
 export interface IGetServiceTitle {

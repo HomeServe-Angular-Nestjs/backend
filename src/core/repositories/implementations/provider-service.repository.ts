@@ -43,6 +43,10 @@ export class ProviderServiceRepository extends BaseRepository<ProviderServiceDoc
     }
 
     async count(filter: FilterQuery<ProviderServiceDocument> = {}): Promise<number> {
+        if (filter.providerId) {
+            filter.providerId = this._toObjectId(filter.providerId);
+        }
+
         return await this._providerServiceModel.countDocuments({ ...filter, isDeleted: false });
     }
 
@@ -91,5 +95,12 @@ export class ProviderServiceRepository extends BaseRepository<ProviderServiceDoc
         return await this._providerServiceModel.findById(serviceId)
             .populate('professionId')
             .populate('categoryId') as unknown as ProviderServicePopulatedDocument | null;
+    }
+
+    async findByCategoryId(categoryId: string): Promise<ProviderServiceDocument[]> {
+        return await this._providerServiceModel.find({
+            categoryId: new Types.ObjectId(categoryId),
+            isDeleted: false
+        }).lean();
     }
 }

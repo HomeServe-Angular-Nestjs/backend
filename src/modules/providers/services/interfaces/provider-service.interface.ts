@@ -1,11 +1,10 @@
 import { IDisplayReviews, IProvider, IProviderCardWithPagination, UserType } from '@core/entities/interfaces/user.entity.interface';
 import { UploadsType } from '@core/enum/uploads.enum';
 import { IResponse } from '@core/misc/response.util';
-import { FilterDto, GetProvidersFromLocationSearch, SlotDto, UpdateBioDto } from '@modules/providers/dtos/provider.dto';
+import { FilterDto, SlotDto, UpdateBioDto } from '@modules/providers/dtos/provider.dto';
 
 export interface IProviderServices {
-  getProviders(customerId: string, filter: FilterDto): Promise<IResponse<IProviderCardWithPagination>>;
-  getProvidersLocationBasedSearch(searchData: GetProvidersFromLocationSearch): Promise<IResponse<IProviderCardWithPagination>>
+  getProviders(filter: FilterDto): Promise<IResponse<IProviderCardWithPagination>>;
   getReviews(providerId: string, count: number): Promise<IResponse<IDisplayReviews>>;
   fetchOneProvider(providerId: string): Promise<IProvider>;
   bulkUpdateProvider(id: string, updateData: Partial<IProvider>, file?: Express.Multer.File,): Promise<IProvider>;

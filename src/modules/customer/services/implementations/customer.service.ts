@@ -3,9 +3,9 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 
-import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SERVICE_OFFERED_REPOSITORY_NAME } from '@core/constants/repository.constant';
+import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, PROVIDER_SERVICE_REPOSITORY_NAME, SERVICE_CATEGORY_REPOSITORY_NAME } from '@core/constants/repository.constant';
 import { ARGON_UTILITY_NAME, UPLOAD_UTILITY_NAME } from '@core/constants/utility.constant';
-import { ICustomerSearchServices } from '@core/entities/interfaces/service.entity.interface';
+import { ICustomerSearchCategories } from '@core/entities/interfaces/service.entity.interface';
 import { ICustomer, ISearchedProviders } from '@core/entities/interfaces/user.entity.interface';
 import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
@@ -13,15 +13,17 @@ import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-fa
 import { IResponse } from '@core/misc/response.util';
 import { ICustomerRepository } from '@core/repositories/interfaces/customer-repo.interface';
 import { IProviderRepository } from '@core/repositories/interfaces/provider-repo.interface';
-import { IServiceOfferedRepository } from '@core/repositories/interfaces/serviceOffered-repo.interface';
 import { IArgonUtility } from '@core/utilities/interface/argon.utility.interface';
 import { IUploadsUtility } from '@core/utilities/interface/upload.utility.interface';
 import { ChangePasswordDto } from '@modules/customer/dtos/customer.dto';
 import { ICustomerService } from '@modules/customer/services/interfaces/customer-service.interface';
 import { UpdateProfileDto, ProviderIdDto } from '@modules/customer/dtos/customer.dto';
-import { CUSTOMER_MAPPER } from '@core/constants/mappers.constant';
+import { CUSTOMER_MAPPER, SERVICE_CATEGORY_MAPPER } from '@core/constants/mappers.constant';
 import { ICustomerMapper } from '@core/dto-mapper/interface/customer.mapper..interface';
 import { UploadsType } from '@core/enum/uploads.enum';
+import { IProviderServiceRepository } from '@core/repositories/interfaces/provider-service-repo.interface';
+import { IServiceCategoryRepository } from '@core/repositories/interfaces/service-category-repo.interface';
+import { IServiceCategoryMapper } from '@core/dto-mapper/interface/service-category.mapper.interface';
 
 @Injectable()
 export class CustomerService implements ICustomerService {
@@ -38,10 +40,14 @@ export class CustomerService implements ICustomerService {
         private readonly _argonUtility: IArgonUtility,
         @Inject(UPLOAD_UTILITY_NAME)
         private readonly _uploadsUtility: IUploadsUtility,
-        @Inject(SERVICE_OFFERED_REPOSITORY_NAME)
-        private readonly _serviceOfferedRepository: IServiceOfferedRepository,
         @Inject(CUSTOMER_MAPPER)
         private readonly _customerMapper: ICustomerMapper,
+        @Inject(PROVIDER_SERVICE_REPOSITORY_NAME)
+        private readonly _providerServiceRepository: IProviderServiceRepository,
+        @Inject(SERVICE_CATEGORY_REPOSITORY_NAME)
+        private readonly _serviceCategoryRepository: IServiceCategoryRepository,
+        @Inject(SERVICE_CATEGORY_MAPPER)
+        private readonly _serviceCategoryMapper: IServiceCategoryMapper,
     ) {
         this.logger = this.loggerFactory.createLogger(CustomerService.name);
     }
@@ -200,72 +206,6 @@ export class CustomerService implements ICustomerService {
             success: !!updatedCustomer,
             message: 'image updated',
             data: this._customerMapper.toEntity(updatedCustomer)
-        }
-    }
-
-    async searchServices(search: string): Promise<IResponse<ICustomerSearchServices[]>> {
-        if (!search.trim()) {
-            return {
-                success: true,
-                message: 'empty search.',
-                data: []
-            };
-        }
-
-        const services = await this._serviceOfferedRepository.find({
-            $or: [
-                { title: { $regex: search, $options: 'i' } },
-                { 'subService.title': { $regex: search, $options: 'i' } }
-            ],
-            isDeleted: false,
-            isActive: true
-        });
-
-        if (services.length === 0) {
-            return {
-                success: true,
-                message: 'No services matched your search.',
-                data: []
-            };
-        }
-
-        const serviceIdSet = new Set(services.map(s => s.id));
-
-        const providers = await this._providerRepository.find({
-            servicesOffered: { $in: [...serviceIdSet].map(id => new Types.ObjectId(id)) }
-        });
-
-        const serviceToProviderMap = new Map<string, { providerId: string; offeredServiceIds: string[] }>();
-
-        for (const provider of providers) {
-            const offeredServiceIds = provider.servicesOffered.map(id => id.toString());
-
-            for (const serviceId of offeredServiceIds) {
-                if (serviceIdSet.has(serviceId) && !serviceToProviderMap.has(serviceId)) {
-                    serviceToProviderMap.set(serviceId, {
-                        providerId: provider.id,
-                        offeredServiceIds
-                    });
-                }
-            }
-        }
-
-        const filteredServices = services.map(service => {
-            const providerData = serviceToProviderMap.get(service.id);
-
-            return {
-                id: service.id,
-                title: service.title,
-                image: service.image,
-                provider: providerData?.providerId as string,
-                offeredServiceIds: providerData?.offeredServiceIds ?? []
-            };
-        });
-
-        return {
-            success: true,
-            message: 'Services fetched successfully',
-            data: filteredServices
         }
     }
 

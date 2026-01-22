@@ -1,5 +1,5 @@
 import { BadRequestException, Inject, Injectable, InternalServerErrorException } from "@nestjs/common";
-import { PROFESSION_REPOSITORY_NAME, PROVIDER_SERVICE_REPOSITORY_NAME, SERVICE_CATEGORY_REPOSITORY_NAME } from "@core/constants/repository.constant";
+import { PLAN_REPOSITORY_INTERFACE_NAME, PROVIDER_SERVICE_REPOSITORY_NAME, SUBSCRIPTION_REPOSITORY_NAME } from "@core/constants/repository.constant";
 import { PROVIDER_SERVICE_MAPPER } from "@core/constants/mappers.constant";
 import { IProviderServiceRepository } from "@core/repositories/interfaces/provider-service-repo.interface";
 import { IProviderServiceMapper } from "@core/dto-mapper/interface/provider-service.mapper.interface";
@@ -13,8 +13,9 @@ import { UPLOAD_UTILITY_NAME } from "@core/constants/utility.constant";
 import { IUploadsUtility } from "@core/utilities/interface/upload.utility.interface";
 import { UserType } from "@core/entities/interfaces/user.entity.interface";
 import { UploadsType } from "@core/enum/uploads.enum";
-import { IProfessionRepository } from "@core/repositories/interfaces/profession-repo.interface";
-import { IServiceCategoryRepository } from "@core/repositories/interfaces/service-category-repo.interface";
+import { ISubscriptionRepository } from "@core/repositories/interfaces/subscription-repo.interface";
+import { FEATURE_REGISTRY } from "@modules/plans/registry/feature.registry";
+import { IPlanRepository } from "@core/repositories/interfaces/plans-repo.interface";
 
 @Injectable()
 export class ProviderServiceService implements IProviderServiceService {
@@ -25,10 +26,10 @@ export class ProviderServiceService implements IProviderServiceService {
         private readonly _providerServiceMapper: IProviderServiceMapper,
         @Inject(UPLOAD_UTILITY_NAME)
         private readonly _uploadUtility: IUploadsUtility,
-        @Inject(PROFESSION_REPOSITORY_NAME)
-        private readonly _professionRepository: IProfessionRepository,
-        @Inject(SERVICE_CATEGORY_REPOSITORY_NAME)
-        private readonly _categoryRepository: IServiceCategoryRepository
+        @Inject(PLAN_REPOSITORY_INTERFACE_NAME)
+        private readonly _planRepository: IPlanRepository,
+        @Inject(SUBSCRIPTION_REPOSITORY_NAME)
+        private readonly _subscriptionRepository: ISubscriptionRepository,
     ) { }
 
     async createService(providerId: string, userType: UserType, createServiceDto: CreateProviderServiceDto, file: Express.Multer.File): Promise<IResponse<IProviderServiceUI>> {
@@ -200,6 +201,43 @@ export class ProviderServiceService implements IProviderServiceService {
         return {
             success: true,
             message: 'Provider service deleted successfully'
+        };
+    }
+
+    async canProviderCreateService(providerId: string, userType: UserType): Promise<IResponse<boolean>> {
+        const [subscriptionDoc, totalServiceCount, freePlanDoc] = await Promise.all([
+            this._subscriptionRepository.findActiveSubscriptionByUserId(providerId, userType),
+            this._providerServiceRepository.count({ providerId }),
+            this._planRepository.findFreePlan(),
+        ]);
+
+        const features = subscriptionDoc
+            ? subscriptionDoc.features
+            : freePlanDoc?.features || {};
+
+        const serviceLimit =
+            features[FEATURE_REGISTRY.SERVICE_LISTING_LIMIT.key];
+
+        console.log("serviceLimit:", serviceLimit);
+
+        if (!serviceLimit || typeof serviceLimit !== 'number') {
+            throw new InternalServerErrorException({
+                code: ErrorCodes.INTERNAL_SERVER_ERROR,
+                message: 'Invalid service limit configuration. Check if there is a free plan.'
+            });
+        }
+
+        if (totalServiceCount >= serviceLimit) {
+            throw new BadRequestException({
+                code: ErrorCodes.BAD_REQUEST,
+                message: 'You’ve exceeded the service limit. Upgrade your plan to add more services.'
+            });
+        }
+
+        return {
+            success: true,
+            message: 'Service creation allowed',
+            data: true
         };
     }
 }

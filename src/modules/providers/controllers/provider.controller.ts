@@ -1,5 +1,5 @@
 import { BadRequestException, Body, Controller, Get, Inject, Param, Patch, Put, Query, Req, UploadedFile, UseInterceptors } from '@nestjs/common';
-import { FilterDto, GetProvidersFromLocationSearch, GetReviewsDto, RemoveCertificateDto, SlotDto, UpdateBioDto, UpdateBufferTimeDto, UpdatePasswordDto, UploadCertificateDto, UploadGalleryImageDto } from '@modules/providers/dtos/provider.dto';
+import { FilterDto, GetReviewsDto, RemoveCertificateDto, SlotDto, UpdateBioDto, UpdateBufferTimeDto, UpdatePasswordDto, UploadCertificateDto, UploadGalleryImageDto } from '@modules/providers/dtos/provider.dto';
 import { Request } from 'express';
 import { PROVIDER_SERVICE_NAME } from '@core/constants/service.constant';
 import { IProvider } from '@core/entities/interfaces/user.entity.interface';
@@ -29,15 +29,9 @@ export class ProviderController {
     }
 
     @Get('fetch_providers')
-    async fetchProviders(@User() user: IPayload, @Query() providerLocationWithFilterDto: FilterDto & GetProvidersFromLocationSearch) {
-        const { lat, lng, title, page, limit, ...filter } = providerLocationWithFilterDto;
-
-        if (lat && lng && title) {
-            const locationSearch = { lat, lng, title };
-            return await this._providerServices.getProvidersLocationBasedSearch({ ...locationSearch, page: Number(page), limit: Number(limit) });
-        } else {
-            return await this._providerServices.getProviders(user.sub, { ...filter, page: Number(page), limit: Number(limit) });
-        }
+    async fetchProviders(@User() user: IPayload, @Query() filterDto: FilterDto) {
+        const { page, limit, ...filter } = filterDto;
+        return await this._providerServices.getProviders({ ...filter, page: Number(page), limit: Number(limit) });
     }
 
     @Get('fetch_one_provider')
