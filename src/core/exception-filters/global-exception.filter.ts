@@ -37,7 +37,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         }
 
         this.logger.error(`End Point: ${request.url} Status: ${status} Error: ${JSON.stringify(message)}`);
-
+        
         response
             .status(status)
             .json({

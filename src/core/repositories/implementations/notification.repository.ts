@@ -17,13 +17,11 @@ export class NotificationRepository extends BaseRepository<NotificationDocument>
     }
 
     async findAll(userId: string): Promise<NotificationDocument[]> {
-        return await this._notificationModel.find({ userId: this._toObjectId(userId) }).lean();
+        return await this._notificationModel.find({ userId: this._toObjectId(userId) })
+            .sort({ createdAt: -1 }).lean();
     }
 
-    async findNotification(
-        userId: string,
-        type: NotificationType,
-        templateId: NotificationTemplateId)
+    async findNotification(userId: string, type: NotificationType, templateId: NotificationTemplateId)
         : Promise<NotificationDocument | null> {
         return await this._notificationModel.findOne({
             userId: this._toObjectId(userId),
@@ -40,6 +38,13 @@ export class NotificationRepository extends BaseRepository<NotificationDocument>
         );
     }
 
+    async markAllAsRead(userId: string): Promise<void> {
+        await this._notificationModel.updateMany(
+            { userId: this._toObjectId(userId), isRead: false },
+            { $set: { isRead: true } }
+        );
+    }
+
     async deleteByUserIdAndTemplateId(userId: string, templateId: NotificationTemplateId): Promise<NotificationDocument | null> {
         const result = await this._notificationModel.findOneAndDelete(
             {
@@ -48,6 +53,10 @@ export class NotificationRepository extends BaseRepository<NotificationDocument>
             },
         );
         return result;
+    }
+
+    async deleteAll(userId: string): Promise<void> {
+        await this._notificationModel.deleteMany({ userId: this._toObjectId(userId) });
     }
 
 }

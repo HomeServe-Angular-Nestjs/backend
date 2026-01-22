@@ -216,7 +216,7 @@ export class WalletLedgerRepository extends BaseRepository<WalletLedgerDocument>
 
         const { match, sort } = this._buildTransactionFilterQuery(filters, userId);
 
-        const pipeline: any[] = [
+        const pipeline: PipelineStage[] = [
             { $match: match },
             { $sort: sort },
             { $skip: skip },
@@ -225,6 +225,9 @@ export class WalletLedgerRepository extends BaseRepository<WalletLedgerDocument>
                 $project: {
                     _id: 0,
                     createdAt: 1,
+                    transactionId: {
+                        $ifNull: ['$bookingTransactionId', '$subscriptionTransactionId', '$_id']
+                    },
                     paymentId: "$gatewayPaymentId",
                     amount: { $divide: ["$amount", 100] },
                     method: "$direction",

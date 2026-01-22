@@ -5,7 +5,7 @@ import { ILoggerFactory, LOGGER_FACTORY } from "@core/logger/interface/logger-fa
 import { IPayload } from "@core/misc/payload.interface";
 import { ITokenService } from "@modules/auth/services/interfaces/token-service.interface";
 import { INotificationService } from "@modules/websockets/services/interface/notification-service.interface";
-import { Body, Controller, Get, Inject, Post, Req, Res, UnauthorizedException } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Req, Res, UnauthorizedException } from "@nestjs/common";
 import { Request, Response } from "express";
 
 @Controller('notification')
@@ -59,6 +59,28 @@ export class NotificationController {
     async fetchAllNotifications(@Req() req: Request) {
         const user = req.user as IPayload;
         return this._notificationService.fetchAll(user.sub);
+    }
+
+    @Patch('mark-read/:id')
+    async markRead(@Param('id') id: string) {
+        return this._notificationService.markAsReadById(id);
+    }
+
+    @Patch('mark-all-read')
+    async markAllRead(@Req() req: Request) {
+        const user = req.user as IPayload;
+        return this._notificationService.markAllAsRead(user.sub);
+    }
+
+    @Delete('clear-all')
+    async clearAll(@Req() req: Request) {
+        const user = req.user as IPayload;
+        return this._notificationService.deleteAll(user.sub);
+    }
+
+    @Delete(':id')
+    async deleteNotification(@Param('id') id: string) {
+        return this._notificationService.deleteById(id);
     }
 
 }

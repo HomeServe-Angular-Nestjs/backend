@@ -10,4 +10,4 @@ export interface IBaseRepository<TDocument extends Document> {
   deleteOne(query: FilterQuery<TDocument>): Promise<{ deletedCount?: number }>;
 }
 
-export type SortQuery<TDocument> = Partial<Record<keyof TDocument, SortOrder>>;
+export type SortQuery<TDocument> = Partial<Record<keyof TDocument, 1 | -1>>;

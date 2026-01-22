@@ -984,8 +984,7 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                             $project: {
                                 growthRate: {
                                     $cond: [
-                                        { $eq: ["$prevTotal", 0] },
-                                        0,
+                                        { $gt: ["$prevTotal", 0] },
                                         {
                                             $multiply: [
                                                 {
@@ -996,7 +995,8 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                                                 },
                                                 100
                                             ]
-                                        }
+                                        },
+                                        0
                                     ]
                                 }
                             }
@@ -1044,8 +1044,7 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                                 currentRevenue: { $arrayElemAt: ["$revenues", 1] },
                                 growthPercentage: {
                                     $cond: [
-                                        { $eq: [{ $arrayElemAt: ["$revenues", 0] }, 0] },
-                                        null,
+                                        { $gt: [{ $arrayElemAt: ["$revenues", 0] }, 0] },
                                         {
                                             $multiply: [
                                                 {
@@ -1056,7 +1055,8 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                                                 },
                                                 100
                                             ]
-                                        }
+                                        },
+                                        0
                                     ]
                                 }
                             }
@@ -1134,7 +1134,6 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
             {
                 $match: {
                     bookingStatus: BookingStatus.COMPLETED,
-                    "review.isActive": true,
                     createdAt: {
                         $gte: new Date(`${currentYear}-01-01T00:00:00.000Z`),
                         $lt: new Date(`${currentYear + 1}-01-01T00:00:00.000Z`)
@@ -1142,26 +1141,8 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                 }
             },
             {
-                $addFields: {
-                    score: {
-                        $cond: [
-                            {
-                                $and: [
-                                    { $eq: ["$bookingStatus", BookingStatus.COMPLETED] },
-                                    { $ne: ["$actualArrivalTime", null] },
-                                    { $lte: ["$actualArrivalTime", "$expectedArrivalTime"] }
-                                ]
-                            },
-                            "$review.rating",
-                            0
-                        ]
-                    }
-                }
-            },
-            {
                 $group: {
                     _id: { month: { $month: "$createdAt" }, providerId: "$providerId" },
-                    totalScore: { $sum: "$score" },
                     completedBookings: { $sum: 1 }
                 }
             },
@@ -1171,11 +1152,10 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                     providerData: {
                         $push: {
                             providerId: "$_id.providerId",
-                            totalScore: "$totalScore",
                             completedBookings: "$completedBookings"
                         }
                     },
-                    totalPlatformScore: { $sum: "$totalScore" },
+                    totalPlatformBookings: { $sum: "$completedBookings" },
                     totalProviders: { $sum: 1 }
                 }
             },
@@ -1199,13 +1179,13 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                                     ]
                                 }
                             },
-                            in: { $ifNull: ["$$your.totalScore", 0] }
+                            in: { $ifNull: ["$$your.completedBookings", 0] }
                         }
                     },
                     platformAvg: {
                         $cond: [
                             { $gt: ["$totalProviders", 0] },
-                            { $divide: ["$totalPlatformScore", "$totalProviders"] },
+                            { $divide: ["$totalPlatformBookings", "$totalProviders"] },
                             0
                         ]
                     }
@@ -1424,14 +1404,9 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
             },
             { $unwind: "$services" },
             {
-                $addFields: {
-                    "services.serviceId": { $toObjectId: "$services.serviceId" },
-                }
-            },
-            {
                 $lookup: {
-                    from: 'services',
-                    localField: "services.serviceId",
+                    from: 'providerservices',
+                    localField: "services",
                     foreignField: "_id",
                     as: "serviceDetails"
                 }
@@ -1443,8 +1418,22 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                 }
             },
             {
+                $lookup: {
+                    from: 'servicecategories',
+                    localField: "serviceDetails.categoryId",
+                    foreignField: "_id",
+                    as: "categoryDetails"
+                }
+            },
+            {
+                $unwind: {
+                    path: "$categoryDetails",
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+            {
                 $group: {
-                    _id: "$serviceDetails.title",
+                    _id: "$categoryDetails.name",
                     totalRevenue: { $sum: "$totalAmount" }
                 }
             },
@@ -1463,23 +1452,26 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
             { $match: { providerId: this._toObjectId(providerId) } },
             { $unwind: "$services" },
             {
-                $addFields: {
-                    "services.serviceId": { $toObjectId: "$services.serviceId" },
-                }
-            },
-            {
                 $lookup: {
-                    from: 'services',
-                    localField: 'services.serviceId',
+                    from: 'providerservices',
+                    localField: 'services',
                     foreignField: "_id",
                     as: 'serviceDetails'
                 }
             },
             { $unwind: "$serviceDetails" },
-            { $unwind: "$serviceDetails.subService" },
+            {
+                $lookup: {
+                    from: 'professions',
+                    localField: 'serviceDetails.professionId',
+                    foreignField: '_id',
+                    as: 'professionDetails'
+                }
+            },
+            { $unwind: "$professionDetails" },
             {
                 $group: {
-                    _id: "$serviceDetails.subService.title",
+                    _id: "$professionDetails.name",
                     revenue: { $sum: "$totalAmount" },
                     totalBookings: { $sum: 1 },
                 }
@@ -2389,8 +2381,8 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                         $expr: { $regexMatch: { input: { $toString: '$_id' }, regex: searchRegex } }
                     }
                 });
-            // } else if (filter.searchBy === 'customer') {
-            //     pipeline.push({ $match: { 'customer.username': searchRegex } });
+                // } else if (filter.searchBy === 'customer') {
+                //     pipeline.push({ $match: { 'customer.username': searchRegex } });
             } else if (filter.searchBy === 'provider') {
                 pipeline.push({ $match: { 'provider.username': searchRegex } });
             } else if (filter.searchBy === 'content') {

@@ -538,7 +538,7 @@ export class RazorPaymentService implements IRazorPaymentService {
             // Notify User
             await this._sendNotification(
                 userId,
-                NotificationTemplateId.PAYMENT_SUCCESS,
+                NotificationTemplateId.SUBSCRIPTION_SUCCESS,
                 NotificationType.EVENT,
                 'Subscription Success',
                 `Your payment for subscription #${orderData.subscriptionId.slice(-6)} has been verified.`,

@@ -28,7 +28,7 @@ export class ProviderAnalyticsService implements IProviderAnalyticsService {
         return {
             success: true,
             message: 'Performance analytic data fetched successfully.',
-            data: await this._bookingRepository.getPerformanceSummary(providerId)
+            data: (await this._bookingRepository.getPerformanceSummary(providerId)) || { avgResponseTime: 0, onTimePercent: 0, avgRating: 0, completionRate: 0 }
         }
     }
 
@@ -36,13 +36,13 @@ export class ProviderAnalyticsService implements IProviderAnalyticsService {
         return {
             success: true,
             message: 'Booking performance stats fetched successfully',
-            data: await this._bookingRepository.getBookingPerformanceData(providerId)
+            data: (await this._bookingRepository.getBookingPerformanceData(providerId)) || []
         }
     }
 
     async getPerformanceTrends(providerId: string): Promise<IResponse<IReviewChartData>> {
-        const distributions = await this._bookingRepository.getRatingDistributionsByProviderId(providerId);
-        const recentReviews = await this._bookingRepository.getRecentReviews(providerId)
+        const distributions = (await this._bookingRepository.getRatingDistributionsByProviderId(providerId)) || [];
+        const recentReviews = (await this._bookingRepository.getRecentReviews(providerId)) || [];
 
         return {
             success: true,
@@ -61,7 +61,7 @@ export class ProviderAnalyticsService implements IProviderAnalyticsService {
     }
 
     async getResponseTimeDistributionData(providerId: string): Promise<IResponse<IResponseTimeChartData[]>> {
-        const responseTimeStats = await this._bookingRepository.getResponseDistributionTime(providerId);
+        const responseTimeStats = (await this._bookingRepository.getResponseDistributionTime(providerId)) || [];
         const labels = ["< 1 min", "1–10 min", "10–60 min", "1–24 hrs", "> 1 day"];
 
         const chartData = responseTimeStats.map((r, i) => ({
@@ -77,7 +77,7 @@ export class ProviderAnalyticsService implements IProviderAnalyticsService {
     }
 
     async getOnTimeArrivalData(providerId: string): Promise<IResponse<IOnTimeArrivalChartData[]>> {
-        const onTimeArrivalData = await this._bookingRepository.getOnTimeArrivalData(providerId);
+        const onTimeArrivalData = (await this._bookingRepository.getOnTimeArrivalData(providerId)) || [];
 
         const monthNames = this._getMonths();
 
@@ -101,7 +101,7 @@ export class ProviderAnalyticsService implements IProviderAnalyticsService {
     }
 
     async getMonthlyDisputeStats(providerId: string): Promise<IResponse<IDisputeAnalytics[]>> {
-        const disputeStats = await this._reportRepository.getMonthlyDisputeStats(providerId);
+        const disputeStats = (await this._reportRepository.getMonthlyDisputeStats(providerId)) || [];
 
         const monthNames = this._getMonths();
 
@@ -121,12 +121,12 @@ export class ProviderAnalyticsService implements IProviderAnalyticsService {
         return {
             success: true,
             message: "Comparison overview data fetched successfully.",
-            data: await this._bookingRepository.getComparisonOverviewData(providerId)
+            data: (await this._bookingRepository.getComparisonOverviewData(providerId)) || { growthRate: 0, monthlyTrend: { previousMonth: 0, currentMonth: 0, previousRevenue: 0, currentRevenue: 0, growthPercentage: 0 }, providerRank: 0 }
         }
     }
 
     async getComparisonStats(providerId: string): Promise<IResponse<IComparisonChartData[]>> {
-        const rawData = await this._bookingRepository.getComparisonData(providerId);
+        const rawData = (await this._bookingRepository.getComparisonData(providerId)) || [];
 
         const monthNames = this._getMonths();
 
@@ -152,12 +152,12 @@ export class ProviderAnalyticsService implements IProviderAnalyticsService {
         return {
             success: true,
             message: 'Revenue overview data fetched successfully.',
-            data: await this._bookingRepository.getRevenueOverview(providerId)
+            data: (await this._bookingRepository.getRevenueOverview(providerId)) || { totalRevenue: 0, revenueGrowth: 0, completedTransactions: 0, avgTransactionValue: 0 }
         }
     }
 
     async getRevenueTrendOverTime(providerId: string, view: RevenueChartView): Promise<IResponse<IRevenueTrendData>> {
-        const raw = await this._bookingRepository.getRevenueTrendOverTime(providerId, view);
+        const raw = (await this._bookingRepository.getRevenueTrendOverTime(providerId, view)) || { providerRevenue: [], platformAvg: [] };
 
         const { providerRevenue, platformAvg } = raw;
 
@@ -196,7 +196,7 @@ export class ProviderAnalyticsService implements IProviderAnalyticsService {
     }
 
     async getRevenueGrowthByMonth(providerId: string): Promise<IResponse<IRevenueMonthlyGrowthRateData[]>> {
-        const result = await this._bookingRepository.getRevenueGrowthByMonth(providerId);
+        const result = (await this._bookingRepository.getRevenueGrowthByMonth(providerId)) || [];
         const monthNames = this._getMonths();
 
         const final = Array.from({ length: 12 }, (_, i) => {
@@ -216,7 +216,7 @@ export class ProviderAnalyticsService implements IProviderAnalyticsService {
         return {
             success: true,
             message: 'Revenue composition data fetched successfully.',
-            data: await this._bookingRepository.getRevenueCompositionByServiceCategory(providerId)
+            data: (await this._bookingRepository.getRevenueCompositionByServiceCategory(providerId)) || []
         }
     }
 
@@ -224,7 +224,7 @@ export class ProviderAnalyticsService implements IProviderAnalyticsService {
         return {
             success: true,
             message: 'Top service data fetched successfully.',
-            data: await this._bookingRepository.getTopTenServicesByRevenue(providerId)
+            data: (await this._bookingRepository.getTopTenServicesByRevenue(providerId)) || []
         }
     }
 
@@ -232,7 +232,7 @@ export class ProviderAnalyticsService implements IProviderAnalyticsService {
         return {
             success: true,
             message: 'Top service data fetched successfully.',
-            data: await this._bookingRepository.getNewAndReturningClientData(providerId)
+            data: (await this._bookingRepository.getNewAndReturningClientData(providerId)) || []
         }
     }
 
@@ -242,7 +242,7 @@ export class ProviderAnalyticsService implements IProviderAnalyticsService {
         return {
             success: true,
             message: 'Area analytical summary data fetched successfully.',
-            data: await this._bookingRepository.getAreaSummaryData(providerId)
+            data: (await this._bookingRepository.getAreaSummaryData(providerId)) || { totalBookings: 0, topPerformingArea: "N/A", underperformingArea: "N/A", peakBookingHour: "N/A" }
         }
     }
 
@@ -250,7 +250,7 @@ export class ProviderAnalyticsService implements IProviderAnalyticsService {
         return {
             success: true,
             message: 'Area demand by week data fetched successfully.',
-            data: await this._bookingRepository.getServiceDemandData(providerId)
+            data: (await this._bookingRepository.getServiceDemandData(providerId)) || []
         }
     }
 
@@ -258,7 +258,7 @@ export class ProviderAnalyticsService implements IProviderAnalyticsService {
         return {
             success: true,
             message: 'Area by revenue data fetched successfully.',
-            data: await this._bookingRepository.getServiceDemandByLocation(providerId)
+            data: (await this._bookingRepository.getServiceDemandByLocation(providerId)) || []
         }
     }
 
@@ -266,7 +266,7 @@ export class ProviderAnalyticsService implements IProviderAnalyticsService {
         return {
             success: true,
             message: 'Top areas by revenue data fetched successfully.',
-            data: await this._bookingRepository.getTopAreasRevenue(providerId)
+            data: (await this._bookingRepository.getTopAreasRevenue(providerId)) || []
         }
     }
 
@@ -274,7 +274,7 @@ export class ProviderAnalyticsService implements IProviderAnalyticsService {
         return {
             success: true,
             message: 'Underperforming area data fetched successfully.',
-            data: await this._bookingRepository.getUnderperformingAreas(providerId)
+            data: (await this._bookingRepository.getUnderperformingAreas(providerId)) || []
         }
     }
 
@@ -282,7 +282,7 @@ export class ProviderAnalyticsService implements IProviderAnalyticsService {
         return {
             success: true,
             message: 'Peak service time data fetched successfully.',
-            data: await this._bookingRepository.getPeakServiceTime(providerId)
+            data: (await this._bookingRepository.getPeakServiceTime(providerId)) || []
         }
     }
 }  
