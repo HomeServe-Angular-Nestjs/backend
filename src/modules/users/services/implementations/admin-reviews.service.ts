@@ -1,59 +1,65 @@
-import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME } from '@core/constants/repository.constant';
-
+import { BOOKING_REPOSITORY_NAME } from '@core/constants/repository.constant';
+import { IReviewFilters } from '@core/entities/interfaces/user.entity.interface';
 import { ErrorMessage } from '@core/enum/error.enum';
 import { IResponse } from '@core/misc/response.util';
-import { ICustomerRepository } from '@core/repositories/interfaces/customer-repo.interface';
-import { IProviderRepository } from '@core/repositories/interfaces/provider-repo.interface';
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-
-import { PROVIDER_MAPPER } from '@core/constants/mappers.constant';
-import { IProviderMapper } from '@core/dto-mapper/interface/provider.mapper.interface';
+import { IBookingRepository } from '@core/repositories/interfaces/bookings-repo.interface';
+import { Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { IAdminReviewService } from '@modules/users/services/interfaces/admin-reviews-service.interface';
 import { UpdateReviewStatus } from '@modules/users/dtos/admin-user.dto';
+import { UPLOAD_UTILITY_NAME } from '@core/constants/utility.constant';
+import { IUploadsUtility } from '@core/utilities/interface/upload.utility.interface';
 
 @Injectable()
 export class AdminReviewService implements IAdminReviewService {
     constructor(
-        @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
-        private readonly _providerRepository: IProviderRepository,
-        @Inject(CUSTOMER_REPOSITORY_INTERFACE_NAME)
-        private readonly _customerRepository: ICustomerRepository,
-        @Inject(PROVIDER_MAPPER)
-        private readonly _providerMapper: IProviderMapper,
+        @Inject(BOOKING_REPOSITORY_NAME)
+        private readonly _bookingRepository: IBookingRepository,
+        @Inject(UPLOAD_UTILITY_NAME)
+        private readonly _uploadUtility: IUploadsUtility
     ) { }
 
-    async updateReviewStatus(updateReviewStatus: UpdateReviewStatus): Promise<IResponse> {
-        const updatedProvider = await this._providerRepository.findOneAndUpdate(
-            {
-                _id: updateReviewStatus.providerId,
-                'reviews._id': updateReviewStatus.reviewId,
-            },
-            {
-                $set: {
-                    'reviews.$.isActive': !updateReviewStatus.status
-                }
-            },
-            { new: true }
-        ); //todo
+    async getReviews(filter: IReviewFilters): Promise<IResponse> {
+        try {
+            const result = await this._bookingRepository.getAdminReviews(filter);
 
-        if (!updatedProvider) {
-            throw new NotFoundException(ErrorMessage.PROVIDER_NOT_FOUND_WITH_ID, updateReviewStatus.providerId);
+            for (let review of result.reviews) {
+                review.providerAvatar = this._uploadUtility.getSignedImageUrl(review.providerAvatar);
+                review.reviewedBy.customerAvatar = this._uploadUtility.getSignedImageUrl(review.reviewedBy.customerAvatar);
+            }
 
-        }
-
-        return {
-            success: true,
-            message: updateReviewStatus.status ? 'Review Successfully inactivated.' : 'Review Successfully activated.'
+            return {
+                success: true,
+                message: 'Reviews fetched successfully',
+                data: result
+            };
+        } catch (error) {
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
         }
     }
 
-    async reviewOverviews(): Promise<IResponse> {
+    async updateReviewStatus(updateReviewStatus: UpdateReviewStatus): Promise<IResponse> {
+        const isUpdated = await this._bookingRepository.updateReviewStatus(updateReviewStatus.reviewId, updateReviewStatus.status);
 
-
+        if (!isUpdated) {
+            throw new NotFoundException('Review not found or could not be updated');
+        }
 
         return {
             success: true,
-            message: 'successfully fetched'
+            message: updateReviewStatus.status ? 'Review Successfully activated.' : 'Review Successfully inactivated.'
+        }
+    }
+
+    async reviewStats(): Promise<IResponse> {
+        try {
+            const stats = await this._bookingRepository.getAdminReviewStats();
+            return {
+                success: true,
+                message: 'Review stats fetched successfully',
+                data: stats
+            };
+        } catch (error) {
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
         }
     }
 }

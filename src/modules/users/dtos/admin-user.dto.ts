@@ -104,7 +104,7 @@ export class FilterWithPaginationDto extends PageDto {
 
     @IsOptional()
     @IsEnum(RatingsSortBy)
-    sortBy?: string;
+    sortBy?: RatingsSortBy;
 
     @IsOptional()
     @IsString()
@@ -112,8 +112,9 @@ export class FilterWithPaginationDto extends PageDto {
 
     @IsOptional()
     @IsEnum(RatingSearchBy)
-    searchBy?: string;
+    searchBy?: RatingSearchBy;
 }
+
 
 export class UpdateReviewStatus {
     @IsNotEmpty()

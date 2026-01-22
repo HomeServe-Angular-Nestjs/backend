@@ -1,5 +1,5 @@
 import { CUSTOMER_MAPPER, PROVIDER_MAPPER, WALLET_LEDGER_MAPPER } from "@core/constants/mappers.constant";
-import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, TRANSACTION_REPOSITORY_NAME, WALLET_LEDGER_REPOSITORY_NAME, WALLET_REPOSITORY_NAME } from "@core/constants/repository.constant";
+import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, TRANSACTION_REPOSITORY_NAME, WALLET_LEDGER_REPOSITORY_NAME, WALLET_REPOSITORY_NAME, BOOKING_REPOSITORY_NAME } from "@core/constants/repository.constant";
 import { PDF_SERVICE } from "@core/constants/service.constant";
 import { ICustomerMapper } from "@core/dto-mapper/interface/customer.mapper..interface";
 import { IProviderMapper } from "@core/dto-mapper/interface/provider.mapper.interface";
@@ -8,6 +8,7 @@ import { ClientUserType, ICustomer, IProvider } from "@core/entities/interfaces/
 import { IAdminTransactionDataWithPagination, ITransactionAdminList, ITransactionStats, IWalletTransactionFilter } from "@core/entities/interfaces/wallet-ledger.entity.interface";
 import { ErrorCodes } from "@core/enum/error.enum";
 import { IResponse } from "@core/misc/response.util";
+import { IBookingRepository } from "@core/repositories/interfaces/bookings-repo.interface";
 import { ICustomerRepository } from "@core/repositories/interfaces/customer-repo.interface";
 import { IProviderRepository } from "@core/repositories/interfaces/provider-repo.interface";
 import { ITransactionRepository } from "@core/repositories/interfaces/transaction-repo.interface";
@@ -42,6 +43,8 @@ export class AdminTransactionService implements IAdminTransactionService {
         private readonly _providerMapper: IProviderMapper,
         @Inject(WALLET_REPOSITORY_NAME)
         private readonly _walletRepository: IWalletRepository,
+        @Inject(BOOKING_REPOSITORY_NAME)
+        private readonly _bookingRepository: IBookingRepository,
     ) { }
 
     private async _getUserDetails(userId: string, role: ClientUserType | null): Promise<ICustomer | IProvider | null> {
@@ -96,7 +99,7 @@ export class AdminTransactionService implements IAdminTransactionService {
         } & IWalletTransactionFilter;
 
         const [total, transactionDocs] = await Promise.all([
-            this._walletLedgerRepository.count(),
+            this._walletLedgerRepository.countFiltered(filters),
             this._walletLedgerRepository.getAdminTransactionLists(adminId, filters, { page, limit })
         ]);
 
@@ -112,26 +115,28 @@ export class AdminTransactionService implements IAdminTransactionService {
                         userId,
                         tnxDoc.userRole as ClientUserType
                     );
-
-                    if (!user) {
-                        throw new NotFoundException({
-                            code: ErrorCodes.NOT_FOUND,
-                            message: 'User not found',
-                        });
+                } else if (tnxDoc.bookingId) {
+                    // It's an admin commission from a booking
+                    const booking = await this._bookingRepository.findById(tnxDoc.bookingId.toString());
+                    if (booking) {
+                        user = await this._getUserDetails(
+                            booking.customerId.toString(),
+                            'customer'
+                        );
                     }
                 }
 
                 return {
                     dateTime: tnxDoc.createdAt.toString(),
                     counterparty: {
-                        email: user?.email ?? '',
-                        role: role ?? 'admin',
+                        email: user?.email ?? (adminId === userId ? 'Internal' : ''),
+                        role: user ? (tnxDoc.type.includes('provider') ? 'provider' : 'customer') : (adminId === userId ? 'admin' : 'customer'),
                     },
                     type: tnxDoc.type,
                     direction: tnxDoc.direction,
                     amount: tnxDoc.amount / 100,
                     referenceType: tnxDoc.bookingId ? 'booking' : tnxDoc.subscriptionId ? 'subscription' : 'Internal',
-                    referenceId: tnxDoc.bookingId?.toString() || tnxDoc.subscriptionId?.toString() || '',
+                    referenceId: tnxDoc.bookingId?.toString() || tnxDoc.subscriptionId?.toString() || (tnxDoc as any)._id.toString(),
                     source: tnxDoc.source,
                 };
             })

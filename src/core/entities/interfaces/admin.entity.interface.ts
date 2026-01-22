@@ -147,3 +147,10 @@ export interface IReportTransactionData {
   transactionType: string;
   date: string | Date;
 }
+
+export interface IAdminReviewStats {
+  totalReviews: number;
+  activeReviews: number;
+  reportedReviews: number;
+  averageRating: number;
+}

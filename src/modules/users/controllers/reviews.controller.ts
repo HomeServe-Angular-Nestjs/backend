@@ -16,8 +16,19 @@ export class ReviewController {
         private readonly _reviewService: IAdminReviewService,
     ) { }
 
+    @Get()
+    async getReviews(@Query() filter: FilterWithPaginationDto) {
+        return await this._reviewService.getReviews(filter);
+    }
+
+    @Get('stats')
+    async getReviewStats() {
+        return await this._reviewService.reviewStats();
+    }
+
     @Patch('status')
     async updateStatus(@Body() updateReviewStatus: UpdateReviewStatus) {
         return await this._reviewService.updateReviewStatus(updateReviewStatus);
     }
 }
+

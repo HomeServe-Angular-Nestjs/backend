@@ -124,6 +124,11 @@ export class WalletLedgerRepository extends BaseRepository<WalletLedgerDocument>
         return this._walletLedgerModel.countDocuments();
     }
 
+    async countFiltered(filters: IWalletTransactionFilter): Promise<number> {
+        const { match } = this._buildTransactionFilterQuery(filters);
+        return this._walletLedgerModel.countDocuments(match);
+    }
+
     async getTotalLedgerCountByUserId(userId: string): Promise<number> {
         return await this._walletLedgerModel.countDocuments({ userId });
     }
@@ -320,6 +325,8 @@ export class WalletLedgerRepository extends BaseRepository<WalletLedgerDocument>
                                                 [
                                                     TransactionType.PROVIDER_COMMISSION,
                                                     TransactionType.CUSTOMER_COMMISSION,
+                                                    TransactionType.SUBSCRIPTION_PAYMENT,
+                                                    TransactionType.CANCELLATION_FEE,
                                                 ],
                                             ],
                                         },
@@ -368,7 +375,7 @@ export class WalletLedgerRepository extends BaseRepository<WalletLedgerDocument>
                     netProfit: {
                         $subtract: [
                             "$platformCommission",
-                            { $add: ["$gstCollected", "$refundIssued"] },
+                            "$refundIssued",
                         ],
                     },
 

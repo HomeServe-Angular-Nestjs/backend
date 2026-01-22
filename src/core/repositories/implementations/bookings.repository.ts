@@ -3,11 +3,13 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { BOOKINGS_MODEL_NAME } from '@core/constants/model.constant';
 import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData, ILocationRevenue, ITopAreaRevenue, IUnderperformingArea, IPeakServiceTime, IRevenueBreakdown, IBookingsBreakdown, IReviewDetailsRaw, IReviewFilter, IAdminBookingFilter, IAdminBookingList } from '@core/entities/interfaces/booking.entity.interface';
-import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderRevenueOverview, IResponseTimeChartData, ITopProviders, ITotalReviewAndAvgRating } from '@core/entities/interfaces/user.entity.interface';
+import { IReviewFilters, PaginatedReviewResponse, IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderRevenueOverview, IResponseTimeChartData, ITopProviders, ITotalReviewAndAvgRating } from '@core/entities/interfaces/user.entity.interface';
+
 import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
 import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
 import { IBookingRepository } from '@core/repositories/interfaces/bookings-repo.interface';
-import { IBookingReportData, IReportCustomerMatrix, IReportDownloadBookingData, IReportProviderMatrix } from '@core/entities/interfaces/admin.entity.interface';
+import { IAdminReviewStats, IBookingReportData, IReportCustomerMatrix, IReportDownloadBookingData, IReportProviderMatrix } from '@core/entities/interfaces/admin.entity.interface';
+
 import { SlotStatusEnum } from '@core/enum/slot.enum';
 import { BookingStatus, CancelStatus, PaymentStatus } from '@core/enum/bookings.enum';
 import { UpdateQuery } from 'mongoose';
@@ -2340,4 +2342,159 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
             bookingStatus: BookingStatus.COMPLETED
         });
     }
+
+    async getAdminReviews(filter: IReviewFilters): Promise<PaginatedReviewResponse> {
+        const page = filter.page || 1;
+
+        const limit = 10;
+        const skip = (page - 1) * limit;
+
+        const match: FilterQuery<BookingDocument> = {
+            review: { $exists: true, $ne: null }
+        };
+
+        if (filter.minRating) {
+            match['review.rating'] = { $gte: Number(filter.minRating) };
+        }
+
+        const pipeline: PipelineStage[] = [];
+
+        pipeline.push(
+            { $match: match },
+            {
+                $lookup: {
+                    from: 'customers',
+                    localField: 'customerId',
+                    foreignField: '_id',
+                    as: 'customer'
+                }
+            },
+            { $unwind: '$customer' },
+            {
+                $lookup: {
+                    from: 'providers',
+                    localField: 'providerId',
+                    foreignField: '_id',
+                    as: 'provider'
+                }
+            },
+            { $unwind: '$provider' }
+        );
+
+        if (filter.search) {
+            const searchRegex = new RegExp(this._escapeRegex(filter.search), 'i');
+            if (filter.searchBy === 'review id') {
+                pipeline.push({
+                    $match: {
+                        $expr: { $regexMatch: { input: { $toString: '$_id' }, regex: searchRegex } }
+                    }
+                });
+            // } else if (filter.searchBy === 'customer') {
+            //     pipeline.push({ $match: { 'customer.username': searchRegex } });
+            } else if (filter.searchBy === 'provider') {
+                pipeline.push({ $match: { 'provider.username': searchRegex } });
+            } else if (filter.searchBy === 'content') {
+                pipeline.push({ $match: { 'review.desc': searchRegex } });
+            } else {
+                pipeline.push({
+                    $match: {
+                        $or: [
+                            { 'customer.username': searchRegex },
+                            { 'provider.username': searchRegex },
+                            { 'review.desc': searchRegex }
+                        ]
+                    }
+                });
+            }
+        }
+
+        const countPipeline = [...pipeline, { $count: 'total' }];
+        const [totalCountResult] = await this._bookingModel.aggregate(countPipeline);
+        const total = totalCountResult?.total ?? 0;
+
+        const sort: Record<string, 1 | -1> = {};
+        if (filter.sortBy === 'highest') sort['review.rating'] = -1;
+        else if (filter.sortBy === 'lowest') sort['review.rating'] = 1;
+        else if (filter.sortBy === 'oldest') sort['review.writtenAt'] = 1;
+        else sort['review.writtenAt'] = -1;
+
+        pipeline.push(
+            { $sort: sort },
+            { $skip: skip },
+            { $limit: limit },
+            {
+                $project: {
+                    _id: 0,
+                    reviewId: { $toString: '$_id' },
+                    reviewedBy: {
+                        customerId: { $toString: '$customer._id' },
+                        customerName: '$customer.username',
+                        customerEmail: '$customer.email',
+                        customerAvatar: '$customer.avatar'
+                    },
+                    providerId: { $toString: '$provider._id' },
+                    providerName: '$provider.username',
+                    providerEmail: '$provider.email',
+                    providerAvatar: { $ifNull: ['$provider.avatar', ''] },
+                    isReported: '$review.isReported',
+                    desc: '$review.desc',
+                    rating: '$review.rating',
+                    writtenAt: '$review.writtenAt',
+                    isActive: '$review.isActive'
+
+                }
+            }
+        );
+
+        const reviews = await this._bookingModel.aggregate(pipeline);
+
+        return {
+            reviews,
+            pagination: {
+                total,
+                page,
+                limit,
+            }
+        };
+    }
+
+    async getAdminReviewStats(): Promise<IAdminReviewStats> {
+        const result = await this._bookingModel.aggregate([
+            { $match: { review: { $exists: true, $ne: null } } },
+            {
+                $group: {
+                    _id: null,
+                    totalReviews: { $sum: 1 },
+                    activeReviews: {
+                        $sum: { $cond: [{ $eq: ["$review.isActive", true] }, 1, 0] }
+                    },
+                    reportedReviews: {
+                        $sum: { $cond: [{ $eq: ["$review.isReported", true] }, 1, 0] }
+                    },
+                    averageRating: { $avg: "$review.rating" }
+                }
+            }
+        ]);
+
+        return result[0] ? {
+            totalReviews: result[0].totalReviews,
+            activeReviews: result[0].activeReviews,
+            reportedReviews: result[0].reportedReviews,
+            averageRating: Math.round((result[0].averageRating || 0) * 10) / 10
+        } : {
+            totalReviews: 0,
+            activeReviews: 0,
+            reportedReviews: 0,
+            averageRating: 0
+        };
+    }
+
+    async updateReviewStatus(reviewId: string, status: boolean): Promise<boolean> {
+        const result = await this._bookingModel.updateOne(
+            { _id: this._toObjectId(reviewId) },
+            { $set: { 'review.isActive': status } }
+        );
+        return result.modifiedCount > 0;
+    }
 }
+

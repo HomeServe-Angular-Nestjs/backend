@@ -11,6 +11,7 @@ export interface IWalletLedgerRepository extends IBaseRepository<WalletLedgerDoc
     getProviderTransactionOverview(providerId: string): Promise<Omit<IProviderTransactionOverview, 'balance'>>;
     getAdminTransactionLists(adminId: string, filters: IWalletTransactionFilter, options: { page: number; limit: number }): Promise<WalletLedgerDocument[]>;
     count(): Promise<number>;
+    countFiltered(filters: IWalletTransactionFilter): Promise<number>;
     getTransactionStats(): Promise<Omit<ITransactionStats, "balance">>;
     getAdminRevenueChartData(): Promise<{ date: string; amount: number }[]>;
 }
