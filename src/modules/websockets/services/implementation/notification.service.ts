@@ -58,9 +58,33 @@ export class NotificationService implements INotificationService {
         return notificationDoc ? this._notificationMapper.toEntity(notificationDoc) : null;
     }
 
+    async markAllAsRead(userId: string): Promise<IResponse<void>> {
+        await this._notificationRepository.markAllAsRead(userId);
+        return {
+            success: true,
+            message: 'All notifications marked as read.'
+        };
+    }
+
     async deleteByUserIdAndTemplateId(userId: string, templateId: NotificationTemplateId): Promise<INotification | null> {
         const deletedDoc = await this._notificationRepository.deleteByUserIdAndTemplateId(userId, templateId);
         return deletedDoc ? this._notificationMapper.toEntity(deletedDoc) : null;
+    }
+
+    async deleteById(notificationId: string): Promise<IResponse<void>> {
+        await this._notificationRepository.deleteOne({ _id: notificationId });
+        return {
+            success: true,
+            message: 'Notification deleted.'
+        };
+    }
+
+    async deleteAll(userId: string): Promise<IResponse<void>> {
+        await this._notificationRepository.deleteAll(userId);
+        return {
+            success: true,
+            message: 'All notifications cleared.'
+        };
     }
 }
 
