@@ -1,13 +1,13 @@
-import { Request } from 'express';
-import { BadRequestException, Body, Controller, Get, Inject, Param, Patch, Put, Query, Req, UnauthorizedException, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Inject, Param, Patch, Put, Query, UnauthorizedException, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CUSTOMER_SERVICE_NAME } from '@core/constants/service.constant';
-import { ICustomer, IFetchReviews } from '@core/entities/interfaces/user.entity.interface';
+import { ICustomer } from '@core/entities/interfaces/user.entity.interface';
 import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
 import { IPayload } from '@core/misc/payload.interface';
 import { IResponse } from '@core/misc/response.util';
-import { ChangePasswordDto, SubmitReviewDto, UpdateProfileDto, ProviderIdDto } from '@modules/customer/dtos/customer.dto';
+import { ChangePasswordDto, UpdateProfileDto, ProviderIdDto } from '@modules/customer/dtos/customer.dto';
 import { ICustomerService } from '@modules/customer/services/interfaces/customer-service.interface';
+import { User } from '@core/decorators/extract-user.decorator';
 
 @Controller('')
 export class CustomerController {
@@ -17,8 +17,7 @@ export class CustomerController {
     ) { }
 
     @Get('customer')
-    async fetchOneCustomer(@Req() req: Request): Promise<ICustomer | null> {
-        const user = req.user as IPayload;
+    async fetchOneCustomer(@User() user: IPayload): Promise<ICustomer | null> {
         return await this._customerService.fetchOneCustomer(user.sub);
     }
 
@@ -28,8 +27,7 @@ export class CustomerController {
     }
 
     @Put('profile')
-    async updateProfile(@Req() req: Request, @Body() updateProfileDto: UpdateProfileDto): Promise<IResponse<ICustomer>> {
-        const user = req.user as IPayload;
+    async updateProfile(@User() user: IPayload, @Body() updateProfileDto: UpdateProfileDto): Promise<IResponse<ICustomer>> {
         return await this._customerService.updateProfile(user.sub, updateProfileDto);
     }
 
@@ -44,21 +42,18 @@ export class CustomerController {
     }
 
     @Patch('saved_providers')
-    async updateSavedProviders(@Req() req: Request, @Body() providerIdDto: ProviderIdDto): Promise<ICustomer> {
-        const user = req.user as IPayload;
+    async updateSavedProviders(@User() user: IPayload, @Body() providerIdDto: ProviderIdDto): Promise<ICustomer> {
         return this._customerService.updateSavedProviders(user.sub, providerIdDto);
     }
 
     @Patch('password')
-    async changePassword(@Req() req: Request, @Body() dto: ChangePasswordDto): Promise<IResponse<ICustomer>> {
-        const user = req.user as IPayload;
+    async changePassword(@User() user: IPayload, @Body() dto: ChangePasswordDto): Promise<IResponse<ICustomer>> {
         return await this._customerService.changePassword(user.sub, dto);
     }
 
     @Patch('avatar')
     @UseInterceptors(FileInterceptor('customerAvatar'))
-    async changeAvatar(@Req() req: Request, @Body() dto: any, @UploadedFile() file: Express.Multer.File) {
-        const user = req.user as IPayload;
+    async changeAvatar(@User() user: IPayload, @Body() dto: any, @UploadedFile() file: Express.Multer.File) {
 
         if (!file) {
             throw new BadRequestException({
