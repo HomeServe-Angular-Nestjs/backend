@@ -4,7 +4,7 @@ import { AvailabilityEnum } from '@core/enum/slot.enum';
 import { SlotType } from '../../../modules/bookings/dtos/booking.dto';
 import { IBaseUserEntity } from '../base/interfaces/base-user.entity.interface';
 import { IAdmin } from './admin.entity.interface';
-import { IBookingsBreakdown, IPagination, IRatingDistribution, IRecentReviews, IRevenueBreakdown, IReview } from './booking.entity.interface';
+import { IBookingsBreakdown, IPagination, IRatingDistribution, IRecentReviews, IRevenueBreakdown, IReview, ISlot } from './booking.entity.interface';
 
 export type UserType = 'customer' | 'provider' | 'admin';
 export type ClientUserType = Exclude<UserType, 'admin'>;
@@ -276,7 +276,7 @@ export interface IProviderDashboardOverview {
   bookings: IBookingsBreakdown;
   avgRating: number;
   completionRate: number;
-  availability: Availability | null;
-  nextAvailableSlot: { from: string | Date, to: String | Date } | null;
+  workingHours: Availability | null;
+  nextAvailableSlot: ISlot & { date: Date | string } | null;
   activeServiceCount: number;
 }
