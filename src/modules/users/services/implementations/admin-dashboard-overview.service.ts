@@ -4,7 +4,7 @@ import {
     WALLET_LEDGER_REPOSITORY_NAME
 } from '@/core/constants/repository.constant';
 import {
-    IAdminDashboardOverview, IAdminDashboardSubscription,
+    IAdminDashboardOverview, IAdminDashboardRevenue, IAdminDashboardSubscription,
     IAdminDashboardUserStats
 } from '@/core/entities/interfaces/admin.entity.interface';
 import { ITopProviders } from '@/core/entities/interfaces/user.entity.interface';
@@ -98,26 +98,28 @@ export class AdminDashboardOverviewService implements IAdminDashboardOverviewSer
         };
     }
 
-    // async getDashBoardRevenue(): Promise<IResponse<IAdminDashboardRevenue[]>> {
-    //     const transactions = await this._transactionRepository.find({});
-    //     const revenueData = transactions.map(tx => ({
-    //         amount: tx.amount,
-    //         createdAt: tx.createdAt?.toString() || ''
-    //     }));
-
-    //     return {
-    //         success: true,
-    //         message: "Dashboard revenue data fetched successfully",
-    //         data: revenueData
-    //     }
-    // }
+    async getDashBoardRevenue(): Promise<IResponse<IAdminDashboardRevenue[]>> {
+        const result = await this._walletLedgerRepository.getAdminRevenueChartData();
+        return {
+            success: true,
+            message: "Dashboard revenue data fetched successfully",
+            data: result
+        };
+    }
 
     async getSubscriptionData(): Promise<IResponse<IAdminDashboardSubscription>> {
-        const subscriptionData = await this._subscriptionRepository.getSubscriptionChartData();
+        const [subscriptionData, totalProviders] = await Promise.all([
+            this._subscriptionRepository.getSubscriptionChartData(),
+            this._providerRepository.count({ isDeleted: false })
+        ]);
+
         return {
             success: true,
             message: "Subscription data fetched successfully",
-            data: subscriptionData
+            data: {
+                ...subscriptionData,
+                totalProviders
+            }
         };
     }
 

@@ -397,4 +397,45 @@ export class WalletLedgerRepository extends BaseRepository<WalletLedgerDocument>
             refundIssued: 0,
         };
     }
+
+    async getAdminRevenueChartData(): Promise<{ date: string; amount: number }[]> {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+        const match: FilterQuery<WalletLedgerDocument> = {
+            userRole: 'admin',
+            direction: PaymentDirection.CREDIT,
+            type: {
+                $in: [
+                    TransactionType.CUSTOMER_COMMISSION,
+                    TransactionType.PROVIDER_COMMISSION,
+                    TransactionType.SUBSCRIPTION_PAYMENT,
+                    TransactionType.CANCELLATION_FEE,
+                ],
+            },
+            createdAt: { $gte: thirtyDaysAgo },
+        };
+
+        const result = await this._walletLedgerModel.aggregate([
+            { $match: match },
+            {
+                $group: {
+                    _id: {
+                        $dateToString: { format: "%Y-%m-%d", date: "$createdAt" }
+                    },
+                    amount: { $sum: "$amount" }
+                }
+            },
+            { $sort: { "_id": 1 } },
+            {
+                $project: {
+                    _id: 0,
+                    date: "$_id",
+                    amount: { $divide: ["$amount", 100] }
+                }
+            }
+        ]);
+
+        return result;
+    }
 }

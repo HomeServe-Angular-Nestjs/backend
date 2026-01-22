@@ -55,40 +55,27 @@ export class SubscriptionRepository extends BaseRepository<SubscriptionDocument>
         return match;
     }
 
-    async getSubscriptionChartData(): Promise<IAdminDashboardSubscription> {
+    async getSubscriptionChartData(): Promise<Omit<IAdminDashboardSubscription, 'totalProviders'>> {
+        const now = new Date();
         const result = await this._subscriptionModel.aggregate([
             {
-                $group: {
-                    _id: {
-                        name: "$name",
-                        duration: "$duration",
-                    },
-                    count: { $sum: 1 }
+                $match: {
+                    isDeleted: false,
+                    isActive: true,
+                    endDate: { $gte: now }
                 }
             },
             {
                 $group: {
                     _id: null,
-                    free: {
-                        $sum: {
-                            $cond: [{ $eq: ["$_id.name", "free"] }, "$count", 0]
-                        }
-                    },
                     totalPremium: {
-                        $sum: {
-                            $cond: [{ $eq: ["$_id.name", "premium"] }, "$count", 0]
-                        }
+                        $sum: { $cond: [{ $gt: ["$price", 0] }, 1, 0] }
                     },
                     monthlyPremium: {
                         $sum: {
                             $cond: [
-                                {
-                                    $and: [
-                                        { $eq: ["$_id.name", "premium"] },
-                                        { $eq: ["$_id.duration", "monthly"] }
-                                    ]
-                                },
-                                "$count",
+                                { $and: [{ $gt: ["$price", 0] }, { $eq: ["$duration", 'monthly'] }] },
+                                1,
                                 0
                             ]
                         }
@@ -96,13 +83,8 @@ export class SubscriptionRepository extends BaseRepository<SubscriptionDocument>
                     yearlyPremium: {
                         $sum: {
                             $cond: [
-                                {
-                                    $and: [
-                                        { $eq: ["$_id.name", "premium"] },
-                                        { $eq: ["$_id.duration", "yearly"] }
-                                    ]
-                                },
-                                "$count",
+                                { $and: [{ $gt: ["$price", 0] }, { $eq: ["$duration", 'yearly'] }] },
+                                1,
                                 0
                             ]
                         }
@@ -112,17 +94,13 @@ export class SubscriptionRepository extends BaseRepository<SubscriptionDocument>
             {
                 $project: {
                     _id: 0,
-                    free: 1,
-                    totalPremium: 1,
                     monthlyPremium: 1,
                     yearlyPremium: 1
                 }
             }
         ]);
 
-        return result.length > 0 ? result[0] : {
-            free: 0,
-            totalPremium: 0,
+        return result.length > 0 ? { ...result[0] } : {
             monthlyPremium: 0,
             yearlyPremium: 0
         };
