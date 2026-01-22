@@ -880,50 +880,20 @@ export class ProviderBookingService implements IProviderBookingService {
             filterFinal.sort = filter.sort;
         }
 
-        const [reviewCount, result] = await Promise.all([
-            this._bookingRepository.countReviews(providerId),
-            this._bookingRepository.getReviews(providerId, filterFinal, { page, limit })
+        const [reviewDetails, reviewCount] = await Promise.all([
+            this._bookingRepository.getReviews(providerId, filterFinal, { page, limit }),
+            this._bookingRepository.countReviews(providerId)
         ]);
 
-        const response: IReviewDetails[] = result.map(review => {
-            const subServiceIds = review.services.flatMap(s => s.subserviceIds.map(id => id.toString()));
-            const subServiceTitles: string[] = [];
-
-            for (const serviceDetailDoc of review.serviceDetails || []) {
-                const serviceDetail = this._serviceMapper.toEntity(serviceDetailDoc);
-
-                const matchedSubs =
-                    (serviceDetail.subService ?? []).filter((sub) => {
-                        if (sub.id) {
-                            return subServiceIds.includes(sub.id.toString())
-                        }
-                        return false;
-                    }) || [];
-
-                matchedSubs.forEach((sub) => {
-                    if (sub.title) {
-                        return subServiceTitles.push(sub.title)
-                    }
-                });
-            }
-
-            return {
-                id: review.id,
-                avatar: this._uploadUtility.getSignedImageUrl(review.avatar),
-                username: review.username,
-                email: review.email,
-                rating: review.rating,
-                desc: review.desc,
-                writtenAt: review.writtenAt,
-                serviceTitles: subServiceTitles
-            }
-        });
+        for (let review of reviewDetails) {
+            review.customer.avatar = this._uploadUtility.getSignedImageUrl(review.customer.avatar);
+        }
 
         return {
             success: true,
             message: "Fetched review data successfully.",
             data: {
-                reviewDetails: response,
+                reviewDetails: reviewDetails,
                 pagination: { page, limit, total: reviewCount }
             }
         }

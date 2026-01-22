@@ -361,16 +361,16 @@ export interface IBookingsBreakdown {
     averageBookingValue: number;
 }
 
-export interface IReviewDetailsRaw extends IReview {
-    id: string;
-    avatar: string;
-    email: string;
-    username: string;
-    services: {
-        serviceId: string;
-        subserviceIds: string[];
-    }[];
-    serviceDetails: ServiceDocument[];
+export interface IReviewDetailsRaw {
+    bookingId: string;
+    desc: string;
+    rating: number;
+    writtenAt: string;
+    customer: {
+        avatar: string;
+        email: string;
+        username: string;
+    }
 }
 
 export interface IReviewDetails extends Omit<IReview, 'isActive' | 'isReported'> {
@@ -378,11 +378,10 @@ export interface IReviewDetails extends Omit<IReview, 'isActive' | 'isReported'>
     avatar: string;
     email: string;
     username: string;
-    serviceTitles: string[];
 }
 
 export interface IReviewWithPagination {
-    reviewDetails: IReviewDetails[];
+    reviewDetails: IReviewDetailsRaw[];
     pagination: IPagination;
 }
 

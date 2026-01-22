@@ -801,13 +801,43 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
         const limit = options?.limit ?? 10;
         const skip = (page - 1) * limit;
 
-        const baseMatch: Record<string, any> = {
-            providerId: this._toObjectId(providerId),
-            review: { $exists: true, $ne: null }
+        console.log(filters)
+
+        const matchStage: PipelineStage = {
+            $match: {
+                providerId: this._toObjectId(providerId),
+                review: { $exists: true, $ne: null }
+            }
         };
 
+        if (filters.search) {
+            const regex = { $regex: filters.search, $options: 'i' };
+            matchStage.$match.$or = [
+                { 'customer.email': regex },
+                { 'review.desc': regex },
+                { 'customer.username': regex },
+                { 'provider.email': regex },
+                { 'provider.username': regex },
+            ];
+        }
+
+        if (filters.rating && filters.rating !== 'all') {
+            matchStage.$match['review.rating'] = Number(filters.rating);
+        }
+
+        if (filters.time && filters.time !== 'all') {
+            const now = new Date();
+            let pastDate: Date | null = null;
+
+            if (filters.time === 'last_6_months') pastDate = new Date(now.setMonth(now.getMonth() - 6));
+            if (filters.time === 'last_year') pastDate = new Date(now.setFullYear(now.getFullYear() - 1));
+
+            if (pastDate) {
+                matchStage.$match['review.writtenAt'] = { $gte: pastDate };
+            }
+        }
+
         const pipeline: PipelineStage[] = [
-            { $match: baseMatch },
             {
                 $lookup: {
                     from: 'customers',
@@ -816,71 +846,29 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                     as: 'customer',
                 },
             },
-            { $unwind: '$customer' }
-        ];
-
-        if (filters.search) {
-            pipeline.push({
-                $match: {
-                    $or: [
-                        { 'customer.email': { $regex: filters.search, $options: 'i' } },
-                        { 'review.desc': { $regex: filters.search, $options: 'i' } }
-                    ]
-                }
-            });
-        }
-
-        if (filters.rating) {
-            pipeline.push({
-                $match: { 'review.rating': filters.rating }
-            });
-        }
-
-        if (filters.time) {
-            const now = new Date();
-            let pastDate: Date | null = null;
-
-            if (filters.time === 'last_6_months') pastDate = new Date(now.setMonth(now.getMonth() - 6));
-            if (filters.time === 'last_year') pastDate = new Date(now.setFullYear(now.getFullYear() - 1));
-
-            if (pastDate) {
-                pipeline.push({
-                    $match: { 'review.writtenAt': { $gte: pastDate } }
-                });
-            }
-        }
-
-        pipeline.push(
-            {
-                $lookup: {
-                    from: 'services',
-                    localField: 'services.serviceId',
-                    foreignField: '_id',
-                    as: 'serviceDetails',
-                },
-            },
+            { $unwind: '$customer' },
+            matchStage,
             {
                 $project: {
                     _id: 0,
-                    id: '$_id',
+                    bookingId: '$_id',
                     desc: '$review.desc',
                     rating: '$review.rating',
                     writtenAt: '$review.writtenAt',
-                    avatar: '$customer.avatar',
-                    email: '$customer.email',
-                    username: '$customer.username',
-                    services: '$services',
-                    serviceDetails: '$serviceDetails',
+                    customer: {
+                        avatar: '$customer.avatar',
+                        email: '$customer.email',
+                        username: '$customer.username',
+                    }
                 },
             },
             { $sort: { writtenAt: filters.sort === 'asc' ? 1 : -1 } },
             { $skip: skip },
             { $limit: limit }
-        );
+        ];
 
         return await this._bookingModel.aggregate(pipeline);
     }
-
 
     async countReviews(providerId: string): Promise<number> {
         return await this._bookingModel.countDocuments({
