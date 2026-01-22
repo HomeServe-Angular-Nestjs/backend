@@ -159,6 +159,7 @@ export interface IBookingDetailsBase {
     cancelReason: string | null;
     cancelledAt: Date | null;
     expectedArrivalTime: Date;
+    actualArrivalTime: Date | null;
     totalAmount: number;
     orderedServices: IBookedService[];
     transaction: {
@@ -176,11 +177,13 @@ export interface IBookedService {
 
 export interface IBookingDetailCustomer extends IBookingDetailsBase {
     provider: {
+        id: string;
         name: string;
         email: string;
         phone: string;
         location: string;
     };
+    breakup: IPriceBreakupData;
 }
 
 export interface IBookingDetailProvider extends IBookingDetailsBase {
@@ -450,4 +453,10 @@ export interface IAdminBookingFilter {
     search?: string;
     bookingStatus?: BookingStatus | 'all';
     paymentStatus?: PaymentStatus | 'all';
+}
+
+export interface IPriceBreakupData {
+    subTotal: number;
+    tax: number;
+    total: number;
 }

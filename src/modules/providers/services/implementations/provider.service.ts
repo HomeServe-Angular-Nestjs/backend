@@ -5,7 +5,7 @@ import { BadRequestException, Inject, Injectable, InternalServerErrorException, 
 import { BOOKING_REPOSITORY_NAME, CART_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, DATE_OVERRIDES_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, PROVIDER_SERVICE_REPOSITORY_NAME, RESERVATION_REPOSITORY_NAME, SERVICE_CATEGORY_REPOSITORY_NAME, SERVICE_OFFERED_REPOSITORY_NAME, WEEKLY_AVAILABILITY_REPOSITORY_INTERFACE_NAME } from '@core/constants/repository.constant';
 import { ARGON_UTILITY_NAME, TIME_UTILITY_NAME, UPLOAD_UTILITY_NAME } from '@core/constants/utility.constant';
 import { CloudinaryService } from '@configs/cloudinary/cloudinary.service';
-import { IDisplayReviews, IProvider, IProviderCardView, IProviderCardWithPagination, UserType } from '@core/entities/interfaces/user.entity.interface';
+import { ICustomerProviderDetails, IDisplayReviews, IProvider, IProviderCardView, IProviderCardWithPagination, UserType } from '@core/entities/interfaces/user.entity.interface';
 import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
 import { UploadsType } from '@core/enum/uploads.enum';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
@@ -449,8 +449,14 @@ export class ProviderServices implements IProviderServices {
   //   }
   // }
 
-  async fetchOneProvider(providerId: string): Promise<IProvider> {
-    const providerDoc = await this._providerRepository.findById(providerId);
+  async fetchOneProvider(providerId: string): Promise<IResponse<ICustomerProviderDetails>> {
+    const [providerDoc, avgRating, completedBookingsCount, successRate, totalReviews] = await Promise.all([
+      this._providerRepository.findById(providerId),
+      this._bookingRepository.getAvgRating(providerId),
+      this._bookingRepository.completedBookingsCount(providerId),
+      this._bookingRepository.getBookingsCompletionRate(providerId),
+      this._bookingRepository.countReviews(providerId)
+    ]);
 
     if (!providerDoc) throw new NotFoundException({
       code: ErrorCodes.NOT_FOUND,
@@ -459,7 +465,21 @@ export class ProviderServices implements IProviderServices {
 
     const provider = this._providerMapper.toEntity(providerDoc);
     provider.avatar = provider?.avatar ? this._uploadsUtility.getSignedImageUrl(provider.avatar) : '';
-    return provider;
+
+    const responseDate: ICustomerProviderDetails = {
+      ...provider,
+      avgRating: avgRating ?? 0,
+      totalReviews: totalReviews ?? 0,
+      isSaved: false,
+      successRate: successRate ?? 0,
+      jobsCompleted: completedBookingsCount ?? 0
+    }
+
+    return {
+      success: true,
+      message: 'Provider fetched successfully.',
+      data: responseDate
+    };
   }
 
   async bulkUpdateProvider(id: string, updateData: Partial<IProvider>, file?: Express.Multer.File,): Promise<IProvider> {

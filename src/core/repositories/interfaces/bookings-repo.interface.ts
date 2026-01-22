@@ -4,7 +4,6 @@ import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData,
 import { IBaseRepository } from '@core/repositories/base/interfaces/base-repo.interface';
 import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
 import { IBookingReportData, IReportCustomerMatrix, IReportDownloadBookingData, IReportProviderMatrix } from '@core/entities/interfaces/admin.entity.interface';
-import { SlotStatusEnum } from '@core/enum/slot.enum';
 import { BookingStatus, CancelStatus, PaymentStatus } from '@core/enum/bookings.enum';
 
 export interface IBookingRepository extends IBaseRepository<BookingDocument> {
@@ -62,4 +61,5 @@ export interface IBookingRepository extends IBaseRepository<BookingDocument> {
     getRevenueBreakdown(providerId: string): Promise<IRevenueBreakdown>;
     getBookingsBreakdown(providerId: string): Promise<IBookingsBreakdown>;
     getBookingsCompletionRate(providerId: string): Promise<number>;
+    completedBookingsCount(providerId: string): Promise<number>;
 } 

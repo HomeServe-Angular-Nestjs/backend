@@ -2334,4 +2334,10 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
         });
     }
 
+    async completedBookingsCount(providerId: string): Promise<number> {
+        return await this._bookingModel.countDocuments({
+            providerId: this._toObjectId(providerId),
+            bookingStatus: BookingStatus.COMPLETED
+        });
+    }
 }
