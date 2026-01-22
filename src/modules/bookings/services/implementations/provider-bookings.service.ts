@@ -1155,7 +1155,7 @@ export class ProviderBookingService implements IProviderBookingService {
                 })
             );
 
-            // CREDIT gst amount to admin
+            // CREDIT gst amount to admin (Provider Portion)
             await this._walletLedgerRepository.create(
                 this._walletLedgerMapper.toDocument({
                     walletId: adminWallet.id,
@@ -1179,10 +1179,75 @@ export class ProviderBookingService implements IProviderBookingService {
                         totalAmount,
                         commissionAmount,
                         gstAmount,
-                        finalAmount
+                        finalAmount,
+                        portion: 'provider'
                     }
                 })
             );
+
+            // CREDIT customer commission to admin (Categorization)
+            const customerCommission = transaction.metadata?.breakup?.commission || 0;
+            const customerGst = transaction.metadata?.breakup?.gst || 0;
+
+            if (customerCommission > 0) {
+                await this._walletLedgerRepository.create(
+                    this._walletLedgerMapper.toDocument({
+                        walletId: adminWallet.id,
+                        userId: adminWallet.userId,
+                        userRole: 'admin',
+                        direction: PaymentDirection.CREDIT,
+                        type: TransactionType.CUSTOMER_COMMISSION,
+                        source: PaymentSource.WALLET,
+                        amount: customerCommission,
+                        currency: CurrencyType.INR,
+                        balanceBefore: adminWallet.balance,
+                        balanceAfter: adminWallet.balance + customerCommission,
+                        journalId: adminWalletLedger?.journalId,
+                        bookingId,
+                        bookingTransactionId: null,
+                        subscriptionId: null,
+                        subscriptionTransactionId: null,
+                        gatewayOrderId: null,
+                        gatewayPaymentId: null,
+                        metadata: {
+                            totalAmount,
+                            customerCommission,
+                            customerGst,
+                            portion: 'customer'
+                        }
+                    })
+                );
+            }
+
+            if (customerGst > 0) {
+                await this._walletLedgerRepository.create(
+                    this._walletLedgerMapper.toDocument({
+                        walletId: adminWallet.id,
+                        userId: adminWallet.userId,
+                        userRole: 'admin',
+                        direction: PaymentDirection.CREDIT,
+                        type: TransactionType.GST,
+                        source: PaymentSource.WALLET,
+                        amount: customerGst,
+                        currency: CurrencyType.INR,
+                        balanceBefore: adminWallet.balance,
+                        balanceAfter: adminWallet.balance + customerGst,
+                        journalId: adminWalletLedger?.journalId,
+                        bookingId,
+                        bookingTransactionId: null,
+                        subscriptionId: null,
+                        subscriptionTransactionId: null,
+                        gatewayOrderId: null,
+                        gatewayPaymentId: null,
+                        metadata: {
+                            totalAmount,
+                            customerCommission,
+                            customerGst,
+                            portion: 'customer'
+                        }
+                    })
+                );
+            }
 
             // CREDIT booking amount to provider wallet
             await this._walletLedgerRepository.create(

@@ -124,6 +124,11 @@ export class WalletLedgerRepository extends BaseRepository<WalletLedgerDocument>
         return this._walletLedgerModel.countDocuments();
     }
 
+    async countFiltered(filters: IWalletTransactionFilter): Promise<number> {
+        const { match } = this._buildTransactionFilterQuery(filters);
+        return this._walletLedgerModel.countDocuments(match);
+    }
+
     async getTotalLedgerCountByUserId(userId: string): Promise<number> {
         return await this._walletLedgerModel.countDocuments({ userId });
     }
@@ -320,6 +325,8 @@ export class WalletLedgerRepository extends BaseRepository<WalletLedgerDocument>
                                                 [
                                                     TransactionType.PROVIDER_COMMISSION,
                                                     TransactionType.CUSTOMER_COMMISSION,
+                                                    TransactionType.SUBSCRIPTION_PAYMENT,
+                                                    TransactionType.CANCELLATION_FEE,
                                                 ],
                                             ],
                                         },
@@ -368,7 +375,7 @@ export class WalletLedgerRepository extends BaseRepository<WalletLedgerDocument>
                     netProfit: {
                         $subtract: [
                             "$platformCommission",
-                            { $add: ["$gstCollected", "$refundIssued"] },
+                            "$refundIssued",
                         ],
                     },
 
@@ -396,5 +403,46 @@ export class WalletLedgerRepository extends BaseRepository<WalletLedgerDocument>
             gstCollected: 0,
             refundIssued: 0,
         };
+    }
+
+    async getAdminRevenueChartData(): Promise<{ date: string; amount: number }[]> {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+        const match: FilterQuery<WalletLedgerDocument> = {
+            userRole: 'admin',
+            direction: PaymentDirection.CREDIT,
+            type: {
+                $in: [
+                    TransactionType.CUSTOMER_COMMISSION,
+                    TransactionType.PROVIDER_COMMISSION,
+                    TransactionType.SUBSCRIPTION_PAYMENT,
+                    TransactionType.CANCELLATION_FEE,
+                ],
+            },
+            createdAt: { $gte: thirtyDaysAgo },
+        };
+
+        const result = await this._walletLedgerModel.aggregate([
+            { $match: match },
+            {
+                $group: {
+                    _id: {
+                        $dateToString: { format: "%Y-%m-%d", date: "$createdAt" }
+                    },
+                    amount: { $sum: "$amount" }
+                }
+            },
+            { $sort: { "_id": 1 } },
+            {
+                $project: {
+                    _id: 0,
+                    date: "$_id",
+                    amount: { $divide: ["$amount", 100] }
+                }
+            }
+        ]);
+
+        return result;
     }
 }

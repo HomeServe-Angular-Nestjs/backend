@@ -1,9 +1,11 @@
 import { FilterQuery, Types } from 'mongoose';
 import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData, ILocationRevenue, ITopAreaRevenue, IUnderperformingArea, IPeakServiceTime, IRevenueBreakdown, IBookingsBreakdown, IReviewDetailsRaw, IReviewFilter, IAdminBookingFilter, IAdminBookingList } from '@core/entities/interfaces/booking.entity.interface';
-import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderRevenueOverview, IResponseTimeChartData, ITopProviders, ITotalReviewAndAvgRating } from '@core/entities/interfaces/user.entity.interface';
+import { IReviewFilters, PaginatedReviewResponse, IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderRevenueOverview, IResponseTimeChartData, ITopProviders, ITotalReviewAndAvgRating } from '@core/entities/interfaces/user.entity.interface';
+
 import { IBaseRepository } from '@core/repositories/base/interfaces/base-repo.interface';
 import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
-import { IBookingReportData, IReportCustomerMatrix, IReportDownloadBookingData, IReportProviderMatrix } from '@core/entities/interfaces/admin.entity.interface';
+import { IAdminReviewStats, IBookingReportData, IReportCustomerMatrix, IReportDownloadBookingData, IReportProviderMatrix } from '@core/entities/interfaces/admin.entity.interface';
+
 import { BookingStatus, CancelStatus, PaymentStatus } from '@core/enum/bookings.enum';
 
 export interface IBookingRepository extends IBaseRepository<BookingDocument> {
@@ -62,4 +64,9 @@ export interface IBookingRepository extends IBaseRepository<BookingDocument> {
     getBookingsBreakdown(providerId: string): Promise<IBookingsBreakdown>;
     getBookingsCompletionRate(providerId: string): Promise<number>;
     completedBookingsCount(providerId: string): Promise<number>;
-} 
+    getAdminReviews(filter: IReviewFilters): Promise<PaginatedReviewResponse>;
+    getAdminReviewStats(): Promise<IAdminReviewStats>;
+    updateReviewStatus(reviewId: string, status: boolean): Promise<boolean>;
+}
+
+
