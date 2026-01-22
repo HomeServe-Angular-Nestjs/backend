@@ -1,9 +1,9 @@
 import { Body, Controller, Delete, FileTypeValidator, Get, Inject, MaxFileSizeValidator, Param, ParseFilePipe, Patch, Post, Put, Query, Req, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { PROVIDER_OFFER_SERVICE_NAME } from "@core/constants/service.constant";
 import { IProviderServiceService } from "../services/interfaces/provider-service.interface";
-import { CreateProviderServiceDto, UpdateProviderServiceDto } from "../dto/provider-service.dto";
+import { CreateProviderServiceDto, UpdateProviderServiceDto, ProviderServiceFilterDto } from "../dto/provider-service.dto";
 import { IResponse } from "@core/misc/response.util";
-import { IProviderService, IProviderServiceUI } from "@core/entities/interfaces/provider-service.entity.interface";
+import { IProviderServiceUI } from "@core/entities/interfaces/provider-service.entity.interface";
 import { isValidIdPipe } from "@core/pipes/is-valid-id.pipe";
 import { IPayload } from "@core/misc/payload.interface";
 import { User } from "@core/decorators/extract-user.decorator";
@@ -47,16 +47,13 @@ export class ProviderServiceController {
     }
 
     @Get('my-services')
-    async getMyServices(
-        @User() user: IPayload,
-        @Query('sort') sort?: string
-    ): Promise<IResponse<IProviderServiceUI[]>> {
-        return await this._service.findAllByProviderId(user.sub, sort);
+    async getMyServices(@User() user: IPayload, @Query() filterDto: ProviderServiceFilterDto): Promise<IResponse<IProviderServiceUI[]>> {
+        return await this._service.findAllByProviderId(user.sub, filterDto);
     }
 
     @Get('/:providerId')
-    async getProviderServices(@Param('providerId', new isValidIdPipe()) providerId: string): Promise<IResponse<IProviderServiceUI[]>> {
-        return await this._service.findAllByProviderId(providerId);
+    async getProviderServices(@Param('providerId', new isValidIdPipe()) providerId: string, @Query() filterDto: ProviderServiceFilterDto): Promise<IResponse<IProviderServiceUI[]>> {
+        return await this._service.findAllByProviderId(providerId, filterDto);
     }
 
     @Patch(':id/toggle-status')

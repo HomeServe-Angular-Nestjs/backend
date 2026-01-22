@@ -4,7 +4,7 @@ import { PROVIDER_SERVICE_MAPPER } from "@core/constants/mappers.constant";
 import { IProviderServiceRepository } from "@core/repositories/interfaces/provider-service-repo.interface";
 import { IProviderServiceMapper } from "@core/dto-mapper/interface/provider-service.mapper.interface";
 import { IProviderServiceService } from "../interfaces/provider-service.interface";
-import { CreateProviderServiceDto, UpdateProviderServiceDto } from "../../dto/provider-service.dto";
+import { CreateProviderServiceDto, UpdateProviderServiceDto, ProviderServiceFilterDto } from "../../dto/provider-service.dto";
 import { IResponse } from "@core/misc/response.util";
 import { IProviderService, IProviderServiceUI } from "@core/entities/interfaces/provider-service.entity.interface";
 import { ProviderService } from "@core/entities/implementation/provider-service.entity";
@@ -139,36 +139,38 @@ export class ProviderServiceService implements IProviderServiceService {
         }
     }
 
-    async findAllByProviderId(providerId: string, sort?: string): Promise<IResponse<IProviderServiceUI[]>> {
-        const docs = await this._providerServiceRepository.findAllAndPopulateByProviderId(providerId, sort);
-
-        const services: IProviderServiceUI[] = await Promise.all(
-            docs.map(async doc => {
-                const service = this._providerServiceMapper.toPopulatedEntity(doc);
-
-                const enrichedService: IProviderServiceUI = {
-                    id: service.id,
-                    providerId,
-                    profession: {
-                        id: service.profession.id,
-                        name: service.profession.name
-                    },
-                    category: {
-                        id: service.category.id,
-                        name: service.category.name
-                    },
-                    description: service.description,
-                    price: service.price,
-                    pricingUnit: service.pricingUnit,
-                    image: this._uploadUtility.getSignedImageUrl(service.image) || '',
-                    estimatedTimeInMinutes: service.estimatedTimeInMinutes,
-                    isActive: service.isActive,
-                    createdAt: service.createdAt,
-                    updatedAt: service.updatedAt
-                }
-                return enrichedService;
-            })
+    async findAllByProviderId(providerId: string, filters: ProviderServiceFilterDto): Promise<IResponse<IProviderServiceUI[]>> {
+        const serviceDocs = await this._providerServiceRepository.findAllAndPopulateByProviderId(
+            providerId,
+            { search: filters.search, status: filters.status, sort: filters.sort },
+            { page: parseInt(filters.page || '1'), limit: parseInt(filters.limit || '10') }
         );
+
+        const services: IProviderServiceUI[] = (serviceDocs ?? []).map(doc => {
+            const service = this._providerServiceMapper.toPopulatedEntity(doc);
+
+            const enrichedService: IProviderServiceUI = {
+                id: service.id,
+                providerId,
+                profession: {
+                    id: service.profession.id,
+                    name: service.profession.name
+                },
+                category: {
+                    id: service.category.id,
+                    name: service.category.name
+                },
+                description: service.description,
+                price: service.price,
+                pricingUnit: service.pricingUnit,
+                image: this._uploadUtility.getSignedImageUrl(service.image) || '',
+                estimatedTimeInMinutes: service.estimatedTimeInMinutes,
+                isActive: service.isActive,
+                createdAt: service.createdAt,
+                updatedAt: service.updatedAt
+            }
+            return enrichedService;
+        });
 
         return {
             success: true,
