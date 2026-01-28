@@ -1115,14 +1115,14 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
             },
             {
                 $project: {
-                    growthRate: { $arrayElemAt: ["$growthRate.overallAvgGrowth", 0] },
-                    monthlyTrend: { $arrayElemAt: ["$monthlyTrend", 0] },
-                    providerRank: { $arrayElemAt: ["$providerRank.providerRank", 0] }
+                    growthRate: { $ifNull: [{ $arrayElemAt: ["$growthRate.overallAvgGrowth", 0] }, 0] },
+                    monthlyTrend: { $ifNull: [{ $arrayElemAt: ["$monthlyTrend", 0] }, 0] },
+                    providerRank: { $ifNull: [{ $arrayElemAt: ["$providerRank.providerRank", 0] }, 0] }
                 }
             }
         ]);
 
-        return result[0] || null;
+        return result[0];
     }
 
 

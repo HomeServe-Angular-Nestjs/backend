@@ -121,7 +121,7 @@ export class ProviderAnalyticsService implements IProviderAnalyticsService {
         return {
             success: true,
             message: "Comparison overview data fetched successfully.",
-            data: (await this._bookingRepository.getComparisonOverviewData(providerId)) || { growthRate: 0, monthlyTrend: { previousMonth: 0, currentMonth: 0, previousRevenue: 0, currentRevenue: 0, growthPercentage: 0 }, providerRank: 0 }
+            data: await this._bookingRepository.getComparisonOverviewData(providerId)
         }
     }
 
