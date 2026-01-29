@@ -67,5 +67,5 @@ jobs:
             corepack enable
             corepack prepare pnpm@9 --activate
             pnpm install --prod --frozen-lockfile
-            pm2 restart backend || pm2 start dist/src/main.js --name backend
+            pm2 restart homeserve_backend || pm2 start dist/src/main.js --name homeserve_backend
             pm2 save
