@@ -1,0 +1,67 @@
+name: CI/CD – Deploy NestJS Backend (pnpm) to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Checkout repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2️⃣ Setup Node.js + pnpm
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Enable pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@latest --activate
+
+      # 3️⃣ Install ALL dependencies (dev + prod)
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # 4️⃣ Run tests
+      - name: Run tests
+        run: pnpm test
+
+      # 5️⃣ Build NestJS app
+      - name: Build application
+        run: pnpm build
+
+      # 6️⃣ Upload build artifacts to EC2
+      - name: Upload build to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: |
+            dist
+            package.json
+            pnpm-lock.yaml
+          target: /home/ubuntu/backend
+
+      # 7️⃣ Install prod deps & restart app
+      - name: Install prod deps & restart PM2
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /home/ubuntu/backend
+            corepack enable
+            corepack prepare pnpm@latest --activate
+            pnpm install --prod --frozen-lockfile
+            pm2 restart backend || pm2 start dist/src/main.js --name backend
+            pm2 save
