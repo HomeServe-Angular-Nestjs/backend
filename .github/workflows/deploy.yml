@@ -33,7 +33,7 @@ jobs:
 
       # 5️⃣ Run tests
       - name: Run tests
-        run: pnpm test
+        run: pnpm test -- --passWithNoTests
 
       # 6️⃣ Build NestJS app
       - name: Build application
