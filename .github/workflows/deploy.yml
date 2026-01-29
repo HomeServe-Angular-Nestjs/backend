@@ -10,35 +10,36 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout repository
+      # 1️⃣ Checkout code
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2️⃣ Setup Node.js + pnpm
+      # 2️⃣ Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'pnpm'
 
-      - name: Enable pnpm
-        run: |
-          corepack enable
-          corepack prepare pnpm@latest --activate
+      # 3️⃣ Setup pnpm (THIS FIXES YOUR ERROR)
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+          run_install: false
 
-      # 3️⃣ Install ALL dependencies (dev + prod)
+      # 4️⃣ Install dependencies (dev + prod)
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # 4️⃣ Run tests
+      # 5️⃣ Run tests
       - name: Run tests
         run: pnpm test
 
-      # 5️⃣ Build NestJS app
+      # 6️⃣ Build NestJS app
       - name: Build application
         run: pnpm build
 
-      # 6️⃣ Upload build artifacts to EC2
+      # 7️⃣ Upload build artifacts to EC2
       - name: Upload build to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -51,7 +52,7 @@ jobs:
             pnpm-lock.yaml
           target: /home/ubuntu/backend
 
-      # 7️⃣ Install prod deps & restart app
+      # 8️⃣ Install prod deps & restart PM2
       - name: Install prod deps & restart PM2
         uses: appleboy/ssh-action@v1.0.0
         with:
@@ -61,7 +62,7 @@ jobs:
           script: |
             cd /home/ubuntu/backend
             corepack enable
-            corepack prepare pnpm@latest --activate
+            corepack prepare pnpm@9 --activate
             pnpm install --prod --frozen-lockfile
             pm2 restart backend || pm2 start dist/src/main.js --name backend
             pm2 save
