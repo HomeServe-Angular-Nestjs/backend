@@ -39,9 +39,6 @@ export class UpdatePlanDto extends SavePlanDto {
     @IsNotEmpty()
     @IsString()
     id: string;
-
-    @IsBoolean()
-    isDeleted?: boolean;
 }
 
 export class UpdatePlanStatusDto {

@@ -20,7 +20,6 @@ export interface IPlan extends IEntity {
     role: PlanRoleEnum;
     features: PlanFeatures;
     isActive: boolean;
-    isDeleted: boolean;
 }
 
 export type ICreatePlan = Omit<IPlan, keyof IEntity>;

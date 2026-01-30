@@ -33,7 +33,6 @@ export class PlanRepository extends BaseRepository<PlanDocument> implements IPla
         return !!(await this._planModel.exists({
             role: filter.role,
             name: filter.name,
-            isDeleted: false,
         }));
     }
 

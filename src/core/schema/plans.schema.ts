@@ -43,12 +43,6 @@ export class PlanDocument extends Document {
     })
     isActive: boolean;
 
-    @Prop({
-        type: Boolean,
-        default: false
-    })
-    isDeleted: boolean;
-
     @Prop()
     createdAt: Date;
 
