@@ -198,7 +198,7 @@ export class PlanService implements IPlanService {
         if (!updatedPlan) {
             throw new NotFoundException({
                 code: ErrorCodes.NOT_FOUND,
-                message: ErrorMessage.DOCUMENT_NOT_FOUND
+                message: ErrorMessage.PLAN_NOT_FOUND
             });
         }
 
@@ -210,19 +210,30 @@ export class PlanService implements IPlanService {
     }
 
     async deletePlan(planId: string): Promise<IResponse> {
+        try {
 
-        const deletedPlan = await this._planRepository.deletePlan(planId);
+            const deletedPlan = await this._planRepository.deletePlan(planId);
 
-        if (!deletedPlan) {
-            throw new NotFoundException({
-                code: ErrorCodes.NOT_FOUND,
-                message: ErrorMessage.DOCUMENT_NOT_FOUND
-            });
-        }
+            if (!deletedPlan) {
+                throw new NotFoundException({
+                    code: ErrorCodes.NOT_FOUND,
+                    message: ErrorMessage.PLAN_NOT_FOUND
+                });
+            }
 
-        return {
-            success: !!deletedPlan,
-            message: !!deletedPlan ? 'Plan deleted successfully.' : 'Failed to delete plan.'
+            return {
+                success: !!deletedPlan,
+                message: !!deletedPlan ? 'Plan deleted successfully.' : 'Failed to delete plan.'
+            }
+        } catch (err) {
+            if (err.code === 11000) {
+                throw new ConflictException({
+                    code: ErrorCodes.CONFLICT,
+                    message: ErrorMessage.PLAN_ALREADY_EXISTS
+                });
+            }
+
+            throw err;
         }
     }
 }
