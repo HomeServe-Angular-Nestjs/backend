@@ -3,12 +3,11 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { BOOKINGS_MODEL_NAME } from '@core/constants/model.constant';
 import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData, ILocationRevenue, ITopAreaRevenue, IUnderperformingArea, IPeakServiceTime, IRevenueBreakdown, IBookingsBreakdown, IReviewDetailsRaw, IReviewFilter, IAdminBookingFilter, IAdminBookingList, ISlot } from '@core/entities/interfaces/booking.entity.interface';
-import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderRevenueOverview, IResponseTimeChartData, ITopProviders, ITotalReviewAndAvgRating } from '@core/entities/interfaces/user.entity.interface';
+import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderRevenueOverview, IResponseTimeChartData, IReviewFilters, ITopProviders, ITotalReviewAndAvgRating, PaginatedReviewResponse } from '@core/entities/interfaces/user.entity.interface';
 import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
 import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
 import { IBookingRepository } from '@core/repositories/interfaces/bookings-repo.interface';
 import { IAdminReviewStats, IBookingReportData, IReportCustomerMatrix, IReportDownloadBookingData, IReportProviderMatrix } from '@core/entities/interfaces/admin.entity.interface';
-
 import { SlotStatusEnum } from '@core/enum/slot.enum';
 import { BookingStatus, CancelStatus, PaymentStatus } from '@core/enum/bookings.enum';
 import { UpdateQuery } from 'mongoose';
