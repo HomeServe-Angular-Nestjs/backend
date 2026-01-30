@@ -49,7 +49,7 @@ export class CartService implements ICartService {
         };
     }
 
-    async addItem(customerId: string, providerId: string, providerServiceId: string): Promise<IResponse> {
+    async addItem(customerId: string, providerId: string, providerServiceId: string): Promise<IResponse<ICartPopulated>> {
         const isItemExists = await this._cartRepository.isItemExists(customerId, providerServiceId);
         if (isItemExists) throw new BadRequestException({
             code: ErrorCodes.BAD_REQUEST,
@@ -69,9 +69,20 @@ export class CartService implements ICartService {
             message: "Failed to add item to cart"
         });
 
+        const cart = await this._cartRepository.findAndPopulateByCustomerId(customerId);
+        if (!cart) throw new InternalServerErrorException({
+            code: ErrorCodes.INTERNAL_SERVER_ERROR,
+            message: "Failed to retrieve updated cart"
+        });
+
+        cart.items.forEach(item => {
+            item.image = this._uploadUtility.getSignedImageUrl(item.image);
+        });
+
         return {
-            success: !!updatedCart,
-            message: "Item added to cart"
+            success: !!cart,
+            message: "Item added to cart",
+            data: this._cartMapper.toPopulatedEntity(cart)
         };
     }
 

@@ -511,17 +511,40 @@ export class RazorPaymentService implements IRazorPaymentService {
 
             if (!transaction) {
                 this.logger.error('Subscription transaction document failed to create.');
-                throw new InternalServerErrorException({
-                    code: ErrorCodes.INTERNAL_SERVER_ERROR,
-                    message: ErrorMessage.INTERNAL_SERVER_ERROR
-                });
+                throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
             }
+
+            await this._applySubscriptionPaymentWalletMovements(
+                userId,
+                role,
+                orderData,
+                transaction,
+                verifyData
+            );
 
             const updatePaymentStatus = await this._subscriptionRepository.updatePaymentStatus(orderData.subscriptionId, PaymentStatus.PAID);
             if (!updatePaymentStatus) {
                 this.logger.error('Failed to update payment status for subscription payment.');
                 throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
             }
+
+            // Update user's subscription ID
+            if (role === 'customer') {
+                await this._customerRepository.updateSubscriptionId(userId, orderData.subscriptionId);
+            } else if (role === 'provider') {
+                await this._providerRepository.updateSubscriptionId(userId, orderData.subscriptionId);
+            }
+
+            // Notify User
+            await this._sendNotification(
+                userId,
+                NotificationTemplateId.SUBSCRIPTION_SUCCESS,
+                NotificationType.EVENT,
+                'Subscription Success',
+                `Your payment for subscription #${orderData.subscriptionId.slice(-6)} has been verified.`,
+                verifyData.razorpay_payment_id,
+                { subscriptionId: orderData.subscriptionId, role }
+            );
 
             return { verified, subscriptionId: orderData.subscriptionId, transaction };
         } catch (error) {

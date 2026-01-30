@@ -42,10 +42,7 @@ export class PlanRepository extends BaseRepository<PlanDocument> implements IPla
     }
 
     async deletePlan(planId: string): Promise<boolean> {
-        const result = await this._planModel.updateOne(
-            { _id: planId },
-            { isDeleted: true, isActive: false }
-        );
-        return result.modifiedCount > 0;
+        const result = await this._planModel.deleteOne({ _id: planId });
+        return result.deletedCount > 0;
     }
 }

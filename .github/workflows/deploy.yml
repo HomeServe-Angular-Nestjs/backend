@@ -1,0 +1,71 @@
+name: CI/CD – Deploy NestJS Backend (pnpm) to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2️⃣ Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # 3️⃣ Setup pnpm (THIS FIXES YOUR ERROR)
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+          run_install: false
+
+      # 4️⃣ Install dependencies (dev + prod)
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # 5️⃣ Run tests
+      - name: Run tests
+        run: pnpm test -- --passWithNoTests
+
+      # 6️⃣ Build NestJS app
+      - name: Build application
+        run: pnpm build
+
+      - name: Debug build output
+        run: |
+          pwd
+          ls -la
+          ls -la dist || echo "❌ dist not found"
+
+      # 7️⃣ Upload build artifacts to EC2
+      - name: Upload build to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "dist/**,package.json,pnpm-lock.yaml"
+          target: /home/ubuntu/backend
+
+      # 8️⃣ Install prod deps & restart PM2
+      - name: Install prod deps & restart PM2
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /home/ubuntu/backend
+            corepack enable
+            corepack prepare pnpm@9 --activate
+            pnpm install --prod --frozen-lockfile
+            pm2 restart homeserve_backend || pm2 start dist/src/main.js --name homeserve_backend
+            pm2 save

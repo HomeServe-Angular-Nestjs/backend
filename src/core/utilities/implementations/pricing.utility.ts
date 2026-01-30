@@ -41,12 +41,13 @@ export class PricingUtility implements IPricingUtility {
     async computeBreakup(prices: number[]): Promise<IPricingBreakup> {
         const subTotal = this.calculateSubtotal(prices);
         const tax = await this.calculateTax(subTotal);
-        const total = this.calculateTotal(subTotal, tax);
+        const fee = await this.calculateFee(subTotal);
+        const total = this.calculateTotal(subTotal, tax, fee);
 
         return {
             subTotal,
             tax,
-            fee: 0,
+            fee,
             total,
             taxRate: await this._adminSettingsRepository.getTax(),
             feeRate: await this._adminSettingsRepository.getCustomerCommission()

@@ -3,12 +3,14 @@ import { Message } from "@core/entities/implementation/message.entity";
 import { IMessage } from "@core/entities/interfaces/message.entity.interface";
 import { MessageDocument } from "@core/schema/message.schema";
 import { Injectable } from "@nestjs/common";
+import { Types } from "mongoose";
+
 
 @Injectable()
 export class MessageMapper implements IMessageMapper {
     toEntity(doc: MessageDocument): IMessage {
         return new Message({
-            id: doc.id,
+            id: (doc._id as Types.ObjectId).toString(),
             chatId: doc.chatId,
             senderId: doc.senderId,
             receiverId: doc.receiverId,

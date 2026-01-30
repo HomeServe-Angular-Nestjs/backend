@@ -37,15 +37,14 @@ export interface IAdminDashboardOverview {
 }
 
 export interface IAdminDashboardRevenue {
-  amount: number,
-  createdAt: string
+  amount: number;
+  date: string;
 }
 
 export interface IAdminDashboardSubscription {
-  free: number;
-  totalPremium: number;
   monthlyPremium: number;
   yearlyPremium: number;
+  totalProviders: number;
 }
 
 export interface IStats {
@@ -147,4 +146,11 @@ export interface IReportTransactionData {
   contact: string;
   transactionType: string;
   date: string | Date;
+}
+
+export interface IAdminReviewStats {
+  totalReviews: number;
+  activeReviews: number;
+  reportedReviews: number;
+  averageRating: number;
 }

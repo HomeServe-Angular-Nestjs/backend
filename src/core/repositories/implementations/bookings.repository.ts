@@ -2,12 +2,14 @@ import { FilterQuery, Model, PipelineStage, Types } from 'mongoose';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { BOOKINGS_MODEL_NAME } from '@core/constants/model.constant';
-import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData, ILocationRevenue, ITopAreaRevenue, IUnderperformingArea, IPeakServiceTime, IRevenueBreakdown, IBookingsBreakdown, IReviewDetailsRaw, IReviewFilter, IAdminBookingFilter, IAdminBookingList, ISlot } from '@core/entities/interfaces/booking.entity.interface';
-import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderRevenueOverview, IResponseTimeChartData, ITopProviders, ITotalReviewAndAvgRating } from '@core/entities/interfaces/user.entity.interface';
+import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData, ILocationRevenue, ITopAreaRevenue, IUnderperformingArea, IPeakServiceTime, IRevenueBreakdown, IBookingsBreakdown, IReviewDetailsRaw, IReviewFilter, IAdminBookingFilter, IAdminBookingList } from '@core/entities/interfaces/booking.entity.interface';
+import { IReviewFilters, PaginatedReviewResponse, IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderRevenueOverview, IResponseTimeChartData, ITopProviders, ITotalReviewAndAvgRating } from '@core/entities/interfaces/user.entity.interface';
+
 import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
 import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
 import { IBookingRepository } from '@core/repositories/interfaces/bookings-repo.interface';
-import { IBookingReportData, IReportCustomerMatrix, IReportDownloadBookingData, IReportProviderMatrix } from '@core/entities/interfaces/admin.entity.interface';
+import { IAdminReviewStats, IBookingReportData, IReportCustomerMatrix, IReportDownloadBookingData, IReportProviderMatrix } from '@core/entities/interfaces/admin.entity.interface';
+
 import { SlotStatusEnum } from '@core/enum/slot.enum';
 import { BookingStatus, CancelStatus, PaymentStatus } from '@core/enum/bookings.enum';
 import { UpdateQuery } from 'mongoose';
@@ -971,8 +973,7 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                             $project: {
                                 growthRate: {
                                     $cond: [
-                                        { $eq: ["$prevTotal", 0] },
-                                        0,
+                                        { $gt: ["$prevTotal", 0] },
                                         {
                                             $multiply: [
                                                 {
@@ -983,7 +984,8 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                                                 },
                                                 100
                                             ]
-                                        }
+                                        },
+                                        0
                                     ]
                                 }
                             }
@@ -1031,8 +1033,7 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                                 currentRevenue: { $arrayElemAt: ["$revenues", 1] },
                                 growthPercentage: {
                                     $cond: [
-                                        { $eq: [{ $arrayElemAt: ["$revenues", 0] }, 0] },
-                                        null,
+                                        { $gt: [{ $arrayElemAt: ["$revenues", 0] }, 0] },
                                         {
                                             $multiply: [
                                                 {
@@ -1043,7 +1044,8 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                                                 },
                                                 100
                                             ]
-                                        }
+                                        },
+                                        0
                                     ]
                                 }
                             }
@@ -1102,14 +1104,14 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
             },
             {
                 $project: {
-                    growthRate: { $arrayElemAt: ["$growthRate.overallAvgGrowth", 0] },
-                    monthlyTrend: { $arrayElemAt: ["$monthlyTrend", 0] },
-                    providerRank: { $arrayElemAt: ["$providerRank.providerRank", 0] }
+                    growthRate: { $ifNull: [{ $arrayElemAt: ["$growthRate.overallAvgGrowth", 0] }, 0] },
+                    monthlyTrend: { $ifNull: [{ $arrayElemAt: ["$monthlyTrend", 0] }, 0] },
+                    providerRank: { $ifNull: [{ $arrayElemAt: ["$providerRank.providerRank", 0] }, 0] }
                 }
             }
         ]);
 
-        return result[0] || null;
+        return result[0];
     }
 
 
@@ -1121,7 +1123,6 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
             {
                 $match: {
                     bookingStatus: BookingStatus.COMPLETED,
-                    "review.isActive": true,
                     createdAt: {
                         $gte: new Date(`${currentYear}-01-01T00:00:00.000Z`),
                         $lt: new Date(`${currentYear + 1}-01-01T00:00:00.000Z`)
@@ -1129,26 +1130,8 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                 }
             },
             {
-                $addFields: {
-                    score: {
-                        $cond: [
-                            {
-                                $and: [
-                                    { $eq: ["$bookingStatus", BookingStatus.COMPLETED] },
-                                    { $ne: ["$actualArrivalTime", null] },
-                                    { $lte: ["$actualArrivalTime", "$expectedArrivalTime"] }
-                                ]
-                            },
-                            "$review.rating",
-                            0
-                        ]
-                    }
-                }
-            },
-            {
                 $group: {
                     _id: { month: { $month: "$createdAt" }, providerId: "$providerId" },
-                    totalScore: { $sum: "$score" },
                     completedBookings: { $sum: 1 }
                 }
             },
@@ -1158,11 +1141,10 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                     providerData: {
                         $push: {
                             providerId: "$_id.providerId",
-                            totalScore: "$totalScore",
                             completedBookings: "$completedBookings"
                         }
                     },
-                    totalPlatformScore: { $sum: "$totalScore" },
+                    totalPlatformBookings: { $sum: "$completedBookings" },
                     totalProviders: { $sum: 1 }
                 }
             },
@@ -1186,13 +1168,13 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                                     ]
                                 }
                             },
-                            in: { $ifNull: ["$$your.totalScore", 0] }
+                            in: { $ifNull: ["$$your.completedBookings", 0] }
                         }
                     },
                     platformAvg: {
                         $cond: [
                             { $gt: ["$totalProviders", 0] },
-                            { $divide: ["$totalPlatformScore", "$totalProviders"] },
+                            { $divide: ["$totalPlatformBookings", "$totalProviders"] },
                             0
                         ]
                     }
@@ -1411,14 +1393,9 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
             },
             { $unwind: "$services" },
             {
-                $addFields: {
-                    "services.serviceId": { $toObjectId: "$services.serviceId" },
-                }
-            },
-            {
                 $lookup: {
-                    from: 'services',
-                    localField: "services.serviceId",
+                    from: 'providerservices',
+                    localField: "services",
                     foreignField: "_id",
                     as: "serviceDetails"
                 }
@@ -1430,8 +1407,22 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                 }
             },
             {
+                $lookup: {
+                    from: 'servicecategories',
+                    localField: "serviceDetails.categoryId",
+                    foreignField: "_id",
+                    as: "categoryDetails"
+                }
+            },
+            {
+                $unwind: {
+                    path: "$categoryDetails",
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+            {
                 $group: {
-                    _id: "$serviceDetails.title",
+                    _id: "$categoryDetails.name",
                     totalRevenue: { $sum: "$totalAmount" }
                 }
             },
@@ -1450,23 +1441,26 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
             { $match: { providerId: this._toObjectId(providerId) } },
             { $unwind: "$services" },
             {
-                $addFields: {
-                    "services.serviceId": { $toObjectId: "$services.serviceId" },
-                }
-            },
-            {
                 $lookup: {
-                    from: 'services',
-                    localField: 'services.serviceId',
+                    from: 'providerservices',
+                    localField: 'services',
                     foreignField: "_id",
                     as: 'serviceDetails'
                 }
             },
             { $unwind: "$serviceDetails" },
-            { $unwind: "$serviceDetails.subService" },
+            {
+                $lookup: {
+                    from: 'professions',
+                    localField: 'serviceDetails.professionId',
+                    foreignField: '_id',
+                    as: 'professionDetails'
+                }
+            },
+            { $unwind: "$professionDetails" },
             {
                 $group: {
-                    _id: "$serviceDetails.subService.title",
+                    _id: "$professionDetails.name",
                     revenue: { $sum: "$totalAmount" },
                     totalBookings: { $sum: 1 },
                 }
@@ -2337,36 +2331,158 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
         });
     }
 
-    async getNextAvailableSlot(providerId: string): Promise<ISlot & { date: Date }> {
-        const providerObjId = this._toObjectId(providerId);
+    async getAdminReviews(filter: IReviewFilters): Promise<PaginatedReviewResponse> {
+        const page = filter.page || 1;
 
-        const result = await this._bookingModel.aggregate([
+        const limit = 10;
+        const skip = (page - 1) * limit;
+
+        const match: FilterQuery<BookingDocument> = {
+            review: { $exists: true, $ne: null }
+        };
+
+        if (filter.minRating) {
+            match['review.rating'] = { $gte: Number(filter.minRating) };
+        }
+
+        const pipeline: PipelineStage[] = [];
+
+        pipeline.push(
+            { $match: match },
             {
-                $match: {
-                    providerId: providerObjId,
-                    bookingStatus: {
-                        $in: [
-                            BookingStatus.PENDING,
-                            BookingStatus.CONFIRMED,
-                            BookingStatus.IN_PROGRESS,
-                        ]
-                    },
+                $lookup: {
+                    from: 'customers',
+                    localField: 'customerId',
+                    foreignField: '_id',
+                    as: 'customer'
                 }
             },
-            { $sort: { 'slot.date': 1 } },
-            { $limit: 1 },
+            { $unwind: '$customer' },
+            {
+                $lookup: {
+                    from: 'providers',
+                    localField: 'providerId',
+                    foreignField: '_id',
+                    as: 'provider'
+                }
+            },
+            { $unwind: '$provider' }
+        );
+
+        if (filter.search) {
+            const searchRegex = new RegExp(this._escapeRegex(filter.search), 'i');
+            if (filter.searchBy === 'review id') {
+                pipeline.push({
+                    $match: {
+                        $expr: { $regexMatch: { input: { $toString: '$_id' }, regex: searchRegex } }
+                    }
+                });
+                // } else if (filter.searchBy === 'customer') {
+                //     pipeline.push({ $match: { 'customer.username': searchRegex } });
+            } else if (filter.searchBy === 'provider') {
+                pipeline.push({ $match: { 'provider.username': searchRegex } });
+            } else if (filter.searchBy === 'content') {
+                pipeline.push({ $match: { 'review.desc': searchRegex } });
+            } else {
+                pipeline.push({
+                    $match: {
+                        $or: [
+                            { 'customer.username': searchRegex },
+                            { 'provider.username': searchRegex },
+                            { 'review.desc': searchRegex }
+                        ]
+                    }
+                });
+            }
+        }
+
+        const countPipeline = [...pipeline, { $count: 'total' }];
+        const [totalCountResult] = await this._bookingModel.aggregate(countPipeline);
+        const total = totalCountResult?.total ?? 0;
+
+        const sort: Record<string, 1 | -1> = {};
+        if (filter.sortBy === 'highest') sort['review.rating'] = -1;
+        else if (filter.sortBy === 'lowest') sort['review.rating'] = 1;
+        else if (filter.sortBy === 'oldest') sort['review.writtenAt'] = 1;
+        else sort['review.writtenAt'] = -1;
+
+        pipeline.push(
+            { $sort: sort },
+            { $skip: skip },
+            { $limit: limit },
             {
                 $project: {
                     _id: 0,
-                    slot: {
-                        from: "$slot.from",
-                        to: "$slot.to",
-                        date: '$slot.date'
-                    }
+                    reviewId: { $toString: '$_id' },
+                    reviewedBy: {
+                        customerId: { $toString: '$customer._id' },
+                        customerName: '$customer.username',
+                        customerEmail: '$customer.email',
+                        customerAvatar: '$customer.avatar'
+                    },
+                    providerId: { $toString: '$provider._id' },
+                    providerName: '$provider.username',
+                    providerEmail: '$provider.email',
+                    providerAvatar: { $ifNull: ['$provider.avatar', ''] },
+                    isReported: '$review.isReported',
+                    desc: '$review.desc',
+                    rating: '$review.rating',
+                    writtenAt: '$review.writtenAt',
+                    isActive: '$review.isActive'
+
+                }
+            }
+        );
+
+        const reviews = await this._bookingModel.aggregate(pipeline);
+
+        return {
+            reviews,
+            pagination: {
+                total,
+                page,
+                limit,
+            }
+        };
+    }
+
+    async getAdminReviewStats(): Promise<IAdminReviewStats> {
+        const result = await this._bookingModel.aggregate([
+            { $match: { review: { $exists: true, $ne: null } } },
+            {
+                $group: {
+                    _id: null,
+                    totalReviews: { $sum: 1 },
+                    activeReviews: {
+                        $sum: { $cond: [{ $eq: ["$review.isActive", true] }, 1, 0] }
+                    },
+                    reportedReviews: {
+                        $sum: { $cond: [{ $eq: ["$review.isReported", true] }, 1, 0] }
+                    },
+                    averageRating: { $avg: "$review.rating" }
                 }
             }
         ]);
 
-        return result?.[0]?.slot;
+        return result[0] ? {
+            totalReviews: result[0].totalReviews,
+            activeReviews: result[0].activeReviews,
+            reportedReviews: result[0].reportedReviews,
+            averageRating: Math.round((result[0].averageRating || 0) * 10) / 10
+        } : {
+            totalReviews: 0,
+            activeReviews: 0,
+            reportedReviews: 0,
+            averageRating: 0
+        };
+    }
+
+    async updateReviewStatus(reviewId: string, status: boolean): Promise<boolean> {
+        const result = await this._bookingModel.updateOne(
+            { _id: this._toObjectId(reviewId) },
+            { $set: { 'review.isActive': status } }
+        );
+        return result.modifiedCount > 0;
     }
 }
+

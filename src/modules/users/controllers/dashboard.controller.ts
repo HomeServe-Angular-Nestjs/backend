@@ -36,15 +36,15 @@ export class AdminDashboardController {
         }
     }
 
-    // @Get('revenue')
-    // async getRevenueData(): Promise<IResponse<IAdminDashboardRevenue[]>> {
-    //     try {
-    //         return this._adminDashboardOverviewService.getDashBoardRevenue();
-    //     } catch (err) {
-    //         this.logger.error('Error fetching dashboard overview', err, err.stack);
-    //         throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR)
-    //     }
-    // }
+    @Get('revenue')
+    async getRevenueData(): Promise<IResponse<IAdminDashboardRevenue[]>> {
+        try {
+            return this._adminDashboardOverviewService.getDashBoardRevenue();
+        } catch (err) {
+            this.logger.error('Error fetching dashboard overview', err, err.stack);
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR)
+        }
+    }
 
     @Get('subscription')
     async getSubscriptionData(): Promise<IResponse<IAdminDashboardSubscription>> {

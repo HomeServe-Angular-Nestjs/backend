@@ -93,7 +93,7 @@ importers:
         specifier: ^2.6.0
         version: 2.6.0
       connect-redis:
-        specifier: ^5.2.0
+        specifier: 5.2.0
         version: 5.2.0
       cookie:
         specifier: ^1.0.2
@@ -119,6 +119,9 @@ importers:
       luxon:
         specifier: ^3.7.1
         version: 3.7.1
+      mongoose:
+        specifier: 8.12.2
+        version: 8.12.2(socks@2.8.6)
       morgan:
         specifier: ^1.10.1
         version: 1.10.1
@@ -237,9 +240,6 @@ importers:
       mongodb-memory-server:
         specifier: ^10.2.3
         version: 10.2.3(socks@2.8.6)
-      mongoose:
-        specifier: ^8.12.2
-        version: 8.12.2(socks@2.8.6)
       prettier:
         specifier: ^3.4.2
         version: 3.5.3

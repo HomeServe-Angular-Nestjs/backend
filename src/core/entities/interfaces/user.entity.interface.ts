@@ -1,4 +1,6 @@
+import { RatingSearchBy, RatingsSortBy } from '@core/enum/ratings.enum';
 import { AvailabilityEnum } from '@core/enum/slot.enum';
+
 import { SlotType } from '../../../modules/bookings/dtos/booking.dto';
 import { IBaseUserEntity } from '../base/interfaces/base-user.entity.interface';
 import { IAdmin } from './admin.entity.interface';
@@ -8,8 +10,9 @@ export type UserType = 'customer' | 'provider' | 'admin';
 export type ClientUserType = Exclude<UserType, 'admin'>;
 export type VerificationStatusType = 'pending' | 'verified' | 'rejected';
 export type IUser = ICustomer | IProvider | IAdmin;
-export type SortByRatingType = 'latest' | 'oldest' | 'highest' | 'lowest';
-export type SearchByReviewType = 'review id' | 'customer' | 'provider' | 'content';
+export type SortByRatingType = RatingsSortBy;
+export type SearchByReviewType = RatingSearchBy;
+
 export type FilterStatusType = 'nearest' | 'best-rated' | 'all';
 
 

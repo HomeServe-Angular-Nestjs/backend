@@ -6,7 +6,7 @@ import { TransactionDocument } from '@core/schema/bookings.schema';
 import { SubscriptionDocument } from '@core/schema/subscription.schema';
 
 export interface ISubscriptionRepository extends IBaseRepository<SubscriptionDocument> {
-    getSubscriptionChartData(): Promise<IAdminDashboardSubscription>;
+    getSubscriptionChartData(): Promise<Omit<IAdminDashboardSubscription, 'totalProviders'>>;
     findSubscriptionById(subscriptionId: string): Promise<SubscriptionDocument | null>;
     fetchCurrentActiveSubscription(subscriptionId: string): Promise<SubscriptionDocument | null>;
     count(): Promise<number>;

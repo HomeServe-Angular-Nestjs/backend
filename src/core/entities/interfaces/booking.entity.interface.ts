@@ -37,6 +37,7 @@ export interface IPagination {
     limit: number
 }
 
+
 export interface IBookingWithPagination {
     bookingData: IBookingResponse[];
     paginationData: IPagination;
@@ -70,6 +71,7 @@ export interface IPagination {
     limit: number;
     total: number;
 }
+
 
 export interface IResponseProviderBookingLists {
     bookingData: IProviderBookingLists[];
