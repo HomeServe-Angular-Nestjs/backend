@@ -9,7 +9,6 @@ export class Plan extends BaseEntity implements IPlan {
     role: PlanRoleEnum;
     features: PlanFeatures;
     isActive: boolean;
-    isDeleted: boolean;
 
     constructor(partial: Partial<Plan>) {
         super(partial);

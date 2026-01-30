@@ -99,7 +99,6 @@ export class PlanService implements IPlanService {
             role: createPlanDto.role,
             features: createPlanDto.features,
             isActive: createPlanDto.isActive,
-            isDeleted: false
         });
 
         let createdPlan: IPlan;

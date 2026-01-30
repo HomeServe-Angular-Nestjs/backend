@@ -16,7 +16,6 @@ export class PlanMapper implements IPlanMapper {
             role: doc.role,
             features: doc.features,
             isActive: doc.isActive,
-            isDeleted: doc.isDeleted,
             createdAt: doc.createdAt,
             updatedAt: doc.updatedAt,
         });
@@ -30,7 +29,6 @@ export class PlanMapper implements IPlanMapper {
             role: entity.role,
             features: entity.features,
             isActive: entity.isActive,
-            isDeleted: entity.isDeleted,
         }
     }
 }
