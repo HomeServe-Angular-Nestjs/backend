@@ -5,7 +5,7 @@ import { ProviderServiceDocument, ProviderServicePopulatedDocument } from "@core
 export interface IProviderServiceRepository extends IBaseRepository<ProviderServiceDocument> {
     createAndPopulate(doc: Partial<ProviderServiceDocument>): Promise<ProviderServicePopulatedDocument>;
     updateAndPopulateByServiceId(serviceId: string, update: Partial<IProviderService>): Promise<ProviderServicePopulatedDocument | null>;
-    findAllAndPopulateByProviderId(providerId: string): Promise<ProviderServicePopulatedDocument[]>;
+    findAllAndPopulateByProviderId(providerId: string, filters: { search?: string, status?: string, sort?: string }, options: { page: number, limit: number }): Promise<ProviderServicePopulatedDocument[]>;
     updateStatusByServiceId(serviceId: string): Promise<boolean>;
     deleteService(serviceId: string): Promise<boolean>;
     count(filter?: any): Promise<number>;

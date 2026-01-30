@@ -2,7 +2,7 @@ import { PROVIDER_SERVICE_MODEL_NAME } from "@core/constants/model.constant";
 import { ProviderServiceDocument, ProviderServicePopulatedDocument } from "@core/schema/provider-service.schema";
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { FilterQuery, Model, Types } from "mongoose";
+import { FilterQuery, Model, PipelineStage, Types } from "mongoose";
 import { BaseRepository } from "../base/implementations/base.repository";
 import { IProviderServiceRepository } from "../interfaces/provider-service-repo.interface";
 import { IProviderService } from "@core/entities/interfaces/provider-service.entity.interface";
@@ -14,6 +14,16 @@ export class ProviderServiceRepository extends BaseRepository<ProviderServiceDoc
         private readonly _providerServiceModel: Model<ProviderServiceDocument>
     ) {
         super(_providerServiceModel);
+    }
+
+    private _getSortObject(sort?: string): any {
+        switch (sort) {
+            case 'latest': return { createdAt: -1 };
+            case 'oldest': return { createdAt: 1 };
+            case 'price_high_to_low': return { price: -1 };
+            case 'price_low_to_high': return { price: 1 };
+            default: return { createdAt: -1 };
+        }
     }
 
     async createAndPopulate(doc: ProviderServiceDocument): Promise<ProviderServicePopulatedDocument> {
@@ -35,11 +45,38 @@ export class ProviderServiceRepository extends BaseRepository<ProviderServiceDoc
             .populate('categoryId') as unknown as ProviderServicePopulatedDocument | null;
     }
 
-    async findAllAndPopulateByProviderId(providerId: string): Promise<ProviderServicePopulatedDocument[]> {
-        return await this._providerServiceModel.find({
-            providerId: new Types.ObjectId(providerId),
+    async findAllAndPopulateByProviderId(providerId: string, filters: { search?: string, status?: string, sort?: string }, options: { page: number, limit: number }): Promise<ProviderServicePopulatedDocument[]> {
+        const skip = (options.page - 1) * options.limit;
+        const query: FilterQuery<ProviderServiceDocument> = {
+            providerId: this._toObjectId(providerId),
             isDeleted: false
-        }).populate('professionId').populate('categoryId') as unknown as ProviderServicePopulatedDocument[];
+        };
+
+        if (filters.status && filters.status !== 'all') {
+            query.isActive = filters.status === 'true';
+        }
+
+        const categoryMatch = filters.search
+            ? { name: { $regex: filters.search, $options: 'i' } }
+            : undefined;
+
+        const sort = this._getSortObject(filters.sort) || { createdAt: -1 };
+
+        const services = await this._providerServiceModel
+            .find(query)
+            .populate({
+                path: 'categoryId',
+                match: categoryMatch
+            })
+            .populate('professionId')
+            .sort(sort)
+            .skip(skip)
+            .limit(options.limit)
+            .lean();
+
+        return filters.search
+            ? (services.filter(s => s.categoryId) as unknown as ProviderServicePopulatedDocument[])
+            : (services as unknown as ProviderServicePopulatedDocument[]);
     }
 
     async count(filter: FilterQuery<ProviderServiceDocument> = {}): Promise<number> {
