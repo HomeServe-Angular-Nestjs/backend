@@ -11,7 +11,9 @@ export enum ErrorMessage {
     SERVICE_ALREADY_EXISTS = 'Service already exists',
     PLAN_ALREADY_EXISTS = 'Plan already exists',
     PLAN_UNAVAILABLE = 'Plan not available at the moment.',
-
+    UPDATE_FAILED = 'Update failed',
+    
+    NOTIFICATION_NOT_FOUND = 'Notification not found',
     PROVIDER_NOT_FOUND = 'Provider not found',
     SERVICE_NOT_FOUND = 'Service not found',
     SUBSCRIPTION_NOT_FOUND = 'Subscription not found',

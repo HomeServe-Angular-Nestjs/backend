@@ -6,7 +6,8 @@ export interface INotificationRepository extends IBaseRepository<NotificationDoc
     findNotification(userId: string, type: NotificationType, templateId: NotificationTemplateId): Promise<NotificationDocument | null>;
     findAll(userId: string): Promise<NotificationDocument[]>;
     markAsReadById(notificationId: string): Promise<NotificationDocument | null>;
-    markAllAsRead(userId: string): Promise<void>;
+    markAllAsRead(userId: string): Promise<boolean>;
     deleteByUserIdAndTemplateId(userId: string, templateId: NotificationTemplateId): Promise<NotificationDocument | null>;
     deleteAll(userId: string): Promise<void>;
+    deleteById(notificationId: string): Promise<boolean>
 }
