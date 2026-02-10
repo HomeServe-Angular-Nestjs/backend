@@ -1,11 +1,11 @@
 import { COUPON_MAPPER } from "@core/constants/mappers.constant";
 import { COUPON_REPOSITORY_NAME } from "@core/constants/repository.constant";
 import { ICouponMapper } from "@core/dto-mapper/interface/coupon.mapper.interface";
-import { ICoupon } from "@core/entities/interfaces/coupon.entity.interface";
+import { ICoupon, ICouponFilter, ICouponWithPagination } from "@core/entities/interfaces/coupon.entity.interface";
 import { ErrorCodes, ErrorMessage } from "@core/enum/error.enum";
 import { IResponse } from "@core/misc/response.util";
 import { ICouponRepository } from "@core/repositories/interfaces/coupon-repo.interface";
-import { CreateCouponDto, EditCouponDto } from "@modules/coupons/dtos/coupon.dto";
+import { CouponFilterDto, CreateCouponDto, EditCouponDto } from "@modules/coupons/dtos/coupon.dto";
 import { ICouponService } from "@modules/coupons/services/interface/coupon-service.interface";
 import { Inject, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
 
@@ -19,16 +19,28 @@ export class CouponService implements ICouponService {
     ) { }
 
 
-    async getAllCoupons(): Promise<IResponse<ICoupon[]>> {
-        const couponDocs = await this._couponRepository.find({ isDeleted: false });
+    async getAllCoupons(couponFilterDto: CouponFilterDto): Promise<IResponse<ICouponWithPagination>> {
+        const { page, limit, ...couponFilter } = couponFilterDto;
+
+        const [couponDocs, totalCoupons] = await Promise.all([
+            this._couponRepository.fetchCouponsWithFilterAndPagination(couponFilter, { page, limit }),
+            this._couponRepository.countCoupons()
+        ]);
         const coupons = (couponDocs ?? []).map(coupon => this._couponMapper.toEntity(coupon));
 
         return {
             success: true,
             message: coupons.length > 0
                 ? 'All coupons fetched successfully.'
-                : 'No Coupon found.',
-            data: coupons
+                : 'No Coupons found.',
+            data: {
+                coupons,
+                pagination: {
+                    total: totalCoupons,
+                    page,
+                    limit,
+                }
+            }
         }
     }
 

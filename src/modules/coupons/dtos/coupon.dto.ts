@@ -1,4 +1,5 @@
 import { DiscountTypeEnum, UsageTypeEnum } from "@core/enum/coupon.enum";
+import { PageDto } from "@modules/providers/dtos/provider.dto";
 import { PartialType } from "@nestjs/mapped-types";
 import { IsBoolean, IsIn, IsISO8601, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from "class-validator";
 
@@ -46,4 +47,21 @@ export class EditCouponDto extends PartialType(CreateCouponDto) {
     @IsOptional()
     @IsBoolean()
     isDeleted?: boolean;
+}
+
+export class CouponFilterDto extends PageDto {
+    @IsOptional()
+    @IsString()
+    search: string;
+
+    @IsOptional()
+    @IsIn([true, false, 'all'])
+    isActive: boolean | 'all';
+
+    @IsOptional()
+    @IsIn([...Object.values(DiscountTypeEnum), 'all'])
+    discountType: DiscountTypeEnum | 'all';
+
+    @IsIn([...Object.values(UsageTypeEnum), 'all'])
+    usageType: UsageTypeEnum | 'all';
 }
