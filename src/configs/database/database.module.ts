@@ -1,7 +1,7 @@
 import { Connection, ConnectionStates } from 'mongoose';
 
 import {
-  ADMIN_MODEL_NAME, ADMIN_SETTINGS_MODEL_NAME, BOOKINGS_MODEL_NAME, CHAT_MODEL_NAME, CUSTOMER_MODEL_NAME, DATE_OVERRIDE_MODEL_NAME, MESSAGE_MODEL_NAME,
+  ADMIN_MODEL_NAME, ADMIN_SETTINGS_MODEL_NAME, BOOKINGS_MODEL_NAME, CHAT_MODEL_NAME, COUPON_MODEL_NAME, CUSTOMER_MODEL_NAME, DATE_OVERRIDE_MODEL_NAME, MESSAGE_MODEL_NAME,
   NOTIFICATION_MODEL_NAME, PLAN_MODEL_NAME, PROFESSION_MODEL_NAME, PROVIDER_MODEL_NAME, PROVIDER_SERVICE_MODEL_NAME, REPORT_MODEL_NAME, RESERVATION_MODEL_NAME,
   SERVICE_CATEGORY_MODEL_NAME, SERVICE_OFFERED_MODEL_NAME, SUBSCRIPTION_MODEL_NAME, WALLET_LEDGER_MODEL_NAME, WALLET_MODEL_NAME, WEEKLY_AVAILABILITY_MODEL_NAME
 } from '@core/constants/model.constant';
@@ -30,6 +30,7 @@ import { ServiceCategorySchema } from '@core/schema/service-category';
 import { ProviderServiceSchema } from '@core/schema/provider-service.schema';
 import { CART_MODEL_NAME } from '@core/constants/model.constant';
 import { CartSchema } from '@core/schema/cart.schema';
+import { CouponSchema } from '@core/schema/coupon.schema';
 
 @Global()
 @Module({
@@ -84,6 +85,7 @@ import { CartSchema } from '@core/schema/cart.schema';
       { name: CHAT_MODEL_NAME, schema: ChatSchema },
       { name: PLAN_MODEL_NAME, schema: PlanSchema },
       { name: CART_MODEL_NAME, schema: CartSchema },
+      { name: COUPON_MODEL_NAME, schema: CouponSchema },
     ]),
   ],
   exports: [MongooseModule],

@@ -12,7 +12,7 @@ export enum ErrorMessage {
     PLAN_ALREADY_EXISTS = 'Plan already exists',
     PLAN_UNAVAILABLE = 'Plan not available at the moment.',
     UPDATE_FAILED = 'Update failed',
-    
+
     NOTIFICATION_NOT_FOUND = 'Notification not found',
     PROVIDER_NOT_FOUND = 'Provider not found',
     SERVICE_NOT_FOUND = 'Service not found',
@@ -21,6 +21,7 @@ export enum ErrorMessage {
     PROVIDER_NOT_FOUND_WITH_ID = 'Provider not found with ID: ',
     CUSTOMER_NOT_FOUND_WITH_ID = 'Customer not found with ID: ',
     SERVICE_NOT_FOUND_WITH_ID = 'Service not found with ID: ',
+    COUPON_NOT_FOUND = 'Coupon not found',
     INVALID_INPUT = 'Invalid input data',
     MISSING_FIELDS = 'Required fields are missing',
     INVALID_CREDENTIALS = 'Invalid email or password',
