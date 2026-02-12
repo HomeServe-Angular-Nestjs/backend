@@ -7,8 +7,9 @@ import { IResponse } from "@core/misc/response.util";
 import { INotificationRepository } from "@core/repositories/interfaces/notification-repo.interface";
 import { SendNewNotificationDto } from "@modules/websockets/dto/notification.dto";
 import { INotificationService } from "@modules/websockets/services/interface/notification-service.interface";
-import { forwardRef, Inject, Injectable } from "@nestjs/common";
+import { forwardRef, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { NotificationGateway } from "@modules/websockets/namespaces/notification.gateway";
+import { ErrorCodes, ErrorMessage } from "@core/enum/error.enum";
 
 @Injectable()
 export class NotificationService implements INotificationService {
@@ -53,16 +54,36 @@ export class NotificationService implements INotificationService {
         return notificationDoc ? this._notificationMapper.toEntity(notificationDoc) : null;
     }
 
-    async markAsReadById(notificationId: string): Promise<INotification | null> {
+    async markAsReadById(notificationId: string): Promise<IResponse<INotification>> {
         const notificationDoc = await this._notificationRepository.markAsReadById(notificationId);
-        return notificationDoc ? this._notificationMapper.toEntity(notificationDoc) : null;
-    }
+        if (!notificationDoc) throw new NotFoundException({
+            code: ErrorCodes.NOT_FOUND,
+            message: ErrorMessage.NOTIFICATION_NOT_FOUND
+        });
 
-    async markAllAsRead(userId: string): Promise<IResponse<void>> {
-        await this._notificationRepository.markAllAsRead(userId);
         return {
             success: true,
-            message: 'All notifications marked as read.'
+            message: 'Notification marked as read.',
+            data: this._notificationMapper.toEntity(notificationDoc)
+        }
+    }
+
+    async markAllAsRead(userId: string): Promise<IResponse<INotification[]>> {
+        const result = await this._notificationRepository.markAllAsRead(userId);
+
+        if (!result) {
+            return {
+                success: true,
+                message: 'No notifications found to mark as read.'
+            };
+        }
+
+        const notificationDocs = await this._notificationRepository.findAll(userId);
+
+        return {
+            success: true,
+            message: 'All notifications marked as read.',
+            data: (notificationDocs ?? []).map(notification => this._notificationMapper.toEntity(notification))
         };
     }
 
@@ -72,10 +93,15 @@ export class NotificationService implements INotificationService {
     }
 
     async deleteById(notificationId: string): Promise<IResponse<void>> {
-        await this._notificationRepository.deleteOne({ _id: notificationId });
+        const isDeleted = await this._notificationRepository.deleteById(notificationId);
+        if (!isDeleted) throw new NotFoundException({
+            code: ErrorCodes.NOT_FOUND,
+            message: ErrorMessage.NOTIFICATION_NOT_FOUND
+        })
+
         return {
             success: true,
-            message: 'Notification deleted.'
+            message: 'Notification deleted successfully.'
         };
     }
 

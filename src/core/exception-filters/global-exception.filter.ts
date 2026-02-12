@@ -2,6 +2,7 @@ import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus, Injec
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { Request, Response } from 'express';
+import { IResponse } from '@core/misc/response.util';
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
@@ -25,19 +26,15 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
         if (exception instanceof HttpException) {
             status = exception.getStatus();
-            const responseBody = exception.getResponse();
-            if (typeof responseBody === 'object' && responseBody !== null) {
-                message = (responseBody as any).message || message;
-                error = (responseBody as any).error || error;
-            } else {
-                message = responseBody as string;
-            }
+            const responseBody = exception.getResponse() as IResponse;
+            message = responseBody.message;
+            error = responseBody.code as string;
         } else if (exception instanceof Error) {
             this.logger.error(exception.stack || exception.message);
         }
 
         this.logger.error(`End Point: ${request.url} Status: ${status} Error: ${JSON.stringify(message)}`);
-        
+
         response
             .status(status)
             .json({

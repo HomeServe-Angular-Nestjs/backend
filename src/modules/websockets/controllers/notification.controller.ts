@@ -1,8 +1,11 @@
 import { NOTIFICATION_SERVICE_NAME, TOKEN_SERVICE_NAME } from "@core/constants/service.constant";
+import { User } from "@core/decorators/extract-user.decorator";
+import { INotification } from "@core/entities/interfaces/notification.entity.interface";
 import { ErrorCodes, ErrorMessage } from "@core/enum/error.enum";
 import { ICustomLogger } from "@core/logger/interface/custom-logger.interface";
 import { ILoggerFactory, LOGGER_FACTORY } from "@core/logger/interface/logger-factory.interface";
 import { IPayload } from "@core/misc/payload.interface";
+import { IResponse } from "@core/misc/response.util";
 import { ITokenService } from "@modules/auth/services/interfaces/token-service.interface";
 import { INotificationService } from "@modules/websockets/services/interface/notification-service.interface";
 import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Req, Res, UnauthorizedException } from "@nestjs/common";
@@ -62,25 +65,22 @@ export class NotificationController {
     }
 
     @Patch('mark-read/:id')
-    async markRead(@Param('id') id: string) {
-        return this._notificationService.markAsReadById(id);
+    async markRead(@Param('id') notificationId: string):Promise<IResponse<INotification>> {
+        return this._notificationService.markAsReadById(notificationId);
     }
 
     @Patch('mark-all-read')
-    async markAllRead(@Req() req: Request) {
-        const user = req.user as IPayload;
+    async markAllRead(@User() user: IPayload): Promise<IResponse<INotification[]>> {
         return this._notificationService.markAllAsRead(user.sub);
     }
 
     @Delete('clear-all')
-    async clearAll(@Req() req: Request) {
-        const user = req.user as IPayload;
+    async clearAll(@User() user: IPayload): Promise<IResponse<void>> {
         return this._notificationService.deleteAll(user.sub);
     }
 
     @Delete(':id')
-    async deleteNotification(@Param('id') id: string) {
-        return this._notificationService.deleteById(id);
+    async deleteNotification(@Param('id') notificationId: string):Promise<IResponse<void>> {
+        return this._notificationService.deleteById(notificationId);
     }
-
 }

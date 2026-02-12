@@ -26,7 +26,8 @@ export class NotificationRepository extends BaseRepository<NotificationDocument>
         return await this._notificationModel.findOne({
             userId: this._toObjectId(userId),
             type,
-            templateId
+            templateId,
+            isDeleted: false,
         }).lean();
     }
 
@@ -38,11 +39,12 @@ export class NotificationRepository extends BaseRepository<NotificationDocument>
         );
     }
 
-    async markAllAsRead(userId: string): Promise<void> {
-        await this._notificationModel.updateMany(
+    async markAllAsRead(userId: string): Promise<boolean> {
+        const result = await this._notificationModel.updateMany(
             { userId: this._toObjectId(userId), isRead: false },
             { $set: { isRead: true } }
         );
+        return result.modifiedCount > 0;
     }
 
     async deleteByUserIdAndTemplateId(userId: string, templateId: NotificationTemplateId): Promise<NotificationDocument | null> {
@@ -53,6 +55,11 @@ export class NotificationRepository extends BaseRepository<NotificationDocument>
             },
         );
         return result;
+    }
+
+    async deleteById(notificationId: string): Promise<boolean> {
+        const result = await this._notificationModel.deleteOne({ _id: notificationId });
+        return result.deletedCount > 0;
     }
 
     async deleteAll(userId: string): Promise<void> {

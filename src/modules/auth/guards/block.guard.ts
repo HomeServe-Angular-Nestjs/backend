@@ -15,6 +15,7 @@ import {
 import { CustomerDocument } from '@core/schema/customer.schema';
 import { ProviderDocument } from '@core/schema/provider.schema';
 import { UserType } from '@core/entities/interfaces/user.entity.interface';
+import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
 
 @Injectable()
 export class BlockGuard implements CanActivate {
@@ -40,17 +41,29 @@ export class BlockGuard implements CanActivate {
 
         const userPayload = request.user as IPayload;
         if (!userPayload?.sub) {
-            throw new UnauthorizedException('User payload missing: Unable to validate authentication.');
+            this.logger.error('User payload missing: Unable to validate authentication.');
+            throw new UnauthorizedException({
+                code: ErrorCodes.UNAUTHORIZED_ACCESS,
+                message: ErrorMessage.UNAUTHORIZED_ACCESS
+            });
         }
 
         const userType = (request.headers['x-user-type']) as UserType;
 
         if (!userType) {
-            throw new UnauthorizedException('Missing user type header');
+            this.logger.error('User payload missing: Unable to validate authentication.');
+            throw new UnauthorizedException({
+                code: ErrorCodes.UNAUTHORIZED_ACCESS,
+                message: ErrorMessage.UNAUTHORIZED_ACCESS
+            });
         }
 
         if (!this.validUserTypes.includes(userType.toLowerCase())) {
-            throw new BadRequestException(`Invalid user type: ${userType}`);
+            this.logger.error('User payload missing: Unable to validate authentication.');
+            throw new BadRequestException({
+                code: ErrorCodes.UNAUTHORIZED_ACCESS,
+                message: ErrorMessage.UNAUTHORIZED_ACCESS
+            });
         }
 
         if (userType === 'admin') {
@@ -61,11 +74,17 @@ export class BlockGuard implements CanActivate {
         const user: CustomerDocument | ProviderDocument | null = await repo.findById(userPayload.sub);
 
         if (!user) {
-            throw new UnauthorizedException(`User with ID ${userPayload.sub} not found in the database.`);
+            throw new UnauthorizedException({
+                code: ErrorCodes.UNAUTHORIZED_ACCESS,
+                message: ErrorMessage.USER_NOT_FOUND
+            });
         }
         if (!user.isActive) {
             this.logger.error(`User ${user.id} is Blocked by the admin`);
-            throw new ForbiddenException('You are blocked by the admin.');
+            throw new ForbiddenException({
+                code: ErrorCodes.FORBIDDEN,
+                message: ErrorMessage.USER_BLOCKED
+            });
         }
 
         request['userType'] = userType.toLowerCase();
