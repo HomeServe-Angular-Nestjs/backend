@@ -1,11 +1,17 @@
 import { DiscountTypeEnum, UsageTypeEnum } from "@core/enum/coupon.enum";
 import { PageDto } from "@modules/providers/dtos/provider.dto";
-import { PartialType } from "@nestjs/mapped-types";
+import { Transform } from "class-transformer";
 import { IsBoolean, IsIn, IsISO8601, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from "class-validator";
 
-export class CreateCouponDto {
+export class UpsertCouponDto {
     @IsNotEmpty()
     @IsString()
+    @Transform(({ value }) => value.toLowerCase())
+    couponCode: string;
+
+    @IsNotEmpty()
+    @IsString()
+    @Transform(({ value }) => value.toLowerCase())
     couponName: string;
 
     @IsString()
@@ -32,21 +38,11 @@ export class CreateCouponDto {
     @IsNotEmpty()
     @IsNumber()
     @Min(1, { message: "Usage limit should be above 1." })
-    usageLimit: number;
-}
+    usageValue: number;
 
-export class EditCouponDto extends PartialType(CreateCouponDto) {
     @IsNotEmpty()
-    @IsString()
-    couponId: string;
-
-    @IsOptional()
     @IsBoolean()
-    isActive?: boolean;
-
-    @IsOptional()
-    @IsBoolean()
-    isDeleted?: boolean;
+    isActive: boolean;
 }
 
 export class CouponFilterDto extends PageDto {
@@ -55,6 +51,10 @@ export class CouponFilterDto extends PageDto {
     search: string;
 
     @IsOptional()
+    @Transform(({ value }) => {
+        if (value == 'all') return value;
+        return value === 'true';
+    })
     @IsIn([true, false, 'all'])
     isActive: boolean | 'all';
 

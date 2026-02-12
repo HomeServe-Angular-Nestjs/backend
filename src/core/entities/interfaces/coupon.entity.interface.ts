@@ -10,7 +10,7 @@ export interface ICoupon extends IEntity {
     discountValue: number;
     validFrom: Date | null;
     validTo: Date | null;
-    usageLimit: number;
+    usageValue: number;
     isActive: boolean;
     isDeleted: boolean;
 }

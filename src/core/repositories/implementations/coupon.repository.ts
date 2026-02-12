@@ -22,8 +22,8 @@ export class CouponRepository extends BaseRepository<CouponDocument> implements 
 
         if (couponFilter.search?.trim()) {
             matchQuery.$or = [
-                { couponName: { $regex: couponFilter.search, $option: 'i' } },
-                { couponCode: { $regex: couponFilter.search, $option: 'i' } },
+                { couponName: { $regex: couponFilter.search, $options: 'i' } },
+                { couponCode: { $regex: couponFilter.search, $options: 'i' } },
             ]
         }
 
@@ -57,5 +57,18 @@ export class CouponRepository extends BaseRepository<CouponDocument> implements 
 
     async countCoupons(): Promise<number> {
         return await this._couponModel.countDocuments({ isDeleted: false });
+    }
+
+    async deleteCouponById(couponId: string): Promise<boolean> {
+        const result = await this._couponModel.deleteOne({ _id: couponId });
+        return result.deletedCount > 0;
+    }
+
+    async toggleStatusById(couponId: string): Promise<boolean> {
+        const result = await this._couponModel.updateOne(
+            { _id: couponId },
+            [{ $set: { isActive: { $not: "$isActive" } } }]
+        );
+        return result.modifiedCount > 0;
     }
 }

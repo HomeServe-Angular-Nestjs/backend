@@ -10,7 +10,7 @@ export class Coupon extends BaseEntity implements ICoupon {
     discountValue: number;
     validFrom: Date | null;
     validTo: Date | null;
-    usageLimit: number;
+    usageValue: number;
     isActive: boolean;
     isDeleted: boolean;
 

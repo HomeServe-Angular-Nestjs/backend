@@ -50,7 +50,7 @@ export class CouponDocument extends Document {
         required: true,
         min: 1
     })
-    usageLimit: number;
+    usageValue: number;
 
     @Prop({
         type: Boolean,

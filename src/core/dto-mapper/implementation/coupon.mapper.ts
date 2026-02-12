@@ -2,7 +2,7 @@ import { ICouponMapper } from "@core/dto-mapper/interface/coupon.mapper.interfac
 import { Coupon } from "@core/entities/implementation/coupon.entity";
 import { ICoupon } from "@core/entities/interfaces/coupon.entity.interface";
 import { CouponDocument } from "@core/schema/coupon.schema";
-import { EditCouponDto } from "@modules/coupons/dtos/coupon.dto";
+import { UpsertCouponDto } from "@modules/coupons/dtos/coupon.dto";
 import { Injectable } from "@nestjs/common";
 import { Types } from "mongoose";
 
@@ -18,7 +18,7 @@ export class CouponMapper implements ICouponMapper {
             discountValue: entity.discountValue,
             validFrom: entity.validFrom,
             validTo: entity.validTo,
-            usageLimit: entity.usageLimit,
+            usageValue: entity.usageValue,
             isActive: entity.isActive,
             isDeleted: entity.isDeleted,
         };
@@ -34,7 +34,7 @@ export class CouponMapper implements ICouponMapper {
             discountValue: doc.discountValue,
             validFrom: doc.validFrom,
             validTo: doc.validTo,
-            usageLimit: doc.usageLimit,
+            usageValue: doc.usageValue,
             isActive: doc.isActive,
             isDeleted: doc.isDeleted,
             createdAt: doc.createdAt,
@@ -42,7 +42,7 @@ export class CouponMapper implements ICouponMapper {
         });
     }
 
-    editCouponDtoToEntity(couponDto: EditCouponDto): Partial<ICoupon> {
+    editCouponDtoToEntity(couponDto: UpsertCouponDto): Partial<ICoupon> {
         return new Coupon({
             couponName: couponDto.couponName,
             discountType: couponDto.discountType,
@@ -50,9 +50,8 @@ export class CouponMapper implements ICouponMapper {
             discountValue: couponDto.discountValue,
             validFrom: couponDto.validFrom ? new Date(couponDto.validFrom) : null,
             validTo: couponDto.validTo ? new Date(couponDto.validTo) : null,
-            usageLimit: couponDto.usageLimit,
+            usageValue: couponDto.usageValue,
             isActive: couponDto.isActive,
-            isDeleted: couponDto.isDeleted,
         });
     }
 }

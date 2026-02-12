@@ -6,4 +6,6 @@ export interface ICouponRepository extends IBaseRepository<CouponDocument> {
     fetchCouponsWithFilterAndPagination(couponFilter: ICouponFilter, option: { page: number, limit: number }): Promise<CouponDocument[]>;
     editCoupon(couponId: string, updateData: Partial<Omit<ICoupon, 'id'>>): Promise<CouponDocument | null>;
     countCoupons(): Promise<number>;
+    deleteCouponById(couponId: string): Promise<boolean>;
+    toggleStatusById(couponId: string): Promise<boolean>;
 }

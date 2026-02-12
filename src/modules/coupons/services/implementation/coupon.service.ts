@@ -5,9 +5,10 @@ import { ICoupon, ICouponFilter, ICouponWithPagination } from "@core/entities/in
 import { ErrorCodes, ErrorMessage } from "@core/enum/error.enum";
 import { IResponse } from "@core/misc/response.util";
 import { ICouponRepository } from "@core/repositories/interfaces/coupon-repo.interface";
-import { CouponFilterDto, CreateCouponDto, EditCouponDto } from "@modules/coupons/dtos/coupon.dto";
+import { CouponFilterDto, UpsertCouponDto } from "@modules/coupons/dtos/coupon.dto";
 import { ICouponService } from "@modules/coupons/services/interface/coupon-service.interface";
 import { Inject, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
+import { randomBytes } from "node:crypto";
 
 @Injectable()
 export class CouponService implements ICouponService {
@@ -44,17 +45,17 @@ export class CouponService implements ICouponService {
         }
     }
 
-    async createCoupon(adminId: string, createCouponDto: CreateCouponDto): Promise<IResponse<ICoupon>> {
+    async createCoupon(createCouponDto: UpsertCouponDto): Promise<IResponse<ICoupon>> {
         const newCoupon = this._couponMapper.toDocument({
-            couponCode: 'createCouponDto.couponCode',
+            couponCode: createCouponDto.couponCode,
             couponName: createCouponDto.couponName,
             discountType: createCouponDto.discountType,
             usageType: createCouponDto.usageType,
             discountValue: createCouponDto.discountValue,
             validFrom: createCouponDto.validFrom ? new Date(createCouponDto.validFrom) : null,
             validTo: createCouponDto.validTo ? new Date(createCouponDto.validTo) : null,
-            usageLimit: createCouponDto.usageLimit,
-            isActive: true,
+            usageValue: createCouponDto.usageValue,
+            isActive: createCouponDto.isActive,
             isDeleted: false,
         });
 
@@ -77,9 +78,7 @@ export class CouponService implements ICouponService {
         }
     }
 
-    async editCoupon(editCouponDto: EditCouponDto): Promise<IResponse<ICoupon>> {
-        const { couponId, ...couponData } = editCouponDto;
-
+    async editCoupon(couponId: string, editCouponDto: UpsertCouponDto): Promise<IResponse<ICoupon>> {
         const editCouponEntity = this._couponMapper.editCouponDtoToEntity(editCouponDto);
         const updatedCouponDoc = await this._couponRepository.editCoupon(couponId, editCouponEntity);
 
@@ -109,6 +108,39 @@ export class CouponService implements ICouponService {
             success: true,
             message: 'Coupon fetched successfully.',
             data: coupon
+        }
+    }
+
+    async generateCode(): Promise<IResponse<string>> {
+        const str = 'abcdefghijklmnopqrstuvwxyz0123456789';
+        const length = 6;
+        const bytes = randomBytes(length);
+        let result = '';
+
+        for (let i = 0; i < length; i++) {
+            result += str[bytes[i] % str.length];
+        }
+
+        return {
+            success: true,
+            message: 'Coupon code generated.',
+            data: result
+        }
+    }
+
+    async deleteCoupon(couponId: string): Promise<IResponse> {
+        const isDeleted = await this._couponRepository.deleteCouponById(couponId);
+        return {
+            success: isDeleted,
+            message: isDeleted ? 'Successfully deleted.' : 'Failed to delete.'
+        }
+    }
+
+    async toggleStatus(couponId: string): Promise<IResponse> {
+        const isUpdated = await this._couponRepository.toggleStatusById(couponId);
+        return {
+            success: isUpdated,
+            message: isUpdated ? 'Successfully updated.' : 'Failed to update.'
         }
     }
 }
