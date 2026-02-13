@@ -143,4 +143,14 @@ export class CouponService implements ICouponService {
             message: isUpdated ? 'Successfully updated.' : 'Failed to update.'
         }
     }
+
+    async getAvailableCoupons(): Promise<IResponse<ICoupon[]>> {
+        const couponDocs = await this._couponRepository.findAvailableCoupons();
+        const coupons = (couponDocs ?? []).map(coupon => this._couponMapper.toEntity(coupon));
+        return {
+            success: true,
+            message: 'All available coupons fetched successfully',
+            data: coupons
+        }
+    }
 }

@@ -71,4 +71,8 @@ export class CouponRepository extends BaseRepository<CouponDocument> implements 
         );
         return result.modifiedCount > 0;
     }
+
+    async findAvailableCoupons(): Promise<CouponDocument[]> {
+        return await this._couponModel.find({ isDeleted: false, isActive: true }).lean();
+    }
 }

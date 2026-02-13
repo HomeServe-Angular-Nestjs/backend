@@ -20,14 +20,14 @@ export class CouponController {
         return this._couponService.getAllCoupons(couponFilterDto);
     }
 
-    @Get('/:id')
-    async getOneCoupons(@Param('id', new isValidIdPipe()) couponId: string): Promise<IResponse<ICoupon>> {
-        return this._couponService.getOneCoupon(couponId);
-    }
-
     @Get('code')
     async generateCode(): Promise<IResponse<string>> {
         return this._couponService.generateCode();
+    }
+
+    @Get('available')
+    async getAvailableCoupons(): Promise<IResponse<ICoupon[]>> {
+        return this._couponService.getAvailableCoupons();
     }
 
     @Post('')
@@ -35,9 +35,14 @@ export class CouponController {
         return this._couponService.createCoupon(createCouponDto);
     }
 
-    @Put('/:id')
-    async editCoupon(@Param('id', new isValidIdPipe()) couponId: string, @Body() editCouponDto: UpsertCouponDto): Promise<IResponse<ICoupon>> {
-        return this._couponService.editCoupon(couponId, editCouponDto);
+    @Patch('/:id/status')
+    async toggleStatus(@Param('id', new isValidIdPipe()) couponId: string): Promise<IResponse> {
+        return this._couponService.toggleStatus(couponId);
+    }
+
+    @Get('/:id')
+    async getOneCoupons(@Param('id', new isValidIdPipe()) couponId: string): Promise<IResponse<ICoupon>> {
+        return this._couponService.getOneCoupon(couponId);
     }
 
     @Delete('/:id')
@@ -45,8 +50,8 @@ export class CouponController {
         return this._couponService.deleteCoupon(couponId);
     }
 
-    @Patch('/:id/status')
-    async toggleStatus(@Param('id', new isValidIdPipe()) couponId: string): Promise<IResponse> {
-        return this._couponService.toggleStatus(couponId);
+    @Put('/:id')
+    async editCoupon(@Param('id', new isValidIdPipe()) couponId: string, @Body() editCouponDto: UpsertCouponDto): Promise<IResponse<ICoupon>> {
+        return this._couponService.editCoupon(couponId, editCouponDto);
     }
 }

@@ -8,4 +8,5 @@ export interface ICouponRepository extends IBaseRepository<CouponDocument> {
     countCoupons(): Promise<number>;
     deleteCouponById(couponId: string): Promise<boolean>;
     toggleStatusById(couponId: string): Promise<boolean>;
+    findAvailableCoupons():Promise<CouponDocument[]>;
 }

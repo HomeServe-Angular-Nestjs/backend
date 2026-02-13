@@ -10,4 +10,5 @@ export interface ICouponService {
     generateCode(): Promise<IResponse<string>>;
     deleteCoupon(couponId: string): Promise<IResponse>;
     toggleStatus(couponId: string): Promise<IResponse>;
+    getAvailableCoupons(): Promise<IResponse<ICoupon[]>>;
 }
