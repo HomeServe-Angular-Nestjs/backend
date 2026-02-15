@@ -240,4 +240,23 @@ export class CategoryService implements ICategoryService {
             data: searchResponse
         }
     }
+
+    async fetchAvailableServiceByProfessionId(professionId: string): Promise<IResponse<IServiceCategory[]>> {
+        const serviceCategoryDocs = await this._serviceCategoryRepository.fetchAvailableServiceByProfessionId(professionId);
+        if (serviceCategoryDocs.length === 0) {
+            return {
+                success: true,
+                message: 'No services matched your search.',
+                data: []
+            };
+        }
+
+        const serviceCategories = serviceCategoryDocs.map(serviceCategory => this._serviceCategoryMapper.toEntity(serviceCategory));
+
+        return {
+            success: true,
+            message: 'Services fetched successfully',
+            data: serviceCategories
+        }
+    }
 }

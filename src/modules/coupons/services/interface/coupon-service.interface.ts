@@ -1,6 +1,6 @@
-import { ICoupon, ICouponWithPagination } from "@core/entities/interfaces/coupon.entity.interface";
+import { ICoupon, ICouponAppliedResponse, ICouponWithPagination } from "@core/entities/interfaces/coupon.entity.interface";
 import { IResponse } from "@core/misc/response.util";
-import { CouponFilterDto, UpsertCouponDto } from "@modules/coupons/dtos/coupon.dto";
+import { ApplyCouponPayload, CouponFilterDto, UpsertCouponDto } from "@modules/coupons/dtos/coupon.dto";
 
 export interface ICouponService {
     getAllCoupons(couponFilterDto: CouponFilterDto): Promise<IResponse<ICouponWithPagination>>
@@ -11,4 +11,5 @@ export interface ICouponService {
     deleteCoupon(couponId: string): Promise<IResponse>;
     toggleStatus(couponId: string): Promise<IResponse>;
     getAvailableCoupons(): Promise<IResponse<ICoupon[]>>;
+    applyCoupon(applyCouponPayload: ApplyCouponPayload): Promise<IResponse<ICouponAppliedResponse>>;
 }

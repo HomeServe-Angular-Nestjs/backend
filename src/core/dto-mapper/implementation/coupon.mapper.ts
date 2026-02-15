@@ -21,6 +21,8 @@ export class CouponMapper implements ICouponMapper {
             usageValue: entity.usageValue,
             isActive: entity.isActive,
             isDeleted: entity.isDeleted,
+            professionId: entity.professionId ? new Types.ObjectId(entity.professionId) : null,
+            serviceCategoryId: entity.serviceCategoryId ? new Types.ObjectId(entity.serviceCategoryId) : null,
         };
     }
 
@@ -38,7 +40,9 @@ export class CouponMapper implements ICouponMapper {
             isActive: doc.isActive,
             isDeleted: doc.isDeleted,
             createdAt: doc.createdAt,
-            updatedAt: doc.updatedAt
+            updatedAt: doc.updatedAt,
+            professionId: doc.professionId?.toString(),
+            serviceCategoryId: doc.serviceCategoryId?.toString(),
         });
     }
 
@@ -52,6 +56,8 @@ export class CouponMapper implements ICouponMapper {
             validTo: couponDto.validTo ? new Date(couponDto.validTo) : null,
             usageValue: couponDto.usageValue,
             isActive: couponDto.isActive,
+            professionId: couponDto.professionId,
+            serviceCategoryId: couponDto.serviceCategoryId,
         });
     }
 }

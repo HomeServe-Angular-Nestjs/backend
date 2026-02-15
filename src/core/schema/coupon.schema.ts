@@ -1,6 +1,7 @@
+import { PROFESSION_MODEL_NAME, SERVICE_CATEGORY_MODEL_NAME } from "@core/constants/model.constant";
 import { DiscountTypeEnum, UsageTypeEnum } from "@core/enum/coupon.enum";
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { Document } from "mongoose";
+import { Document, Types } from "mongoose";
 
 @Schema({ timestamps: true })
 export class CouponDocument extends Document {
@@ -63,6 +64,12 @@ export class CouponDocument extends Document {
         default: true
     })
     isDeleted: boolean;
+
+    @Prop({ type: Types.ObjectId, ref: PROFESSION_MODEL_NAME })
+    professionId: Types.ObjectId | null;
+
+    @Prop({ type: Types.ObjectId, ref: SERVICE_CATEGORY_MODEL_NAME })
+    serviceCategoryId: Types.ObjectId | null;
 
     @Prop({ type: Date })
     createdAt?: Date;

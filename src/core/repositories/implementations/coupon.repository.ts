@@ -39,6 +39,14 @@ export class CouponRepository extends BaseRepository<CouponDocument> implements 
             matchQuery.usageType = couponFilter.usageType;
         }
 
+        if (couponFilter.professionId) {
+            matchQuery.professionId = couponFilter.professionId;
+        }
+
+        if (couponFilter.serviceCategoryId) {
+            matchQuery.serviceCategoryId = couponFilter.serviceCategoryId;
+        }
+
         return await this._couponModel
             .find(matchQuery)
             .sort({ createdAt: -1 })

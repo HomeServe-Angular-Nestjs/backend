@@ -1,13 +1,16 @@
 import { COUPON_MAPPER } from "@core/constants/mappers.constant";
-import { COUPON_REPOSITORY_NAME } from "@core/constants/repository.constant";
+import { COUPON_REPOSITORY_NAME, PROFESSION_REPOSITORY_NAME, SERVICE_CATEGORY_REPOSITORY_NAME } from "@core/constants/repository.constant";
 import { ICouponMapper } from "@core/dto-mapper/interface/coupon.mapper.interface";
-import { ICoupon, ICouponFilter, ICouponWithPagination } from "@core/entities/interfaces/coupon.entity.interface";
+import { ICoupon, ICouponAppliedResponse, ICouponFilter, ICouponTableData, ICouponWithPagination } from "@core/entities/interfaces/coupon.entity.interface";
+import { DiscountTypeEnum, UsageTypeEnum } from "@core/enum/coupon.enum";
 import { ErrorCodes, ErrorMessage } from "@core/enum/error.enum";
 import { IResponse } from "@core/misc/response.util";
 import { ICouponRepository } from "@core/repositories/interfaces/coupon-repo.interface";
-import { CouponFilterDto, UpsertCouponDto } from "@modules/coupons/dtos/coupon.dto";
+import { IProfessionRepository } from "@core/repositories/interfaces/profession-repo.interface";
+import { IServiceCategoryRepository } from "@core/repositories/interfaces/service-category-repo.interface";
+import { ApplyCouponPayload, CouponFilterDto, UpsertCouponDto } from "@modules/coupons/dtos/coupon.dto";
 import { ICouponService } from "@modules/coupons/services/interface/coupon-service.interface";
-import { Inject, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
 import { randomBytes } from "node:crypto";
 
 @Injectable()
@@ -17,6 +20,10 @@ export class CouponService implements ICouponService {
         private readonly _couponMapper: ICouponMapper,
         @Inject(COUPON_REPOSITORY_NAME)
         private readonly _couponRepository: ICouponRepository,
+        @Inject(PROFESSION_REPOSITORY_NAME)
+        private readonly _professionRepository: IProfessionRepository,
+        @Inject(SERVICE_CATEGORY_REPOSITORY_NAME)
+        private readonly _serviceCategoryRepository: IServiceCategoryRepository,
     ) { }
 
 
@@ -27,7 +34,31 @@ export class CouponService implements ICouponService {
             this._couponRepository.fetchCouponsWithFilterAndPagination(couponFilter, { page, limit }),
             this._couponRepository.countCoupons()
         ]);
-        const coupons = (couponDocs ?? []).map(coupon => this._couponMapper.toEntity(coupon));
+
+        const coupons: ICouponTableData[] = await Promise.all(
+            (couponDocs ?? []).map(async (coupon) => {
+                const mappedCoupons = this._couponMapper.toEntity(coupon);
+
+                let professionName = '';
+                let categoryServiceName = '';
+
+                if (coupon.professionId) {
+                    const professionDoc = await this._professionRepository.findById(coupon.professionId.toString());
+                    professionName = professionDoc?.name ?? '';
+                }
+
+                if (coupon.serviceCategoryId) {
+                    const serviceCategoryDoc = await this._serviceCategoryRepository.findById(coupon.serviceCategoryId.toString());
+                    categoryServiceName = serviceCategoryDoc?.name ?? '';
+                }
+
+                return {
+                    ...mappedCoupons,
+                    professionName,
+                    categoryServiceName
+                };
+            })
+        );
 
         return {
             success: true,
@@ -57,6 +88,8 @@ export class CouponService implements ICouponService {
             usageValue: createCouponDto.usageValue,
             isActive: createCouponDto.isActive,
             isDeleted: false,
+            professionId: createCouponDto.professionId ?? null,
+            serviceCategoryId: createCouponDto.serviceCategoryId ?? null,
         });
 
         let coupon: ICoupon;
@@ -146,11 +179,71 @@ export class CouponService implements ICouponService {
 
     async getAvailableCoupons(): Promise<IResponse<ICoupon[]>> {
         const couponDocs = await this._couponRepository.findAvailableCoupons();
-        const coupons = (couponDocs ?? []).map(coupon => this._couponMapper.toEntity(coupon));
+        const coupons = (couponDocs ?? [])
+            .filter(coupon => {
+                if (coupon.usageType === UsageTypeEnum.Expiry
+                    && coupon.validTo
+                    && !this._isCouponExpired(coupon.validTo)
+                ) return true;
+                return false;
+            })
+            .map(coupon => this._couponMapper.toEntity(coupon));
         return {
             success: true,
             message: 'All available coupons fetched successfully',
             data: coupons
         }
+    }
+
+    async applyCoupon(applyCouponPayload: ApplyCouponPayload): Promise<IResponse<ICouponAppliedResponse>> {
+        const { couponId, total } = applyCouponPayload;
+
+        const couponDoc = await this._couponRepository.findById(couponId);
+        if (!couponDoc) throw new BadRequestException({
+            code: ErrorCodes.BAD_REQUEST,
+            message: 'This coupon is not available.'
+        });
+
+        const coupon = this._couponMapper.toEntity(couponDoc);
+
+        if (coupon.usageType === UsageTypeEnum.Expiry
+            && coupon.validTo
+            && this._isCouponExpired(coupon.validTo)
+        ) {
+            throw new BadRequestException({
+                code: ErrorCodes.BAD_REQUEST,
+                message: 'This coupon has expired.'
+            });
+        }
+
+        let appliedAmount: number = total;
+        let discountedAmount: number = 0;
+        if (coupon.discountType === DiscountTypeEnum.Flat) {
+            discountedAmount = coupon.discountValue;
+            appliedAmount = total - discountedAmount;
+        } else if (coupon.discountType === DiscountTypeEnum.Percentage) {
+            discountedAmount = total * (coupon.discountValue / 100);
+            appliedAmount = total - discountedAmount;
+        }
+
+        return {
+            success: true,
+            message: 'Coupon applied successfully.',
+            data: {
+                couponValue: coupon.discountValue,
+                discountType: coupon.discountType,
+                deductedValue: discountedAmount
+            }
+        }
+    }
+
+    private _isCouponExpired(endDate: Date | string): boolean {
+        const today = new Date();
+        today.setUTCHours(0, 0, 0, 0);
+
+        const target = new Date(endDate);
+        target.setUTCHours(0, 0, 0, 0);
+
+        return today.getTime() > target.getTime();
     }
 }

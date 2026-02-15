@@ -43,6 +43,14 @@ export class UpsertCouponDto {
     @IsNotEmpty()
     @IsBoolean()
     isActive: boolean;
+
+    @IsOptional()
+    @IsString()
+    professionId?: string;
+
+    @IsOptional()
+    @IsString()
+    serviceCategoryId?: string;
 }
 
 export class CouponFilterDto extends PageDto {
@@ -62,6 +70,25 @@ export class CouponFilterDto extends PageDto {
     @IsIn([...Object.values(DiscountTypeEnum), 'all'])
     discountType: DiscountTypeEnum | 'all';
 
+    @IsOptional()
     @IsIn([...Object.values(UsageTypeEnum), 'all'])
     usageType: UsageTypeEnum | 'all';
+
+    @IsOptional()
+    @IsString()
+    professionId?: string;
+
+    @IsOptional()
+    @IsString()
+    serviceCategoryId?: string;
+}
+
+export class ApplyCouponPayload {
+    @IsNotEmpty()
+    @IsString()
+    couponId: string;
+
+    @IsNotEmpty()
+    @IsNumber()
+    total: number;
 }

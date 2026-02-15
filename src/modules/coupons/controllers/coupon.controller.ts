@@ -1,10 +1,10 @@
 import { COUPON_SERVICE_NAME } from "@core/constants/service.constant";
 import { User } from "@core/decorators/extract-user.decorator";
-import { ICoupon, ICouponWithPagination } from "@core/entities/interfaces/coupon.entity.interface";
+import { ICoupon, ICouponAppliedResponse, ICouponWithPagination } from "@core/entities/interfaces/coupon.entity.interface";
 import { IPayload } from "@core/misc/payload.interface";
 import { IResponse } from "@core/misc/response.util";
 import { isValidIdPipe } from "@core/pipes/is-valid-id.pipe";
-import { CouponFilterDto, UpsertCouponDto } from "@modules/coupons/dtos/coupon.dto";
+import { ApplyCouponPayload, CouponFilterDto, UpsertCouponDto } from "@modules/coupons/dtos/coupon.dto";
 import { ICouponService } from "@modules/coupons/services/interface/coupon-service.interface";
 import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Put, Query } from "@nestjs/common";
 
@@ -33,6 +33,11 @@ export class CouponController {
     @Post('')
     async createCoupon(@Body() createCouponDto: UpsertCouponDto): Promise<IResponse<ICoupon>> {
         return this._couponService.createCoupon(createCouponDto);
+    }
+
+    @Post('apply')
+    async applyCoupon(@Body() applyCouponPayload: ApplyCouponPayload): Promise<IResponse<ICouponAppliedResponse>> {
+        return this._couponService.applyCoupon(applyCouponPayload)
     }
 
     @Patch('/:id/status')
