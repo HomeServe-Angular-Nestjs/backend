@@ -32,9 +32,11 @@ export interface ICouponWithPagination {
 }
 
 export interface ICouponAppliedResponse {
-    couponValue: number;
+    originalAmount: number;
     discountType: DiscountTypeEnum;
+    couponValue: number;
     deductedValue: number;
+    finalAmount: number;
 }
 
 export interface ICouponTableData extends ICoupon {

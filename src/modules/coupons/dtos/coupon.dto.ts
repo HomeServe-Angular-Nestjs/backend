@@ -83,12 +83,13 @@ export class CouponFilterDto extends PageDto {
     serviceCategoryId?: string;
 }
 
-export class ApplyCouponPayload {
+export class ApplyCouponPayloadDto {
     @IsNotEmpty()
     @IsString()
     couponId: string;
 
     @IsNotEmpty()
     @IsNumber()
+    @Min(1, { message: "Total should be above 1." })
     total: number;
 }

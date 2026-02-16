@@ -35,6 +35,7 @@ export class BookingMapper implements IBookingMapper {
             updatedAt: doc.updatedAt,
             review: doc.review ? this.toReviewEntities(doc.review) : null,
             respondedAt: doc.respondedAt ?? null,
+            couponId: doc.couponId?.toString() ?? null,
         });
     }
 
@@ -82,7 +83,8 @@ export class BookingMapper implements IBookingMapper {
             cancelledAt: entity.cancelledAt ? new Date(entity.cancelledAt) : null,
             actualArrivalTime: entity?.actualArrivalTime ? new Date(entity.actualArrivalTime) : null,
             review: null,
-            respondedAt: entity.respondedAt
+            respondedAt: entity.respondedAt,
+            couponId: entity.couponId ? new Types.ObjectId(entity.couponId) : null,
         }
     }
 }

@@ -262,7 +262,8 @@ export class BookingService implements IBookingService {
                 transactionHistory: [],
                 paymentStatus: PaymentStatus.UNPAID,
                 review: null,
-                respondedAt: null
+                respondedAt: null,
+                couponId: bookingData.couponId ?? null,
             })
 
             let bookingDoc: BookingDocument | null;

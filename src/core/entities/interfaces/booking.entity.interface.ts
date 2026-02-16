@@ -111,6 +111,7 @@ export interface IBooking extends IEntity {
     paymentStatus: PaymentStatus;
     review: IReview | null;
     respondedAt: Date | null;
+    couponId: string | null;
 }
 
 export interface ISlot {

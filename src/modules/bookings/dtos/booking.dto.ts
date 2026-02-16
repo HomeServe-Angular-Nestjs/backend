@@ -76,6 +76,10 @@ export class SaveBookingDto {
     @IsNotEmpty()
     @IsString()
     from: string;
+
+    @IsOptional()
+    @IsString()
+    couponId?: string;
 }
 
 export class BookingPaginationFilterDto {

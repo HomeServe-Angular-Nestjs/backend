@@ -8,7 +8,7 @@ import { IResponse } from "@core/misc/response.util";
 import { ICouponRepository } from "@core/repositories/interfaces/coupon-repo.interface";
 import { IProfessionRepository } from "@core/repositories/interfaces/profession-repo.interface";
 import { IServiceCategoryRepository } from "@core/repositories/interfaces/service-category-repo.interface";
-import { ApplyCouponPayload, CouponFilterDto, UpsertCouponDto } from "@modules/coupons/dtos/coupon.dto";
+import { ApplyCouponPayloadDto, CouponFilterDto, UpsertCouponDto } from "@modules/coupons/dtos/coupon.dto";
 import { ICouponService } from "@modules/coupons/services/interface/coupon-service.interface";
 import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
 import { randomBytes } from "node:crypto";
@@ -195,7 +195,7 @@ export class CouponService implements ICouponService {
         }
     }
 
-    async applyCoupon(applyCouponPayload: ApplyCouponPayload): Promise<IResponse<ICouponAppliedResponse>> {
+    async applyCoupon(applyCouponPayload: ApplyCouponPayloadDto): Promise<IResponse<ICouponAppliedResponse>> {
         const { couponId, total } = applyCouponPayload;
 
         const couponDoc = await this._couponRepository.findById(couponId);
@@ -216,23 +216,40 @@ export class CouponService implements ICouponService {
             });
         }
 
-        let appliedAmount: number = total;
-        let discountedAmount: number = 0;
+        let discountAmount = 0;
+
         if (coupon.discountType === DiscountTypeEnum.Flat) {
-            discountedAmount = coupon.discountValue;
-            appliedAmount = total - discountedAmount;
-        } else if (coupon.discountType === DiscountTypeEnum.Percentage) {
-            discountedAmount = total * (coupon.discountValue / 100);
-            appliedAmount = total - discountedAmount;
+            discountAmount = coupon.discountValue;
         }
+
+        if (coupon.discountType === DiscountTypeEnum.Percentage) {
+            discountAmount = (total * coupon.discountValue) / 100;
+        }
+
+        if (discountAmount > total) {
+            discountAmount = total;
+        }
+
+        discountAmount = Number(discountAmount.toFixed(2));
+        const finalAmount = Number((total - discountAmount).toFixed(2));
+
+        // const threshold = 20; // 20%
+        // if (this._isBelowAllowedPercentage(total, finalAmount, threshold)) {
+        //     throw new BadRequestException({
+        //         code: ErrorCodes.BAD_REQUEST,
+        //         message: `Final amount cannot be below ${threshold}% of original total.`
+        //     });
+        // }
 
         return {
             success: true,
             message: 'Coupon applied successfully.',
             data: {
-                couponValue: coupon.discountValue,
+                originalAmount: total,
                 discountType: coupon.discountType,
-                deductedValue: discountedAmount
+                couponValue: coupon.discountValue,
+                deductedValue: discountAmount,
+                finalAmount: finalAmount
             }
         }
     }
@@ -245,5 +262,11 @@ export class CouponService implements ICouponService {
         target.setUTCHours(0, 0, 0, 0);
 
         return today.getTime() > target.getTime();
+    }
+
+    private _isBelowAllowedPercentage(originalTotal: number, finalAmount: number, thresholdPercent: number): boolean {
+        if (originalTotal <= 0) return false;
+        const percentageRemaining = (finalAmount / originalTotal) * 100;
+        return percentageRemaining < thresholdPercent;
     }
 }
