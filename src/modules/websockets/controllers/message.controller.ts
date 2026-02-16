@@ -1,11 +1,12 @@
 import { MESSAGE_SERVICE_NAME, TOKEN_SERVICE_NAME } from '@/core/constants/service.constant';
 import { ErrorCodes, ErrorMessage } from '@/core/enum/error.enum';
+import { CallOrChatAccessGuard } from '@core/guards/call-or-chat-access.guard';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { ITokenService } from '@modules/auth/services/interfaces/token-service.interface';
 import { GetMessagesDto } from '@modules/websockets/dto/message.dto';
 import { IMessageService } from '@modules/websockets/services/interface/message-service.interface';
-import { Controller, Get, Inject, InternalServerErrorException, Post, Query, Req, Res, UnauthorizedException } from '@nestjs/common';
+import { Controller, Get, Inject,  Post, Query, Req, Res, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { Request, Response } from 'express';
 
 @Controller('messages')
@@ -56,6 +57,7 @@ export class MessagesController {
     }
 
     @Get('')
+    @UseGuards(CallOrChatAccessGuard)
     async getAllMessages(@Query() getMessageDto: GetMessagesDto) {
         return this._messagesService.getAllMessage(getMessageDto.chatId, getMessageDto.beforeMessageId);
     }
