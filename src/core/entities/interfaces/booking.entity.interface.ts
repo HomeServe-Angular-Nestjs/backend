@@ -112,12 +112,21 @@ export interface IBooking extends IEntity {
     review: IReview | null;
     respondedAt: Date | null;
     couponId: string | null;
+    previousSlots: IBookedSlot[];
 }
 
 export interface ISlot {
     from: string;
     to: string;
 }
+
+export interface ISlotUI extends ISlot {
+    isAvailable?: boolean;
+}
+
+// export interface ISelectedSlot extends ISlot{
+//     date
+// }
 
 export interface IBookingOverviewChanges {
     totalBookingsChange: number;
@@ -153,6 +162,7 @@ export interface IBookingDetailsBase {
         paymentDate: Date | string;
         paymentMethod: PaymentSource;
     } | null;
+    previousSchedules: Date[];
 }
 
 export interface IBookedService {

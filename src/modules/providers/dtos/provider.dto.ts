@@ -154,3 +154,14 @@ export class UpdateBufferTimeDto {
     @IsNumber()
     bufferTime: number;
 }
+
+export class RescheduleSlotsDto {
+    @IsNotEmpty()
+    @IsString()
+    selectedDate: string;
+
+    @IsNotEmpty()
+    @Transform(({ value }) => Number(value))
+    @IsNumber()
+    totalDurationInMinutes: number;
+}

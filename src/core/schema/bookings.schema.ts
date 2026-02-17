@@ -209,6 +209,9 @@ export class BookingDocument extends Document {
     })
     slot: SlotDocument;
 
+    @Prop({ type: [SlotDocument] })
+    previousSlots: SlotDocument[];
+
     @Prop({
         type: [Types.ObjectId],
         ref: PROVIDER_SERVICE_MODEL_NAME,

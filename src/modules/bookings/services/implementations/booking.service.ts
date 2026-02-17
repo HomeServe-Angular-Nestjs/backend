@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { BOOKING_REPOSITORY_NAME, CART_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, PROVIDER_SERVICE_REPOSITORY_NAME, RESERVATION_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME, WALLET_REPOSITORY_NAME } from '@core/constants/repository.constant';
-import { IBookedService, IBooking, IBookingDetailCustomer, IBookingResponse, IBookingWithPagination } from '@core/entities/interfaces/booking.entity.interface';
+import { IBookedService, IBookedSlot, IBooking, IBookingDetailCustomer, IBookingResponse, IBookingWithPagination } from '@core/entities/interfaces/booking.entity.interface';
 import { BookingStatus, CancelStatus, PaymentStatus } from '@core/enum/bookings.enum';
 import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
@@ -264,7 +264,8 @@ export class BookingService implements IBookingService {
                 review: null,
                 respondedAt: null,
                 couponId: bookingData.couponId ?? null,
-            })
+                previousSlots: [],
+            });
 
             let bookingDoc: BookingDocument | null;
             try {
@@ -451,7 +452,8 @@ export class BookingService implements IBookingService {
                 subTotal: (booking.totalAmount / 100) - (gst / 100),
                 tax: gst / 100,
                 total: booking.totalAmount / 100
-            }
+            },
+            previousSchedules: this._getPreviousScheduledDates(booking.previousSlots),
         }
 
         return {
@@ -631,5 +633,12 @@ export class BookingService implements IBookingService {
         } catch (error) {
             this.logger.error('Failed to send notification', error);
         }
+    }
+
+    private _getPreviousScheduledDates(slots: IBookedSlot[]): Date[] {
+        return (slots ?? []).map(s => {
+            const date = new Date(s.date);
+            return this._timeUtility.apply24hTime(date, s.from)
+        });
     }
 }

@@ -3,7 +3,7 @@ import { PROVIDER_BOOKING_SERVICE_NAME } from '../../../core/constants/service.c
 import { IBookingDetailProvider, IResponseProviderBookingLists } from '../../../core/entities/interfaces/booking.entity.interface';
 import { ICustomLogger } from '../../../core/logger/interface/custom-logger.interface';
 import { IPayload } from '../../../core/misc/payload.interface';
-import { BookingIdDto, BookingPaginationFilterDto, CancelReasonDto, ReviewFilterDto, UpdateBookingStatusDto, } from '../dtos/booking.dto';
+import { BookingIdDto, BookingPaginationFilterDto, CancelReasonDto, ReviewFilterDto, SelectedSlotDto, UpdateBookingStatusDto, } from '../dtos/booking.dto';
 import { IProviderBookingService } from '../services/interfaces/provider-booking-service.interface';
 import { IResponse } from '@core/misc/response.util';
 import { isValidIdPipe } from '@core/pipes/is-valid-id.pipe';
@@ -80,5 +80,10 @@ export class ProviderBookingsController {
     @Post('call')
     async canStartVideoCall(@User() user: IPayload, @Body() { customerId }: CustomerIdDto): Promise<IResponse> {
         return this._providerBookingService.canStartVideoCall(user.sub, customerId);
+    }
+
+    @Patch('reschedule/:bookingId')
+    async rescheduleBooking(@Param('bookingId', new isValidIdPipe()) bookingId: string, @Body() slotData: SelectedSlotDto): Promise<IResponse<IBookingDetailProvider>> {
+        return await this._providerBookingService.rescheduleBooking(bookingId, slotData);
     }
 }

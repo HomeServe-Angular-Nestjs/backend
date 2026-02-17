@@ -14,7 +14,7 @@ export class PaymentLockingUtility implements IPaymentLockingUtility {
         return `payment:${userId}:${type}`;
     }
 
-    async acquireLock(key: string, ttlSeconds: number = 300): Promise<boolean> {
+    async acquireLock(key: string, ttlSeconds: number = 30): Promise<boolean> {
         const result = await this._redis.set(key, 'locked', 'EX', ttlSeconds, 'NX');
         return result === 'OK';
     }
