@@ -18,4 +18,6 @@ export interface ICategoryService {
     deleteServiceCategory(serviceCategoryId: string): Promise<IResponse>;
     searchCategories(search: string): Promise<IResponse<ICustomerSearchCategories[]>>;
 
+    fetchAvailableServiceByProfessionId(professionId:string): Promise<IResponse<IServiceCategory[]>>;
+
 }

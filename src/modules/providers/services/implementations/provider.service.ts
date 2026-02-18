@@ -35,6 +35,7 @@ import { IProviderServiceRepository } from '@core/repositories/interfaces/provid
 import { ICartRepository } from '@core/repositories/interfaces/cart-repo.interface';
 import { ICartMapper } from '@core/dto-mapper/interface/cart-mapper.interface';
 import { IServiceCategoryRepository } from '@core/repositories/interfaces/service-category-repo.interface';
+import { ISlotUI } from '@core/entities/interfaces/booking.entity.interface';
 
 @Injectable()
 export class ProviderServices implements IProviderServices {
@@ -80,214 +81,6 @@ export class ProviderServices implements IProviderServices {
     private readonly _reservationRepository: IReservationRepository,
   ) {
     this.logger = this.loggerFactory.createLogger(ProviderServices.name);
-  }
-
-  private _getTimeDurationWindow(selectedAvailableTime: AvailabilityEnum) {
-    switch (selectedAvailableTime) {
-      case AvailabilityEnum.MORNING:
-        return {
-          start: '05:00',
-          end: '11:59'
-        };
-      case AvailabilityEnum.AFTERNOON:
-        return {
-          start: '12:00',
-          end: '16:59'
-        };
-      case AvailabilityEnum.EVENING:
-        return {
-          start: '17:00',
-          end: '20:59'
-        };
-      case AvailabilityEnum.NIGHT:
-        return {
-          start: '21:00',
-          end: '04:59'
-        };
-      default:
-        throw new BadRequestException({
-          code: ErrorCodes.INVALID_AVAILABILITY_TIME,
-          message: 'Invalid availability time'
-        });
-    }
-  }
-
-  // Check if a provider has availability in the requested time window
-  private _checkProviderAvailability(week: IWeeklyAvailability['week'], requestedStart: string, requestedEnd: string): boolean {
-    const days = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
-
-    // Check each day of the week
-    for (const day of days) {
-      const dayAvailability = week[day];
-
-      // Skip if day is not available
-      if (!dayAvailability?.isAvailable || !dayAvailability.timeRanges?.length) {
-        continue;
-      }
-
-      // Check each time range for this day
-      for (const timeRange of dayAvailability.timeRanges) {
-        if (this._timeRangesOverlap(
-          timeRange.startTime,
-          timeRange.endTime,
-          requestedStart,
-          requestedEnd
-        )) {
-          return true;
-        }
-      }
-    }
-
-    return false;
-  }
-
-  // Check if two time ranges overlap
-  private _timeRangesOverlap(start1: string, end1: string, start2: string, end2: string): boolean {
-    const toMinutes = (time: string): number => {
-      const [hours, minutes] = time.split(':').map(Number);
-      return hours * 60 + minutes;
-    };
-
-    let start1Min = toMinutes(start1);
-    let end1Min = toMinutes(end1);
-    let start2Min = toMinutes(start2);
-    let end2Min = toMinutes(end2);
-
-    // Handle overnight ranges (e.g., 21:00 to 04:59)
-    // If end time is less than start time, it crosses midnight
-    if (end1Min < start1Min) {
-      end1Min += 24 * 60; // Add 24 hours
-    }
-    if (end2Min < start2Min) {
-      end2Min += 24 * 60; // Add 24 hours
-    }
-
-    // Check for overlap
-    // Two ranges overlap if: start1 < end2 AND start2 < end1
-    return start1Min < end2Min && start2Min < end1Min;
-  }
-
-  // Check if a provider is available on a specific date, considering overrides
-  private _checkProviderAvailabilityOnDate(
-    week: IWeeklyAvailability['week'],
-    overrides: DateOverrideDocument[],
-    targetDate: Date,
-    requestedStart: string,
-    requestedEnd: string
-  ): boolean {
-    const dateString = targetDate.toISOString().split('T')[0];
-
-    // Check for override
-    const override = overrides.find(o => {
-      const oDate = new Date(o.date).toISOString().split('T')[0];
-      return oDate === dateString;
-    });
-
-    if (override) {
-      if (!override.isAvailable) return false;
-      if (!override.timeRanges?.length) return false;
-
-      return override.timeRanges.some(range =>
-        this._timeRangesOverlap(range.startTime, range.endTime, requestedStart, requestedEnd)
-      );
-    }
-
-    // Default to weekly schedule
-    const days = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
-    const dayName = days[targetDate.getDay()];
-    const dayAvailability = week[dayName];
-
-    if (!dayAvailability?.isAvailable || !dayAvailability.timeRanges?.length) {
-      return false;
-    }
-
-    return dayAvailability.timeRanges.some(range =>
-      this._timeRangesOverlap(range.startTime, range.endTime, requestedStart, requestedEnd)
-    );
-  }
-
-  private _isSameDate(a: Date, b: Date): boolean {
-    return a.toDateString() === b.toDateString();
-  }
-
-  private _roundUpToStep(minutes: number, step: number): number {
-    return Math.ceil(minutes / step) * step;
-  }
-
-  private _isToday(date: Date): boolean {
-    const today = new Date();
-    return date.toDateString() === today.toDateString();
-  }
-
-  private _resolveAvailability(selectedDate: Date, weeklyAvailability: IWeeklyAvailability['week'], overrides: DateOverride[]) {
-    const override = overrides.find(o =>
-      this._isSameDate(new Date(o.date), selectedDate)
-    );
-
-    if (override) {
-      return override.isAvailable ? override.timeRanges : [];
-    }
-
-    const day = selectedDate
-      .toLocaleDateString('en-US', { weekday: 'short' })
-      .toLowerCase();
-
-    const weeklyDay = weeklyAvailability[day];
-
-    if (!weeklyDay?.isAvailable) return [];
-
-    return weeklyDay.timeRanges;
-  }
-
-  private _generateSlotsForRange(
-    rangeStartStr: string,
-    rangeEndStr: string,
-    serviceDuration: number,
-    buffer: number,
-    unavailable: { start: number; end: number }[],
-    stepMinutes = 30,
-    selectedDate?: Date
-  ): { from: string; to: string; isAvailable: boolean }[] {
-
-    const slots: { from: string; to: string; isAvailable: boolean }[] = [];
-
-    const rangeStart = this._timeUtility.timeToMinutes(rangeStartStr);
-    const rangeEnd = this._timeUtility.timeToMinutes(rangeEndStr);
-
-    const totalBusyTime = serviceDuration + buffer;
-
-    let cursor = rangeStart;
-
-    // past-time validation (only for today)
-    if (selectedDate && this._isToday(selectedDate)) {
-      const now = new Date();
-      const nowMinutes = now.getHours() * 60 + now.getMinutes();
-      const earliestAllowed = this._roundUpToStep(nowMinutes, stepMinutes);
-
-      cursor = Math.max(cursor, earliestAllowed);
-    }
-
-    while (cursor + totalBusyTime <= rangeEnd) {
-      const slotStart = cursor;
-      const slotEnd = slotStart + serviceDuration;
-      const slotBusyUntil = slotEnd + buffer;
-
-      const hasCollision = unavailable.some(u =>
-        slotStart < u.end && slotBusyUntil > u.start
-      );
-
-      if (!hasCollision) {
-        slots.push({
-          from: this._timeUtility.minutesToTime(slotStart),
-          to: this._timeUtility.minutesToTime(slotEnd),
-          isAvailable: true
-        });
-      }
-
-      cursor += stepMinutes;
-    }
-
-    return slots;
   }
 
   async getProviders(filters: FilterDto): Promise<IResponse<IProviderCardWithPagination>> {
@@ -765,36 +558,8 @@ export class ProviderServices implements IProviderServices {
     }
   }
 
-  async fetchAvailableSlotsByProviderId(customerId: string, providerId: string, selectedDate: Date): Promise<IResponse> {
-    const [
-      weeklyAvailabilityDocs,
-      overrideDocs,
-      bufferTime,
-      cartDoc,
-      bookingDocs,
-      reservationDocs
-    ] = await Promise.all([
-      this._availabilityRepository.findOneByProviderId(providerId),
-      this._dateOverridesRepository.fetchOverridesByProviderId(providerId),
-      this._providerRepository.getBufferTime(providerId),
-      this._cartRepository.findAndPopulateByCustomerId(customerId),
-      this._bookingRepository.findAllBookingsByProviderOnSameDate(providerId, selectedDate),
-      this._reservationRepository.findAllForDate(providerId, selectedDate)
-    ]);
-
-    if (!weeklyAvailabilityDocs) {
-      throw new NotFoundException({
-        code: ErrorCodes.NOT_FOUND,
-        message: 'Weekly availability not found.'
-      });
-    }
-
-    if (!overrideDocs) {
-      throw new NotFoundException({
-        code: ErrorCodes.NOT_FOUND,
-        message: 'Date overrides not found.'
-      });
-    }
+  async fetchAvailableSlotsByProviderId(customerId: string, providerId: string, selectedDate: Date): Promise<IResponse<ISlotUI[]>> {
+    const cartDoc = await this._cartRepository.findAndPopulateByCustomerId(customerId);
 
     if (!cartDoc) {
       throw new NotFoundException({
@@ -803,56 +568,13 @@ export class ProviderServices implements IProviderServices {
       });
     }
 
-    const weeklyAvailability = this._availabilityMapper.toWeeklyAvailabilityEntity(weeklyAvailabilityDocs);
-    const dateOverrides = overrideDocs.map(doc => this._availabilityMapper.toDateOverrideEntity(doc));
     const populatedCart = this._cartMapper.toPopulatedEntity(cartDoc);
-
-    const baseRanges = this._resolveAvailability(selectedDate, weeklyAvailability.week, dateOverrides);
-
-    if (!baseRanges.length) {
-      return {
-        success: true,
-        message: 'No available slots',
-        data: []
-      };
-    }
-
     const totalDurationInMinutes = populatedCart.items.reduce(
       (acc, item) => acc + item.estimatedTimeInMinutes,
       0
     );
 
-    const effectiveBuffer = Math.max(0, bufferTime ?? 0);
-
-    const unavailableIntervals: { start: number; end: number }[] = [];
-
-    // Add bookings to unavailable intervals
-    bookingDocs.forEach(b => {
-      const start = this._timeUtility.timeToMinutes(b.slot.from);
-      const end = this._timeUtility.timeToMinutes(b.slot.to);
-      unavailableIntervals.push({ start, end: end + effectiveBuffer });
-    });
-
-    // Add reservations to unavailable intervals
-    reservationDocs.forEach(r => {
-      const start = this._timeUtility.timeToMinutes(r.from);
-      const end = this._timeUtility.timeToMinutes(r.to);
-      unavailableIntervals.push({ start, end: end + effectiveBuffer });
-    });
-
-    unavailableIntervals.sort((a, b) => a.start - b.start);
-
-    const availableSlots = baseRanges.flatMap(range =>
-      this._generateSlotsForRange(
-        range.startTime,
-        range.endTime,
-        totalDurationInMinutes,
-        effectiveBuffer,
-        unavailableIntervals,
-        30,
-        selectedDate
-      )
-    );
+    const availableSlots = await this._getAvailableSlots(providerId, selectedDate, totalDurationInMinutes);
 
     return {
       success: true,
@@ -873,6 +595,297 @@ export class ProviderServices implements IProviderServices {
       message: 'Buffer time updated successfully.',
       data: this._providerMapper.toEntity(updatedProviderDoc)
     }
+  }
+
+  async fetchSlotsForReschedule(providerId: string, selectedDate: Date, totalDurationInMinutes: number): Promise<IResponse<ISlotUI[]>> {
+    const availableSlots = await this._getAvailableSlots(providerId, selectedDate, totalDurationInMinutes);
+
+    return {
+      success: true,
+      message: 'Reschedule slots fetched successfully.',
+      data: availableSlots
+    };
+  }
+
+
+  //* /////////////////////////////////////////////////////////[PRIVATE METHODS]/////////////////////////////////////////////////////////////////////////////*//
+
+  private _getTimeDurationWindow(selectedAvailableTime: AvailabilityEnum) {
+    switch (selectedAvailableTime) {
+      case AvailabilityEnum.MORNING:
+        return {
+          start: '05:00',
+          end: '11:59'
+        };
+      case AvailabilityEnum.AFTERNOON:
+        return {
+          start: '12:00',
+          end: '16:59'
+        };
+      case AvailabilityEnum.EVENING:
+        return {
+          start: '17:00',
+          end: '20:59'
+        };
+      case AvailabilityEnum.NIGHT:
+        return {
+          start: '21:00',
+          end: '04:59'
+        };
+      default:
+        throw new BadRequestException({
+          code: ErrorCodes.INVALID_AVAILABILITY_TIME,
+          message: 'Invalid availability time'
+        });
+    }
+  }
+
+  // Check if a provider has availability in the requested time window
+  private _checkProviderAvailability(week: IWeeklyAvailability['week'], requestedStart: string, requestedEnd: string): boolean {
+    const days = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
+
+    // Check each day of the week
+    for (const day of days) {
+      const dayAvailability = week[day];
+
+      // Skip if day is not available
+      if (!dayAvailability?.isAvailable || !dayAvailability.timeRanges?.length) {
+        continue;
+      }
+
+      // Check each time range for this day
+      for (const timeRange of dayAvailability.timeRanges) {
+        if (this._timeRangesOverlap(
+          timeRange.startTime,
+          timeRange.endTime,
+          requestedStart,
+          requestedEnd
+        )) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  // Check if two time ranges overlap
+  private _timeRangesOverlap(start1: string, end1: string, start2: string, end2: string): boolean {
+    const toMinutes = (time: string): number => {
+      const [hours, minutes] = time.split(':').map(Number);
+      return hours * 60 + minutes;
+    };
+
+    let start1Min = toMinutes(start1);
+    let end1Min = toMinutes(end1);
+    let start2Min = toMinutes(start2);
+    let end2Min = toMinutes(end2);
+
+    // Handle overnight ranges (e.g., 21:00 to 04:59)
+    // If end time is less than start time, it crosses midnight
+    if (end1Min < start1Min) {
+      end1Min += 24 * 60; // Add 24 hours
+    }
+    if (end2Min < start2Min) {
+      end2Min += 24 * 60; // Add 24 hours
+    }
+
+    // Check for overlap
+    // Two ranges overlap if: start1 < end2 AND start2 < end1
+    return start1Min < end2Min && start2Min < end1Min;
+  }
+
+  // Check if a provider is available on a specific date, considering overrides
+  private _checkProviderAvailabilityOnDate(
+    week: IWeeklyAvailability['week'],
+    overrides: DateOverrideDocument[],
+    targetDate: Date,
+    requestedStart: string,
+    requestedEnd: string
+  ): boolean {
+    const dateString = targetDate.toISOString().split('T')[0];
+
+    // Check for override
+    const override = overrides.find(o => {
+      const oDate = new Date(o.date).toISOString().split('T')[0];
+      return oDate === dateString;
+    });
+
+    if (override) {
+      if (!override.isAvailable) return false;
+      if (!override.timeRanges?.length) return false;
+
+      return override.timeRanges.some(range =>
+        this._timeRangesOverlap(range.startTime, range.endTime, requestedStart, requestedEnd)
+      );
+    }
+
+    // Default to weekly schedule
+    const days = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
+    const dayName = days[targetDate.getDay()];
+    const dayAvailability = week[dayName];
+
+    if (!dayAvailability?.isAvailable || !dayAvailability.timeRanges?.length) {
+      return false;
+    }
+
+    return dayAvailability.timeRanges.some(range =>
+      this._timeRangesOverlap(range.startTime, range.endTime, requestedStart, requestedEnd)
+    );
+  }
+
+  private _isSameDate(a: Date, b: Date): boolean {
+    return a.toDateString() === b.toDateString();
+  }
+
+  private _roundUpToStep(minutes: number, step: number): number {
+    return Math.ceil(minutes / step) * step;
+  }
+
+  private _isToday(date: Date): boolean {
+    const today = new Date();
+    return date.toDateString() === today.toDateString();
+  }
+
+  private _resolveAvailability(selectedDate: Date, weeklyAvailability: IWeeklyAvailability['week'], overrides: DateOverride[]) {
+    const override = overrides.find(o =>
+      this._isSameDate(new Date(o.date), selectedDate)
+    );
+
+    if (override) {
+      return override.isAvailable ? override.timeRanges : [];
+    }
+
+    const day = selectedDate
+      .toLocaleDateString('en-US', { weekday: 'short' })
+      .toLowerCase();
+
+    const weeklyDay = weeklyAvailability[day];
+
+    if (!weeklyDay?.isAvailable) return [];
+
+    return weeklyDay.timeRanges;
+  }
+
+  private _generateSlotsForRange(
+    rangeStartStr: string,
+    rangeEndStr: string,
+    serviceDuration: number,
+    buffer: number,
+    unavailable: { start: number; end: number }[],
+    stepMinutes = 30,
+    selectedDate?: Date
+  ): ISlotUI[] {
+
+    const slots: { from: string; to: string; isAvailable: boolean }[] = [];
+
+    const rangeStart = this._timeUtility.timeToMinutes(rangeStartStr);
+    const rangeEnd = this._timeUtility.timeToMinutes(rangeEndStr);
+
+    const totalBusyTime = serviceDuration + buffer;
+
+    let cursor = rangeStart;
+
+    // past-time validation (only for today)
+    if (selectedDate && this._isToday(selectedDate)) {
+      const now = new Date();
+      const nowMinutes = now.getHours() * 60 + now.getMinutes();
+      const earliestAllowed = this._roundUpToStep(nowMinutes, stepMinutes);
+
+      cursor = Math.max(cursor, earliestAllowed);
+    }
+
+    while (cursor + totalBusyTime <= rangeEnd) {
+      const slotStart = cursor;
+      const slotEnd = slotStart + serviceDuration;
+      const slotBusyUntil = slotEnd + buffer;
+
+      const hasCollision = unavailable.some(u =>
+        slotStart < u.end && slotBusyUntil > u.start
+      );
+
+      if (!hasCollision) {
+        slots.push({
+          from: this._timeUtility.minutesToTime(slotStart),
+          to: this._timeUtility.minutesToTime(slotEnd),
+          isAvailable: true
+        });
+      }
+
+      cursor += stepMinutes;
+    }
+
+    return slots;
+  }
+
+  private async _getAvailableSlots(providerId: string, selectedDate: Date, totalDurationInMinutes: number): Promise<ISlotUI[]> {
+    const [
+      weeklyAvailabilityDocs,
+      overrideDocs,
+      bufferTime,
+      bookingDocs,
+      reservationDocs
+    ] = await Promise.all([
+      this._availabilityRepository.findOneByProviderId(providerId),
+      this._dateOverridesRepository.fetchOverridesByProviderId(providerId),
+      this._providerRepository.getBufferTime(providerId),
+      this._bookingRepository.findAllBookingsByProviderOnSameDate(providerId, selectedDate),
+      this._reservationRepository.findAllForDate(providerId, selectedDate)
+    ]);
+
+    if (!weeklyAvailabilityDocs) {
+      throw new NotFoundException({
+        code: ErrorCodes.NOT_FOUND,
+        message: 'Weekly availability not found.'
+      });
+    }
+
+    if (!overrideDocs) {
+      throw new NotFoundException({
+        code: ErrorCodes.NOT_FOUND,
+        message: 'Date overrides not found.'
+      });
+    }
+
+    const weeklyAvailability = this._availabilityMapper.toWeeklyAvailabilityEntity(weeklyAvailabilityDocs);
+    const dateOverrides = overrideDocs.map(doc => this._availabilityMapper.toDateOverrideEntity(doc));
+
+    const baseRanges = this._resolveAvailability(selectedDate, weeklyAvailability.week, dateOverrides);
+
+    if (!baseRanges.length) {
+      return [];
+    }
+
+    const effectiveBuffer = Math.max(0, bufferTime ?? 0);
+    const unavailableIntervals: { start: number; end: number }[] = [];
+
+    // Add bookings to unavailable intervals
+    bookingDocs.forEach(b => {
+      const start = this._timeUtility.timeToMinutes(b.slot.from);
+      const end = this._timeUtility.timeToMinutes(b.slot.to);
+      unavailableIntervals.push({ start, end: end + effectiveBuffer });
+    });
+
+    // Add reservations to unavailable intervals
+    reservationDocs.forEach(r => {
+      const start = this._timeUtility.timeToMinutes(r.from);
+      const end = this._timeUtility.timeToMinutes(r.to);
+      unavailableIntervals.push({ start, end: end + effectiveBuffer });
+    });
+
+    unavailableIntervals.sort((a, b) => a.start - b.start);
+
+    return baseRanges.flatMap(range =>
+      this._generateSlotsForRange(
+        range.startTime,
+        range.endTime,
+        totalDurationInMinutes,
+        effectiveBuffer,
+        unavailableIntervals,
+        30,
+        selectedDate
+      )
+    );
   }
 }
 

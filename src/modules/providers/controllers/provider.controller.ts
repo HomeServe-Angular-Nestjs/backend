@@ -1,5 +1,5 @@
 import { BadRequestException, Body, Controller, Get, Inject, Param, Patch, Put, Query, Req, UploadedFile, UseInterceptors } from '@nestjs/common';
-import { FilterDto, GetReviewsDto, RemoveCertificateDto, SlotDto, UpdateBioDto, UpdateBufferTimeDto, UpdatePasswordDto, UploadCertificateDto, UploadGalleryImageDto } from '@modules/providers/dtos/provider.dto';
+import { FilterDto, GetReviewsDto, RemoveCertificateDto, RescheduleSlotsDto, SlotDto, UpdateBioDto, UpdateBufferTimeDto, UpdatePasswordDto, UploadCertificateDto, UploadGalleryImageDto } from '@modules/providers/dtos/provider.dto';
 import { Request } from 'express';
 import { PROVIDER_SERVICE_NAME } from '@core/constants/service.constant';
 import { ICustomerProviderDetails, IProvider } from '@core/entities/interfaces/user.entity.interface';
@@ -13,6 +13,7 @@ import { IProviderServices } from '@modules/providers/services/interfaces/provid
 import { User } from '@core/decorators/extract-user.decorator';
 import { isValidIdPipe } from '@core/pipes/is-valid-id.pipe';
 import { DateDto } from '@modules/availability/dto/availability.dto';
+import { ISlotUI } from '@core/entities/interfaces/booking.entity.interface';
 
 @Controller('provider')
 export class ProviderController {
@@ -122,12 +123,17 @@ export class ProviderController {
     }
 
     @Get('available-slots/:id')
-    async fetchAvailabilitySlots(@User() user: IPayload, @Param('id', new isValidIdPipe()) providerId: string, @Query() { date }: DateDto): Promise<IResponse> {
+    async fetchAvailabilitySlots(@User() user: IPayload, @Param('id', new isValidIdPipe()) providerId: string, @Query() { date }: DateDto): Promise<IResponse<ISlotUI[]>> {
         return this._providerServices.fetchAvailableSlotsByProviderId(user.sub, providerId, new Date(date));
     }
 
     @Patch('buffer')
     async updateBufferTime(@User() user: IPayload, @Body() { bufferTime }: UpdateBufferTimeDto): Promise<IResponse<IProvider>> {
         return this._providerServices.updateBufferTime(user.sub, bufferTime);
+    }
+
+    @Get('reschedule-slots')
+    async fetchRescheduleSlots(@User() user: IPayload, @Query() { selectedDate, totalDurationInMinutes }: RescheduleSlotsDto): Promise<IResponse<ISlotUI[]>> {
+        return this._providerServices.fetchSlotsForReschedule(user.sub, new Date(selectedDate), totalDurationInMinutes);
     }
 }

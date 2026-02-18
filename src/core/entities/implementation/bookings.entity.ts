@@ -24,6 +24,9 @@ export class Booking extends BaseEntity implements IBooking {
     transactionHistory: ITransaction[];
     review: IReview | null;
     respondedAt: Date | null;
+    couponId: string | null;
+    previousSlots: IBookedSlot[];
+
 
     constructor(partial: Partial<Booking>) {
         super(partial)

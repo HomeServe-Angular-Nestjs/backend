@@ -60,11 +60,7 @@ export class IPriceBreakupDto {
     total: number;
 }
 
-export class SaveBookingDto {
-    @IsNotEmpty()
-    @IsString()
-    providerId: string;
-
+export class SelectedSlotDto {
     @IsNotEmpty()
     @IsString()
     date: string;
@@ -76,6 +72,16 @@ export class SaveBookingDto {
     @IsNotEmpty()
     @IsString()
     from: string;
+}
+
+export class SaveBookingDto extends SelectedSlotDto {
+    @IsNotEmpty()
+    @IsString()
+    providerId: string;
+
+    @IsOptional()
+    @IsString()
+    couponId?: string;
 }
 
 export class BookingPaginationFilterDto {

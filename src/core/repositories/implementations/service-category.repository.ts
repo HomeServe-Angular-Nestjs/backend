@@ -96,4 +96,12 @@ export class ServiceCategoryRepository extends BaseRepository<ServiceCategoryDoc
             ]
         }).lean();
     }
+
+    async fetchAvailableServiceByProfessionId(professionId: string): Promise<ServiceCategoryDocument[]> {
+        return await this._serviceCategoryModel.find({
+            professionId: this._toObjectId(professionId),
+            isActive: true,
+            isDeleted: false
+        }).lean();
+    }
 }

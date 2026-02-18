@@ -1,6 +1,6 @@
 import { Model } from 'mongoose';
-import { ADMIN_MODEL_NAME, CHAT_MODEL_NAME, CUSTOMER_MODEL_NAME, MESSAGE_MODEL_NAME, NOTIFICATION_MODEL_NAME, PROVIDER_MODEL_NAME, RESERVATION_MODEL_NAME } from '@/core/constants/model.constant';
-import { ADMIN_REPOSITORY_NAME, CHAT_REPOSITORY_INTERFACE_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, MESSAGE_REPOSITORY_INTERFACE_NAME, NOTIFICATION_REPOSITORY_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, RESERVATION_REPOSITORY_NAME } from '@/core/constants/repository.constant';
+import { ADMIN_MODEL_NAME, BOOKINGS_MODEL_NAME, CHAT_MODEL_NAME, CUSTOMER_MODEL_NAME, MESSAGE_MODEL_NAME, NOTIFICATION_MODEL_NAME, PROVIDER_MODEL_NAME, RESERVATION_MODEL_NAME } from '@/core/constants/model.constant';
+import { ADMIN_REPOSITORY_NAME, BOOKING_REPOSITORY_NAME, CHAT_REPOSITORY_INTERFACE_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, MESSAGE_REPOSITORY_INTERFACE_NAME, NOTIFICATION_REPOSITORY_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, RESERVATION_REPOSITORY_NAME } from '@/core/constants/repository.constant';
 import { AdminRepository } from '@/core/repositories/implementations/admin.repository';
 import { ChatRepository } from '@/core/repositories/implementations/chat.repository';
 import { CustomerRepository } from '@/core/repositories/implementations/customer.repository';
@@ -18,6 +18,8 @@ import { NotificationRepository } from '@core/repositories/implementations/notif
 import { ReservationDocument } from '@core/schema/reservation.schema';
 import { ReservationRepository } from '@core/repositories/implementations/reservation.repository';
 import { LoggerFactory } from '@core/logger/implementation/logger.factory';
+import { BookingDocument } from '@core/schema/bookings.schema';
+import { BookingRepository } from '@core/repositories/implementations/bookings.repository';
 
 export const socketRepositoryProviders: Provider[] = [
     {
@@ -61,5 +63,11 @@ export const socketRepositoryProviders: Provider[] = [
         useFactory: (reservationModel: Model<ReservationDocument>) =>
             new ReservationRepository(reservationModel),
         inject: [getModelToken(RESERVATION_MODEL_NAME)]
+    },
+    {
+        provide:BOOKING_REPOSITORY_NAME,
+        useFactory:(bookingModel: Model<BookingDocument>) =>
+            new BookingRepository(bookingModel),
+        inject:[getModelToken(BOOKINGS_MODEL_NAME)]
     }
 ];

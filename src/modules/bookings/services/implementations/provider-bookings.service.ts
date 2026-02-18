@@ -13,19 +13,19 @@ import { ClientUserType, ICustomer, IProvider } from '@core/entities/interfaces/
 import { ICustomerMapper } from '@core/dto-mapper/interface/customer.mapper..interface';
 import { IProviderMapper } from '@core/dto-mapper/interface/provider.mapper.interface';
 import { IProviderRepository } from '@core/repositories/interfaces/provider-repo.interface';
-import { PAYMENT_LOCKING_UTILITY_NAME, UPLOAD_UTILITY_NAME } from '@core/constants/utility.constant';
+import { PAYMENT_LOCKING_UTILITY_NAME, TIME_UTILITY_NAME, UPLOAD_UTILITY_NAME } from '@core/constants/utility.constant';
 import { IUploadsUtility } from '@core/utilities/interface/upload.utility.interface';
 import { IServiceOfferedMapper } from '@core/dto-mapper/interface/serviceOffered.mapper.interface';
 import { IProviderBookingService } from '@modules/bookings/services/interfaces/provider-booking-service.interface';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
-import { ADMIN_SETTINGS_REPOSITORY_NAME, BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, PROVIDER_SERVICE_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME, WALLET_LEDGER_REPOSITORY_NAME, WALLET_REPOSITORY_NAME } from '@core/constants/repository.constant';
+import { ADMIN_SETTINGS_REPOSITORY_NAME, BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, PROVIDER_SERVICE_REPOSITORY_NAME, RESERVATION_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME, WALLET_LEDGER_REPOSITORY_NAME, WALLET_REPOSITORY_NAME } from '@core/constants/repository.constant';
 import { IProviderServiceRepository } from '@core/repositories/interfaces/provider-service-repo.interface';
 import { IBookingRepository } from '@core/repositories/interfaces/bookings-repo.interface';
 import { ICustomerRepository } from '@core/repositories/interfaces/customer-repo.interface';
 import { ITransactionRepository } from '@core/repositories/interfaces/transaction-repo.interface';
-import { IBookedService, IBooking, IBookingDetailProvider, IBookingInvoice, IBookingOverviewChanges, IBookingOverviewData, IProviderBookingListService, IResponseProviderBookingLists, IReviewDetails, IReviewFilter, IReviewWithPagination } from '@core/entities/interfaces/booking.entity.interface';
-import { FilterFields, ReviewFilterDto } from '@modules/bookings/dtos/booking.dto';
+import { IBookedService, IBookedSlot, IBooking, IBookingDetailProvider, IBookingInvoice, IBookingOverviewChanges, IBookingOverviewData, IProviderBookingListService, IResponseProviderBookingLists, IReviewDetails, IReviewFilter, IReviewWithPagination } from '@core/entities/interfaces/booking.entity.interface';
+import { FilterFields, ReviewFilterDto, SelectedSlotDto } from '@modules/bookings/dtos/booking.dto';
 import { BookingStatus, CancelStatus, DateRange, PaymentStatus } from '@core/enum/bookings.enum';
 import { IResponse } from '@core/misc/response.util';
 import { IWalletLedgerRepository } from '@core/repositories/interfaces/wallet-ledger.repo.interface';
@@ -38,6 +38,9 @@ import { IPaymentLockingUtility } from '@core/utilities/interface/payment-lockin
 import { IProviderServiceMapper } from '@core/dto-mapper/interface/provider-service.mapper.interface';
 import { NotificationTemplateId, NotificationType } from '@core/enum/notification.enum';
 import { INotificationService } from '@modules/websockets/services/interface/notification-service.interface';
+import { ITimeUtility } from '@core/utilities/interface/time.utility.interface';
+import { IReservationRepository } from '@core/repositories/interfaces/reservation-repo.interface';
+import { SlotStatusEnum } from '@core/enum/slot.enum';
 
 @Injectable()
 export class ProviderBookingService implements IProviderBookingService {
@@ -88,6 +91,10 @@ export class ProviderBookingService implements IProviderBookingService {
         private readonly _providerServiceMapper: IProviderServiceMapper,
         @Inject(NOTIFICATION_SERVICE_NAME)
         private readonly _notificationService: INotificationService,
+        @Inject(TIME_UTILITY_NAME)
+        private readonly _timeUtility: ITimeUtility,
+        @Inject(RESERVATION_REPOSITORY_NAME)
+        private readonly _reservationRepository: IReservationRepository,
     ) {
         this.logger = this._loggerFactory.createLogger(ProviderBookingService.name);
     }
@@ -620,6 +627,7 @@ export class ProviderBookingService implements IProviderBookingService {
                 paymentDate: transaction.createdAt as Date,
                 paymentMethod: transaction.source
             } : null,
+            previousSchedules: this._getPreviousScheduledDates(booking.previousSlots)
         }
     }
 
@@ -717,29 +725,30 @@ export class ProviderBookingService implements IProviderBookingService {
         const orderedServices = await this._getBookedServices(updatedBooking.services);//todo-today
 
         const bookingData: IBookingDetailProvider = {
-            bookingId: updatedBookingDoc.id,
-            bookingStatus: updatedBookingDoc.bookingStatus,
-            paymentStatus: updatedBookingDoc.paymentStatus,
-            createdAt: updatedBookingDoc.createdAt as Date,
-            expectedArrivalTime: updatedBookingDoc.expectedArrivalTime,
-            actualArrivalTime: updatedBookingDoc.actualArrivalTime,
-            totalAmount: updatedBookingDoc.totalAmount,
-            cancelStatus: updatedBookingDoc.cancelStatus,
-            cancelReason: updatedBookingDoc.cancellationReason,
-            cancelledAt: updatedBookingDoc.cancelledAt,
+            bookingId: updatedBooking.id,
+            bookingStatus: updatedBooking.bookingStatus,
+            paymentStatus: updatedBooking.paymentStatus,
+            createdAt: updatedBooking.createdAt as Date,
+            expectedArrivalTime: updatedBooking.expectedArrivalTime,
+            actualArrivalTime: updatedBooking.actualArrivalTime,
+            totalAmount: updatedBooking.totalAmount,
+            cancelStatus: updatedBooking.cancelStatus,
+            cancelReason: updatedBooking.cancellationReason,
+            cancelledAt: updatedBooking.cancelledAt,
             customer: {
                 id: customer.id,
                 name: customer.fullname || customer.username,
                 email: customer.email,
                 phone: customer.phone,
-                location: updatedBookingDoc.location.address,
+                location: updatedBooking.location.address,
             },
             orderedServices,
             transaction: {
                 id: transaction.id,
                 paymentDate: transaction.createdAt as Date,
                 paymentMethod: transaction.source
-            }
+            },
+            previousSchedules: this._getPreviousScheduledDates(updatedBooking.previousSlots)
         }
 
         // Notify Customer
@@ -1253,7 +1262,8 @@ export class ProviderBookingService implements IProviderBookingService {
                     id: transaction.id,
                     paymentDate: transaction.createdAt as Date,
                     paymentMethod: transaction.source
-                }
+                },
+                previousSchedules: this._getPreviousScheduledDates(booking.previousSlots)
             }
 
             // Notify Customer
@@ -1286,5 +1296,129 @@ export class ProviderBookingService implements IProviderBookingService {
             success: hasOngoingBooking,
             message: hasOngoingBooking ? "OK to call" : 'No ongoing booking found.'
         }
+    }
+
+    async rescheduleBooking(bookingId: string, slotData: SelectedSlotDto): Promise<IResponse<IBookingDetailProvider>> {
+        const bookingDoc = await this._bookingRepository.findById(bookingId);
+        if (!bookingDoc) throw new NotFoundException({
+            code: ErrorCodes.NOT_FOUND,
+            message: ErrorMessage.DOCUMENT_NOT_FOUND,
+        });
+
+        let booking = this._bookingMapper.toEntity(bookingDoc);
+
+        if (booking.bookingStatus === BookingStatus.CANCELLED || booking.bookingStatus === BookingStatus.COMPLETED) {
+            throw new BadRequestException({
+                code: ErrorCodes.BAD_REQUEST,
+                message: 'Cannot reschedule a cancelled or completed booking'
+            });
+        }
+
+        const bookingDate = new Date(slotData.date);
+        const bookingOfSameProviderInSameDateDoc = await this._bookingRepository.fetchBookingsByProviderOnSameDate(
+            booking.customerId,
+            booking.providerId,
+            bookingDate
+        );
+        const bookingOfSameProviderInSameDate = bookingOfSameProviderInSameDateDoc.map(booking => this._bookingMapper.toEntity(booking));
+
+        const hasConflict = this._hasSlotConflict(
+            bookingDate,
+            bookingOfSameProviderInSameDate,
+            slotData.from,
+            slotData.to
+        );
+
+        if (hasConflict) throw new BadRequestException({
+            code: ErrorCodes.BAD_REQUEST,
+            message: ErrorMessage.SLOT_ALREADY_TAKEN
+        });
+
+        const expectedArrivalTime = this._timeUtility.apply24hTime(bookingDate, slotData.from);
+
+        const updatedBooking = await this._bookingRepository.rescheduleBooking(bookingId, expectedArrivalTime, {
+            date: bookingDate,
+            from: slotData.from,
+            to: slotData.to,
+            status: SlotStatusEnum.RELEASED
+        });
+
+        if (!updatedBooking) throw new NotFoundException({
+            code: ErrorCodes.NOT_FOUND,
+            message: ErrorMessage.DOCUMENT_NOT_FOUND,
+        });
+
+        booking = this._bookingMapper.toEntity(updatedBooking);
+        const transaction = this._getBookingPaymentTransactionDetail(booking.transactionHistory);
+        const { customer, service: orderedServices } = await this._getCustomerAndService(booking);
+
+        const bookingResponse: IBookingDetailProvider = {
+            bookingId: booking.id,
+            bookingStatus: booking.bookingStatus,
+            paymentStatus: booking.paymentStatus,
+            createdAt: booking.createdAt as Date,
+            expectedArrivalTime: booking.expectedArrivalTime,
+            actualArrivalTime: booking.actualArrivalTime,
+            totalAmount: booking.totalAmount / 100,
+            cancelStatus: booking.cancelStatus,
+            cancelReason: booking.cancellationReason,
+            cancelledAt: booking.cancelledAt,
+            customer: {
+                ...customer,
+                location: booking.location.address,
+            },
+            orderedServices,
+            transaction: {
+                id: transaction.id,
+                paymentDate: transaction.createdAt as Date,
+                paymentMethod: transaction.source
+            },
+            previousSchedules: this._getPreviousScheduledDates(booking.previousSlots),
+        }
+
+        // Notify Customer
+        await this._sendNotification(
+            bookingDoc.customerId.toString(),
+            NotificationTemplateId.BOOKING_RESCHEDULED,
+            NotificationType.EVENT,
+            'Booking Rescheduled',
+            `Your booking #${bookingId} has been rescheduled to ${slotData.date} at ${slotData.from}.`,
+            bookingId,
+            { bookingId, role: 'customer' }
+        );
+
+        return {
+            success: true,
+            message: 'Booking rescheduled successfully',
+            data: bookingResponse
+        };
+    }
+
+    private _hasSlotConflict(date: Date, existingBookings: IBooking[], newFrom: string, newTo: string): boolean {
+        const newStart = this._timeUtility.apply24hTime(date, newFrom);
+        let newEnd = this._timeUtility.apply24hTime(date, newTo);
+
+        // handle overnight slot
+        if (newEnd <= newStart) {
+            newEnd.setDate(newEnd.getDate() + 1);
+        }
+
+        return existingBookings.some(booking => {
+            const existingStart = new Date(booking.slot.from);
+            let existingEnd = new Date(booking.slot.to);
+
+            if (existingEnd <= existingStart) {
+                existingEnd.setDate(existingEnd.getDate() + 1);
+            }
+
+            return newStart < existingEnd && newEnd > existingStart;
+        });
+    }
+
+    private _getPreviousScheduledDates(slots: IBookedSlot[]): Date[] {
+        return (slots ?? []).map(s => {
+            const date = new Date(s.date);
+            return this._timeUtility.apply24hTime(date, s.from)
+        });
     }
 }

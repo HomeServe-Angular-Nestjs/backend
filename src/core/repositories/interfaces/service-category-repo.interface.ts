@@ -10,4 +10,5 @@ export interface IServiceCategoryRepository extends IBaseRepository<ServiceCateg
     removeServiceCategory(serviceCategoryId: string): Promise<boolean>;
     count(filter?: FilterQuery<ServiceCategoryDocument>): Promise<number>;
     searchCategories(search: string): Promise<ServiceCategoryDocument[]>;
+    fetchAvailableServiceByProfessionId(professionId: string): Promise<ServiceCategoryDocument[]>;
 }

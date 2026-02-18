@@ -7,6 +7,10 @@ export class GetMessagesDto {
     @IsString()
     chatId: string;
 
+    @IsNotEmpty()
+    @IsString()
+    receiverId: string; //used in guard
+
     @IsOptional()
     @IsString()
     beforeMessageId: string;

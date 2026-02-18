@@ -1,12 +1,12 @@
-import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
-import { Inject, NotFoundException, UnauthorizedException, UseFilters } from '@nestjs/common';
+import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer, WsException } from '@nestjs/websockets';
+import { ForbiddenException, Inject, NotFoundException, UnauthorizedException, UseFilters } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { Server, Socket } from 'socket.io';
 
 import { AUTH_SOCKET_SERVICE_NAME, CHAT_SOCKET_SERVICE_NAME, MESSAGE_SERVICE_NAME, USER_SOCKET_STORE_SERVICE_NAME } from '@/core/constants/service.constant';
 import { IParticipant } from '@/core/entities/interfaces/chat.entity.interface';
 import { ICreateMessage, IMessage } from '@/core/entities/interfaces/message.entity.interface';
-import { ErrorMessage } from '@/core/enum/error.enum';
+import { ErrorCodes, ErrorMessage } from '@/core/enum/error.enum';
 import { GlobalWsExceptionFilter } from '@/core/exception-filters/ws-exception.filters';
 import { ICustomDtoValidator } from '@/core/utilities/interface/custom-dto-validator.utility.interface';
 import { CUSTOM_DTO_VALIDATOR_NAME } from '@core/constants/utility.constant';
@@ -17,6 +17,8 @@ import { IAuthSocketService } from '@modules/websockets/services/interface/auth-
 import { IChatSocketService } from '@modules/websockets/services/interface/chat-socket-service.interface';
 import { IMessageService } from '@modules/websockets/services/interface/message-service.interface';
 import { IUserSocketStoreService } from '@modules/websockets/services/interface/user-socket-store-service.interface';
+import { IBookingRepository } from '@core/repositories/interfaces/bookings-repo.interface';
+import { BOOKING_REPOSITORY_NAME } from '@core/constants/repository.constant';
 
 @UseFilters(GlobalWsExceptionFilter)
 @WebSocketGateway({ cors: corsOption, namespace: 'chat' })
@@ -36,7 +38,9 @@ export class ChatGateway extends BaseSocketGateway {
         @Inject(MESSAGE_SERVICE_NAME)
         private readonly _messageService: IMessageService,
         @Inject(CUSTOM_DTO_VALIDATOR_NAME)
-        private readonly _customDtoValidatorUtility: ICustomDtoValidator
+        private readonly _customDtoValidatorUtility: ICustomDtoValidator,
+        @Inject(BOOKING_REPOSITORY_NAME)
+        private readonly _bookingRepository: IBookingRepository,
     ) {
         super()
         this.logger = this.loggerFactory.createLogger(ChatGateway.name);
@@ -80,6 +84,18 @@ export class ChatGateway extends BaseSocketGateway {
             if (!fromUser) {
                 throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
             };
+
+            // Enforce On-going booking check
+            const customerId = fromUser.type === 'customer' ? fromUser.id : bodyPayload.receiverId;
+            const providerId = fromUser.type === 'provider' ? fromUser.id : bodyPayload.receiverId;
+
+            const isOngoing = await this._bookingRepository.isAnyBookingOngoing(customerId, providerId);
+            if (!isOngoing) {
+                throw new ForbiddenException({
+                    code: ErrorCodes.NO_ACTIVE_BOOKINGS,
+                    message: 'Cannot send messages without an active booking.'
+                });
+            }
 
             const sender: IParticipant = {
                 id: new Types.ObjectId(fromUser.id as string),

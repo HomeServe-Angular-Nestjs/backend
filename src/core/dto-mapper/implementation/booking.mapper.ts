@@ -19,6 +19,7 @@ export class BookingMapper implements IBookingMapper {
             id: (doc._id as Types.ObjectId).toString(),
             customerId: doc.customerId.toString(),
             providerId: doc.providerId.toString(),
+            previousSlots: (doc.previousSlots ?? []).map(slot => this.toSlotEntity(slot)),
             totalAmount: doc.totalAmount,
             slot: this.toSlotEntity(doc.slot),
             services: (doc.services ?? []).map(service => service.toString()),
@@ -35,6 +36,7 @@ export class BookingMapper implements IBookingMapper {
             updatedAt: doc.updatedAt,
             review: doc.review ? this.toReviewEntities(doc.review) : null,
             respondedAt: doc.respondedAt ?? null,
+            couponId: doc.couponId?.toString() ?? null,
         });
     }
 
@@ -74,6 +76,17 @@ export class BookingMapper implements IBookingMapper {
                 to: entity.slot.to,
                 status: entity.slot.status
             },
+            previousSlots: (entity.previousSlots ?? []).map(ps => {
+                const psDate = new Date(ps.date);
+                psDate.setHours(0, 0, 0, 0);
+
+                return {
+                    date: psDate,
+                    from: ps.from,
+                    to: ps.to,
+                    status: ps.status
+                }
+            }),
             bookingStatus: entity.bookingStatus,
             transactionHistory: (entity.transactionHistory ?? []).map(tnx => this._transactionMapper.toDocument(tnx) as TransactionDocument),
             paymentStatus: entity.paymentStatus,
@@ -82,7 +95,8 @@ export class BookingMapper implements IBookingMapper {
             cancelledAt: entity.cancelledAt ? new Date(entity.cancelledAt) : null,
             actualArrivalTime: entity?.actualArrivalTime ? new Date(entity.actualArrivalTime) : null,
             review: null,
-            respondedAt: entity.respondedAt
+            respondedAt: entity.respondedAt,
+            couponId: entity.couponId ? new Types.ObjectId(entity.couponId) : null,
         }
     }
 }

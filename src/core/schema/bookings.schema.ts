@@ -2,7 +2,7 @@ import { Document, Types } from 'mongoose';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { BookingStatus, CancelStatus, PaymentStatus } from '../enum/bookings.enum';
 import { SlotStatusEnum } from '@core/enum/slot.enum';
-import { CUSTOMER_MODEL_NAME, PROVIDER_SERVICE_MODEL_NAME, SERVICE_OFFERED_MODEL_NAME } from '@core/constants/model.constant';
+import { COUPON_MODEL_NAME, CUSTOMER_MODEL_NAME, PROVIDER_SERVICE_MODEL_NAME } from '@core/constants/model.constant';
 import { CurrencyType, PaymentDirection, PaymentSource, TransactionStatus, TransactionType } from '@core/enum/transaction.enum';
 import { IGatewayDetails, ITxUserDetails } from '@core/entities/interfaces/transaction.entity.interface';
 
@@ -209,6 +209,9 @@ export class BookingDocument extends Document {
     })
     slot: SlotDocument;
 
+    @Prop({ type: [SlotDocument] })
+    previousSlots: SlotDocument[];
+
     @Prop({
         type: [Types.ObjectId],
         ref: PROVIDER_SERVICE_MODEL_NAME,
@@ -228,6 +231,9 @@ export class BookingDocument extends Document {
 
     @Prop({ type: Date, default: null })
     respondedAt: Date | null;
+
+    @Prop({ type: Types.ObjectId, ref: COUPON_MODEL_NAME, default: null })
+    couponId: Types.ObjectId | null;
 
     @Prop({ type: Date })
     createdAt: Date;

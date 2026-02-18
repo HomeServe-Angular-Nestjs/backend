@@ -13,6 +13,8 @@ export class Coupon extends BaseEntity implements ICoupon {
     usageValue: number;
     isActive: boolean;
     isDeleted: boolean;
+    professionId: string | null;
+    serviceCategoryId: string | null;
 
     constructor(partial: Partial<ICoupon>) {
         super(partial);

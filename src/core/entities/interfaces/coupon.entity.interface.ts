@@ -13,6 +13,8 @@ export interface ICoupon extends IEntity {
     usageValue: number;
     isActive: boolean;
     isDeleted: boolean;
+    professionId: string | null;
+    serviceCategoryId?: string | null;
 }
 
 export interface ICouponFilter {
@@ -20,9 +22,24 @@ export interface ICouponFilter {
     isActive: boolean | 'all',
     discountType: DiscountTypeEnum | 'all',
     usageType: UsageTypeEnum | 'all',
+    professionId?: string;
+    serviceCategoryId?: string;
 }
 
 export interface ICouponWithPagination {
-    coupons: ICoupon[];
+    coupons: ICouponTableData[];
     pagination: IPagination;
+}
+
+export interface ICouponAppliedResponse {
+    originalAmount: number;
+    discountType: DiscountTypeEnum;
+    couponValue: number;
+    deductedValue: number;
+    finalAmount: number;
+}
+
+export interface ICouponTableData extends ICoupon {
+    professionName?: string;
+    categoryServiceName?: string;
 }
