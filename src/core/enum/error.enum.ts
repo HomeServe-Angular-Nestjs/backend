@@ -1,27 +1,35 @@
 export enum ErrorMessage {
     LOGIN_FAILED = 'Login failed, please check your credentials',
-    EMAIL_CONFLICT_ERROR = 'User already exists.',
-    USER_NOT_FOUND = 'User not found.',
     UNAUTHORIZED_ACCESS = 'Unauthorized access, please login',
     INVALID_TYPE = 'Invalid type found.',
     INVALID_OTP = 'Invalid OTP. Please try again.',
     OTP_EXPIRED = 'OTP expired. Please try again.',
-    DOCUMENT_NOT_FOUND = 'Document not found',
-    FILE_UPLOAD_FAILED = 'File upload failed',
-    SERVICE_ALREADY_EXISTS = 'Service already exists',
-    PLAN_ALREADY_EXISTS = 'Plan already exists',
     PLAN_UNAVAILABLE = 'Plan not available at the moment.',
     UPDATE_FAILED = 'Update failed',
 
+    EMAIL_CONFLICT_ERROR = 'User already exists.',
+    SERVICE_ALREADY_EXISTS = 'Service already exists',
+    PLAN_ALREADY_EXISTS = 'Plan already exists',
+    DOCUMENT_ALREADY_EXISTS = 'already exists',
+    SLOT_ALREADY_TAKEN = 'Slot already taken.',
+    PROVIDER_CONFLICT_IN_CART = 'You can only book on provider\'s services at a time.',
+
+    DOCUMENT_NOT_FOUND = 'Document not found',
     NOTIFICATION_NOT_FOUND = 'Notification not found',
-    PROVIDER_NOT_FOUND = 'Provider not found',
-    SERVICE_NOT_FOUND = 'Service not found',
+    PROVIDER_NOT_FOUND = 'The selected provider no longer exists. Try refreshing the page.',
+    SERVICE_NOT_FOUND = 'The selected service no longer exists. Try refreshing the page.',
     SUBSCRIPTION_NOT_FOUND = 'Subscription not found',
     PLAN_NOT_FOUND = 'Plan not found',
+    COUPON_NOT_FOUND = 'Coupon not found',
+    NO_TOKEN_FOUND = 'No token provided.',
+    USER_NOT_FOUND = 'User not found.',
     PROVIDER_NOT_FOUND_WITH_ID = 'Provider not found with ID: ',
     CUSTOMER_NOT_FOUND_WITH_ID = 'Customer not found with ID: ',
     SERVICE_NOT_FOUND_WITH_ID = 'Service not found with ID: ',
-    COUPON_NOT_FOUND = 'Coupon not found',
+
+    SERVICE_CREATION_FAILED = 'Failed to create service.',
+    SUBSCRIPTION_CREATION_FAILED = 'Failed to create subscription',
+
     INVALID_INPUT = 'Invalid input data',
     MISSING_FIELDS = 'Required fields are missing',
     INVALID_CREDENTIALS = 'Invalid email or password',
@@ -30,13 +38,9 @@ export enum ErrorMessage {
     FORBIDDEN_ACTION = 'You are not allowed to perform this action',
     USER_BLOCKED = 'You are blocked by the admin.',
     INTERNAL_SERVER_ERROR = 'An unexpected error occurred. Please try again later',
-    DOCUMENT_CREATION_ERROR = 'Error creating document',
-    DOCUMENT_ALREADY_EXISTS = 'already exists',
     SOCKET_CONNECTION_REJECTED = 'Socket connection rejected: ',
-    NO_TOKEN_FOUND = 'No token provided.',
     INVALID_REFRESH_TOKEN = 'Invalid or expired refresh token.',
     TOKEN_VERIFICATION_FAILED = 'Token verification failed.',
-    UPLOAD_FAILED = 'Failed to upload an image.',
     SLOT_RESERVATION_FAILED = 'Slot already reserved. Please select another.',
     PAYMENT_IN_PROGRESS = 'Payment already in progress.',
     PAYMENT_VERIFICATION_FAILED = 'Payment verification failed.',
@@ -44,9 +48,17 @@ export enum ErrorMessage {
     INSUFFICIENT_BALANCE = 'You have insufficient balance in your wallet.',
     BOOKING_ALREADY_COMPLETED = 'Booking has already been completed.',
     DIFFERENT_PROVIDER_IN_CART = 'This service is from a different provider. To continue, please confirm your current cart or clear it first.',
-    PROVIDER_CONFLICT_IN_CART = 'You can only book on provider\'s services at a time.',
-    SLOT_ALREADY_TAKEN = 'Slot already taken.',
     EMPTY_CART = 'Your cart is empty.',
+}
+
+export enum UploadErrorMessages {
+    IMAGE_UPLOAD_FAILED = 'Failed to upload an image.',
+    INVALID_FILE_TYPE = 'Invalid file type. Only image files are allowed.',
+    IMAGE_NOT_FOUND = 'Image is required.',
+    NETWORK_FAILURE = 'Image upload service is temporarily unavailable. Please try again later.',
+    EMPTY_RESULT = 'Image upload failed. No result was returned.',
+    UPLOAD_PROVIDER_ERROR = 'Image upload was rejected by the storage provider.',
+    UPLOAD_UNKNOWN_ERROR = 'An unexpected error occurred while uploading the image.',
 }
 
 export enum ErrorCodes {
@@ -80,4 +92,13 @@ export enum ErrorCodes {
     UNSUPPORTED_FILE_TYPE = 'UNSUPPORTED_FILE_TYPE',
     FORBIDDEN = 'FORBIDDEN',
     NO_ACTIVE_BOOKINGS = 'NO_ACTIVE_BOOKINGS',
+
+}
+
+export enum UploadErrorCodes {
+    INVALID_FILE_TYPE = 'INVALID_FILE_TYPE',
+    NETWORK_FAILURE = 'NETWORK_FAILURE',
+    UPLOAD_PROVIDER_ERROR = 'UPLOAD_PROVIDER_ERROR',
+    EMPTY_RESULT = 'EMPTY_RESULT',
+    UPLOAD_UNKNOWN_ERROR = 'UPLOAD_UNKNOWN_ERROR',
 }

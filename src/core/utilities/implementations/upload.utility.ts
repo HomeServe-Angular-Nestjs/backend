@@ -8,6 +8,7 @@ import { ILoggerFactory, LOGGER_FACTORY } from '../../logger/interface/logger-fa
 import { IUploadsUtility } from '../interface/upload.utility.interface';
 import { UploadsType } from '@core/enum/uploads.enum';
 import { UserType } from '@core/entities/interfaces/user.entity.interface';
+import { ErrorCodes, UploadErrorCodes } from '@core/enum/error.enum';
 
 @Injectable()
 export class UploadsUtility implements IUploadsUtility {
@@ -40,16 +41,28 @@ export class UploadsUtility implements IUploadsUtility {
   }
 
   async uploadsImage(file: Express.Multer.File, publicId: string): Promise<UploadApiResponse> {
-    try {
-      if (!file) throw new Error('No file provided');
-      if (!file.mimetype.startsWith('image/')) {
-        throw new Error('Invalid file type. Only images are allowed.');
-      }
 
+    if (!file) {
+      throw new Error(UploadErrorCodes.EMPTY_RESULT);
+    }
+
+    if (!file.mimetype.startsWith('image/')) {
+      throw new Error(UploadErrorCodes.UPLOAD_PROVIDER_ERROR);
+    }
+
+    try {
       return await this._cloudinaryService.uploadsImage(file, publicId);
-    } catch (err) {
-      this.logger.error('Error uploading image: ', err.message, err.stack);
-      throw new InternalServerErrorException('Something happened while uploading image');
+    } catch (err: any) {
+      this.logger.error(
+        'Upload error:',
+        err?.message,
+        err?.stack
+      );
+
+      // Re-throw normalized error
+      throw err instanceof Error
+        ? err
+        : new Error(UploadErrorCodes.UPLOAD_UNKNOWN_ERROR);
     }
   }
 
