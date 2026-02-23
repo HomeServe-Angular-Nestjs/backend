@@ -7,7 +7,7 @@ import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME,
 import { ARGON_UTILITY_NAME, UPLOAD_UTILITY_NAME } from '@core/constants/utility.constant';
 import { ICustomerSearchCategories } from '@core/entities/interfaces/service.entity.interface';
 import { ICustomer, ISearchedProviders } from '@core/entities/interfaces/user.entity.interface';
-import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
+import { ErrorCodes, ErrorMessage, UploadErrorMessages } from '@core/enum/error.enum';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { IResponse } from '@core/misc/response.util';
@@ -187,7 +187,7 @@ export class CustomerService implements ICustomerService {
         const uploadResponse = await this._uploadsUtility.uploadsImage(file, publicId);
 
         if (!uploadResponse) {
-            throw new InternalServerErrorException(ErrorMessage.FILE_UPLOAD_FAILED);
+            throw new InternalServerErrorException(UploadErrorMessages.IMAGE_UPLOAD_FAILED);
         }
 
         const updatedCustomer = await this._customerRepository.findOneAndUpdate(

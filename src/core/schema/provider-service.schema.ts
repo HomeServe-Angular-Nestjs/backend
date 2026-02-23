@@ -5,6 +5,11 @@ import { ServiceCategoryDocument } from "@core/schema/service-category";
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Document, Types } from "mongoose";
 
+export interface ProviderServicePopulatedDocument extends Omit<ProviderServiceDocument, 'professionId' | 'categoryId'> {
+    professionId: ProfessionDocument;
+    categoryId: ServiceCategoryDocument;
+}
+
 @Schema({ timestamps: true })
 export class ProviderServiceDocument extends Document {
     @Prop({
@@ -83,8 +88,14 @@ export class ProviderServiceDocument extends Document {
 }
 
 export const ProviderServiceSchema = SchemaFactory.createForClass(ProviderServiceDocument);
-
-export interface ProviderServicePopulatedDocument extends Omit<ProviderServiceDocument, 'professionId' | 'categoryId'> {
-    professionId: ProfessionDocument;
-    categoryId: ServiceCategoryDocument;
-}
+ProviderServiceSchema.index(
+    {
+        providerId: 1,
+        categoryId: 1,
+        professionId: 1
+    },
+    {
+        unique: true,
+        partialFilterExpression:{isDeleted:false},
+    }
+);

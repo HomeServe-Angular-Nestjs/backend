@@ -42,7 +42,8 @@ export class ProviderServiceRepository extends BaseRepository<ProviderServiceDoc
             { $set: update },
             { new: true })
             .populate('professionId')
-            .populate('categoryId') as unknown as ProviderServicePopulatedDocument | null;
+            .populate('categoryId')
+            .lean<ProviderServicePopulatedDocument | null>()
     }
 
     async findAllAndPopulateByProviderId(providerId: string, filters: { search?: string, status?: string, sort?: string }, options: { page: number, limit: number }): Promise<ProviderServicePopulatedDocument[]> {
@@ -92,7 +93,7 @@ export class ProviderServiceRepository extends BaseRepository<ProviderServiceDoc
             { _id: this._toObjectId(serviceId) },
             [{ $set: { isActive: { $not: '$isActive' } } }]
         );
-        return updated.modifiedCount === 1;
+        return updated.modifiedCount > 0;
     }
 
     async isServiceExist(serviceId: string): Promise<boolean> {
