@@ -30,14 +30,13 @@ export class CartService implements ICartService {
     }
 
     async getCart(customerId: string): Promise<IResponse<ICartPopulated>> {
-        let cart = await this._cartRepository.findAndPopulateByCustomerId(customerId);
-
-        if (!cart) throw new NotFoundException({
+        let cartDoc = await this._cartRepository.findAndPopulateByCustomerId(customerId);
+        if (!cartDoc) throw new NotFoundException({
             code: ErrorCodes.NOT_FOUND,
             message: "Cart not found"
         });
 
-
+        const cart = this._cartMapper.toPopulatedEntity(cartDoc);
         cart.items.forEach(item => {
             item.image = this._uploadUtility.getSignedImageUrl(item.image);
         });
@@ -45,14 +44,14 @@ export class CartService implements ICartService {
         return {
             success: !!cart,
             message: "Cart found",
-            data: this._cartMapper.toPopulatedEntity(cart)
+            data: cart
         };
     }
 
     async addItem(customerId: string, providerId: string, providerServiceId: string): Promise<IResponse<ICartPopulated>> {
         const isItemExists = await this._cartRepository.isItemExists(customerId, providerServiceId);
         if (isItemExists) throw new BadRequestException({
-            code: ErrorCodes.BAD_REQUEST,
+            code: ErrorCodes.CONFLICT,
             message: "Item already exists in cart"
         });
 
@@ -69,12 +68,13 @@ export class CartService implements ICartService {
             message: "Failed to add item to cart"
         });
 
-        const cart = await this._cartRepository.findAndPopulateByCustomerId(customerId);
-        if (!cart) throw new InternalServerErrorException({
+        const cartDoc = await this._cartRepository.findAndPopulateByCustomerId(customerId);
+        if (!cartDoc) throw new InternalServerErrorException({
             code: ErrorCodes.INTERNAL_SERVER_ERROR,
             message: "Failed to retrieve updated cart"
         });
 
+        const cart = this._cartMapper.toPopulatedEntity(cartDoc);
         cart.items.forEach(item => {
             item.image = this._uploadUtility.getSignedImageUrl(item.image);
         });
@@ -82,7 +82,7 @@ export class CartService implements ICartService {
         return {
             success: !!cart,
             message: "Item added to cart",
-            data: this._cartMapper.toPopulatedEntity(cart)
+            data: cart
         };
     }
 

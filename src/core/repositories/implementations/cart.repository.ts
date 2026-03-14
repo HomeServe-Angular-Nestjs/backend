@@ -26,6 +26,11 @@ export class CartRepository extends BaseRepository<CartDocument> implements ICar
                     as: 'items',
                     pipeline: [
                         {
+                            $match: {
+                                isDeleted: false
+                            }
+                        },
+                        {
                             $lookup: {
                                 from: 'professions',
                                 localField: 'professionId',
@@ -50,7 +55,6 @@ export class CartRepository extends BaseRepository<CartDocument> implements ICar
         ]);
 
         return result[0] ?? null;
-
     }
 
     async clearCartByCustomerId(customerId: string): Promise<boolean> {

@@ -23,6 +23,8 @@ export enum ErrorMessage {
     COUPON_NOT_FOUND = 'Coupon not found',
     NO_TOKEN_FOUND = 'No token provided.',
     USER_NOT_FOUND = 'User not found.',
+    CUSTOMER_WALLET_NOT_FOUND = 'Customer wallet not found. Please contact support.',
+    PROVIDER_WALLET_NOT_FOUND = 'Provider wallet not found. Please contact support.',
     PROVIDER_NOT_FOUND_WITH_ID = 'Provider not found with ID: ',
     CUSTOMER_NOT_FOUND_WITH_ID = 'Customer not found with ID: ',
     SERVICE_NOT_FOUND_WITH_ID = 'Service not found with ID: ',
@@ -49,16 +51,8 @@ export enum ErrorMessage {
     BOOKING_ALREADY_COMPLETED = 'Booking has already been completed.',
     DIFFERENT_PROVIDER_IN_CART = 'This service is from a different provider. To continue, please confirm your current cart or clear it first.',
     EMPTY_CART = 'Your cart is empty.',
-}
 
-export enum UploadErrorMessages {
-    IMAGE_UPLOAD_FAILED = 'Failed to upload an image.',
-    INVALID_FILE_TYPE = 'Invalid file type. Only image files are allowed.',
-    IMAGE_NOT_FOUND = 'Image is required.',
-    NETWORK_FAILURE = 'Image upload service is temporarily unavailable. Please try again later.',
-    EMPTY_RESULT = 'Image upload failed. No result was returned.',
-    UPLOAD_PROVIDER_ERROR = 'Image upload was rejected by the storage provider.',
-    UPLOAD_UNKNOWN_ERROR = 'An unexpected error occurred while uploading the image.',
+    FINANCIAL_CONFIG_ERROR = "Financial configuration error. Please contact support."
 }
 
 export enum ErrorCodes {
@@ -92,7 +86,16 @@ export enum ErrorCodes {
     UNSUPPORTED_FILE_TYPE = 'UNSUPPORTED_FILE_TYPE',
     FORBIDDEN = 'FORBIDDEN',
     NO_ACTIVE_BOOKINGS = 'NO_ACTIVE_BOOKINGS',
+}
 
+export enum UploadErrorMessages {
+    IMAGE_UPLOAD_FAILED = 'Failed to upload an image.',
+    INVALID_FILE_TYPE = 'Invalid file type. Only image files are allowed.',
+    IMAGE_NOT_FOUND = 'Image is required.',
+    NETWORK_FAILURE = 'Image upload service is temporarily unavailable. Please try again later.',
+    EMPTY_RESULT = 'Image upload failed. No result was returned.',
+    UPLOAD_PROVIDER_ERROR = 'Image upload was rejected by the storage provider.',
+    UPLOAD_UNKNOWN_ERROR = 'An unexpected error occurred while uploading the image.',
 }
 
 export enum UploadErrorCodes {

@@ -10,4 +10,5 @@ export interface ITransactionRepository extends IBaseRepository<BookingDocument>
     countByUserId(userId: string): Promise<number>;
     getReportDetails(filter: IReportDownloadTransactionData): Promise<IReportTransactionData[]>;
     updateStatus(txId: string, status: TransactionStatus): Promise<boolean>;
+    removeTransaction(bookingId: string, transactionId: string): Promise<boolean>
 }
