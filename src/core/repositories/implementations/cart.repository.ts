@@ -31,6 +31,26 @@ export class CartRepository extends BaseRepository<CartDocument> implements ICar
                             }
                         },
                         {
+                            $set: {
+                                professionId: {
+                                    $convert: {
+                                        input: "$professionId",
+                                        to: "objectId",
+                                        onError: "$professionId",
+                                        onNull: "$professionId"
+                                    }
+                                },
+                                categoryId: {
+                                    $convert: {
+                                        input: "$categoryId",
+                                        to: "objectId",
+                                        onError: "$categoryId",
+                                        onNull: "$categoryId"
+                                    }
+                                }
+                            }
+                        },
+                        {
                             $lookup: {
                                 from: 'professions',
                                 localField: 'professionId',

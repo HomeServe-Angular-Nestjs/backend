@@ -19,7 +19,7 @@ import { IServiceOfferedMapper } from '@core/dto-mapper/interface/serviceOffered
 import { IProviderBookingService } from '@modules/bookings/services/interfaces/provider-booking-service.interface';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
-import { ADMIN_SETTINGS_REPOSITORY_NAME, BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, PROVIDER_SERVICE_REPOSITORY_NAME, RESERVATION_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME, WALLET_LEDGER_REPOSITORY_NAME, WALLET_REPOSITORY_NAME } from '@core/constants/repository.constant';
+import { ADMIN_SETTINGS_REPOSITORY_NAME, BOOKING_REPOSITORY_NAME, CART_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, PROVIDER_SERVICE_REPOSITORY_NAME, RESERVATION_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME, WALLET_LEDGER_REPOSITORY_NAME, WALLET_REPOSITORY_NAME } from '@core/constants/repository.constant';
 import { IProviderServiceRepository } from '@core/repositories/interfaces/provider-service-repo.interface';
 import { IBookingRepository } from '@core/repositories/interfaces/bookings-repo.interface';
 import { ICustomerRepository } from '@core/repositories/interfaces/customer-repo.interface';
@@ -41,6 +41,9 @@ import { INotificationService } from '@modules/websockets/services/interface/not
 import { ITimeUtility } from '@core/utilities/interface/time.utility.interface';
 import { IReservationRepository } from '@core/repositories/interfaces/reservation-repo.interface';
 import { SlotStatusEnum } from '@core/enum/slot.enum';
+import { v4 as uuidv4 } from 'uuid';
+import { ICartRepository } from '@core/repositories/interfaces/cart-repo.interface';
+import { CustomerIdDto } from '@modules/customer/dtos/customer.dto';
 
 @Injectable()
 export class ProviderBookingService implements IProviderBookingService {
@@ -95,11 +98,13 @@ export class ProviderBookingService implements IProviderBookingService {
         private readonly _timeUtility: ITimeUtility,
         @Inject(RESERVATION_REPOSITORY_NAME)
         private readonly _reservationRepository: IReservationRepository,
+        @Inject(CART_REPOSITORY_NAME)
+        private readonly _cartRepository: ICartRepository,
     ) {
         this.logger = this._loggerFactory.createLogger(ProviderBookingService.name);
     }
 
-    
+
     async fetchBookingsList(providerId: string, page: number = 1, filters: FilterFields): Promise<IResponseProviderBookingLists> {
         const limit = 5;
         const skip = (page - 1) * limit;
@@ -719,7 +724,7 @@ export class ProviderBookingService implements IProviderBookingService {
             }
 
             const transaction = this._getBookingPaymentTransactionDetail(booking.transactionHistory);
-            const adminWalletLedger = await this._walletLedgerRepository.getAdminWalletLedgerByTransactionId(transaction.id);
+            // const adminWalletLedger = await this._walletLedgerRepository.getAdminWalletLedgerByTransactionId(transaction.id);
 
             if (adminWallet.balance < finalAmount) {
                 throw new BadRequestException({
@@ -749,6 +754,10 @@ export class ProviderBookingService implements IProviderBookingService {
                 throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
             }
 
+            await this._cartRepository.clearCartByCustomerId(booking.customerId)
+
+            const journalId = uuidv4();
+
             // DEBIT booking amount from admin wallet (after deducting commission and gst)
             await this._walletLedgerRepository.create(
                 this._walletLedgerMapper.toDocument({
@@ -762,7 +771,7 @@ export class ProviderBookingService implements IProviderBookingService {
                     currency: CurrencyType.INR,
                     balanceBefore: adminWallet.balance,
                     balanceAfter: adminWallet.balance - finalAmount,
-                    journalId: adminWalletLedger?.journalId,
+                    journalId,
                     bookingId,
                     bookingTransactionId: null,
                     subscriptionId: null,
@@ -770,10 +779,12 @@ export class ProviderBookingService implements IProviderBookingService {
                     gatewayOrderId: null,
                     gatewayPaymentId: null,
                     metadata: {
-                        totalAmount,
-                        commissionAmount,
-                        gstAmount,
-                        finalAmount
+                        breakup: {
+                            totalAmount,
+                            providerCommission: commissionAmount,
+                            gst: gstAmount,
+                            providerAmount: finalAmount
+                        }
                     }
                 })
             );
@@ -793,19 +804,14 @@ export class ProviderBookingService implements IProviderBookingService {
                     currency: CurrencyType.INR,
                     balanceBefore: adminWallet.balance,
                     balanceAfter: adminWallet.balance + commissionAmount,
-                    journalId: adminWalletLedger?.journalId,
+                    journalId,
                     bookingId,
                     bookingTransactionId: null,
                     subscriptionId: null,
                     subscriptionTransactionId: null,
                     gatewayOrderId: null,
                     gatewayPaymentId: null,
-                    metadata: {
-                        totalAmount,
-                        commissionAmount,
-                        gstAmount,
-                        finalAmount
-                    }
+                    metadata: null,
                 })
             );
 
@@ -822,20 +828,14 @@ export class ProviderBookingService implements IProviderBookingService {
                     currency: CurrencyType.INR,
                     balanceBefore: adminWallet.balance,
                     balanceAfter: adminWallet.balance + gstAmount,
-                    journalId: adminWalletLedger?.journalId,
+                    journalId,
                     bookingId,
                     bookingTransactionId: null,
                     subscriptionId: null,
                     subscriptionTransactionId: null,
                     gatewayOrderId: null,
                     gatewayPaymentId: null,
-                    metadata: {
-                        totalAmount,
-                        commissionAmount,
-                        gstAmount,
-                        finalAmount,
-                        portion: 'provider'
-                    }
+                    metadata: null,
                 })
             );
 
@@ -856,19 +856,14 @@ export class ProviderBookingService implements IProviderBookingService {
                         currency: CurrencyType.INR,
                         balanceBefore: adminWallet.balance,
                         balanceAfter: adminWallet.balance + customerCommission,
-                        journalId: adminWalletLedger?.journalId,
+                        journalId,
                         bookingId,
                         bookingTransactionId: null,
                         subscriptionId: null,
                         subscriptionTransactionId: null,
                         gatewayOrderId: null,
                         gatewayPaymentId: null,
-                        metadata: {
-                            totalAmount,
-                            customerCommission,
-                            customerGst,
-                            portion: 'customer'
-                        }
+                        metadata: null,
                     })
                 );
             }
@@ -886,19 +881,14 @@ export class ProviderBookingService implements IProviderBookingService {
                         currency: CurrencyType.INR,
                         balanceBefore: adminWallet.balance,
                         balanceAfter: adminWallet.balance + customerGst,
-                        journalId: adminWalletLedger?.journalId,
+                        journalId,
                         bookingId,
                         bookingTransactionId: null,
                         subscriptionId: null,
                         subscriptionTransactionId: null,
                         gatewayOrderId: null,
                         gatewayPaymentId: null,
-                        metadata: {
-                            totalAmount,
-                            customerCommission,
-                            customerGst,
-                            portion: 'customer'
-                        }
+                        metadata: null,
                     })
                 );
             }
@@ -916,7 +906,7 @@ export class ProviderBookingService implements IProviderBookingService {
                     currency: CurrencyType.INR,
                     balanceBefore: providerWallet.balance,
                     balanceAfter: providerWallet.balance + finalAmount,
-                    journalId: adminWalletLedger?.journalId,
+                    journalId,
                     bookingId,
                     bookingTransactionId: null,
                     subscriptionId: null,
@@ -924,10 +914,12 @@ export class ProviderBookingService implements IProviderBookingService {
                     gatewayOrderId: null,
                     gatewayPaymentId: null,
                     metadata: {
-                        totalAmount,
-                        commissionAmount,
-                        gstAmount,
-                        finalAmount
+                        breakup: {
+                            totalAmount,
+                            providerCommission: commissionAmount,
+                            gst: gstAmount,
+                            providerAmount: finalAmount
+                        }
                     }
                 })
             );

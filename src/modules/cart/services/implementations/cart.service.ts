@@ -68,21 +68,9 @@ export class CartService implements ICartService {
             message: "Failed to add item to cart"
         });
 
-        const cartDoc = await this._cartRepository.findAndPopulateByCustomerId(customerId);
-        if (!cartDoc) throw new InternalServerErrorException({
-            code: ErrorCodes.INTERNAL_SERVER_ERROR,
-            message: "Failed to retrieve updated cart"
-        });
-
-        const cart = this._cartMapper.toPopulatedEntity(cartDoc);
-        cart.items.forEach(item => {
-            item.image = this._uploadUtility.getSignedImageUrl(item.image);
-        });
-
         return {
-            success: !!cart,
+            success: true,
             message: "Item added to cart",
-            data: cart
         };
     }
 

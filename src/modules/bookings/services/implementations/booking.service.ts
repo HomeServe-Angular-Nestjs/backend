@@ -787,7 +787,7 @@ export class BookingService implements IBookingService {
                 subscriptionTransactionId: null,
                 gatewayOrderId: null,
                 gatewayPaymentId: null,
-                metadata: {}
+                metadata: null
             })
         );
 
@@ -819,7 +819,11 @@ export class BookingService implements IBookingService {
                 subscriptionTransactionId: null,
                 gatewayOrderId: null,
                 gatewayPaymentId: null,
-                metadata: {}
+                metadata: {
+                    breakup: {
+                        customerFine
+                    }
+                }
             })
         );
 
@@ -851,7 +855,7 @@ export class BookingService implements IBookingService {
                     subscriptionTransactionId: null,
                     gatewayOrderId: null,
                     gatewayPaymentId: null,
-                    metadata: {}
+                    metadata: null,
                 })
             );
         }

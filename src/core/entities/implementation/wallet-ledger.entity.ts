@@ -1,6 +1,6 @@
 import { BaseEntity } from "@core/entities/base/implementation/base.entity";
 import { UserType } from "@core/entities/interfaces/user.entity.interface";
-import { IWalletLedger } from "@core/entities/interfaces/wallet-ledger.entity.interface";
+import { IWalletLedger, LedgerMetadataType } from "@core/entities/interfaces/wallet-ledger.entity.interface";
 import { CurrencyType, PaymentDirection, PaymentSource, TransactionType } from "@core/enum/transaction.enum";
 
 export class WalletLedger extends BaseEntity implements IWalletLedger {
@@ -21,7 +21,7 @@ export class WalletLedger extends BaseEntity implements IWalletLedger {
     gatewayOrderId: string | null;
     gatewayPaymentId: string | null;
     source: PaymentSource;
-    metadata?: Record<string, any>;
+    metadata?: LedgerMetadataType | null;
 
     constructor(partial: Partial<IWalletLedger>) {
         super(partial);
