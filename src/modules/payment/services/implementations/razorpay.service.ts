@@ -161,7 +161,11 @@ export class RazorPaymentService implements IRazorPaymentService {
                 userDetails: { contact: user.contact, email: user.email, role: user.role },
                 metadata: {
                     bookingId: orderData.bookingId,
-                    breakup: { providerAmount, commission, gst: gstAmount }
+                    breakup: {
+                        providerAmount,
+                        commission,
+                        gst: gstAmount
+                    }
                 }
             }),
         );
@@ -231,9 +235,7 @@ export class RazorPaymentService implements IRazorPaymentService {
                 gatewayOrderId: orderData.id,
                 gatewayPaymentId: verifyData.razorpay_payment_id,
                 source: orderData.source,
-                metadata: {
-                    breakup: transaction.metadata?.breakup,
-                },
+                metadata: this._walletLedgerMapper.mapTransactionMetadataToLedgerMetadata(transaction.metadata),
             }),
         );
 
@@ -276,9 +278,7 @@ export class RazorPaymentService implements IRazorPaymentService {
                 gatewayOrderId: orderData.id,
                 gatewayPaymentId: verifyData.razorpay_payment_id,
                 source: orderData.source,
-                metadata: {
-                    breakup: transaction.metadata?.breakup,
-                },
+                metadata: this._walletLedgerMapper.mapTransactionMetadataToLedgerMetadata(transaction.metadata),
             }),
         );
 

@@ -6,7 +6,7 @@ import { BOOKING_REPOSITORY_NAME, CART_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTE
 import { ARGON_UTILITY_NAME, TIME_UTILITY_NAME, UPLOAD_UTILITY_NAME } from '@core/constants/utility.constant';
 import { CloudinaryService } from '@configs/cloudinary/cloudinary.service';
 import { ICustomerProviderDetails, IDisplayReviews, IProvider, IProviderCardView, IProviderCardWithPagination, UserType } from '@core/entities/interfaces/user.entity.interface';
-import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
+import { ErrorCodes, ErrorMessage, UploadErrorMessages } from '@core/enum/error.enum';
 import { UploadsType } from '@core/enum/uploads.enum';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
@@ -463,7 +463,7 @@ export class ProviderServices implements IProviderServices {
     const result = await this._uploadsUtility.uploadsImage(file, publicId);
 
     if (!result) {
-      throw new InternalServerErrorException(ErrorMessage.UPLOAD_FAILED);
+      throw new InternalServerErrorException(UploadErrorMessages.IMAGE_UPLOAD_FAILED);
     }
 
     const updatedProvider = await this._providerRepository.addWorkImage(providerId, result.public_id);

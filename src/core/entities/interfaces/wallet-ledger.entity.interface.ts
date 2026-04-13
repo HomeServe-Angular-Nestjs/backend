@@ -3,6 +3,21 @@ import { IPagination } from "@core/entities/interfaces/booking.entity.interface"
 import { UserType } from "@core/entities/interfaces/user.entity.interface";
 import { CurrencyType, PaymentDirection, PaymentSource, TransactionType } from "@core/enum/transaction.enum";
 
+export interface IBreakupMetadata {
+    totalAmount?: number;
+    providerAmount?: number;
+    providerCommission?: number;
+    customerCommission?: number;
+    gst?: number;
+    customerFine?: number;
+    providerFine?: number;
+    refundAmount?: number;
+}
+
+export type LedgerMetadataType = {
+    breakup: IBreakupMetadata;
+} & Record<string, unknown>;
+
 export interface IWalletLedger extends IEntity {
     walletId: string;
     userId: string;
@@ -21,7 +36,7 @@ export interface IWalletLedger extends IEntity {
     gatewayOrderId: string | null;
     gatewayPaymentId: string | null;
     source: PaymentSource;
-    metadata?: Record<string, any>;
+    metadata?: LedgerMetadataType | null;
 }
 
 export interface IWalletTransactionFilter {

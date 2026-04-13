@@ -1,6 +1,7 @@
 import { IWalletLedgerMapper } from "@core/dto-mapper/interface/wallet-ledger.mapper.interface";
 import { WalletLedger } from "@core/entities/implementation/wallet-ledger.entity";
-import { IWalletLedger } from "@core/entities/interfaces/wallet-ledger.entity.interface";
+import { ITransactionMetadata } from "@core/entities/interfaces/transaction.entity.interface";
+import { IWalletLedger, LedgerMetadataType } from "@core/entities/interfaces/wallet-ledger.entity.interface";
 import { WalletLedgerDocument } from "@core/schema/wallet-ledger.schema";
 import { Injectable } from "@nestjs/common";
 import { Types } from "mongoose";
@@ -27,7 +28,7 @@ export class WalletLedgerMapper implements IWalletLedgerMapper {
             gatewayOrderId: doc.gatewayOrderId,
             gatewayPaymentId: doc.gatewayPaymentId,
             source: doc.source,
-            metadata: doc.metadata,
+            metadata: doc?.metadata ?? null,
             createdAt: doc.createdAt,
             updatedAt: doc.updatedAt,
         });
@@ -50,9 +51,22 @@ export class WalletLedgerMapper implements IWalletLedgerMapper {
             gatewayOrderId: entity.gatewayOrderId,
             gatewayPaymentId: entity.gatewayPaymentId,
             source: entity.source,
-            metadata: entity.metadata,
+            metadata: this.mapTransactionMetadataToLedgerMetadata(entity.metadata),
             userRole: entity.userRole,
             direction: entity.direction,
         }
     }
+
+    mapTransactionMetadataToLedgerMetadata(metadata?: ITransactionMetadata | null | undefined): LedgerMetadataType | null {
+        if (!metadata) return null;
+        return {
+            breakup: {
+                providerAmount: metadata?.breakup?.providerAmount ?? 0,
+                providerCommission: metadata?.breakup?.commission ?? 0,
+                customerCommission: metadata?.breakup?.commission ?? 0,
+                gst: metadata?.breakup?.gst ?? 0
+            }
+        }
+    }
+
 }

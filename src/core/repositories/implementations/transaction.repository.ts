@@ -120,4 +120,16 @@ export class TransactionRepository extends BaseRepository<BookingDocument> imple
             { new: true }
         ));
     }
+
+    async removeTransaction(bookingId: string, transactionId: string): Promise<boolean> {
+        const result = await this._bookingModel.updateOne(
+            { _id: bookingId },
+            {
+                $pull: {
+                    transactionHistory: { _id: transactionId }
+                }
+            }
+        );
+        return result.modifiedCount > 0;
+    }
 }

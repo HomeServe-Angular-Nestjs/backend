@@ -26,6 +26,31 @@ export class CartRepository extends BaseRepository<CartDocument> implements ICar
                     as: 'items',
                     pipeline: [
                         {
+                            $match: {
+                                isDeleted: false
+                            }
+                        },
+                        {
+                            $set: {
+                                professionId: {
+                                    $convert: {
+                                        input: "$professionId",
+                                        to: "objectId",
+                                        onError: "$professionId",
+                                        onNull: "$professionId"
+                                    }
+                                },
+                                categoryId: {
+                                    $convert: {
+                                        input: "$categoryId",
+                                        to: "objectId",
+                                        onError: "$categoryId",
+                                        onNull: "$categoryId"
+                                    }
+                                }
+                            }
+                        },
+                        {
                             $lookup: {
                                 from: 'professions',
                                 localField: 'professionId',
@@ -50,7 +75,6 @@ export class CartRepository extends BaseRepository<CartDocument> implements ICar
         ]);
 
         return result[0] ?? null;
-
     }
 
     async clearCartByCustomerId(customerId: string): Promise<boolean> {

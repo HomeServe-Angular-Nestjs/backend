@@ -453,13 +453,15 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                 bookingStatus: { $nin: [BookingStatus.CANCELLED, BookingStatus.COMPLETED] },
                 createdAt: {
                     $gte: new Date(now.getTime() - TWENTY_FOUR_HOURS)
-                }
+                },
+
             },
             {
                 $set: {
                     bookingStatus,
                     cancellationReason: reason,
                     cancelStatus,
+                    cancelledAt: now,
                 }
             },
             { new: true }

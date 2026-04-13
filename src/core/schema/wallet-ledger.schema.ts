@@ -1,5 +1,6 @@
 import { BOOKINGS_MODEL_NAME, SUBSCRIPTION_MODEL_NAME, WALLET_MODEL_NAME } from "@core/constants/model.constant";
 import { UserType } from "@core/entities/interfaces/user.entity.interface";
+import { LedgerMetadataType } from "@core/entities/interfaces/wallet-ledger.entity.interface";
 import { CurrencyType, PaymentDirection, PaymentSource, TransactionType } from "@core/enum/transaction.enum";
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Types, Schema as MongooseSchema, Document } from "mongoose";
@@ -58,7 +59,7 @@ export class WalletLedgerDocument extends Document {
     source: PaymentSource;
 
     @Prop({ type: MongooseSchema.Types.Mixed, required: false })
-    metadata?: Record<string, any>;
+    metadata?: LedgerMetadataType | null;
 
     @Prop({ type: Date })
     createdAt: Date;

@@ -19,7 +19,7 @@ import { IServiceOfferedMapper } from '@core/dto-mapper/interface/serviceOffered
 import { IProviderBookingService } from '@modules/bookings/services/interfaces/provider-booking-service.interface';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
-import { ADMIN_SETTINGS_REPOSITORY_NAME, BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, PROVIDER_SERVICE_REPOSITORY_NAME, RESERVATION_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME, WALLET_LEDGER_REPOSITORY_NAME, WALLET_REPOSITORY_NAME } from '@core/constants/repository.constant';
+import { ADMIN_SETTINGS_REPOSITORY_NAME, BOOKING_REPOSITORY_NAME, CART_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, PROVIDER_SERVICE_REPOSITORY_NAME, RESERVATION_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME, WALLET_LEDGER_REPOSITORY_NAME, WALLET_REPOSITORY_NAME } from '@core/constants/repository.constant';
 import { IProviderServiceRepository } from '@core/repositories/interfaces/provider-service-repo.interface';
 import { IBookingRepository } from '@core/repositories/interfaces/bookings-repo.interface';
 import { ICustomerRepository } from '@core/repositories/interfaces/customer-repo.interface';
@@ -41,6 +41,9 @@ import { INotificationService } from '@modules/websockets/services/interface/not
 import { ITimeUtility } from '@core/utilities/interface/time.utility.interface';
 import { IReservationRepository } from '@core/repositories/interfaces/reservation-repo.interface';
 import { SlotStatusEnum } from '@core/enum/slot.enum';
+import { v4 as uuidv4 } from 'uuid';
+import { ICartRepository } from '@core/repositories/interfaces/cart-repo.interface';
+import { CustomerIdDto } from '@modules/customer/dtos/customer.dto';
 
 @Injectable()
 export class ProviderBookingService implements IProviderBookingService {
@@ -95,328 +98,12 @@ export class ProviderBookingService implements IProviderBookingService {
         private readonly _timeUtility: ITimeUtility,
         @Inject(RESERVATION_REPOSITORY_NAME)
         private readonly _reservationRepository: IReservationRepository,
+        @Inject(CART_REPOSITORY_NAME)
+        private readonly _cartRepository: ICartRepository,
     ) {
         this.logger = this._loggerFactory.createLogger(ProviderBookingService.name);
     }
 
-    private async _getAdminWallet(): Promise<IWallet> {
-        const adminWalletDoc = await this._walletRepository.getAdminWallet();
-        if (!adminWalletDoc) throw new InternalServerErrorException('Admin wallet not found');
-        return this._walletMapper.toEntity(adminWalletDoc);
-    }
-
-    private async _getUserWallet(userId: string): Promise<IWallet> {
-        const userWalletDoc = await this._walletRepository.findWallet(userId);
-        if (!userWalletDoc) {
-            this.logger.error(`Wallet not found for user ${userId}`);
-            throw new InternalServerErrorException('User wallet not found');
-        }
-        return this._walletMapper.toEntity(userWalletDoc);
-    }
-
-    private async _getAdminSettings(): Promise<IAdminSettings> {
-        const adminSettingsDoc = await this._adminSettings.getSettings();
-        if (!adminSettingsDoc) {
-            throw new InternalServerErrorException('Admin settings not found');
-        }
-
-        return this._adminSettingsMapper.toEntity(adminSettingsDoc);
-    }
-
-    private async _handleWalletUpdateOnBookingCancellation(providerId: string, customerId: string, bookingId: string, transaction: ITransaction, adminSettings: IAdminSettings, journalId: string | null, isRequestedForCancellation: boolean = false,) {
-        let adminWallet = await this._getAdminWallet();
-        const [customerWallet, providerWallet] = await Promise.all([
-            this._getUserWallet(customerId),
-            this._getUserWallet(providerId),
-        ]);
-
-        const totalPaid = transaction.amount;
-        const customerFine = isRequestedForCancellation ? (adminSettings.cancellationFee ?? 0) : 0;
-        const providerFine = adminSettings.providerCancellationFine ?? 0;
-
-        const customerCreditAmount = Math.max(0, totalPaid - customerFine);
-        const adminDebitAmount = totalPaid;
-
-        const providerCreditAmount = isRequestedForCancellation ? customerFine : 0;
-        const providerDebitAmount = isRequestedForCancellation ? 0 : providerFine;
-
-        // Admin ledger: admin debits totalPaid
-        await this._walletLedgerRepository.create(
-            this._walletLedgerMapper.toDocument({
-                walletId: adminWallet.id,
-                userId: adminWallet.userId,
-                userRole: 'admin',
-                direction: PaymentDirection.DEBIT,
-                type: TransactionType.BOOKING_REFUND,
-                source: PaymentSource.WALLET,
-                amount: adminDebitAmount,
-                currency: CurrencyType.INR,
-                balanceBefore: adminWallet.balance,
-                balanceAfter: adminWallet.balance - adminDebitAmount,
-                journalId,
-                bookingId,
-                bookingTransactionId: null,
-                subscriptionId: null,
-                subscriptionTransactionId: null,
-                gatewayOrderId: null,
-                gatewayPaymentId: null,
-            }),
-        );
-
-        const adminWalletUpdated = await this._walletRepository.updateAdminAmount(-adminDebitAmount);
-
-        if (!adminWalletUpdated) {
-            this.logger.error('Failed to update admin wallet.');
-            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
-        }
-
-        adminWallet = await this._getAdminWallet();
-
-        // Customer ledger & update: credit customer with refund
-        await this._walletLedgerRepository.create(
-            this._walletLedgerMapper.toDocument({
-                walletId: customerWallet.id,
-                userId: customerWallet.userId,
-                userRole: 'customer',
-                direction: PaymentDirection.CREDIT,
-                type: TransactionType.BOOKING_REFUND,
-                source: PaymentSource.WALLET,
-                amount: customerCreditAmount,
-                currency: CurrencyType.INR,
-                balanceBefore: customerWallet.balance,
-                balanceAfter: customerWallet.balance + customerCreditAmount,
-                journalId,
-                bookingId,
-                bookingTransactionId: null,
-                subscriptionId: null,
-                subscriptionTransactionId: null,
-                gatewayOrderId: null,
-                gatewayPaymentId: null,
-            }),
-        );
-
-        const customerWalletUpdated = await this._walletRepository.updateUserAmount(customerId, 'customer', customerCreditAmount);
-
-        if (!customerWalletUpdated) {
-            this.logger.error('Failed to update customer wallet.');
-            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
-        }
-
-        if (isRequestedForCancellation) {
-            if (providerCreditAmount > 0) {
-                // CREDIT provider with customerFine
-                await this._walletLedgerRepository.create(
-                    this._walletLedgerMapper.toDocument({
-                        walletId: providerWallet.id,
-                        userId: providerWallet.userId,
-                        userRole: 'provider',
-                        direction: PaymentDirection.CREDIT,
-                        type: TransactionType.CANCELLATION_FEE,
-                        source: PaymentSource.WALLET,
-                        amount: providerCreditAmount,
-                        currency: CurrencyType.INR,
-                        balanceBefore: providerWallet.balance,
-                        balanceAfter: providerWallet.balance + providerCreditAmount,
-                        journalId,
-                        bookingId,
-                        bookingTransactionId: null,
-                        subscriptionId: null,
-                        subscriptionTransactionId: null,
-                        gatewayOrderId: null,
-                        gatewayPaymentId: null,
-                    }),
-                );
-
-                const providerWalletUpdated = await this._walletRepository.updateUserAmount(providerId, 'provider', providerCreditAmount);
-                if (!providerWalletUpdated) {
-                    this.logger.error('Failed to update provider wallet (credit).');
-                    throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
-                }
-            } else {
-                if (providerDebitAmount > 0) {
-                    // DEBIT provider with providerFine
-                    await this._walletLedgerRepository.create(
-                        this._walletLedgerMapper.toDocument({
-                            walletId: providerWallet.id,
-                            userId: providerWallet.userId,
-                            userRole: 'provider',
-                            direction: PaymentDirection.DEBIT,
-                            type: TransactionType.CANCELLATION_FEE,
-                            source: PaymentSource.WALLET,
-                            amount: providerDebitAmount,
-                            currency: CurrencyType.INR,
-                            balanceBefore: providerWallet.balance,
-                            balanceAfter: providerWallet.balance - providerDebitAmount,
-                            journalId,
-                            bookingId,
-                            bookingTransactionId: null,
-                            subscriptionId: null,
-                            subscriptionTransactionId: null,
-                            gatewayOrderId: null,
-                            gatewayPaymentId: null,
-                        }),
-                    );
-
-                    const providerWalletUpdated = await this._walletRepository.updateUserAmount(providerId, 'provider', -providerDebitAmount);
-                    if (!providerWalletUpdated) {
-                        this.logger.error('Failed to update provider wallet (debit).');
-                        throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
-                    }
-
-                    // Credit admin with provider fine
-                    await this._walletLedgerRepository.create(
-                        this._walletLedgerMapper.toDocument({
-                            walletId: adminWallet.id,
-                            userId: adminWallet.userId,
-                            userRole: 'admin',
-                            direction: PaymentDirection.CREDIT,
-                            type: TransactionType.CANCELLATION_FEE,
-                            source: PaymentSource.WALLET,
-                            amount: providerDebitAmount,
-                            currency: CurrencyType.INR,
-                            balanceBefore: adminWallet.balance,
-                            balanceAfter: adminWallet.balance + providerDebitAmount,
-                            journalId,
-                            bookingId,
-                            bookingTransactionId: null,
-                            subscriptionId: null,
-                            subscriptionTransactionId: null,
-                            gatewayOrderId: null,
-                            gatewayPaymentId: null,
-                        }),
-                    );
-
-                    const adminCreditOk = await this._walletRepository.updateAdminAmount(providerDebitAmount);
-                    if (!adminCreditOk) {
-                        this.logger.error('Failed to credit admin with provider fine.');
-                        throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
-                    }
-                }
-            }
-        }
-    }
-
-    private async _getBookedServices(servicesIds: string[]): Promise<IBookedService[]> {
-        return (
-            await Promise.all(
-                servicesIds.map(async (s) => {
-                    const service = await this._providerServiceRepository.findOneAndPopulateById(s);
-
-                    if (!service) throw new InternalServerErrorException({
-                        code: ErrorCodes.INTERNAL_SERVER_ERROR,
-                        message: ErrorMessage.INTERNAL_SERVER_ERROR
-                    });
-
-                    return {
-                        title: service.description,
-                        price: service.price,
-                        estimatedTime: service.estimatedTimeInMinutes
-                    };
-                })
-            )
-        );
-    }
-
-    private _computeRefund(totalPaid: number, adminSettings: IAdminSettings): { refundAmount: number; customerFine: number; providerFine: number } {
-        const customerFine = adminSettings.cancellationFee;
-        const providerFine = adminSettings.providerCancellationFine;
-
-        const refundAmount = Math.max(0, totalPaid - customerFine);
-
-        return {
-            refundAmount,   // amount to credit customer (paisa)
-            customerFine,   // fee charged to customer (paisa)
-            providerFine,   // fee to be charged to provider (paisa) — handle separately
-        };
-    }
-
-    private _getBookingPaymentTransactionDetail(transactions: ITransaction[]): ITransaction {
-        const transaction = transactions
-            .filter(t => t.transactionType === TransactionType.BOOKING_PAYMENT && t.status === TransactionStatus.SUCCESS)
-            .sort((a, b) => (b.createdAt as Date).getTime() - (a.createdAt as Date).getTime())[0];
-
-        if (!transaction) {
-            throw new InternalServerErrorException({
-                code: ErrorCodes.INTERNAL_SERVER_ERROR,
-                message: 'Transaction not found',
-            });
-        }
-        return transaction;
-    }
-
-    private async _getCustomerAndService(booking: IBooking): Promise<{
-        customer: { id: string, name: string, email: string, phone: string, location: string };
-        service: { title: string, price: number, estimatedTime: number }[];
-    }> {
-        const customerDoc = await this._customerRepository.findById(booking.customerId);
-        if (!customerDoc) {
-            throw new InternalServerErrorException(`Customer with ID ${booking.customerId} not found.`);
-        }
-
-        const customer = this._customerMapper.toEntity(customerDoc);
-        const orderedServices = await this._getBookedServices(booking.services);
-
-        return {
-            customer: {
-                id: customer.id,
-                name: customer.fullname || customer.username,
-                email: customer.email,
-                phone: customer.phone,
-                location: customer.address,
-            },
-            service: orderedServices,
-        };
-    }
-
-    private async _sendNotification(
-        userId: string,
-        templateId: NotificationTemplateId,
-        type: NotificationType,
-        title: string,
-        message: string,
-        entityId?: string,
-        metadata?: any
-    ) {
-        try {
-            await this._notificationService.createNotification(userId, {
-                templateId,
-                type,
-                title,
-                message,
-                entityId,
-                metadata
-            });
-        } catch (error) {
-            this.logger.error('Failed to send notification', error);
-            throw new Error('Failed to send notification');
-        }
-    }
-
-    private async _getInvoiceUser(booking: IBooking, userType: ClientUserType,): Promise<IProvider | ICustomer> {
-        if (userType === 'customer') {
-            const customerDoc = await this._customerRepository.findById(
-                booking.customerId,
-            );
-            if (!customerDoc) {
-                throw new NotFoundException({
-                    code: ErrorCodes.NOT_FOUND,
-                    message: `Customer ${ErrorMessage.DOCUMENT_NOT_FOUND}`,
-                });
-            }
-            return this._customerMapper.toEntity(customerDoc);
-        }
-
-        const providerDoc = await this._providerRepository.findById(
-            booking.providerId,
-        );
-        if (!providerDoc) {
-            throw new NotFoundException({
-                code: ErrorCodes.NOT_FOUND,
-                message: `Provider ${ErrorMessage.DOCUMENT_NOT_FOUND}`,
-            });
-        }
-        return this._providerMapper.toEntity(providerDoc);
-    }
 
     async fetchBookingsList(providerId: string, page: number = 1, filters: FilterFields): Promise<IResponseProviderBookingLists> {
         const limit = 5;
@@ -634,12 +321,19 @@ export class ProviderBookingService implements IProviderBookingService {
     async markBookingCancelledByProvider(providerId: string, bookingId: string, reason?: string): Promise<IResponse<IBookingDetailProvider>> {
         const bookingDoc = await this._bookingRepository.findPaidBookings(bookingId);
         if (!bookingDoc) {
-            throw new InternalServerErrorException(`Booking with ID ${bookingId} not found.`);
+            this.logger.error(`Booking ${bookingId} is paid or it is not in the db.`);
+            throw new NotFoundException({
+                code: ErrorCodes.RESOURCE_NOT_FOUND,
+                message: `Booking with ID ${bookingId} not found.`
+            });
         }
 
         const customer = await this._customerRepository.findById(bookingDoc.customerId);
         if (!customer) {
-            throw new InternalServerErrorException(`Customer with ID ${bookingDoc.customerId} not found.`);
+            throw new NotFoundException({
+                code: ErrorCodes.RESOURCE_NOT_FOUND,
+                message: `Customer with ID ${bookingDoc.customerId} not found.`
+            });
         }
 
         let booking = this._bookingMapper.toEntity(bookingDoc);
@@ -663,6 +357,9 @@ export class ProviderBookingService implements IProviderBookingService {
 
             let customerCreditAmount = transaction.amount;
             const { refundAmount } = this._computeRefund(transaction.amount, adminSettings);
+            console.log('Transaction amount: ', transaction);
+            console.log('admin settings: ', adminSettings);
+            console.log("computed refund: ", refundAmount);
             if (isAlreadyRequestedForCancellation) {
                 customerCreditAmount = refundAmount;
             }
@@ -722,7 +419,7 @@ export class ProviderBookingService implements IProviderBookingService {
         const updatedBooking = this._bookingMapper.toEntity(updatedBookingDoc);
         transaction = this._getBookingPaymentTransactionDetail(updatedBooking.transactionHistory);
 
-        const orderedServices = await this._getBookedServices(updatedBooking.services);//todo-today
+        const orderedServices = await this._getBookedServices(updatedBooking.services);
 
         const bookingData: IBookingDetailProvider = {
             bookingId: updatedBooking.id,
@@ -1027,7 +724,7 @@ export class ProviderBookingService implements IProviderBookingService {
             }
 
             const transaction = this._getBookingPaymentTransactionDetail(booking.transactionHistory);
-            const adminWalletLedger = await this._walletLedgerRepository.getAdminWalletLedgerByTransactionId(transaction.id);
+            // const adminWalletLedger = await this._walletLedgerRepository.getAdminWalletLedgerByTransactionId(transaction.id);
 
             if (adminWallet.balance < finalAmount) {
                 throw new BadRequestException({
@@ -1057,6 +754,10 @@ export class ProviderBookingService implements IProviderBookingService {
                 throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
             }
 
+            await this._cartRepository.clearCartByCustomerId(booking.customerId)
+
+            const journalId = uuidv4();
+
             // DEBIT booking amount from admin wallet (after deducting commission and gst)
             await this._walletLedgerRepository.create(
                 this._walletLedgerMapper.toDocument({
@@ -1070,7 +771,7 @@ export class ProviderBookingService implements IProviderBookingService {
                     currency: CurrencyType.INR,
                     balanceBefore: adminWallet.balance,
                     balanceAfter: adminWallet.balance - finalAmount,
-                    journalId: adminWalletLedger?.journalId,
+                    journalId,
                     bookingId,
                     bookingTransactionId: null,
                     subscriptionId: null,
@@ -1078,10 +779,12 @@ export class ProviderBookingService implements IProviderBookingService {
                     gatewayOrderId: null,
                     gatewayPaymentId: null,
                     metadata: {
-                        totalAmount,
-                        commissionAmount,
-                        gstAmount,
-                        finalAmount
+                        breakup: {
+                            totalAmount,
+                            providerCommission: commissionAmount,
+                            gst: gstAmount,
+                            providerAmount: finalAmount
+                        }
                     }
                 })
             );
@@ -1101,19 +804,14 @@ export class ProviderBookingService implements IProviderBookingService {
                     currency: CurrencyType.INR,
                     balanceBefore: adminWallet.balance,
                     balanceAfter: adminWallet.balance + commissionAmount,
-                    journalId: adminWalletLedger?.journalId,
+                    journalId,
                     bookingId,
                     bookingTransactionId: null,
                     subscriptionId: null,
                     subscriptionTransactionId: null,
                     gatewayOrderId: null,
                     gatewayPaymentId: null,
-                    metadata: {
-                        totalAmount,
-                        commissionAmount,
-                        gstAmount,
-                        finalAmount
-                    }
+                    metadata: null,
                 })
             );
 
@@ -1130,20 +828,14 @@ export class ProviderBookingService implements IProviderBookingService {
                     currency: CurrencyType.INR,
                     balanceBefore: adminWallet.balance,
                     balanceAfter: adminWallet.balance + gstAmount,
-                    journalId: adminWalletLedger?.journalId,
+                    journalId,
                     bookingId,
                     bookingTransactionId: null,
                     subscriptionId: null,
                     subscriptionTransactionId: null,
                     gatewayOrderId: null,
                     gatewayPaymentId: null,
-                    metadata: {
-                        totalAmount,
-                        commissionAmount,
-                        gstAmount,
-                        finalAmount,
-                        portion: 'provider'
-                    }
+                    metadata: null,
                 })
             );
 
@@ -1164,19 +856,14 @@ export class ProviderBookingService implements IProviderBookingService {
                         currency: CurrencyType.INR,
                         balanceBefore: adminWallet.balance,
                         balanceAfter: adminWallet.balance + customerCommission,
-                        journalId: adminWalletLedger?.journalId,
+                        journalId,
                         bookingId,
                         bookingTransactionId: null,
                         subscriptionId: null,
                         subscriptionTransactionId: null,
                         gatewayOrderId: null,
                         gatewayPaymentId: null,
-                        metadata: {
-                            totalAmount,
-                            customerCommission,
-                            customerGst,
-                            portion: 'customer'
-                        }
+                        metadata: null,
                     })
                 );
             }
@@ -1194,19 +881,14 @@ export class ProviderBookingService implements IProviderBookingService {
                         currency: CurrencyType.INR,
                         balanceBefore: adminWallet.balance,
                         balanceAfter: adminWallet.balance + customerGst,
-                        journalId: adminWalletLedger?.journalId,
+                        journalId,
                         bookingId,
                         bookingTransactionId: null,
                         subscriptionId: null,
                         subscriptionTransactionId: null,
                         gatewayOrderId: null,
                         gatewayPaymentId: null,
-                        metadata: {
-                            totalAmount,
-                            customerCommission,
-                            customerGst,
-                            portion: 'customer'
-                        }
+                        metadata: null,
                     })
                 );
             }
@@ -1224,7 +906,7 @@ export class ProviderBookingService implements IProviderBookingService {
                     currency: CurrencyType.INR,
                     balanceBefore: providerWallet.balance,
                     balanceAfter: providerWallet.balance + finalAmount,
-                    journalId: adminWalletLedger?.journalId,
+                    journalId,
                     bookingId,
                     bookingTransactionId: null,
                     subscriptionId: null,
@@ -1232,10 +914,12 @@ export class ProviderBookingService implements IProviderBookingService {
                     gatewayOrderId: null,
                     gatewayPaymentId: null,
                     metadata: {
-                        totalAmount,
-                        commissionAmount,
-                        gstAmount,
-                        finalAmount
+                        breakup: {
+                            totalAmount,
+                            providerCommission: commissionAmount,
+                            gst: gstAmount,
+                            providerAmount: finalAmount
+                        }
                     }
                 })
             );
@@ -1420,5 +1104,330 @@ export class ProviderBookingService implements IProviderBookingService {
             const date = new Date(s.date);
             return this._timeUtility.apply24hTime(date, s.from)
         });
+    }
+
+    private async _getAdminWallet(): Promise<IWallet> {
+        const adminWalletDoc = await this._walletRepository.getAdminWallet();
+        if (!adminWalletDoc) throw new InternalServerErrorException('Admin wallet not found');
+        return this._walletMapper.toEntity(adminWalletDoc);
+    }
+
+    private async _getUserWallet(userId: string): Promise<IWallet> {
+        const userWalletDoc = await this._walletRepository.findWallet(userId);
+        if (!userWalletDoc) {
+            this.logger.error(`Wallet not found for user ${userId}`);
+            throw new InternalServerErrorException('User wallet not found');
+        }
+        return this._walletMapper.toEntity(userWalletDoc);
+    }
+
+    private async _getAdminSettings(): Promise<IAdminSettings> {
+        const adminSettingsDoc = await this._adminSettings.getSettings();
+        if (!adminSettingsDoc) {
+            throw new InternalServerErrorException('Admin settings not found');
+        }
+
+        return this._adminSettingsMapper.toEntity(adminSettingsDoc);
+    }
+
+    private async _handleWalletUpdateOnBookingCancellation(providerId: string, customerId: string, bookingId: string, transaction: ITransaction, adminSettings: IAdminSettings, journalId: string | null, isRequestedForCancellation: boolean = false,) {
+        let adminWallet = await this._getAdminWallet();
+        const [customerWallet, providerWallet] = await Promise.all([
+            this._getUserWallet(customerId),
+            this._getUserWallet(providerId),
+        ]);
+
+        const totalPaid = transaction.amount;
+        const customerFine = isRequestedForCancellation
+            ? (adminSettings.cancellationFee ?? 0)
+            : 0;
+
+        const providerFine = !isRequestedForCancellation
+            ? (adminSettings.providerCancellationFine ?? 0)
+            : 0;
+
+        const customerRefund = totalPaid - customerFine;
+        if (customerRefund < 0) {
+            throw new BadRequestException("Invalid refund configuration.");
+        }
+        const customerCreditAmount = Math.max(0, totalPaid - customerFine);
+        const adminDebitAmount = totalPaid;
+
+        const providerCreditAmount = isRequestedForCancellation ? customerFine : 0;
+        const providerDebitAmount = isRequestedForCancellation ? 0 : providerFine;
+
+        // Admin ledger: admin debits totalPaid
+        await this._walletLedgerRepository.create(
+            this._walletLedgerMapper.toDocument({
+                walletId: adminWallet.id,
+                userId: adminWallet.userId,
+                userRole: 'admin',
+                direction: PaymentDirection.DEBIT,
+                type: TransactionType.BOOKING_REFUND,
+                source: PaymentSource.WALLET,
+                amount: adminDebitAmount,
+                currency: CurrencyType.INR,
+                balanceBefore: adminWallet.balance,
+                balanceAfter: adminWallet.balance - adminDebitAmount,
+                journalId,
+                bookingId,
+                bookingTransactionId: null,
+                subscriptionId: null,
+                subscriptionTransactionId: null,
+                gatewayOrderId: null,
+                gatewayPaymentId: null,
+            }),
+        );
+
+        const adminWalletUpdated = await this._walletRepository.updateAdminAmount(-adminDebitAmount);
+
+        if (!adminWalletUpdated) {
+            this.logger.error('Failed to update admin wallet.');
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+        }
+
+        adminWallet = await this._getAdminWallet();
+
+        // Customer ledger & update: credit customer with refund
+        await this._walletLedgerRepository.create(
+            this._walletLedgerMapper.toDocument({
+                walletId: customerWallet.id,
+                userId: customerWallet.userId,
+                userRole: 'customer',
+                direction: PaymentDirection.CREDIT,
+                type: TransactionType.BOOKING_REFUND,
+                source: PaymentSource.WALLET,
+                amount: customerCreditAmount,
+                currency: CurrencyType.INR,
+                balanceBefore: customerWallet.balance,
+                balanceAfter: customerWallet.balance + customerCreditAmount,
+                journalId,
+                bookingId,
+                bookingTransactionId: null,
+                subscriptionId: null,
+                subscriptionTransactionId: null,
+                gatewayOrderId: null,
+                gatewayPaymentId: null,
+            }),
+        );
+
+        const customerWalletUpdated = await this._walletRepository.updateUserAmount(customerId, 'customer', customerCreditAmount);
+
+        if (!customerWalletUpdated) {
+            this.logger.error('Failed to update customer wallet.');
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+        }
+
+        if (isRequestedForCancellation) {
+            if (providerCreditAmount > 0) {
+                // CREDIT provider with customerFine
+                await this._walletLedgerRepository.create(
+                    this._walletLedgerMapper.toDocument({
+                        walletId: providerWallet.id,
+                        userId: providerWallet.userId,
+                        userRole: 'provider',
+                        direction: PaymentDirection.CREDIT,
+                        type: TransactionType.CANCELLATION_FEE,
+                        source: PaymentSource.WALLET,
+                        amount: providerCreditAmount,
+                        currency: CurrencyType.INR,
+                        balanceBefore: providerWallet.balance,
+                        balanceAfter: providerWallet.balance + providerCreditAmount,
+                        journalId,
+                        bookingId,
+                        bookingTransactionId: null,
+                        subscriptionId: null,
+                        subscriptionTransactionId: null,
+                        gatewayOrderId: null,
+                        gatewayPaymentId: null,
+                    }),
+                );
+
+                const providerWalletUpdated = await this._walletRepository.updateUserAmount(providerId, 'provider', providerCreditAmount);
+                if (!providerWalletUpdated) {
+                    this.logger.error('Failed to update provider wallet (credit).');
+                    throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+                }
+            } else {
+                if (providerDebitAmount > 0) {
+                    // DEBIT provider with providerFine
+                    await this._walletLedgerRepository.create(
+                        this._walletLedgerMapper.toDocument({
+                            walletId: providerWallet.id,
+                            userId: providerWallet.userId,
+                            userRole: 'provider',
+                            direction: PaymentDirection.DEBIT,
+                            type: TransactionType.CANCELLATION_FEE,
+                            source: PaymentSource.WALLET,
+                            amount: providerDebitAmount,
+                            currency: CurrencyType.INR,
+                            balanceBefore: providerWallet.balance,
+                            balanceAfter: providerWallet.balance - providerDebitAmount,
+                            journalId,
+                            bookingId,
+                            bookingTransactionId: null,
+                            subscriptionId: null,
+                            subscriptionTransactionId: null,
+                            gatewayOrderId: null,
+                            gatewayPaymentId: null,
+                        }),
+                    );
+
+                    const providerWalletUpdated = await this._walletRepository.updateUserAmount(providerId, 'provider', -providerDebitAmount);
+                    if (!providerWalletUpdated) {
+                        this.logger.error('Failed to update provider wallet (debit).');
+                        throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+                    }
+
+                    // Credit admin with provider fine
+                    await this._walletLedgerRepository.create(
+                        this._walletLedgerMapper.toDocument({
+                            walletId: adminWallet.id,
+                            userId: adminWallet.userId,
+                            userRole: 'admin',
+                            direction: PaymentDirection.CREDIT,
+                            type: TransactionType.CANCELLATION_FEE,
+                            source: PaymentSource.WALLET,
+                            amount: providerDebitAmount,
+                            currency: CurrencyType.INR,
+                            balanceBefore: adminWallet.balance,
+                            balanceAfter: adminWallet.balance + providerDebitAmount,
+                            journalId,
+                            bookingId,
+                            bookingTransactionId: null,
+                            subscriptionId: null,
+                            subscriptionTransactionId: null,
+                            gatewayOrderId: null,
+                            gatewayPaymentId: null,
+                        }),
+                    );
+
+                    const adminCreditOk = await this._walletRepository.updateAdminAmount(providerDebitAmount);
+                    if (!adminCreditOk) {
+                        this.logger.error('Failed to credit admin with provider fine.');
+                        throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+                    }
+                }
+            }
+        }
+    }
+
+    private async _getBookedServices(servicesIds: string[]): Promise<IBookedService[]> {
+        return (
+            await Promise.all(
+                servicesIds.map(async (s) => {
+                    const service = await this._providerServiceRepository.findOneAndPopulateById(s);
+
+                    if (!service) throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+
+                    return {
+                        title: service.description,
+                        price: service.price,
+                        estimatedTime: service.estimatedTimeInMinutes
+                    };
+                })
+            )
+        );
+    }
+
+    private _computeRefund(totalPaid: number, adminSettings: IAdminSettings): { refundAmount: number; customerFine: number; providerFine: number } {
+        const customerFine = adminSettings.cancellationFee;
+        const providerFine = adminSettings.providerCancellationFine;
+
+        const refundAmount = Math.max(0, totalPaid - customerFine);
+
+        return {
+            refundAmount,   // amount to credit customer (paisa)
+            customerFine,   // fee charged to customer (paisa)
+            providerFine,   // fee to be charged to provider (paisa) — handle separately
+        };
+    }
+
+    private _getBookingPaymentTransactionDetail(transactions: ITransaction[]): ITransaction {
+        const transaction = transactions
+            .filter(t => t.transactionType === TransactionType.BOOKING_PAYMENT && t.status === TransactionStatus.SUCCESS)
+            .sort((a, b) => (b.createdAt as Date).getTime() - (a.createdAt as Date).getTime())[0];
+
+        if (!transaction) {
+            throw new InternalServerErrorException({
+                code: ErrorCodes.INTERNAL_SERVER_ERROR,
+                message: 'Transaction not found',
+            });
+        }
+        return transaction;
+    }
+
+    private async _getCustomerAndService(booking: IBooking): Promise<{
+        customer: { id: string, name: string, email: string, phone: string, location: string };
+        service: { title: string, price: number, estimatedTime: number }[];
+    }> {
+        const customerDoc = await this._customerRepository.findById(booking.customerId);
+        if (!customerDoc) {
+            throw new InternalServerErrorException(`Customer with ID ${booking.customerId} not found.`);
+        }
+
+        const customer = this._customerMapper.toEntity(customerDoc);
+        const orderedServices = await this._getBookedServices(booking.services);
+
+        return {
+            customer: {
+                id: customer.id,
+                name: customer.fullname || customer.username,
+                email: customer.email,
+                phone: customer.phone,
+                location: customer.address,
+            },
+            service: orderedServices,
+        };
+    }
+
+    private async _sendNotification(
+        userId: string,
+        templateId: NotificationTemplateId,
+        type: NotificationType,
+        title: string,
+        message: string,
+        entityId?: string,
+        metadata?: any
+    ) {
+        try {
+            await this._notificationService.createNotification(userId, {
+                templateId,
+                type,
+                title,
+                message,
+                entityId,
+                metadata
+            });
+        } catch (error) {
+            this.logger.error('Failed to send notification', error);
+            throw new Error('Failed to send notification');
+        }
+    }
+
+    private async _getInvoiceUser(booking: IBooking, userType: ClientUserType,): Promise<IProvider | ICustomer> {
+        if (userType === 'customer') {
+            const customerDoc = await this._customerRepository.findById(
+                booking.customerId,
+            );
+            if (!customerDoc) {
+                throw new NotFoundException({
+                    code: ErrorCodes.NOT_FOUND,
+                    message: `Customer ${ErrorMessage.DOCUMENT_NOT_FOUND}`,
+                });
+            }
+            return this._customerMapper.toEntity(customerDoc);
+        }
+
+        const providerDoc = await this._providerRepository.findById(
+            booking.providerId,
+        );
+        if (!providerDoc) {
+            throw new NotFoundException({
+                code: ErrorCodes.NOT_FOUND,
+                message: `Provider ${ErrorMessage.DOCUMENT_NOT_FOUND}`,
+            });
+        }
+        return this._providerMapper.toEntity(providerDoc);
     }
 }

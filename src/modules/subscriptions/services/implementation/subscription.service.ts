@@ -309,7 +309,7 @@ export class SubscriptionService implements ISubscriptionService {
             );
 
             if (!newSubscription) {
-                throw new InternalServerErrorException(ErrorMessage.DOCUMENT_CREATION_ERROR);
+                throw new InternalServerErrorException(ErrorMessage.SUBSCRIPTION_CREATION_FAILED);
             }
 
             return {
