@@ -312,7 +312,8 @@ export class ProviderBookingService implements IProviderBookingService {
             transaction: transaction ? {
                 id: transaction.id,
                 paymentDate: transaction.createdAt as Date,
-                paymentMethod: transaction.source
+                paymentMethod: transaction.source,
+                gst: (transaction.metadata?.breakup?.gst ?? 0) / 100
             } : null,
             previousSchedules: this._getPreviousScheduledDates(booking.previousSlots)
         }
@@ -443,7 +444,8 @@ export class ProviderBookingService implements IProviderBookingService {
             transaction: {
                 id: transaction.id,
                 paymentDate: transaction.createdAt as Date,
-                paymentMethod: transaction.source
+                paymentMethod: transaction.source,
+                gst: (transaction?.metadata?.breakup?.gst ?? 0) / 100
             },
             previousSchedules: this._getPreviousScheduledDates(updatedBooking.previousSlots)
         }
@@ -945,7 +947,8 @@ export class ProviderBookingService implements IProviderBookingService {
                 transaction: {
                     id: transaction.id,
                     paymentDate: transaction.createdAt as Date,
-                    paymentMethod: transaction.source
+                    paymentMethod: transaction.source,
+                    gst: (transaction?.metadata?.breakup?.gst ?? 0) / 100
                 },
                 previousSchedules: this._getPreviousScheduledDates(booking.previousSlots)
             }
@@ -1055,7 +1058,8 @@ export class ProviderBookingService implements IProviderBookingService {
             transaction: {
                 id: transaction.id,
                 paymentDate: transaction.createdAt as Date,
-                paymentMethod: transaction.source
+                paymentMethod: transaction.source,
+                gst: (transaction.metadata?.breakup?.gst ?? 0) / 100
             },
             previousSchedules: this._getPreviousScheduledDates(booking.previousSlots),
         }
