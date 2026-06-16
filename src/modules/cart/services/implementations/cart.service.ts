@@ -82,9 +82,21 @@ export class CartService implements ICartService {
             message: "Failed to remove item from cart"
         });
 
+        let cartDoc = await this._cartRepository.findAndPopulateByCustomerId(customerId);
+        if (!cartDoc) throw new NotFoundException({
+            code: ErrorCodes.NOT_FOUND,
+            message: "Cart not found"
+        });
+
+        const cart = this._cartMapper.toPopulatedEntity(cartDoc);
+        cart.items.forEach(item => {
+            item.image = this._uploadUtility.getSignedImageUrl(item.image);
+        });
+
         return {
             success: !!updatedCart,
             message: "Item removed from cart",
+            data: cart,
         };
     }
 
