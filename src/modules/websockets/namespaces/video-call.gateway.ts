@@ -12,6 +12,8 @@ import { IVideoCallService } from '@modules/websockets/services/interface/video-
 import { GlobalWsExceptionFilter } from '@core/exception-filters/ws-exception.filters';
 import { IAuthSocketService } from '@modules/websockets/services/interface/auth-socket-service.interface';
 import { IUserSocketStoreService } from '@modules/websockets/services/interface/user-socket-store-service.interface';
+import { IBookingRepository } from '@core/repositories/interfaces/bookings-repo.interface';
+import { BOOKING_REPOSITORY_NAME } from '@core/constants/repository.constant';
 
 const namespace = 'video-call';
 const VIDEO_CALL_UNAVAILABLE = 'video-call:unavailable';
@@ -38,6 +40,8 @@ export class VideoCallGateway extends BaseSocketGateway {
     private readonly _customDtoValidatorUtility: ICustomDtoValidator,
     @Inject(VIDEO_CALL_SERVICE_NAME)
     private readonly _videoCallService: IVideoCallService,
+    @Inject(BOOKING_REPOSITORY_NAME)
+    private readonly _bookingRepository: IBookingRepository,
   ) {
     super();
     this.logger = this._loggerFactory.createLogger(VideoCallGateway.name);
@@ -84,6 +88,15 @@ export class VideoCallGateway extends BaseSocketGateway {
     await this._customDtoValidatorUtility.validateDto(CallReceiverDto, body);
     const user = this._getClient(client);
     const { callee } = body;
+
+    // Enforce active booking validation
+    const customerId = user.type === 'customer' ? user.id : callee;
+    const providerId = user.type === 'provider' ? user.id : callee;
+    const isOngoing = await this._bookingRepository.isAnyBookingOngoing(customerId, providerId);
+    if (!isOngoing) {
+      client.emit(VIDEO_CALL_UNAVAILABLE, { message: 'No active booking found with this user' });
+      return;
+    }
 
     // Check if caller is already in a call
     const callerPartner = await this._videoCallService.getUserCallPartner(user.id);
