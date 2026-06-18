@@ -142,5 +142,18 @@ export class ChatGateway extends BaseSocketGateway {
             throw err;
         }
     }
+
+    @SubscribeMessage('markMessagesRead')
+    async handleMarkMessagesRead(@ConnectedSocket() client: Socket, @MessageBody() body: { chatId: string }) {
+        const user = client.data.user;
+        if (!user?.id) return;
+
+        const { chatId } = body;
+        if (!chatId) return;
+
+        await this._messageService.markMessagesAsRead(chatId, user.id);
+
+        this.logger.log(`Messages marked as read for user ${user.id} in chat ${chatId}`);
+    }
 }
 
