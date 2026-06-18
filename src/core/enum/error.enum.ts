@@ -136,7 +136,8 @@ export enum BookingErrorCodes {
     ACTION_FORBIDDEN_UNPAID = 'ACTION_FORBIDDEN_UNPAID',
     BOOKING_ALREADY_COMPLETED = 'BOOKING_ALREADY_COMPLETED',
     BOOKING_ALREADY_CANCELLED = 'BOOKING_ALREADY_CANCELLED',
-    BOOKING_RELEASE_FAILED = 'BOOKING_RELEASE_FAILED'
+    BOOKING_RELEASE_FAILED = 'BOOKING_RELEASE_FAILED',
+    BOOKING_ALREADY_REFUNDED = 'BOOKING_ALREADY_REFUNDED',
 }
 
 export enum BookingErrorMessages {
@@ -145,5 +146,6 @@ export enum BookingErrorMessages {
     ACTION_FORBIDDEN_UNPAID = 'Action requires a completed payment status.',
     BOOKING_ALREADY_COMPLETED = 'Booking has already been completed.',
     BOOKING_ALREADY_CANCELLED = 'Booking has already been cancelled.',
-    BOOKING_RELEASE_FAILED = 'Failed to release the booking.'
+    BOOKING_RELEASE_FAILED = 'Failed to release the booking.',
+    BOOKING_ALREADY_REFUNDED = 'This booking has already been refunded.',
 }

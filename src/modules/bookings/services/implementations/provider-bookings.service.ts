@@ -347,8 +347,8 @@ export class ProviderBookingService implements IProviderBookingService {
 
         if (alreadyRefunded) {
             throw new BadRequestException({
-                code: ErrorCodes.BAD_REQUEST,
-                message: 'This booking has already been refunded.'
+                code: BookingErrorCodes.BOOKING_ALREADY_REFUNDED,
+                message: BookingErrorMessages.BOOKING_ALREADY_REFUNDED
             });
         }
 
@@ -359,9 +359,6 @@ export class ProviderBookingService implements IProviderBookingService {
 
             let customerCreditAmount = transaction.amount;
             const { refundAmount } = this._computeRefund(transaction.amount, adminSettings);
-            console.log('Transaction amount: ', transaction);
-            console.log('admin settings: ', adminSettings);
-            console.log("computed refund: ", refundAmount);
             if (isAlreadyRequestedForCancellation) {
                 customerCreditAmount = refundAmount;
             }
@@ -388,7 +385,6 @@ export class ProviderBookingService implements IProviderBookingService {
             }
 
             const adminWalletLedger = await this._walletLedgerRepository.getAdminWalletLedgerByTransactionId(transaction.id);
-
             await this._handleWalletUpdateOnBookingCancellation(
                 providerId,
                 booking.customerId,
@@ -396,7 +392,6 @@ export class ProviderBookingService implements IProviderBookingService {
                 transaction,
                 adminSettings,
                 adminWalletLedger?.journalId ?? null,
-                isAlreadyRequestedForCancellation
             );
 
             await this._bookingRepository.updatePaymentStatus(bookingId, PaymentStatus.REFUNDED);
@@ -1139,7 +1134,7 @@ export class ProviderBookingService implements IProviderBookingService {
         return this._adminSettingsMapper.toEntity(adminSettingsDoc);
     }
 
-    private async _handleWalletUpdateOnBookingCancellation(providerId: string, customerId: string, bookingId: string, transaction: ITransaction, adminSettings: IAdminSettings, journalId: string | null, isRequestedForCancellation: boolean = false,) {
+    private async _handleWalletUpdateOnBookingCancellation(providerId: string, customerId: string, bookingId: string, transaction: ITransaction, adminSettings: IAdminSettings, journalId: string | null) {
         let adminWallet = await this._getAdminWallet();
         const [customerWallet, providerWallet] = await Promise.all([
             this._getUserWallet(customerId),
@@ -1147,25 +1142,13 @@ export class ProviderBookingService implements IProviderBookingService {
         ]);
 
         const totalPaid = transaction.amount;
-        const customerFine = isRequestedForCancellation
-            ? (adminSettings.cancellationFee ?? 0)
-            : 0;
+        const providerFineAmount = adminSettings.providerCancellationFine / 100;
 
-        const providerFine = !isRequestedForCancellation
-            ? (adminSettings.providerCancellationFine ?? 0)
-            : 0;
+        // -------------------------------------------------------------
+        // TRANSACTION PHASE 1: FULL REFUND (Admin -> Customer)
+        // -------------------------------------------------------------
 
-        const customerRefund = totalPaid - customerFine;
-        if (customerRefund < 0) {
-            throw new BadRequestException("Invalid refund configuration.");
-        }
-        const customerCreditAmount = Math.max(0, totalPaid - customerFine);
-        const adminDebitAmount = totalPaid;
-
-        const providerCreditAmount = isRequestedForCancellation ? customerFine : 0;
-        const providerDebitAmount = isRequestedForCancellation ? 0 : providerFine;
-
-        // Admin ledger: admin debits totalPaid
+        // Admin Ledger Tracking
         await this._walletLedgerRepository.create(
             this._walletLedgerMapper.toDocument({
                 walletId: adminWallet.id,
@@ -1174,30 +1157,16 @@ export class ProviderBookingService implements IProviderBookingService {
                 direction: PaymentDirection.DEBIT,
                 type: TransactionType.BOOKING_REFUND,
                 source: PaymentSource.WALLET,
-                amount: adminDebitAmount,
+                amount: totalPaid,
                 currency: CurrencyType.INR,
                 balanceBefore: adminWallet.balance,
-                balanceAfter: adminWallet.balance - adminDebitAmount,
+                balanceAfter: adminWallet.balance - totalPaid,
                 journalId,
                 bookingId,
-                bookingTransactionId: null,
-                subscriptionId: null,
-                subscriptionTransactionId: null,
-                gatewayOrderId: null,
-                gatewayPaymentId: null,
             }),
         );
 
-        const adminWalletUpdated = await this._walletRepository.updateAdminAmount(-adminDebitAmount);
-
-        if (!adminWalletUpdated) {
-            this.logger.error('Failed to update admin wallet.');
-            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
-        }
-
-        adminWallet = await this._getAdminWallet();
-
-        // Customer ledger & update: credit customer with refund
+        // Customer Ledger Tracking
         await this._walletLedgerRepository.create(
             this._walletLedgerMapper.toDocument({
                 walletId: customerWallet.id,
@@ -1206,118 +1175,68 @@ export class ProviderBookingService implements IProviderBookingService {
                 direction: PaymentDirection.CREDIT,
                 type: TransactionType.BOOKING_REFUND,
                 source: PaymentSource.WALLET,
-                amount: customerCreditAmount,
+                amount: totalPaid,
                 currency: CurrencyType.INR,
                 balanceBefore: customerWallet.balance,
-                balanceAfter: customerWallet.balance + customerCreditAmount,
+                balanceAfter: customerWallet.balance + totalPaid,
                 journalId,
                 bookingId,
-                bookingTransactionId: null,
-                subscriptionId: null,
-                subscriptionTransactionId: null,
-                gatewayOrderId: null,
-                gatewayPaymentId: null,
             }),
         );
 
-        const customerWalletUpdated = await this._walletRepository.updateUserAmount(customerId, 'customer', customerCreditAmount);
+        // -------------------------------------------------------------
+        // TRANSACTION PHASE 2: PENALTY SYSTEM (Provider -> Admin)
+        // -------------------------------------------------------------
 
-        if (!customerWalletUpdated) {
-            this.logger.error('Failed to update customer wallet.');
+        // Provider Ledger Tracking (Fine Debit)
+        await this._walletLedgerRepository.create(
+            this._walletLedgerMapper.toDocument({
+                walletId: providerWallet.id,
+                userId: providerWallet.userId,
+                userRole: 'provider',
+                direction: PaymentDirection.DEBIT,
+                type: TransactionType.CANCELLATION_FEE,
+                source: PaymentSource.WALLET,
+                amount: providerFineAmount,
+                currency: CurrencyType.INR,
+                balanceBefore: providerWallet.balance,
+                balanceAfter: providerWallet.balance - providerFineAmount,
+                journalId,
+                bookingId,
+            }),
+        );
+
+        // Admin Ledger Tracking (Fine Revenue Credit)
+        // Dynamic calculation takes into account that Admin wallet has already been debited totalPaid above
+        const adminBalanceAfterRefund = adminWallet.balance - totalPaid;
+        await this._walletLedgerRepository.create(
+            this._walletLedgerMapper.toDocument({
+                walletId: adminWallet.id,
+                userId: adminWallet.userId,
+                userRole: 'admin',
+                direction: PaymentDirection.CREDIT,
+                type: TransactionType.CANCELLATION_FEE,
+                source: PaymentSource.WALLET,
+                amount: providerFineAmount,
+                currency: CurrencyType.INR,
+                balanceBefore: adminBalanceAfterRefund,
+                balanceAfter: adminBalanceAfterRefund + providerFineAmount,
+                journalId,
+                bookingId,
+            }),
+        );
+
+        // DATABASE WALLET BALANCE SYNCHRONIZATION
+        const netAdminAdjustment = -totalPaid + providerFineAmount;
+        const [adminOk, customerOk, providerOk] = await Promise.all([
+            this._walletRepository.updateAdminAmount(netAdminAdjustment),
+            this._walletRepository.updateUserAmount(customerId, 'customer', totalPaid),
+            this._walletRepository.updateUserAmount(providerId, 'provider', -providerFineAmount)
+        ]);
+
+        if (!adminOk || !customerOk || !providerOk) {
+            this.logger.error(`Critical Balance Sync Failure! Admin: ${adminOk}, Customer: ${customerOk}, Provider: ${providerOk}`);
             throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
-        }
-
-        if (isRequestedForCancellation) {
-            if (providerCreditAmount > 0) {
-                // CREDIT provider with customerFine
-                await this._walletLedgerRepository.create(
-                    this._walletLedgerMapper.toDocument({
-                        walletId: providerWallet.id,
-                        userId: providerWallet.userId,
-                        userRole: 'provider',
-                        direction: PaymentDirection.CREDIT,
-                        type: TransactionType.CANCELLATION_FEE,
-                        source: PaymentSource.WALLET,
-                        amount: providerCreditAmount,
-                        currency: CurrencyType.INR,
-                        balanceBefore: providerWallet.balance,
-                        balanceAfter: providerWallet.balance + providerCreditAmount,
-                        journalId,
-                        bookingId,
-                        bookingTransactionId: null,
-                        subscriptionId: null,
-                        subscriptionTransactionId: null,
-                        gatewayOrderId: null,
-                        gatewayPaymentId: null,
-                    }),
-                );
-
-                const providerWalletUpdated = await this._walletRepository.updateUserAmount(providerId, 'provider', providerCreditAmount);
-                if (!providerWalletUpdated) {
-                    this.logger.error('Failed to update provider wallet (credit).');
-                    throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
-                }
-            } else {
-                if (providerDebitAmount > 0) {
-                    // DEBIT provider with providerFine
-                    await this._walletLedgerRepository.create(
-                        this._walletLedgerMapper.toDocument({
-                            walletId: providerWallet.id,
-                            userId: providerWallet.userId,
-                            userRole: 'provider',
-                            direction: PaymentDirection.DEBIT,
-                            type: TransactionType.CANCELLATION_FEE,
-                            source: PaymentSource.WALLET,
-                            amount: providerDebitAmount,
-                            currency: CurrencyType.INR,
-                            balanceBefore: providerWallet.balance,
-                            balanceAfter: providerWallet.balance - providerDebitAmount,
-                            journalId,
-                            bookingId,
-                            bookingTransactionId: null,
-                            subscriptionId: null,
-                            subscriptionTransactionId: null,
-                            gatewayOrderId: null,
-                            gatewayPaymentId: null,
-                        }),
-                    );
-
-                    const providerWalletUpdated = await this._walletRepository.updateUserAmount(providerId, 'provider', -providerDebitAmount);
-                    if (!providerWalletUpdated) {
-                        this.logger.error('Failed to update provider wallet (debit).');
-                        throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
-                    }
-
-                    // Credit admin with provider fine
-                    await this._walletLedgerRepository.create(
-                        this._walletLedgerMapper.toDocument({
-                            walletId: adminWallet.id,
-                            userId: adminWallet.userId,
-                            userRole: 'admin',
-                            direction: PaymentDirection.CREDIT,
-                            type: TransactionType.CANCELLATION_FEE,
-                            source: PaymentSource.WALLET,
-                            amount: providerDebitAmount,
-                            currency: CurrencyType.INR,
-                            balanceBefore: adminWallet.balance,
-                            balanceAfter: adminWallet.balance + providerDebitAmount,
-                            journalId,
-                            bookingId,
-                            bookingTransactionId: null,
-                            subscriptionId: null,
-                            subscriptionTransactionId: null,
-                            gatewayOrderId: null,
-                            gatewayPaymentId: null,
-                        }),
-                    );
-
-                    const adminCreditOk = await this._walletRepository.updateAdminAmount(providerDebitAmount);
-                    if (!adminCreditOk) {
-                        this.logger.error('Failed to credit admin with provider fine.');
-                        throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
-                    }
-                }
-            }
         }
     }
 
