@@ -233,7 +233,7 @@ export class AdminBookingService implements IAdminBookingService {
         const breakdown = breakdownTxn
             ? {
                 providerAmount: breakdownTxn.metadata?.breakup?.providerAmount ?? 0,
-                commissionEarned: breakdownTxn.metadata?.breakup?.commission ?? 0,
+                commissionEarned: breakdownTxn.metadata?.breakup?.providerCommission ?? 0,
                 gst: breakdownTxn.metadata?.breakup?.gst ?? 0,
             }
             : {

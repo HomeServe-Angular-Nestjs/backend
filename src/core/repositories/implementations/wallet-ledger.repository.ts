@@ -266,7 +266,7 @@ export class WalletLedgerRepository extends BaseRepository<WalletLedgerDocument>
         return result[0] ?? { totalCredit: 0, totalDebit: 0, netGain: 0 };
     }
 
-    async getAdminTransactionLists(adminId: string, filters: IWalletTransactionFilter, options: { page: number; limit: number }): Promise<WalletLedgerDocument[]> {
+    async getAdminTransactionLists(filters: IWalletTransactionFilter, options: { page: number; limit: number }): Promise<WalletLedgerDocument[]> {
         const page = options?.page && options.page > 0 ? options.page : 1;
         const limit = options?.limit && options.limit > 0 ? options.limit : 10;
         const skip = (page - 1) * limit;
@@ -291,8 +291,9 @@ export class WalletLedgerRepository extends BaseRepository<WalletLedgerDocument>
                             $cond: [
                                 {
                                     $and: [
-                                        { $eq: ["$userRole", 'customer'] },
-                                        { $eq: ["$direction", PaymentDirection.DEBIT] },
+                                        { $eq: ["$userRole", 'admin'] },
+                                        { $eq: ["$direction", PaymentDirection.CREDIT] },
+                                        { $in: ["$type", [TransactionType.BOOKING_PAYMENT, TransactionType.SUBSCRIPTION_PAYMENT]] },
                                     ]
                                 },
                                 "$amount",
@@ -376,12 +377,8 @@ export class WalletLedgerRepository extends BaseRepository<WalletLedgerDocument>
             {
                 $addFields: {
                     netProfit: {
-                        $subtract: [
-                            "$platformCommission",
-                            "$refundIssued",
-                        ],
+                        $add: ["$platformCommission", "$gstCollected"],
                     },
-
                 }
             },
             {

@@ -62,8 +62,8 @@ export class WalletLedgerMapper implements IWalletLedgerMapper {
         return {
             breakup: {
                 providerAmount: metadata?.breakup?.providerAmount ?? 0,
-                providerCommission: metadata?.breakup?.commission ?? 0,
-                customerCommission: metadata?.breakup?.commission ?? 0,
+                providerCommission: metadata?.breakup?.providerCommission ?? 0,
+                customerCommission: metadata?.breakup?.customerCommission ?? 0,
                 gst: metadata?.breakup?.gst ?? 0
             }
         }

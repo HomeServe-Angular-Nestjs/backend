@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Put } from "@nestjs/common";
 import { CART_SERVICE_NAME } from "@core/constants/service.constant";
 import { ICartService } from "../services/interfaces/cart-service.interface";
-import { UpdateCartItemsDto } from "@modules/cart/dtos/cart.dto";
+import { ProviderServiceIdDto, UpdateCartItemsDto } from "@modules/cart/dtos/cart.dto";
 import { User } from "@core/decorators/extract-user.decorator";
 import { IPayload } from "@core/misc/payload.interface";
 import { IResponse } from "@core/misc/response.util";
@@ -25,7 +25,7 @@ export class CartController {
     }
 
     @Patch('remove')
-    async removeItem(@User() user: IPayload, @Body() { providerServiceId }: UpdateCartItemsDto): Promise<IResponse> {
+    async removeItem(@User() user: IPayload, @Body() { providerServiceId }: ProviderServiceIdDto): Promise<IResponse> {
         return await this._cartService.removeItem(user.sub, providerServiceId);
     }
 

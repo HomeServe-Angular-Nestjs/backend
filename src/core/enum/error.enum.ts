@@ -105,3 +105,47 @@ export enum UploadErrorCodes {
     EMPTY_RESULT = 'EMPTY_RESULT',
     UPLOAD_UNKNOWN_ERROR = 'UPLOAD_UNKNOWN_ERROR',
 }
+
+export enum WalletErrorCodes {
+    WALLET_UPDATE_ERROR = 'WALLET_UPDATE_ERROR',
+    AMOUNT_CREDIT_ERROR = 'AMOUNT_CREDIT_ERROR',
+    AMOUNT_DEBIT_ERROR = 'AMOUNT_DEBIT_ERROR',
+    INSUFFICIENT_BALANCE_ERROR = 'INSUFFICIENT_BALANCE_ERROR'
+}
+
+export enum WalletErrorMessages {
+    UPDATE_FAILED = 'Wallet update failed.',
+    AMOUNT_CREDIT_FAILED = 'Failed to credit wallet amount.',
+    AMOUNT_DEBIT_FAILED = 'Failed to debit wallet amount.',
+    ADMIN_WALLET_INSUFFICIENT_BALANCE = 'Admin wallet balance is too low to process the payout.'
+
+}
+
+export enum PaymentErrorCodes {
+    PAYMENT_DUPLICATE_ATTEMPT_ERROR = 'PAYMENT_DUPLICATE_ATTEMPT_ERROR',
+    PAYMENT_IN_PROGRESS_ERROR = 'PAYMENT_IN_PROGRESS_ERROR',
+}
+
+export enum PaymentErrorMessages {
+    PAYMENT_DUPLICATE_ATTEMPT = 'This invoice has already been paid.',
+    PAYMENT_IN_PROGRESS = 'A payment operation is already in progress.'
+}
+
+export enum BookingErrorCodes {
+    BOOKING_NOT_FOUND_ERROR = 'BOOKING_NOT_FOUND_ERROR',
+    ACTION_FORBIDDEN_UNPAID = 'ACTION_FORBIDDEN_UNPAID',
+    BOOKING_ALREADY_COMPLETED = 'BOOKING_ALREADY_COMPLETED',
+    BOOKING_ALREADY_CANCELLED = 'BOOKING_ALREADY_CANCELLED',
+    BOOKING_RELEASE_FAILED = 'BOOKING_RELEASE_FAILED',
+    BOOKING_ALREADY_REFUNDED = 'BOOKING_ALREADY_REFUNDED',
+}
+
+export enum BookingErrorMessages {
+    BOOKING_NOT_FOUND = 'Booking not found.',
+    UNAUTHORIZED_ACCESS = 'You are not authorized to access this booking.',
+    ACTION_FORBIDDEN_UNPAID = 'Action requires a completed payment status.',
+    BOOKING_ALREADY_COMPLETED = 'Booking has already been completed.',
+    BOOKING_ALREADY_CANCELLED = 'Booking has already been cancelled.',
+    BOOKING_RELEASE_FAILED = 'Failed to release the booking.',
+    BOOKING_ALREADY_REFUNDED = 'This booking has already been refunded.',
+}

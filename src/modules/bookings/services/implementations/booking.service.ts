@@ -466,6 +466,8 @@ export class BookingService implements IBookingService {
                 id: transaction.id,
                 paymentMethod: transaction.source,
                 paymentDate: transaction.createdAt as Date,
+                gst: transaction?.metadata?.breakup?.gst ?? 0,
+                providerCommission: (transaction?.metadata?.breakup?.providerCommission ?? 0) / 100,
             } : null,
             breakup: {
                 subTotal: (booking.totalAmount / 100) - (gst / 100),
@@ -760,15 +762,18 @@ export class BookingService implements IBookingService {
             });
         }
 
+
         const adminWallet = this._walletMapper.toEntity(adminWalletDoc);
         const customerWallet = this._walletMapper.toEntity(customerWalletDoc);
         const providerWallet = this._walletMapper.toEntity(providerWalletDoc);
 
-        // Admin debits full amount
-        const adminBefore = adminWallet.balance;
-        const adminAfter = adminBefore - totalPaid;
+        let currentAdminBalance = adminWallet.balance;
+
+        const adminBefore = currentAdminBalance;
+        currentAdminBalance -= refundAmount;
 
         await this._walletRepository.updateAdminAmount(-totalPaid);
+
         await this._walletLedgerRepository.create(
             this._walletLedgerMapper.toDocument({
                 walletId: adminWallet.id,
@@ -776,10 +781,10 @@ export class BookingService implements IBookingService {
                 userRole: 'admin',
                 direction: PaymentDirection.DEBIT,
                 type: TransactionType.BOOKING_REFUND,
-                amount: totalPaid,
+                amount: refundAmount,
                 currency: CurrencyType.INR,
                 balanceBefore: adminBefore,
-                balanceAfter: adminAfter,
+                balanceAfter: currentAdminBalance,
                 journalId,
                 bookingId,
                 source: PaymentSource.WALLET,
@@ -837,6 +842,7 @@ export class BookingService implements IBookingService {
                 customerFine,
             );
 
+            // Ledger for Provider receiving fine
             await this._walletLedgerRepository.create(
                 this._walletLedgerMapper.toDocument({
                     walletId: providerWallet.id,
@@ -858,6 +864,32 @@ export class BookingService implements IBookingService {
                     metadata: null,
                 })
             );
+
+            // Ledger for Admin losing the fine component to the provider
+            const adminBeforeFine = currentAdminBalance;
+            currentAdminBalance -= customerFine;
+
+            await this._walletLedgerRepository.create(
+                this._walletLedgerMapper.toDocument({
+                    walletId: adminWallet.id,
+                    userId: adminWallet.userId,
+                    userRole: 'admin',
+                    direction: PaymentDirection.DEBIT,
+                    type: TransactionType.CANCELLATION_FEE,
+                    amount: customerFine,
+                    currency: CurrencyType.INR,
+                    balanceBefore: adminBeforeFine,
+                    balanceAfter: currentAdminBalance,
+                    journalId,
+                    bookingId,
+                    source: PaymentSource.WALLET,
+                    bookingTransactionId,
+                    subscriptionTransactionId: null,
+                    gatewayOrderId: null,
+                    gatewayPaymentId: null,
+                    metadata: null,
+                })
+            )
         }
     }
 }

@@ -132,7 +132,8 @@ export class TransactionDocument {
             breakup: {
                 type: {
                     providerAmount: { type: Number },
-                    commission: { type: Number },
+                    providerCommission: { type: Number },
+                    customerCommission: { type: Number },
                     gst: { type: Number },
                 },
                 default: null
@@ -146,7 +147,8 @@ export class TransactionDocument {
         subscriptionId: Types.ObjectId | null;
         breakup: {
             providerAmount: number | null;
-            commission: number | null;
+            providerCommission: number | null;
+            customerCommission: number | null;
             gst: number | null;
         }
     } | null;

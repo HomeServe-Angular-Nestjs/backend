@@ -14,7 +14,7 @@ import { BookingOrderData, RazorpayVerifyData, SubscriptionOrderData } from '@mo
 import { IRazorPaymentService } from '@modules/payment/services/interfaces/razorpay-service.interface';
 import { CurrencyType, PaymentDirection, PaymentSource, TransactionStatus, TransactionType } from '@core/enum/transaction.enum';
 import { IWalletRepository } from '@core/repositories/interfaces/wallet-repo.interface';
-import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
+import { ErrorCodes, ErrorMessage, WalletErrorCodes } from '@core/enum/error.enum';
 import { IAdminSettingsRepository } from '@core/repositories/interfaces/admin-settings-repo.interface';
 import { ClientUserType, ICustomer, IProvider, UserType } from '@core/entities/interfaces/user.entity.interface';
 import { ICustomerMapper } from '@core/dto-mapper/interface/customer.mapper..interface';
@@ -128,19 +128,16 @@ export class RazorPaymentService implements IRazorPaymentService {
 
     private async _settleBookingPayment(orderData: BookingOrderData, user: ITxUserDetails & { id: string }, verifyData: RazorpayVerifyData,): Promise<ITransaction | null> {
         const totalAmount = orderData.amount;
-        const commissionRate = await this._adminSettingsRepository.getCustomerCommission();
+        const customerCommissionRate = await this._adminSettingsRepository.getCustomerCommission();
+        const providerCommissionRate = await this._adminSettingsRepository.getProviderCommission();
         const gstRate = await this._adminSettingsRepository.getTax();
 
-        // Back-calc baseAmount from total
-        const divisor = 1 + (commissionRate / 100) + (gstRate / 100);
-        const baseAmount = Math.round(totalAmount / divisor); // 19900 => (₹199.00)
+        const baseAmount = Math.round(totalAmount / (1 + (gstRate / 100)));
+        const customerCommissionAmount = Math.round(baseAmount * (customerCommissionRate / 100));
+        const providerAmount = baseAmount - customerCommissionAmount;
+        const providerCommissionAmount = Math.round(providerAmount * (providerCommissionRate / 100));
 
-        // Derive commission & GST from base
-        const commission = Math.round(baseAmount * (commissionRate / 100));
-        const gstAmount = Math.round(baseAmount * (gstRate / 100));
-
-        // Provider’s share
-        const providerAmount = baseAmount - commission;
+        const gstAmount = totalAmount - baseAmount;
 
         const customerTxDoc: TransactionDocument | null = await this._transactionRepository.createNewTransaction(
             orderData.bookingId,
@@ -163,7 +160,8 @@ export class RazorPaymentService implements IRazorPaymentService {
                     bookingId: orderData.bookingId,
                     breakup: {
                         providerAmount,
-                        commission,
+                        customerCommission: customerCommissionAmount,
+                        providerCommission: providerCommissionAmount,
                         gst: gstAmount
                     }
                 }
@@ -243,18 +241,24 @@ export class RazorPaymentService implements IRazorPaymentService {
 
         if (!adminWalletUpdated) {
             this.logger.error('Failed to update admin wallet.');
-            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+            throw new InternalServerErrorException({
+                code: ErrorCodes.INTERNAL_SERVER_ERROR,
+                message: WalletErrorCodes.AMOUNT_DEBIT_ERROR
+            });
         }
 
         if (orderData.source !== PaymentSource.WALLET) {
-            return;
+            return; //todo
         }
 
         const userWalletDoc = await this._walletRepository.findWallet(userId);
 
         if (!userWalletDoc) {
             this.logger.error('Failed to get user wallet.');
-            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+            throw new InternalServerErrorException({
+                code: ErrorCodes.INTERNAL_SERVER_ERROR,
+                message: ErrorMessage.INTERNAL_SERVER_ERROR
+            });
         }
 
         const userWallet = this._walletMapper.toEntity(userWalletDoc);
@@ -290,7 +294,10 @@ export class RazorPaymentService implements IRazorPaymentService {
 
         if (!userWalletUpdated) {
             this.logger.error('Failed to update user wallet.');
-            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+            throw new InternalServerErrorException({
+                code: ErrorCodes.INTERNAL_SERVER_ERROR,
+                message: WalletErrorCodes.AMOUNT_DEBIT_ERROR
+            });
         }
     }
 

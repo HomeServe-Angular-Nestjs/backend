@@ -161,6 +161,8 @@ export interface IBookingDetailsBase {
         id: string;
         paymentDate: Date | string;
         paymentMethod: PaymentSource;
+        gst: number;
+        providerCommission: number;
     } | null;
     previousSchedules: Date[];
 }
