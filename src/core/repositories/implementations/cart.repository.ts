@@ -15,6 +15,10 @@ export class CartRepository extends BaseRepository<CartDocument> implements ICar
         super(_cartModel);
     }
 
+    async findByCustomerId(customerId: string): Promise<CartDocument | null> {
+        return await this._cartModel.findOne({ customerId: this._toObjectId(customerId) }).lean();
+    }
+
     async findAndPopulateByCustomerId(customerId: string): Promise<CartPopulatedDocument | null> {
         const result = await this._cartModel.aggregate([
             { $match: { customerId: this._toObjectId(customerId) } },

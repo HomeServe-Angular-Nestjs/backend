@@ -2,6 +2,7 @@ import { IBaseRepository } from "../base/interfaces/base-repo.interface";
 import { CartDocument, CartPopulatedDocument } from "@core/schema/cart.schema";
 
 export interface ICartRepository extends IBaseRepository<CartDocument> {
+    findByCustomerId(customerId: string): Promise<CartDocument | null>;
     findAndPopulateByCustomerId(customerId: string): Promise<CartPopulatedDocument | null>;
     clearCartByCustomerId(customerId: string): Promise<boolean>;
     addItem(customerId: string, providerServiceId: string): Promise<boolean>;
