@@ -22,7 +22,7 @@ export class PlanRepository extends BaseRepository<PlanDocument> implements IPla
     }
 
     async findPlan(planId: string): Promise<PlanDocument | null> {
-        return this._planModel.findOne({ _id: planId, isDeleted: false, isActive: true });
+        return this._planModel.findOne({ _id: planId, isActive: true });
     }
 
     async updatePlanByPlanId(planId: string, updateData: Partial<IPlan>, options?: { new?: boolean }): Promise<PlanDocument | null> {
@@ -37,7 +37,7 @@ export class PlanRepository extends BaseRepository<PlanDocument> implements IPla
     }
 
     async findFreePlan(): Promise<PlanDocument | null> {
-        return await this._planModel.findOne({ duration: PlanDurationEnum.Lifetime, isDeleted: false });
+        return await this._planModel.findOne({ duration: PlanDurationEnum.Lifetime });
     }
 
     async deletePlan(planId: string): Promise<boolean> {

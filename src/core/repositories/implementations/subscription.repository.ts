@@ -198,7 +198,7 @@ export class SubscriptionRepository extends BaseRepository<SubscriptionDocument>
                 projection: { transactionHistory: 1 }
             }
         );
-        console.log('mongo: ', result);
+
         if (!result || result.transactionHistory.length < 1) return null;
 
         const history = result.transactionHistory;

@@ -1,5 +1,5 @@
 import { CUSTOMER_MAPPER, PROVIDER_MAPPER, WALLET_LEDGER_MAPPER } from "@core/constants/mappers.constant";
-import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, TRANSACTION_REPOSITORY_NAME, WALLET_LEDGER_REPOSITORY_NAME, WALLET_REPOSITORY_NAME, BOOKING_REPOSITORY_NAME } from "@core/constants/repository.constant";
+import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, TRANSACTION_REPOSITORY_NAME, WALLET_LEDGER_REPOSITORY_NAME, WALLET_REPOSITORY_NAME, BOOKING_REPOSITORY_NAME, SUBSCRIPTION_REPOSITORY_NAME } from "@core/constants/repository.constant";
 import { PDF_SERVICE } from "@core/constants/service.constant";
 import { ICustomerMapper } from "@core/dto-mapper/interface/customer.mapper..interface";
 import { IProviderMapper } from "@core/dto-mapper/interface/provider.mapper.interface";
@@ -7,10 +7,12 @@ import { IWalletLedgerMapper } from "@core/dto-mapper/interface/wallet-ledger.ma
 import { ClientUserType, ICustomer, IProvider } from "@core/entities/interfaces/user.entity.interface";
 import { IAdminTransactionDataWithPagination, ITransactionAdminList, ITransactionStats, IWalletTransactionFilter } from "@core/entities/interfaces/wallet-ledger.entity.interface";
 import { ErrorCodes } from "@core/enum/error.enum";
+import { TransactionType } from "@core/enum/transaction.enum";
 import { IResponse } from "@core/misc/response.util";
 import { IBookingRepository } from "@core/repositories/interfaces/bookings-repo.interface";
 import { ICustomerRepository } from "@core/repositories/interfaces/customer-repo.interface";
 import { IProviderRepository } from "@core/repositories/interfaces/provider-repo.interface";
+import { ISubscriptionRepository } from "@core/repositories/interfaces/subscription-repo.interface";
 import { ITransactionRepository } from "@core/repositories/interfaces/transaction-repo.interface";
 import { IWalletLedgerRepository } from "@core/repositories/interfaces/wallet-ledger.repo.interface";
 import { IWalletRepository } from "@core/repositories/interfaces/wallet-repo.interface";
@@ -21,7 +23,7 @@ import { IPdfService } from "@core/services/pdf/pdf.interface";
 import { TransactionReportDownloadDto } from "@modules/users/dtos/admin-user.dto";
 import { IAdminTransactionService } from "@modules/users/services/interfaces/admin-transaction-service.interface";
 import { ProviderWalletFilterDto } from "@modules/wallet/dto/wallet.dto";
-import { Inject, Injectable, NotFoundException } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 
 @Injectable()
 export class AdminTransactionService implements IAdminTransactionService {
@@ -45,6 +47,8 @@ export class AdminTransactionService implements IAdminTransactionService {
         private readonly _walletRepository: IWalletRepository,
         @Inject(BOOKING_REPOSITORY_NAME)
         private readonly _bookingRepository: IBookingRepository,
+        @Inject(SUBSCRIPTION_REPOSITORY_NAME)
+        private readonly _subscriptionRepository: ISubscriptionRepository,
     ) { }
 
     private async _getUserDetails(userId: string, role: ClientUserType | null): Promise<ICustomer | IProvider | null> {
@@ -100,40 +104,53 @@ export class AdminTransactionService implements IAdminTransactionService {
 
         const [total, transactionDocs] = await Promise.all([
             this._walletLedgerRepository.countFiltered(filters),
-            this._walletLedgerRepository.getAdminTransactionLists(adminId, filters, { page, limit })
+            this._walletLedgerRepository.getAdminTransactionLists(filters, { page, limit })
         ]);
 
         const enrichedTransaction: ITransactionAdminList[] = await Promise.all(
             (transactionDocs ?? [])
-                .filter((tx) => tx.userRole === 'admin')
+                .filter(tx => (tx.type === TransactionType.SUBSCRIPTION_PAYMENT && tx.direction === 'credit') || tx.userRole === 'admin')
                 .map(async (tnxDoc) => {
                     const userId = tnxDoc.userId.toString();
                     const isCurrentAdmin = adminId === userId;
+                    let role: ClientUserType | null = null;
 
                     let user: ICustomer | IProvider | null = null;
 
                     if (!isCurrentAdmin) {
+                        role = tnxDoc.userRole as ClientUserType;
                         user = await this._getUserDetails(
                             userId,
-                            tnxDoc.userRole as ClientUserType
+                            role
                         );
-                    } else if (tnxDoc.bookingId) {
-                        const booking = await this._bookingRepository.findById(tnxDoc.bookingId.toString());
-                        if (booking) {
-                            user = await this._getUserDetails(
-                                booking.customerId.toString(),
-                                'customer'
-                            );
+                    } else {
+                        if (tnxDoc.bookingId) {
+                            const booking = await this._bookingRepository.findById(tnxDoc.bookingId.toString());
+                            if (booking) {
+                                role = 'customer';
+                                user = await this._getUserDetails(
+                                    booking.customerId.toString(),
+                                    'customer'
+                                );
+                            }
+                        } else if (tnxDoc.subscriptionId) {
+                            const subscription = await this._subscriptionRepository.findById(tnxDoc.subscriptionId.toString());
+                            if (subscription) {
+                                role = subscription.role;
+                                user = await this._getUserDetails(
+                                    subscription.userId.toString(),
+                                    role
+                                );
+                            }
                         }
                     }
 
                     let counterpartyEmail = '';
                     let counterpartyRole: 'customer' | 'provider' | 'admin' = 'customer';
 
-                    if (user) {
+                    if (user && role) {
                         counterpartyEmail = user.email;
-                        const isProviderContext = tnxDoc.type.toLowerCase().includes('provider');
-                        counterpartyRole = isProviderContext ? 'provider' : 'customer';
+                        counterpartyRole = role;
                     } else {
                         counterpartyEmail = isCurrentAdmin ? 'Internal' : '';
                         counterpartyRole = isCurrentAdmin ? 'admin' : 'customer';

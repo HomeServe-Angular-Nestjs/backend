@@ -124,7 +124,7 @@ export class PlanService implements IPlanService {
     }
 
     async fetchPlans(): Promise<IResponse<IPlan[]>> {
-        const plans = await this._planRepository.find({ isDeleted: false }, { sort: { price: 1 } });
+        const plans = await this._planRepository.find({}, { sort: { price: 1 } });
 
         return {
             success: true,
