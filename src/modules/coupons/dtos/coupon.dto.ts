@@ -1,17 +1,17 @@
 import { DiscountTypeEnum, UsageTypeEnum } from "@core/enum/coupon.enum";
 import { PageDto } from "@modules/providers/dtos/provider.dto";
 import { Transform } from "class-transformer";
-import { IsBoolean, IsIn, IsISO8601, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from "class-validator";
+import { IsBoolean, IsIn, IsISO8601, IsNotEmpty, IsNumber, IsOptional, IsString, Min, ValidateIf } from "class-validator";
 
 export class UpsertCouponDto {
     @IsNotEmpty()
     @IsString()
-    @Transform(({ value }) => value.toLowerCase())
+    @Transform(({ value }) => typeof value === 'string' ? value.toUpperCase().trim() : value)
     couponCode: string;
 
     @IsNotEmpty()
     @IsString()
-    @Transform(({ value }) => value.toLowerCase())
+    @Transform(({ value }) => typeof value === 'string' ? value.trim() : value)
     couponName: string;
 
     @IsString()
@@ -31,7 +31,8 @@ export class UpsertCouponDto {
     @IsISO8601({}, { message: 'validFrom must be a valid ISO 8601 date' })
     validFrom?: string;
 
-    @IsOptional()
+    @ValidateIf(o => o.usageType === UsageTypeEnum.Expiry)
+    @IsNotEmpty({ message: 'validTo is required when usage type is Expiry' })
     @IsISO8601({}, { message: 'validTo must be a valid ISO 8601 date' })
     validTo?: string;
 
@@ -60,7 +61,8 @@ export class CouponFilterDto extends PageDto {
 
     @IsOptional()
     @Transform(({ value }) => {
-        if (value == 'all') return value;
+        if (value === 'all') return value;
+        if (typeof value === 'boolean') return value;
         return value === 'true';
     })
     @IsIn([true, false, 'all'])

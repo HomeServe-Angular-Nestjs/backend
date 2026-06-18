@@ -10,7 +10,7 @@ import { IProfessionRepository } from "@core/repositories/interfaces/profession-
 import { IServiceCategoryRepository } from "@core/repositories/interfaces/service-category-repo.interface";
 import { ApplyCouponPayloadDto, CouponFilterDto, UpsertCouponDto } from "@modules/coupons/dtos/coupon.dto";
 import { ICouponService } from "@modules/coupons/services/interface/coupon-service.interface";
-import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ConflictException, Inject, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
 import { randomBytes } from "node:crypto";
 
 @Injectable()
@@ -32,7 +32,7 @@ export class CouponService implements ICouponService {
 
         const [couponDocs, totalCoupons] = await Promise.all([
             this._couponRepository.fetchCouponsWithFilterAndPagination(couponFilter, { page, limit }),
-            this._couponRepository.countCoupons()
+            this._couponRepository.countCoupons(couponFilter)
         ]);
 
         const coupons: ICouponTableData[] = await Promise.all(
@@ -77,6 +77,21 @@ export class CouponService implements ICouponService {
     }
 
     async createCoupon(createCouponDto: UpsertCouponDto): Promise<IResponse<ICoupon>> {
+        if (createCouponDto.usageType === UsageTypeEnum.Expiry) {
+            if (!createCouponDto.validTo) {
+                throw new BadRequestException({
+                    code: ErrorCodes.BAD_REQUEST,
+                    message: 'validTo is required when usage type is Expiry.'
+                });
+            }
+            if (createCouponDto.validFrom && new Date(createCouponDto.validFrom) > new Date(createCouponDto.validTo)) {
+                throw new BadRequestException({
+                    code: ErrorCodes.BAD_REQUEST,
+                    message: 'validFrom must be less than or equal to validTo.'
+                });
+            }
+        }
+
         const newCoupon = this._couponMapper.toDocument({
             couponCode: createCouponDto.couponCode,
             couponName: createCouponDto.couponName,
@@ -101,6 +116,12 @@ export class CouponService implements ICouponService {
             });
             coupon = this._couponMapper.toEntity(couponDoc);
         } catch (err) {
+            if (err.code === 11000 || err.message?.includes('E11000')) {
+                throw new ConflictException({
+                    code: ErrorCodes.CONFLICT,
+                    message: ErrorMessage.COUPON_ALREADY_EXISTS
+                });
+            }
             throw err;
         }
 
@@ -112,20 +133,45 @@ export class CouponService implements ICouponService {
     }
 
     async editCoupon(couponId: string, editCouponDto: UpsertCouponDto): Promise<IResponse<ICoupon>> {
-        const editCouponEntity = this._couponMapper.editCouponDtoToEntity(editCouponDto);
-        const updatedCouponDoc = await this._couponRepository.editCoupon(couponId, editCouponEntity);
+        if (editCouponDto.usageType === UsageTypeEnum.Expiry) {
+            if (!editCouponDto.validTo) {
+                throw new BadRequestException({
+                    code: ErrorCodes.BAD_REQUEST,
+                    message: 'validTo is required when usage type is Expiry.'
+                });
+            }
+            if (editCouponDto.validFrom && new Date(editCouponDto.validFrom) > new Date(editCouponDto.validTo)) {
+                throw new BadRequestException({
+                    code: ErrorCodes.BAD_REQUEST,
+                    message: 'validFrom must be less than or equal to validTo.'
+                });
+            }
+        }
 
-        if (!updatedCouponDoc) throw new NotFoundException({
-            code: ErrorCodes.NOT_FOUND,
-            message: ErrorMessage.COUPON_NOT_FOUND
-        });
+        try {
+            const editCouponEntity = this._couponMapper.editCouponDtoToEntity(editCouponDto);
+            const updatedCouponDoc = await this._couponRepository.editCoupon(couponId, editCouponEntity);
 
-        const editedCoupon = this._couponMapper.toEntity(updatedCouponDoc);
+            if (!updatedCouponDoc) throw new NotFoundException({
+                code: ErrorCodes.NOT_FOUND,
+                message: ErrorMessage.COUPON_NOT_FOUND
+            });
 
-        return {
-            success: true,
-            message: 'Coupon edited successfully.',
-            data: editedCoupon
+            const editedCoupon = this._couponMapper.toEntity(updatedCouponDoc);
+
+            return {
+                success: true,
+                message: 'Coupon edited successfully.',
+                data: editedCoupon
+            }
+        } catch (err) {
+            if (err.code === 11000 || err.message?.includes('E11000')) {
+                throw new ConflictException({
+                    code: ErrorCodes.CONFLICT,
+                    message: ErrorMessage.COUPON_ALREADY_EXISTS
+                });
+            }
+            throw err;
         }
     }
 
@@ -181,6 +227,7 @@ export class CouponService implements ICouponService {
         const couponDocs = await this._couponRepository.findAvailableCoupons();
         const coupons = (couponDocs ?? [])
             .filter(coupon => {
+                if (coupon.usageType === UsageTypeEnum.OneTime) return true;
                 if (coupon.usageType === UsageTypeEnum.Expiry
                     && coupon.validTo
                     && !this._isCouponExpired(coupon.validTo)
@@ -203,6 +250,13 @@ export class CouponService implements ICouponService {
             code: ErrorCodes.BAD_REQUEST,
             message: 'This coupon is not available.'
         });
+
+        if (!couponDoc.isActive) {
+            throw new BadRequestException({
+                code: ErrorCodes.BAD_REQUEST,
+                message: 'This coupon is not currently active.'
+            });
+        }
 
         const coupon = this._couponMapper.toEntity(couponDoc);
 
