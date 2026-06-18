@@ -104,42 +104,61 @@ export class AdminTransactionService implements IAdminTransactionService {
         ]);
 
         const enrichedTransaction: ITransactionAdminList[] = await Promise.all(
-            (transactionDocs ?? []).map(async (tnxDoc) => {
-                const role = tnxDoc.userRole;
-                const userId = tnxDoc.userId.toString();
+            (transactionDocs ?? [])
+                .filter((tx) => tx.userRole === 'admin')
+                .map(async (tnxDoc) => {
+                    const userId = tnxDoc.userId.toString();
+                    const isCurrentAdmin = adminId === userId;
 
-                let user: ICustomer | IProvider | null = null;
+                    let user: ICustomer | IProvider | null = null;
 
-                if (adminId !== userId) {
-                    user = await this._getUserDetails(
-                        userId,
-                        tnxDoc.userRole as ClientUserType
-                    );
-                } else if (tnxDoc.bookingId) {
-                    // It's an admin commission from a booking
-                    const booking = await this._bookingRepository.findById(tnxDoc.bookingId.toString());
-                    if (booking) {
+                    if (!isCurrentAdmin) {
                         user = await this._getUserDetails(
-                            booking.customerId.toString(),
-                            'customer'
+                            userId,
+                            tnxDoc.userRole as ClientUserType
                         );
+                    } else if (tnxDoc.bookingId) {
+                        const booking = await this._bookingRepository.findById(tnxDoc.bookingId.toString());
+                        if (booking) {
+                            user = await this._getUserDetails(
+                                booking.customerId.toString(),
+                                'customer'
+                            );
+                        }
                     }
-                }
 
-                return {
-                    dateTime: tnxDoc.createdAt.toString(),
-                    counterparty: {
-                        email: user?.email ?? (adminId === userId ? 'Internal' : ''),
-                        role: user ? (tnxDoc.type.includes('provider') ? 'provider' : 'customer') : (adminId === userId ? 'admin' : 'customer'),
-                    },
-                    type: tnxDoc.type,
-                    direction: tnxDoc.direction,
-                    amount: tnxDoc.amount / 100,
-                    referenceType: tnxDoc.bookingId ? 'booking' : tnxDoc.subscriptionId ? 'subscription' : 'Internal',
-                    referenceId: tnxDoc.bookingId?.toString() || tnxDoc.subscriptionId?.toString() || (tnxDoc as any)._id.toString(),
-                    source: tnxDoc.source,
-                };
-            })
+                    let counterpartyEmail = '';
+                    let counterpartyRole: 'customer' | 'provider' | 'admin' = 'customer';
+
+                    if (user) {
+                        counterpartyEmail = user.email;
+                        const isProviderContext = tnxDoc.type.toLowerCase().includes('provider');
+                        counterpartyRole = isProviderContext ? 'provider' : 'customer';
+                    } else {
+                        counterpartyEmail = isCurrentAdmin ? 'Internal' : '';
+                        counterpartyRole = isCurrentAdmin ? 'admin' : 'customer';
+                    }
+
+                    return {
+                        dateTime: tnxDoc.createdAt.toString(),
+                        counterparty: {
+                            email: counterpartyEmail,
+                            role: counterpartyRole,
+                        },
+                        type: tnxDoc.type,
+                        direction: tnxDoc.direction,
+                        amount: tnxDoc.amount / 100,
+                        referenceType: tnxDoc.bookingId
+                            ? 'booking'
+                            : tnxDoc.subscriptionId
+                                ? 'subscription'
+                                : 'Internal',
+                        referenceId: tnxDoc.bookingId?.toString()
+                            || tnxDoc.subscriptionId?.toString()
+                            || (tnxDoc as any)._id.toString(),
+                        source: tnxDoc.source,
+                    };
+                })
         );
 
         return {

@@ -32,7 +32,8 @@ export interface ITransactionMetadata {
     subscriptionId?: string | null;
     breakup?: {
         providerAmount?: number | null;
-        commission?: number | null;
+        providerCommission?: number | null;
+        customerCommission?: number | null;
         gst?: number | null;
     } | null;
 }

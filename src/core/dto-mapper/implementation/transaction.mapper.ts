@@ -34,7 +34,8 @@ export class TransactionMapper implements ITransactionMapper {
                 subscriptionId: doc.metadata?.subscriptionId?.toString() ?? null,
                 breakup: {
                     providerAmount: doc?.metadata?.breakup?.providerAmount ?? null,
-                    commission: doc?.metadata?.breakup?.commission ?? null,
+                    providerCommission: doc?.metadata?.breakup?.providerCommission ?? null,
+                    customerCommission: doc?.metadata?.breakup?.customerCommission ?? null,
                     gst: doc?.metadata?.breakup?.gst ?? null,
                 }
             } : null
@@ -70,7 +71,8 @@ export class TransactionMapper implements ITransactionMapper {
                     : null,
                 breakup: {
                     providerAmount: entity.metadata?.breakup?.providerAmount ?? null,
-                    commission: entity.metadata?.breakup?.commission ?? null,
+                    providerCommission: entity.metadata?.breakup?.providerCommission ?? null,
+                    customerCommission: entity.metadata?.breakup?.customerCommission ?? null,
                     gst: entity.metadata?.breakup?.gst ?? null,
                 }
             } : null,

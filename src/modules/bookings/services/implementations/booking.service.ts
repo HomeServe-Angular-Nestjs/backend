@@ -466,7 +466,8 @@ export class BookingService implements IBookingService {
                 id: transaction.id,
                 paymentMethod: transaction.source,
                 paymentDate: transaction.createdAt as Date,
-                gst: transaction?.metadata?.breakup?.gst ?? 0
+                gst: transaction?.metadata?.breakup?.gst ?? 0,
+                providerCommission: (transaction?.metadata?.breakup?.providerCommission ?? 0) / 100,
             } : null,
             breakup: {
                 subTotal: (booking.totalAmount / 100) - (gst / 100),

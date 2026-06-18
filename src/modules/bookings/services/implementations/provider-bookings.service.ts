@@ -1,7 +1,7 @@
 import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException, } from '@nestjs/common';
 import { ADMIN_SETTINGS_MAPPER, BOOKING_MAPPER, CUSTOMER_MAPPER, PROVIDER_MAPPER, PROVIDER_SERVICE_MAPPER, SERVICE_OFFERED_MAPPER, TRANSACTION_MAPPER, WALLET_LEDGER_MAPPER, WALLET_MAPPER } from '@core/constants/mappers.constant';
 import { IBookingMapper } from '@core/dto-mapper/interface/bookings.mapper.interface';
-import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
+import { BookingErrorCodes, BookingErrorMessages, ErrorCodes, ErrorMessage, PaymentErrorCodes, PaymentErrorMessages, WalletErrorCodes, WalletErrorMessages } from '@core/enum/error.enum';
 import { ITransaction } from '@core/entities/interfaces/transaction.entity.interface';
 import { ITransactionMapper } from '@core/dto-mapper/interface/transaction.mapper.interface';
 import { CurrencyType, PaymentDirection, PaymentSource, TransactionStatus, TransactionType } from '@core/enum/transaction.enum';
@@ -313,7 +313,8 @@ export class ProviderBookingService implements IProviderBookingService {
                 id: transaction.id,
                 paymentDate: transaction.createdAt as Date,
                 paymentMethod: transaction.source,
-                gst: (transaction.metadata?.breakup?.gst ?? 0) / 100
+                gst: (transaction.metadata?.breakup?.gst ?? 0) / 100,
+                providerCommission: (transaction?.metadata?.breakup?.providerCommission ?? 0) / 100,
             } : null,
             previousSchedules: this._getPreviousScheduledDates(booking.previousSlots)
         }
@@ -445,7 +446,8 @@ export class ProviderBookingService implements IProviderBookingService {
                 id: transaction.id,
                 paymentDate: transaction.createdAt as Date,
                 paymentMethod: transaction.source,
-                gst: (transaction?.metadata?.breakup?.gst ?? 0) / 100
+                gst: (transaction?.metadata?.breakup?.gst ?? 0) / 100,
+                providerCommission: (transaction?.metadata?.breakup?.providerCommission ?? 0) / 100,
             },
             previousSchedules: this._getPreviousScheduledDates(updatedBooking.previousSlots)
         }
@@ -645,72 +647,83 @@ export class ProviderBookingService implements IProviderBookingService {
         try {
             const isLocked = await this._paymentLockingUtility.acquireLock(key);
             if (!isLocked) throw new BadRequestException({
-                code: ErrorCodes.PAYMENT_IN_PROGRESS,
-                message: 'A similar operation is already in progress.'
+                code: PaymentErrorCodes.PAYMENT_IN_PROGRESS_ERROR,
+                message: PaymentErrorMessages.PAYMENT_IN_PROGRESS
             });
 
             const bookingDoc = await this._bookingRepository.findById(bookingId);
             if (!bookingDoc) throw new BadRequestException({
-                code: ErrorCodes.BAD_REQUEST,
-                message: 'Booking not found.'
+                code: BookingErrorCodes.BOOKING_NOT_FOUND_ERROR,
+                message: BookingErrorMessages.BOOKING_NOT_FOUND
             });
 
             if (bookingDoc.providerId.toString() !== providerId) {
                 throw new BadRequestException({
-                    code: ErrorCodes.BAD_REQUEST,
-                    message: 'You are not authorized to complete this booking.'
+                    code: ErrorCodes.UNAUTHORIZED_ACCESS,
+                    message: BookingErrorMessages.UNAUTHORIZED_ACCESS
                 });
             }
 
             const booking = this._bookingMapper.toEntity(bookingDoc);
 
             if (booking.paymentStatus === PaymentStatus.UNPAID || !booking.transactionHistory.some(t => t.transactionType === TransactionType.BOOKING_PAYMENT)) throw new BadRequestException({
-                code: ErrorCodes.BAD_REQUEST,
-                message: 'This booking has not been paid yet.'
+                code: BookingErrorCodes.ACTION_FORBIDDEN_UNPAID,
+                message: BookingErrorMessages.ACTION_FORBIDDEN_UNPAID
             });
 
             if (booking.bookingStatus === BookingStatus.COMPLETED) {
                 throw new BadRequestException({
-                    code: ErrorCodes.BAD_REQUEST,
-                    message: ErrorMessage.BOOKING_ALREADY_COMPLETED
+                    code: BookingErrorCodes.BOOKING_ALREADY_COMPLETED,
+                    message: BookingErrorMessages.BOOKING_ALREADY_COMPLETED
                 });
             }
 
             if (booking.bookingStatus === BookingStatus.CANCELLED || booking.paymentStatus === PaymentStatus.REFUNDED) {
                 throw new BadRequestException({
-                    code: ErrorCodes.BAD_REQUEST,
-                    message: ErrorMessage.BOOKING_ALREADY_CANCELLED
+                    code: BookingErrorCodes.BOOKING_ALREADY_CANCELLED,
+                    message: BookingErrorMessages.BOOKING_ALREADY_CANCELLED
                 });
             }
 
             const isAlreadyReleased = booking.transactionHistory.some(tnx => tnx.transactionType === TransactionType.BOOKING_RELEASE);
             if (isAlreadyReleased) throw new BadRequestException({
-                code: ErrorCodes.BAD_REQUEST,
-                message: ErrorMessage.BOOKING_ALREADY_COMPLETED
+                code: BookingErrorCodes.BOOKING_ALREADY_COMPLETED,
+                message: BookingErrorMessages.BOOKING_ALREADY_COMPLETED
             });
 
-            let adminWallet = await this._getAdminWallet();
-            const [adminSettings, providerWallet] = await Promise.all([
-                this._getAdminSettings(),
+            let [adminWallet, providerWallet] = await Promise.all([
+                this._getAdminWallet(),
                 this._getUserWallet(booking.providerId),
             ]);
+
+            if (!adminWallet || !providerWallet)
+                throw new InternalServerErrorException({
+                    code: ErrorCodes.INTERNAL_SERVER_ERROR,
+                    message: ErrorMessage.INTERNAL_SERVER_ERROR
+                });
+
+            const adminSettings = await this._getAdminSettings();
+            if (!adminSettings)
+                throw new InternalServerErrorException({
+                    code: ErrorCodes.INTERNAL_SERVER_ERROR,
+                    message: ErrorMessage.INTERNAL_SERVER_ERROR
+                });
 
             const totalAmount = booking.totalAmount;
             const providerCommissionInPercentage = adminSettings.providerCommission;
             const gstPercentage = adminSettings.gstPercentage;
 
-            const commissionAmount = Math.floor(totalAmount * (providerCommissionInPercentage / 100));
-            const gstAmount = Math.floor(commissionAmount * (gstPercentage / 100));
-
-            const totalDeductions = commissionAmount + gstAmount;
-            const finalAmount = totalAmount - totalDeductions;
+            const baseAmount = Math.round(totalAmount / (1 + gstPercentage / 100));
+            const commissionAmount = Math.round(baseAmount * (providerCommissionInPercentage / 100));
+            const providerAmount = baseAmount - commissionAmount;
+            const gstAmount = totalAmount - baseAmount;
 
             const bookingReleaseTransaction = await this._transactionRepository.createNewTransaction(bookingId,
                 this._transactionMapper.toDocument({
                     userId: booking.providerId,
                     transactionType: TransactionType.BOOKING_RELEASE,
                     direction: PaymentDirection.CREDIT,
-                    amount: finalAmount,
+                    amount: providerAmount,
                     currency: CurrencyType.INR,
                     source: PaymentSource.WALLET,
                     status: TransactionStatus.SUCCESS,
@@ -726,37 +739,46 @@ export class ProviderBookingService implements IProviderBookingService {
             }
 
             const transaction = this._getBookingPaymentTransactionDetail(booking.transactionHistory);
-            // const adminWalletLedger = await this._walletLedgerRepository.getAdminWalletLedgerByTransactionId(transaction.id);
 
-            if (adminWallet.balance < finalAmount) {
+            if (adminWallet.balance < providerAmount) {
                 throw new BadRequestException({
-                    code: ErrorCodes.BAD_REQUEST,
-                    message: ErrorMessage.INSUFFICIENT_BALANCE
+                    code: WalletErrorCodes.INSUFFICIENT_BALANCE_ERROR,
+                    message: WalletErrorMessages.ADMIN_WALLET_INSUFFICIENT_BALANCE
                 });
             }
 
-            const adminWalletUpdate = await this._walletRepository.updateAdminAmount(-finalAmount);
+            const adminWalletUpdate = await this._walletRepository.updateAdminAmount(-providerAmount);
             if (!adminWalletUpdate) {
                 this.logger.error('Admin wallet update failed for the release of booking ' + bookingId);
-                throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+                throw new InternalServerErrorException({
+                    code: WalletErrorCodes.AMOUNT_DEBIT_ERROR,
+                    message: WalletErrorMessages.AMOUNT_DEBIT_FAILED
+                });
             }
 
-            const providerWalletUpdate = await this._walletRepository.updateUserAmount(providerWallet.userId, 'provider', finalAmount);
+            const providerWalletUpdate = await this._walletRepository.updateUserAmount(providerWallet.userId, 'provider', providerAmount);
             if (!providerWalletUpdate) {
-                await this._walletRepository.updateAdminAmount(finalAmount);
+                await this._walletRepository.updateAdminAmount(providerAmount);
                 this.logger.error('Provider wallet update failed for the release of booking ' + bookingId);
-                throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+                throw new InternalServerErrorException({
+                    code: WalletErrorCodes.AMOUNT_CREDIT_ERROR,
+                    message: WalletErrorMessages.AMOUNT_CREDIT_FAILED
+                });
             }
 
             const updatedBooking = await this._bookingRepository.updateBookingStatus(bookingId, BookingStatus.COMPLETED);
             if (!updatedBooking) {
-                await this._walletRepository.updateAdminAmount(finalAmount);
-                await this._walletRepository.updateUserAmount(providerWallet.userId, 'provider', -finalAmount);
+                await this._walletRepository.updateAdminAmount(providerAmount);
+                await this._walletRepository.updateUserAmount(providerWallet.userId, 'provider', -providerAmount);
                 this.logger.error('Booking update failed for the release of booking ' + bookingId);
-                throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+                throw new InternalServerErrorException({
+                    code: BookingErrorCodes.BOOKING_RELEASE_FAILED,
+                    message: BookingErrorMessages.BOOKING_RELEASE_FAILED
+                });
             }
 
             await this._cartRepository.clearCartByCustomerId(booking.customerId)
+            adminWallet = await this._getAdminWallet();
 
             const journalId = uuidv4();
 
@@ -769,10 +791,10 @@ export class ProviderBookingService implements IProviderBookingService {
                     direction: PaymentDirection.DEBIT,
                     type: TransactionType.BOOKING_RELEASE,
                     source: PaymentSource.WALLET,
-                    amount: finalAmount,
+                    amount: providerAmount,
                     currency: CurrencyType.INR,
                     balanceBefore: adminWallet.balance,
-                    balanceAfter: adminWallet.balance - finalAmount,
+                    balanceAfter: adminWallet.balance - providerAmount,
                     journalId,
                     bookingId,
                     bookingTransactionId: null,
@@ -783,9 +805,9 @@ export class ProviderBookingService implements IProviderBookingService {
                     metadata: {
                         breakup: {
                             totalAmount,
+                            providerAmount,
                             providerCommission: commissionAmount,
                             gst: gstAmount,
-                            providerAmount: finalAmount
                         }
                     }
                 })
@@ -817,6 +839,8 @@ export class ProviderBookingService implements IProviderBookingService {
                 })
             );
 
+            adminWallet = await this._getAdminWallet();
+
             // CREDIT gst amount to admin (Provider Portion)
             await this._walletLedgerRepository.create(
                 this._walletLedgerMapper.toDocument({
@@ -842,10 +866,11 @@ export class ProviderBookingService implements IProviderBookingService {
             );
 
             // CREDIT customer commission to admin (Categorization)
-            const customerCommission = transaction.metadata?.breakup?.commission || 0;
-            const customerGst = transaction.metadata?.breakup?.gst || 0;
+            const customerCommission = transaction.metadata?.breakup?.customerCommission || 0;
 
             if (customerCommission > 0) {
+                adminWallet = await this._getAdminWallet();
+
                 await this._walletLedgerRepository.create(
                     this._walletLedgerMapper.toDocument({
                         walletId: adminWallet.id,
@@ -870,30 +895,8 @@ export class ProviderBookingService implements IProviderBookingService {
                 );
             }
 
-            if (customerGst > 0) {
-                await this._walletLedgerRepository.create(
-                    this._walletLedgerMapper.toDocument({
-                        walletId: adminWallet.id,
-                        userId: adminWallet.userId,
-                        userRole: 'admin',
-                        direction: PaymentDirection.CREDIT,
-                        type: TransactionType.GST,
-                        source: PaymentSource.WALLET,
-                        amount: customerGst,
-                        currency: CurrencyType.INR,
-                        balanceBefore: adminWallet.balance,
-                        balanceAfter: adminWallet.balance + customerGst,
-                        journalId,
-                        bookingId,
-                        bookingTransactionId: null,
-                        subscriptionId: null,
-                        subscriptionTransactionId: null,
-                        gatewayOrderId: null,
-                        gatewayPaymentId: null,
-                        metadata: null,
-                    })
-                );
-            }
+            providerWallet = await this._getUserWallet(booking.providerId);
+
 
             // CREDIT booking amount to provider wallet
             await this._walletLedgerRepository.create(
@@ -904,13 +907,13 @@ export class ProviderBookingService implements IProviderBookingService {
                     direction: PaymentDirection.CREDIT,
                     type: TransactionType.BOOKING_RELEASE,
                     source: PaymentSource.WALLET,
-                    amount: finalAmount,
+                    amount: providerAmount,
                     currency: CurrencyType.INR,
                     balanceBefore: providerWallet.balance,
-                    balanceAfter: providerWallet.balance + finalAmount,
+                    balanceAfter: providerWallet.balance + providerAmount,
                     journalId,
                     bookingId,
-                    bookingTransactionId: null,
+                    bookingTransactionId: transaction.id,
                     subscriptionId: null,
                     subscriptionTransactionId: null,
                     gatewayOrderId: null,
@@ -918,9 +921,9 @@ export class ProviderBookingService implements IProviderBookingService {
                     metadata: {
                         breakup: {
                             totalAmount,
+                            providerAmount,
                             providerCommission: commissionAmount,
                             gst: gstAmount,
-                            providerAmount: finalAmount
                         }
                     }
                 })
@@ -948,7 +951,8 @@ export class ProviderBookingService implements IProviderBookingService {
                     id: transaction.id,
                     paymentDate: transaction.createdAt as Date,
                     paymentMethod: transaction.source,
-                    gst: (transaction?.metadata?.breakup?.gst ?? 0) / 100
+                    gst: (transaction?.metadata?.breakup?.gst ?? 0) / 100,
+                    providerCommission: (transaction?.metadata?.breakup?.providerCommission ?? 0) / 100,
                 },
                 previousSchedules: this._getPreviousScheduledDates(booking.previousSlots)
             }
@@ -1059,7 +1063,8 @@ export class ProviderBookingService implements IProviderBookingService {
                 id: transaction.id,
                 paymentDate: transaction.createdAt as Date,
                 paymentMethod: transaction.source,
-                gst: (transaction.metadata?.breakup?.gst ?? 0) / 100
+                gst: (transaction.metadata?.breakup?.gst ?? 0) / 100,
+                providerCommission: (transaction.metadata?.breakup?.providerCommission ?? 0) / 100,
             },
             previousSchedules: this._getPreviousScheduledDates(booking.previousSlots),
         }

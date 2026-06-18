@@ -291,8 +291,9 @@ export class WalletLedgerRepository extends BaseRepository<WalletLedgerDocument>
                             $cond: [
                                 {
                                     $and: [
-                                        { $eq: ["$userRole", 'customer'] },
-                                        { $eq: ["$direction", PaymentDirection.DEBIT] },
+                                        { $eq: ["$userRole", 'admin'] },
+                                        { $eq: ["$direction", PaymentDirection.CREDIT] },
+                                        { $in: ["$type", [TransactionType.BOOKING_PAYMENT, TransactionType.SUBSCRIPTION_PAYMENT]] },
                                     ]
                                 },
                                 "$amount",
