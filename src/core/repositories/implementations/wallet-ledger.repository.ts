@@ -377,12 +377,8 @@ export class WalletLedgerRepository extends BaseRepository<WalletLedgerDocument>
             {
                 $addFields: {
                     netProfit: {
-                        $subtract: [
-                            "$platformCommission",
-                            "$refundIssued",
-                        ],
+                        $add: ["$platformCommission", "$gstCollected"],
                     },
-
                 }
             },
             {
