@@ -31,9 +31,9 @@ export class NotificationRepository extends BaseRepository<NotificationDocument>
         }).lean();
     }
 
-    async markAsReadById(notificationId: string): Promise<NotificationDocument | null> {
+    async markAsReadById(userId: string, notificationId: string): Promise<NotificationDocument | null> {
         return await this._notificationModel.findOneAndUpdate(
-            { _id: notificationId },
+            { _id: notificationId, userId: this._toObjectId(userId) },
             { $set: { isRead: true } },
             { new: true }
         );
@@ -57,8 +57,11 @@ export class NotificationRepository extends BaseRepository<NotificationDocument>
         return result;
     }
 
-    async deleteById(notificationId: string): Promise<boolean> {
-        const result = await this._notificationModel.deleteOne({ _id: notificationId });
+    async deleteById(userId: string, notificationId: string): Promise<boolean> {
+        const result = await this._notificationModel.deleteOne({
+            _id: notificationId,
+            userId: this._toObjectId(userId)
+        });
         return result.deletedCount > 0;
     }
 

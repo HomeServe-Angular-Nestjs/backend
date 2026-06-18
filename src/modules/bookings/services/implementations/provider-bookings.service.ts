@@ -624,7 +624,7 @@ export class ProviderBookingService implements IProviderBookingService {
             booking.customerId,
             NotificationTemplateId.BOOKING_STATUS_UPDATED,
             NotificationType.EVENT,
-            'Booking Cancelled',
+            'Booking Status Updated',
             `Your booking #${updatedBooking.id.slice(-6)} has been ${newStatus}.`,
             updatedBooking.id,
             { bookingId: updatedBooking.id, role: 'provider' }
@@ -1363,7 +1363,6 @@ export class ProviderBookingService implements IProviderBookingService {
             });
         } catch (error) {
             this.logger.error('Failed to send notification', error);
-            throw new Error('Failed to send notification');
         }
     }
 

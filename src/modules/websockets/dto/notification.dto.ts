@@ -38,6 +38,6 @@ export class SendNewNotificationDto {
 export class TemplateIdDto {
     @IsNotEmpty()
     @IsString()
-    @IsEnum(Object.values(NotificationTemplateId))
+    @IsIn(Object.values(NotificationTemplateId))
     templateId: NotificationTemplateId;
 }

@@ -31,8 +31,8 @@ import { ProviderServiceSchema } from '@core/schema/provider-service.schema';
 import { CART_MODEL_NAME } from '@core/constants/model.constant';
 import { CartSchema } from '@core/schema/cart.schema';
 import { CouponSchema } from '@core/schema/coupon.schema';
-// import dns from 'dns';
-// dns.setServers(['8.8.8.8', '8.8.4.4']);
+import dns from 'dns';
+dns.setServers(['8.8.8.8', '8.8.4.4']);
 
 @Global()
 @Module({

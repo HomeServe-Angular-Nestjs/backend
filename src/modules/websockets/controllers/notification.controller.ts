@@ -65,8 +65,8 @@ export class NotificationController {
     }
 
     @Patch('mark-read/:id')
-    async markRead(@Param('id') notificationId: string):Promise<IResponse<INotification>> {
-        return this._notificationService.markAsReadById(notificationId);
+    async markRead(@User() user: IPayload, @Param('id') notificationId: string): Promise<IResponse<INotification>> {
+        return this._notificationService.markAsReadById(user.sub, notificationId);
     }
 
     @Patch('mark-all-read')
@@ -80,7 +80,7 @@ export class NotificationController {
     }
 
     @Delete(':id')
-    async deleteNotification(@Param('id') notificationId: string):Promise<IResponse<void>> {
-        return this._notificationService.deleteById(notificationId);
+    async deleteNotification(@User() user: IPayload, @Param('id') notificationId: string): Promise<IResponse<void>> {
+        return this._notificationService.deleteById(user.sub, notificationId);
     }
 }
