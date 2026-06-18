@@ -133,7 +133,7 @@ export class ProviderController {
     }
 
     @Get('reschedule-slots')
-    async fetchRescheduleSlots(@User() user: IPayload, @Query() { selectedDate, totalDurationInMinutes }: RescheduleSlotsDto): Promise<IResponse<ISlotUI[]>> {
-        return this._providerServices.fetchSlotsForReschedule(user.sub, new Date(selectedDate), totalDurationInMinutes);
+    async fetchRescheduleSlots(@Query() { providerId, selectedDate, totalDurationInMinutes }: RescheduleSlotsDto): Promise<IResponse<ISlotUI[]>> {
+        return this._providerServices.fetchSlotsForReschedule(providerId, new Date(selectedDate), totalDurationInMinutes);
     }
 }

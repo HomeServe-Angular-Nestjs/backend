@@ -83,7 +83,7 @@ export class ProviderBookingsController {
     }
 
     @Patch('reschedule/:bookingId')
-    async rescheduleBooking(@Param('bookingId', new isValidIdPipe()) bookingId: string, @Body() slotData: SelectedSlotDto): Promise<IResponse<IBookingDetailProvider>> {
-        return await this._providerBookingService.rescheduleBooking(bookingId, slotData);
+    async rescheduleBooking(@User() user: IPayload, @Param('bookingId', new isValidIdPipe()) bookingId: string, @Body() slotData: SelectedSlotDto): Promise<IResponse<IBookingDetailProvider>> {
+        return await this._providerBookingService.rescheduleBooking(user.sub, bookingId, slotData);
     }
 }

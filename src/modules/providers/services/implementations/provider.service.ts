@@ -574,7 +574,9 @@ export class ProviderServices implements IProviderServices {
       0
     );
 
-    const availableSlots = await this._getAvailableSlots(providerId, selectedDate, totalDurationInMinutes);
+    const availableSlots = this._sortSlotsByStartTime(
+      await this._getAvailableSlots(providerId, selectedDate, totalDurationInMinutes)
+    );
 
     return {
       success: true,
@@ -598,7 +600,9 @@ export class ProviderServices implements IProviderServices {
   }
 
   async fetchSlotsForReschedule(providerId: string, selectedDate: Date, totalDurationInMinutes: number): Promise<IResponse<ISlotUI[]>> {
-    const availableSlots = await this._getAvailableSlots(providerId, selectedDate, totalDurationInMinutes);
+    const availableSlots = this._sortSlotsByStartTime(
+      await this._getAvailableSlots(providerId, selectedDate, totalDurationInMinutes)
+    );
 
     return {
       success: true,
@@ -875,7 +879,7 @@ export class ProviderServices implements IProviderServices {
 
     unavailableIntervals.sort((a, b) => a.start - b.start);
 
-    return baseRanges.flatMap(range =>
+    return this._sortSlotsByStartTime(baseRanges.flatMap(range =>
       this._generateSlotsForRange(
         range.startTime,
         range.endTime,
@@ -885,6 +889,12 @@ export class ProviderServices implements IProviderServices {
         30,
         selectedDate
       )
+    ));
+  }
+
+  private _sortSlotsByStartTime(slots: ISlotUI[]): ISlotUI[] {
+    return [...slots].sort((a, b) =>
+      this._timeUtility.timeToMinutes(a.from) - this._timeUtility.timeToMinutes(b.from)
     );
   }
 }

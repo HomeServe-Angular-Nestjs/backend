@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException, } from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable, InternalServerErrorException, NotFoundException, } from '@nestjs/common';
 import { ADMIN_SETTINGS_MAPPER, BOOKING_MAPPER, CUSTOMER_MAPPER, PROVIDER_MAPPER, PROVIDER_SERVICE_MAPPER, SERVICE_OFFERED_MAPPER, TRANSACTION_MAPPER, WALLET_LEDGER_MAPPER, WALLET_MAPPER } from '@core/constants/mappers.constant';
 import { IBookingMapper } from '@core/dto-mapper/interface/bookings.mapper.interface';
 import { BookingErrorCodes, BookingErrorMessages, ErrorCodes, ErrorMessage, PaymentErrorCodes, PaymentErrorMessages, WalletErrorCodes, WalletErrorMessages } from '@core/enum/error.enum';
@@ -984,7 +984,7 @@ export class ProviderBookingService implements IProviderBookingService {
         }
     }
 
-    async rescheduleBooking(bookingId: string, slotData: SelectedSlotDto): Promise<IResponse<IBookingDetailProvider>> {
+    async rescheduleBooking(providerId: string, bookingId: string, slotData: SelectedSlotDto): Promise<IResponse<IBookingDetailProvider>> {
         const bookingDoc = await this._bookingRepository.findById(bookingId);
         if (!bookingDoc) throw new NotFoundException({
             code: ErrorCodes.NOT_FOUND,
@@ -992,6 +992,12 @@ export class ProviderBookingService implements IProviderBookingService {
         });
 
         let booking = this._bookingMapper.toEntity(bookingDoc);
+        if (booking.providerId.toString() !== providerId.toString()) {
+            throw new NotFoundException({
+                code: ErrorCodes.NOT_FOUND,
+                message: ErrorMessage.DOCUMENT_NOT_FOUND,
+            });
+        }
 
         if (booking.bookingStatus === BookingStatus.CANCELLED || booking.bookingStatus === BookingStatus.COMPLETED) {
             throw new BadRequestException({
@@ -1001,12 +1007,29 @@ export class ProviderBookingService implements IProviderBookingService {
         }
 
         const bookingDate = new Date(slotData.date);
-        const bookingOfSameProviderInSameDateDoc = await this._bookingRepository.fetchBookingsByProviderOnSameDate(
-            booking.customerId,
+        if (Number.isNaN(bookingDate.getTime())) {
+            throw new BadRequestException({
+                code: ErrorCodes.BAD_REQUEST,
+                message: 'Invalid booking date'
+            });
+        }
+        bookingDate.setHours(0, 0, 0, 0);
+
+        const expectedArrivalTime = this._timeUtility.apply24hTime(bookingDate, slotData.from);
+        if (expectedArrivalTime <= new Date()) {
+            throw new BadRequestException({
+                code: ErrorCodes.BAD_REQUEST,
+                message: 'Cannot reschedule to a past time'
+            });
+        }
+
+        const bookingOfSameProviderInSameDateDoc = await this._bookingRepository.findAllBookingsByProviderOnSameDate(
             booking.providerId,
             bookingDate
         );
-        const bookingOfSameProviderInSameDate = bookingOfSameProviderInSameDateDoc.map(booking => this._bookingMapper.toEntity(booking));
+        const bookingOfSameProviderInSameDate = bookingOfSameProviderInSameDateDoc
+            .map(existingBooking => this._bookingMapper.toEntity(existingBooking))
+            .filter(existingBooking => existingBooking.id !== bookingId);
 
         const hasConflict = this._hasSlotConflict(
             bookingDate,
@@ -1020,7 +1043,17 @@ export class ProviderBookingService implements IProviderBookingService {
             message: ErrorMessage.SLOT_ALREADY_TAKEN
         });
 
-        const expectedArrivalTime = this._timeUtility.apply24hTime(bookingDate, slotData.from);
+        const isReserved = await this._reservationRepository.isReserved(
+            booking.providerId,
+            slotData.from,
+            slotData.to,
+            bookingDate
+        );
+
+        if (isReserved) throw new ConflictException({
+            code: ErrorCodes.CONFLICT,
+            message: ErrorMessage.SLOT_ALREADY_TAKEN
+        });
 
         const updatedBooking = await this._bookingRepository.rescheduleBooking(bookingId, expectedArrivalTime, {
             date: bookingDate,
@@ -1092,8 +1125,9 @@ export class ProviderBookingService implements IProviderBookingService {
         }
 
         return existingBookings.some(booking => {
-            const existingStart = new Date(booking.slot.from);
-            let existingEnd = new Date(booking.slot.to);
+            const existingDate = new Date(booking.slot.date);
+            const existingStart = this._timeUtility.apply24hTime(existingDate, booking.slot.from);
+            let existingEnd = this._timeUtility.apply24hTime(existingDate, booking.slot.to);
 
             if (existingEnd <= existingStart) {
                 existingEnd.setDate(existingEnd.getDate() + 1);

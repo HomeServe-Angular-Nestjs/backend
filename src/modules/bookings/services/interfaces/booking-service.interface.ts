@@ -1,5 +1,5 @@
 import { IBooking, IBookingDetailCustomer, IBookingResponse, IBookingWithPagination } from '@core/entities/interfaces/booking.entity.interface';
-import { AddReviewDto, IPriceBreakupDto, SaveBookingDto, UpdateBookingDto } from '@modules/bookings/dtos/booking.dto';
+import { AddReviewDto, IPriceBreakupDto, SaveBookingDto, SelectedSlotDto, UpdateBookingDto } from '@modules/bookings/dtos/booking.dto';
 import { IResponse } from '@core/misc/response.util';
 
 export interface IBookingService {
@@ -8,6 +8,7 @@ export interface IBookingService {
     fetchBookingDetails(bookingId: string): Promise<IResponse<IBookingDetailCustomer>>;
     markBookingCancelledByCustomer(customerId: string, bookingId: string, reason: string): Promise<IResponse<IBookingResponse>>;
     updateBooking(bookingDto: UpdateBookingDto): Promise<IResponse<IBookingResponse>>;
+    rescheduleBooking(customerId: string, bookingId: string, slotData: SelectedSlotDto): Promise<IResponse<IBookingDetailCustomer>>;
     addReview(reviewDto: AddReviewDto): Promise<IResponse>;
     canStartVideoCall(customerId: string, providerId: string): Promise<IResponse>;
     fetchPriceBreakup(customerId: string): Promise<IResponse<IPriceBreakupDto>>;

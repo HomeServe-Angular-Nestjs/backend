@@ -11,7 +11,7 @@ import { IProviderRepository } from '@core/repositories/interfaces/provider-repo
 import { IProviderServiceRepository } from '@core/repositories/interfaces/provider-service-repo.interface';
 import { IReservationRepository } from '@core/repositories/interfaces/reservation-repo.interface';
 import { ITransactionRepository } from '@core/repositories/interfaces/transaction-repo.interface';
-import { AddReviewDto, IPriceBreakupDto, SaveBookingDto, UpdateBookingDto } from '@modules/bookings/dtos/booking.dto';
+import { AddReviewDto, IPriceBreakupDto, SaveBookingDto, SelectedSlotDto, UpdateBookingDto } from '@modules/bookings/dtos/booking.dto';
 import { IBookingService } from '@modules/bookings/services/interfaces/booking-service.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { SlotStatusEnum } from '@core/enum/slot.enum';
@@ -107,8 +107,9 @@ export class BookingService implements IBookingService {
         }
 
         return existingBookings.some(booking => {
-            const existingStart = new Date(booking.slot.from);
-            let existingEnd = new Date(booking.slot.to);
+            const existingDate = new Date(booking.slot.date);
+            const existingStart = this._timeUtility.apply24hTime(existingDate, booking.slot.from);
+            let existingEnd = this._timeUtility.apply24hTime(existingDate, booking.slot.to);
 
             if (existingEnd <= existingStart) {
                 existingEnd.setDate(existingEnd.getDate() + 1);
@@ -660,6 +661,104 @@ export class BookingService implements IBookingService {
             message: 'Successfully booked the service',
             data: updatedData
         }
+    }
+
+    async rescheduleBooking(customerId: string, bookingId: string, slotData: SelectedSlotDto): Promise<IResponse<IBookingDetailCustomer>> {
+        const bookingDoc = await this._bookingRepository.findById(bookingId);
+        if (!bookingDoc) throw new NotFoundException({
+            code: ErrorCodes.NOT_FOUND,
+            message: ErrorMessage.DOCUMENT_NOT_FOUND,
+        });
+
+        let booking = this._bookingMapper.toEntity(bookingDoc);
+        if (booking.customerId.toString() !== customerId.toString()) {
+            throw new NotFoundException({
+                code: ErrorCodes.NOT_FOUND,
+                message: ErrorMessage.DOCUMENT_NOT_FOUND,
+            });
+        }
+
+        if (booking.bookingStatus === BookingStatus.CANCELLED || booking.bookingStatus === BookingStatus.COMPLETED) {
+            throw new BadRequestException({
+                code: ErrorCodes.BAD_REQUEST,
+                message: 'Cannot reschedule a cancelled or completed booking'
+            });
+        }
+
+        const bookingDate = new Date(slotData.date);
+        if (Number.isNaN(bookingDate.getTime())) {
+            throw new BadRequestException({
+                code: ErrorCodes.BAD_REQUEST,
+                message: 'Invalid booking date'
+            });
+        }
+        bookingDate.setHours(0, 0, 0, 0);
+
+        const expectedArrivalTime = this._timeUtility.apply24hTime(bookingDate, slotData.from);
+        if (expectedArrivalTime <= new Date()) {
+            throw new BadRequestException({
+                code: ErrorCodes.BAD_REQUEST,
+                message: 'Cannot reschedule to a past time'
+            });
+        }
+
+        const bookingOfSameProviderInSameDateDoc = await this._bookingRepository.findAllBookingsByProviderOnSameDate(
+            booking.providerId,
+            bookingDate
+        );
+        const bookingOfSameProviderInSameDate = bookingOfSameProviderInSameDateDoc
+            .map(existingBooking => this._bookingMapper.toEntity(existingBooking))
+            .filter(existingBooking => existingBooking.id !== bookingId);
+
+        const hasConflict = this._hasSlotConflict(
+            bookingDate,
+            bookingOfSameProviderInSameDate,
+            slotData.from,
+            slotData.to
+        );
+
+        if (hasConflict) throw new BadRequestException({
+            code: ErrorCodes.BAD_REQUEST,
+            message: ErrorMessage.SLOT_ALREADY_TAKEN
+        });
+
+        const isReserved = await this._reservationRepository.isReserved(
+            booking.providerId,
+            slotData.from,
+            slotData.to,
+            bookingDate
+        );
+
+        if (isReserved) throw new ConflictException({
+            code: ErrorCodes.CONFLICT,
+            message: ErrorMessage.SLOT_ALREADY_TAKEN
+        });
+
+        const updatedBooking = await this._bookingRepository.rescheduleBooking(bookingId, expectedArrivalTime, {
+            date: bookingDate,
+            from: slotData.from,
+            to: slotData.to,
+            status: SlotStatusEnum.RELEASED
+        });
+
+        if (!updatedBooking) throw new NotFoundException({
+            code: ErrorCodes.NOT_FOUND,
+            message: ErrorMessage.DOCUMENT_NOT_FOUND,
+        });
+
+        booking = this._bookingMapper.toEntity(updatedBooking);
+
+        await this._sendNotification(
+            booking.providerId.toString(),
+            NotificationTemplateId.BOOKING_RESCHEDULED,
+            NotificationType.EVENT,
+            'Booking Rescheduled',
+            `Booking #${bookingId} has been rescheduled to ${slotData.date} at ${slotData.from}.`,
+            bookingId,
+            { bookingId, role: 'provider' }
+        );
+
+        return await this.fetchBookingDetails(booking.id);
     }
 
     async addReview(addReviewDto: AddReviewDto): Promise<IResponse> {

@@ -14,5 +14,5 @@ export interface IProviderBookingService {
     getReviewData(providerId: string, filters: ReviewFilterDto): Promise<IResponse<IReviewWithPagination>>;
     completeBooking(providerId: string, bookingId: string): Promise<IResponse<IBookingDetailProvider>>;
     canStartVideoCall(providerId: string, customerId: string): Promise<IResponse>;
-    rescheduleBooking(bookingId: string, slotData: SelectedSlotDto): Promise<IResponse<IBookingDetailProvider>>;
+    rescheduleBooking(providerId: string, bookingId: string, slotData: SelectedSlotDto): Promise<IResponse<IBookingDetailProvider>>;
 }

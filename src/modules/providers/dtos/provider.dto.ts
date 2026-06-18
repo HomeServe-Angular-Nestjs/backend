@@ -158,6 +158,10 @@ export class UpdateBufferTimeDto {
 export class RescheduleSlotsDto {
     @IsNotEmpty()
     @IsString()
+    providerId: string;
+
+    @IsNotEmpty()
+    @IsString()
     selectedDate: string;
 
     @IsNotEmpty()
