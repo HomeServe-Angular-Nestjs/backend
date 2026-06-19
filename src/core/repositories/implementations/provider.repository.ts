@@ -69,6 +69,7 @@ export class ProviderRepository extends BaseRepository<ProviderDocument> impleme
         { username: { $regex: filter.search, $options: 'i' } },
         { email: { $regex: filter.search, $options: 'i' } },
         { phone: { $regex: filter.search, $options: 'i' } },
+        { profession: { $regex: filter.search, $options: 'i' } },
       ];
     }
 

@@ -74,11 +74,14 @@ export class AuthMiddleware implements NestMiddleware {
                 const newAccessToken = this.tokenService.generateAccessToken(userId, payload.email, userType);
                 const newRefreshToken = this.tokenService.generateRefreshToken(userId, payload.email, userType);
 
+                const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+
                 res.cookie('access_token', newAccessToken, {
                     httpOnly: true,
                     secure: false,
                     sameSite: 'strict',
                     path: '/',
+                    maxAge: SEVEN_DAYS_MS,
                 });
 
                 res.cookie('refresh_token', newRefreshToken, {
@@ -86,6 +89,7 @@ export class AuthMiddleware implements NestMiddleware {
                     secure: false,
                     sameSite: 'strict',
                     path: '/',
+                    maxAge: SEVEN_DAYS_MS,
                 });
 
                 await attachUserFromToken(newAccessToken);

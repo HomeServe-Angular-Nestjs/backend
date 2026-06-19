@@ -45,7 +45,7 @@ export class NotificationDocument extends Document {
     createdAt: Date;
 
     @Prop({ type: Date })
-    updatedAt: string;
+    updatedAt: Date;
 
     @Prop({ type: String, required: false })
     entityId?: string;

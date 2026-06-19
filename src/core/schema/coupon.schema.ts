@@ -61,7 +61,7 @@ export class CouponDocument extends Document {
 
     @Prop({
         type: Boolean,
-        default: true
+        default: false
     })
     isDeleted: boolean;
 

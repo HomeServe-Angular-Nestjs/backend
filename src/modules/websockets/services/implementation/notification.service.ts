@@ -54,8 +54,8 @@ export class NotificationService implements INotificationService {
         return notificationDoc ? this._notificationMapper.toEntity(notificationDoc) : null;
     }
 
-    async markAsReadById(notificationId: string): Promise<IResponse<INotification>> {
-        const notificationDoc = await this._notificationRepository.markAsReadById(notificationId);
+    async markAsReadById(userId: string, notificationId: string): Promise<IResponse<INotification>> {
+        const notificationDoc = await this._notificationRepository.markAsReadById(userId, notificationId);
         if (!notificationDoc) throw new NotFoundException({
             code: ErrorCodes.NOT_FOUND,
             message: ErrorMessage.NOTIFICATION_NOT_FOUND
@@ -92,8 +92,8 @@ export class NotificationService implements INotificationService {
         return deletedDoc ? this._notificationMapper.toEntity(deletedDoc) : null;
     }
 
-    async deleteById(notificationId: string): Promise<IResponse<void>> {
-        const isDeleted = await this._notificationRepository.deleteById(notificationId);
+    async deleteById(userId: string, notificationId: string): Promise<IResponse<void>> {
+        const isDeleted = await this._notificationRepository.deleteById(userId, notificationId);
         if (!isDeleted) throw new NotFoundException({
             code: ErrorCodes.NOT_FOUND,
             message: ErrorMessage.NOTIFICATION_NOT_FOUND

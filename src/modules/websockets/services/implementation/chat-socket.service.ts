@@ -109,7 +109,7 @@ export class ChatSocketService implements IChatSocketService {
 
                 const unreadMessages = await this._messageRepository.count({
                     chatId: chat.id,
-                    senderId: sender.id,
+                    receiverId: sender.id,
                     isRead: false,
                 });
 

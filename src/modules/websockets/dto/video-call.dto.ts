@@ -7,8 +7,8 @@ export class CallReceiverDto {
 }
 
 export class SignalPayloadDto {
-    @IsIn(['offer', 'answer', 'ice-candidate'])
-    type: 'offer' | 'answer' | 'ice-candidate';
+    @IsIn(['offer', 'answer', 'ice-candidate', 'media-error'])
+    type: 'offer' | 'answer' | 'ice-candidate' | 'media-error';
 
     @IsString()
     targetUserId: string;

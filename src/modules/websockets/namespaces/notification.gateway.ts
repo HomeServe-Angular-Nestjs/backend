@@ -91,8 +91,8 @@ export class NotificationGateway extends BaseSocketGateway {
         await this._customDtoValidatorUtility.validateDto(NotificationIdDto, body);
         const user = this._getClient(client);
 
-        const markedNotification = await this._notificationService.markAsReadById(body.id);
-        if (!markedNotification) {
+        const response = await this._notificationService.markAsReadById(user.id, body.id);
+        if (!response.data) {
             this.logger.error('Failed to update isRead in notification document.');
             throw new NotFoundException({
                 code: ErrorCodes.NOT_FOUND,
@@ -102,7 +102,7 @@ export class NotificationGateway extends BaseSocketGateway {
 
         const senderSockets = await this._userSocketService.getSockets(user.id, namespace);
         for (const socketId of senderSockets) {
-            this.server.to(socketId).emit(MARK_AS_READ, markedNotification);
+            this.server.to(socketId).emit(MARK_AS_READ, response.data);
         }
     }
 
@@ -113,16 +113,12 @@ export class NotificationGateway extends BaseSocketGateway {
 
         const removedNotification = await this._notificationService.deleteByUserIdAndTemplateId(user.id, body.templateId);
         if (!removedNotification) {
-            this.logger.error('Failed to remove in notification of ID: ', body.templateId);
-            throw new NotFoundException({
-                code: ErrorCodes.DATABASE_OPERATION_FAILED,
-                message: 'Failed to remove.'
-            });
+            return;
         }
 
         const senderSockets = await this._userSocketService.getSockets(user.id, namespace);
         for (const socketId of senderSockets) {
-            this.server.to(socketId).emit(MARK_AS_READ, removedNotification.id);
+            this.server.to(socketId).emit(REMOVE_NOTIFICATION, removedNotification.id);
         }
 
     }

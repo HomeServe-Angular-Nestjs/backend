@@ -1,15 +1,16 @@
-import { Body, Controller, Get, Inject, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { CUSTOMER_SERVICE_NAME } from '../../../core/constants/service.constant';
 import { IBookingDetailCustomer, IBookingResponse, IBookingWithPagination } from '../../../core/entities/interfaces/booking.entity.interface';
 import { ICustomLogger } from '../../../core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '../../../core/logger/interface/logger-factory.interface';
 import { IPayload } from '../../../core/misc/payload.interface';
 import { IResponse } from '../../../core/misc/response.util';
-import { AddReviewDto, BookingIdDto, BookingPaginationFilterDto, CancelBookingDto, SaveBookingDto, UpdateBookingDto, UpdateBookingPaymentStatusDto } from '../dtos/booking.dto';
+import { AddReviewDto, BookingIdDto, BookingPaginationFilterDto, CancelBookingDto, SaveBookingDto, SelectedSlotDto, UpdateBookingDto, UpdateBookingPaymentStatusDto } from '../dtos/booking.dto';
 import { IBookingService } from '../services/interfaces/booking-service.interface';
 import { User } from '@core/decorators/extract-user.decorator';
 import { OngoingPaymentGuard } from '@core/guards/ongoing-payment.guard';
 import { ProviderIdDto } from '@modules/customer/dtos/customer.dto';
+import { isValidIdPipe } from '@core/pipes/is-valid-id.pipe';
 
 @Controller('booking')
 export class BookingsController {
@@ -54,6 +55,15 @@ export class BookingsController {
     @Patch('update')
     async updateBooking(@Body() bookingDto: UpdateBookingDto): Promise<IResponse<IBookingResponse>> {
         return await this._bookingService.updateBooking(bookingDto);
+    }
+
+    @Patch('reschedule/:bookingId')
+    async rescheduleBooking(
+        @User() user: IPayload,
+        @Param('bookingId', new isValidIdPipe()) bookingId: string,
+        @Body() slotData: SelectedSlotDto
+    ): Promise<IResponse<IBookingDetailCustomer>> {
+        return await this._bookingService.rescheduleBooking(user.sub, bookingId, slotData);
     }
 
     @Patch('add_review')

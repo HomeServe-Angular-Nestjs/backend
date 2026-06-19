@@ -104,4 +104,15 @@ export class MessageService implements IMessageService {
             data: orderedMessages
         };
     }
+
+    async markMessagesAsRead(chatId: string, userId: string): Promise<void> {
+        await this._messageRepository.updateMany(
+            {
+                chatId: new Types.ObjectId(chatId),
+                receiverId: new Types.ObjectId(userId),
+                isRead: false,
+            },
+            { $set: { isRead: true } }
+        );
+    }
 }

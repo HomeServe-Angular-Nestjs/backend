@@ -12,6 +12,8 @@ import { IVideoCallService } from '@modules/websockets/services/interface/video-
 import { GlobalWsExceptionFilter } from '@core/exception-filters/ws-exception.filters';
 import { IAuthSocketService } from '@modules/websockets/services/interface/auth-socket-service.interface';
 import { IUserSocketStoreService } from '@modules/websockets/services/interface/user-socket-store-service.interface';
+import { IBookingRepository } from '@core/repositories/interfaces/bookings-repo.interface';
+import { BOOKING_REPOSITORY_NAME } from '@core/constants/repository.constant';
 
 const namespace = 'video-call';
 const VIDEO_CALL_UNAVAILABLE = 'video-call:unavailable';
@@ -38,6 +40,8 @@ export class VideoCallGateway extends BaseSocketGateway {
     private readonly _customDtoValidatorUtility: ICustomDtoValidator,
     @Inject(VIDEO_CALL_SERVICE_NAME)
     private readonly _videoCallService: IVideoCallService,
+    @Inject(BOOKING_REPOSITORY_NAME)
+    private readonly _bookingRepository: IBookingRepository,
   ) {
     super();
     this.logger = this._loggerFactory.createLogger(VideoCallGateway.name);
@@ -81,13 +85,45 @@ export class VideoCallGateway extends BaseSocketGateway {
 
   @SubscribeMessage(VIDEO_CALL_INITIATE)
   async handleCallInitiate(@ConnectedSocket() client: Socket, @MessageBody() body: CallReceiverDto) {
-    await this._customDtoValidatorUtility.validateDto(CallReceiverDto, body);
+    this.logger.log(`handleCallInitiate: received from ${client.id}`);
+
+    try {
+      await this._customDtoValidatorUtility.validateDto(CallReceiverDto, body);
+    } catch (err) {
+      this.logger.error(`validateDto failed: ${err.message}`);
+      throw err;
+    }
+
     const user = this._getClient(client);
     const { callee } = body;
+
+    this.logger.log(`callerId=${user.id}, callee=${callee}`);
+
+    // Enforce active booking validation
+    const customerId = user.type === 'customer' ? user.id : callee;
+    const providerId = user.type === 'provider' ? user.id : callee;
+
+    this.logger.log(`booking check: customerId=${customerId}, providerId=${providerId}`);
+
+    let isOngoing: boolean;
+    try {
+      isOngoing = await this._bookingRepository.isAnyBookingOngoing(customerId, providerId);
+    } catch (err) {
+      this.logger.error(`isAnyBookingOngoing threw: ${err.message}`);
+      client.emit(VIDEO_CALL_UNAVAILABLE, { message: 'Booking check failed' });
+      return;
+    }
+
+    if (!isOngoing) {
+      this.logger.warn(`No active booking found - caller=${user.id}, callee=${callee}`);
+      client.emit(VIDEO_CALL_UNAVAILABLE, { message: 'No active booking found with this user' });
+      return;
+    }
 
     // Check if caller is already in a call
     const callerPartner = await this._videoCallService.getUserCallPartner(user.id);
     if (callerPartner) {
+      this.logger.warn(`Caller ${user.id} already in call`);
       client.emit(VIDEO_CALL_UNAVAILABLE, { message: 'You are already in another call' });
       return;
     }
@@ -95,6 +131,7 @@ export class VideoCallGateway extends BaseSocketGateway {
     // Check if callee is already in a call
     const calleePartner = await this._videoCallService.getUserCallPartner(callee);
     if (calleePartner) {
+      this.logger.warn(`Callee ${callee} already in call`);
       client.emit(VIDEO_CALL_UNAVAILABLE, { message: 'User is currently busy' });
       return;
     }
@@ -102,15 +139,17 @@ export class VideoCallGateway extends BaseSocketGateway {
     const roomKey = this._roomKey(callee);
     const socketsInRoom = await this.server.in(roomKey).fetchSockets();
     const socketIds = socketsInRoom.map((s) => s.id);
+    this.logger.log(`callee room=${roomKey}, sockets=${JSON.stringify(socketIds)}`);
 
     if (!socketIds.length) {
+      this.logger.warn(`Callee ${callee} is offline`);
       client.emit(VIDEO_CALL_UNAVAILABLE, { message: 'User is offline' });
       return;
     }
 
-    for (const id of socketIds) {
-      client.to(id).emit(VIDEO_CALL_RINGING, { callerId: user.id });
-    }
+    this.logger.log(`Emitting VIDEO_CALL_RINGING to room ${roomKey}`);
+    this.server.to(roomKey).emit(VIDEO_CALL_RINGING, { callerId: user.id });
+    this.logger.log(`VIDEO_CALL_RINGING sent`);
   }
 
   @SubscribeMessage(VIDEO_CALL_ACCEPT)
@@ -138,12 +177,11 @@ export class VideoCallGateway extends BaseSocketGateway {
     await this._videoCallService.setUserInCall(callerId, callee);
     await this._videoCallService.setUserInCall(callee, callerId);
 
-    for (const id of socketIds) {
-      this.server.to(id).emit(VIDEO_CALL_ACCEPT, {
-        calleeId: callee,
-        calleeType: type,
-      });
-    }
+    this.logger.log(`Emitting VIDEO_CALL_ACCEPT to room ${roomKey}, sockets=${JSON.stringify(socketIds)}`);
+    this.server.to(roomKey).emit(VIDEO_CALL_ACCEPT, {
+      calleeId: callee,
+      calleeType: type,
+    });
 
     this.logger.log(`Call accepted by user ${callee} for caller ${callerId}`);
   }

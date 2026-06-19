@@ -63,19 +63,53 @@ export class CouponRepository extends BaseRepository<CouponDocument> implements 
         )
     }
 
-    async countCoupons(): Promise<number> {
-        return await this._couponModel.countDocuments({ isDeleted: false });
+    async countCoupons(couponFilter?: ICouponFilter): Promise<number> {
+        const matchQuery: FilterQuery<CouponDocument> = { isDeleted: false };
+
+        if (couponFilter) {
+            if (couponFilter.search?.trim()) {
+                matchQuery.$or = [
+                    { couponName: { $regex: couponFilter.search, $options: 'i' } },
+                    { couponCode: { $regex: couponFilter.search, $options: 'i' } },
+                ]
+            }
+
+            if (couponFilter.isActive !== 'all' && couponFilter.isActive !== undefined) {
+                matchQuery.isActive = couponFilter.isActive;
+            }
+
+            if (couponFilter.discountType !== 'all' && couponFilter.discountType !== undefined) {
+                matchQuery.discountType = couponFilter.discountType;
+            }
+
+            if (couponFilter.usageType !== 'all' && couponFilter.usageType !== undefined) {
+                matchQuery.usageType = couponFilter.usageType;
+            }
+
+            if (couponFilter.professionId) {
+                matchQuery.professionId = couponFilter.professionId;
+            }
+
+            if (couponFilter.serviceCategoryId) {
+                matchQuery.serviceCategoryId = couponFilter.serviceCategoryId;
+            }
+        }
+
+        return await this._couponModel.countDocuments(matchQuery);
     }
 
     async deleteCouponById(couponId: string): Promise<boolean> {
-        const result = await this._couponModel.deleteOne({ _id: couponId });
-        return result.deletedCount > 0;
+        const result = await this._couponModel.updateOne(
+            { _id: couponId },
+            { $set: { isDeleted: true, isActive: false } }
+        );
+        return result.modifiedCount > 0;
     }
 
     async toggleStatusById(couponId: string): Promise<boolean> {
         const result = await this._couponModel.updateOne(
             { _id: couponId },
-            [{ $set: { isActive: { $not: "$isActive" } } }]
+            [{ $set: { isActive: { $cond: [{ $eq: ['$isActive', true] }, false, true] } } }]
         );
         return result.modifiedCount > 0;
     }

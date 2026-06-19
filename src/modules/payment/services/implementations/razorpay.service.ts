@@ -395,7 +395,6 @@ export class RazorPaymentService implements IRazorPaymentService {
             });
         } catch (error) {
             this.logger.error('Failed to send notification', error);
-            throw new Error('Failed to send notification');
         }
     }
 

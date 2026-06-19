@@ -10,6 +10,7 @@ export enum ErrorMessage {
     EMAIL_CONFLICT_ERROR = 'User already exists.',
     SERVICE_ALREADY_EXISTS = 'Service already exists',
     PLAN_ALREADY_EXISTS = 'Plan already exists',
+    COUPON_ALREADY_EXISTS = 'Coupon code already exists.',
     DOCUMENT_ALREADY_EXISTS = 'already exists',
     SLOT_ALREADY_TAKEN = 'Slot already taken.',
     PROVIDER_CONFLICT_IN_CART = 'You can only book on provider\'s services at a time.',
