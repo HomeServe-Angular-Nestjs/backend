@@ -1,12 +1,20 @@
 import { OTP_REPOSITORY_INTERFACE_NAME } from '@core/constants/repository.constant';
-import { MAILER_UTILITY_INTERFACE_NAME } from '@core/constants/utility.constant';
+import { MAIL_SERVICE } from '@core/constants/service.constant';
 import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
-import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
+import {
+  ILoggerFactory,
+  LOGGER_FACTORY,
+} from '@core/logger/interface/logger-factory.interface';
 import { IOtpRepository } from '@core/repositories/interfaces/otp-repo.interface';
-import { IMailerUtility } from '@core/utilities/interface/mailer.utility.interface';
+import { IMailService } from '@core/services/mail/mail.service.interface';
 import { IOtpService } from '@modules/auth/services/interfaces/otp-service.interface';
-import { BadRequestException, Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 
 @Injectable()
 export class OtpService implements IOtpService {
@@ -15,8 +23,8 @@ export class OtpService implements IOtpService {
   constructor(
     @Inject(OTP_REPOSITORY_INTERFACE_NAME)
     private readonly otpRepository: IOtpRepository,
-    @Inject(MAILER_UTILITY_INTERFACE_NAME)
-    private readonly mailerService: IMailerUtility,
+    @Inject(MAIL_SERVICE)
+    private readonly mailService: IMailService,
     @Inject(LOGGER_FACTORY)
     private readonly loggerFactory: ILoggerFactory,
   ) {
@@ -24,7 +32,7 @@ export class OtpService implements IOtpService {
   }
 
   private generateOtp(): string {
-    return (Math.floor(1000 + Math.random() * 9000)).toString();
+    return Math.floor(1000 + Math.random() * 9000).toString();
   }
 
   async generateAndSendOtp(email: string): Promise<void> {
@@ -42,7 +50,7 @@ export class OtpService implements IOtpService {
     }
 
     try {
-      await this.mailerService.sendEmail(email, code, 'otp');
+      await this.mailService.sendEmail(email, code, 'otp');
     } catch (error) {
       this.logger.error(
         `Failed to send OTP email to ${email}.`,
