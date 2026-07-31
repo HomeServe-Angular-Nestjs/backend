@@ -1,4 +1,4 @@
-name: CI/CD – Deploy NestJS Backend (pnpm) to EC2
+name: CI/CD – Deploy NestJS Backend (pnpm) to Render
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  build-and-deploy:
+  ci-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -20,14 +20,14 @@ jobs:
         with:
           node-version: 20
 
-      # 3️⃣ Setup pnpm (THIS FIXES YOUR ERROR)
+      # 3️⃣ Setup pnpm
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
         with:
           version: 9
           run_install: false
 
-      # 4️⃣ Install dependencies (dev + prod)
+      # 4️⃣ Install dependencies
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
@@ -35,38 +35,17 @@ jobs:
       - name: Run tests
         run: pnpm test -- --passWithNoTests
 
-      # 6️⃣ Build NestJS app
+      # 6️⃣ Build NestJS app (validates the deploy won't break)
       - name: Build application
         run: pnpm build
 
-      - name: Debug build output
+      # 7️⃣ Trigger Render deployment via Deploy Hook
+      # Get the hook URL: Render Dashboard → your service → Settings → Deploy Hook
+      # Store it as a GitHub secret named RENDER_DEPLOY_HOOK_URL
+      - name: Trigger Render deployment
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
         run: |
-          pwd
-          ls -la
-          ls -la dist || echo "❌ dist not found"
-
-      # 7️⃣ Upload build artifacts to EC2
-      - name: Upload build to EC2
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          debug: true
-          source: "dist/**,package.json,pnpm-lock.yaml"
-          target: /home/ubuntu/backend
-
-      # 8️⃣ Install prod deps & restart PM2
-      - name: Install prod deps & restart PM2
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            cd /home/ubuntu/backend
-            corepack enable
-            corepack prepare pnpm@9 --activate
-            pnpm install --prod --frozen-lockfile
-            pm2 restart homeserve_backend || pm2 start dist/src/main.js --name homeserve_backend
-            pm2 save
+          curl --fail --silent --show-error \
+            --request POST \
+            --url "$RENDER_DEPLOY_HOOK_URL"

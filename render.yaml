@@ -1,0 +1,77 @@
+# Render Blueprint for the HomeServe backend.
+# Docs: https://render.com/docs/blueprint-spec
+# After first push, create the service from this file:
+#   Render Dashboard → New → Blueprint Instance → select this repo
+# Then fill the `sync: false` (secret) env vars and set the Deploy Hook in GitHub secrets.
+
+services:
+  - type: web
+    name: homeserve-backend
+    runtime: node
+    plan: free
+    region: oregon
+    rootDir: .
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm build
+    startCommand: node dist/src/main.js
+    autoDeploy: false
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: FRONTEND_URL
+        value: https://homeserve.msajid.space
+      - key: BACKEND_URL
+        value: https://api.homeserve.msajid.space
+      - key: ALLOWED_URLS
+        value: http://localhost:4200,https://homeserve.msajid.space
+      - key: VERIFICATION_LINK
+        value: https://api.homeserve.msajid.space/api/verify_email
+      - key: JWT_ACCESS_EXPIRES_IN
+        value: 15m
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: 7d
+      - key: GOOGLE_CALLBACK_URL
+        value: https://api.homeserve.msajid.space/api/login/google/redirect
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: "465"
+      - key: SMTP_USER
+        value: sajid189210@gmail.com
+      - key: SMTP_FROM
+        value: HomeServe sajid189210@gmail.com
+      - key: CLOUDINARY_NAME
+        value: drhrf2oc5
+      - key: REDIS_TLS
+        value: "false"
+      - key: REDIS_TTL
+        value: "604800"
+      - key: MULTI_INSTANCE
+        value: "true"
+      - key: RAZORPAY_KEY_ID
+        value: rzp_test_OZVJGxiPWQgDaM
+
+      # Secrets — set these manually in the Render Dashboard (Environment → Environment Variables)
+      - key: MONGO_URI
+        sync: false
+      - key: SESSION_SECRET
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: JWT_VERIFICATION_SECRET
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: CLOUDINARY_KEY
+        sync: false
+      - key: CLOUDINARY_SECRET
+        sync: false
+      - key: REDIS_PASSWORD
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
