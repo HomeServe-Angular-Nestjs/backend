@@ -1,5 +1,6 @@
 import { JwtConfigModule } from '@configs/jwt/jwt.module';
 import { RedisModule } from '@configs/redis/redis.module';
+import { MailModule } from '@core/services/mail/mail.module';
 import { LoginController } from '@modules/auth/controllers/login.controller';
 import { SignUpController } from '@modules/auth/controllers/signup.controller';
 import { repositoryProvider } from '@modules/auth/providers/repositories.provider';
@@ -15,7 +16,8 @@ import { SharedModule } from '@shared/shared.module';
     PassportModule.register({ session: true }),
     JwtConfigModule,
     RedisModule,
-    SharedModule
+    SharedModule,
+    MailModule,
   ],
   controllers: [SignUpController, LoginController],
   providers: [

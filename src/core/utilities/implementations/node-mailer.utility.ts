@@ -3,12 +3,20 @@ import { createTransport, SendMailOptions, Transporter } from 'nodemailer';
 import { Inject, Injectable } from '@nestjs/common';
 
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
-import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
+import {
+  ILoggerFactory,
+  LOGGER_FACTORY,
+} from '@core/logger/interface/logger-factory.interface';
 
-import { IMailerUtility } from '../interface/mailer.utility.interface';
+import { IMailService } from '@core/services/mail/mail.service.interface';
+
+import {
+  buildEmailHtml,
+  buildEmailSubject,
+} from '../../services/mail/email-template';
 
 @Injectable()
-export class MailerUtility implements IMailerUtility {
+export class NodeMailerUtility implements IMailService {
   private readonly logger: ICustomLogger;
   private mailTransporter!: Transporter;
 
@@ -16,7 +24,7 @@ export class MailerUtility implements IMailerUtility {
     @Inject(LOGGER_FACTORY)
     private readonly loggerFactory: ILoggerFactory,
   ) {
-    this.logger = this.loggerFactory.createLogger(MailerUtility.name);
+    this.logger = this.loggerFactory.createLogger(NodeMailerUtility.name);
     this.initializeMailTransPorter();
   }
 
@@ -47,20 +55,8 @@ export class MailerUtility implements IMailerUtility {
         address: process.env.SMTP_FROM as string,
       },
       to,
-      subject:
-        type === 'otp'
-          ? 'Registration OTP'
-          : type === 'link'
-            ? 'Verification Link'
-            : `${type}`,
-      html: `
-            <p>You may verify your account using the ${type} below: 
-                <span style="${type === 'link' ? 'font-size: 16px; font-weight: 700;' : 'font-size:24px; font-weight: 700;'}">
-                ${type === 'link' ? process.env.VERIFICATION_LINK + '?verification_token=' + item : item}
-                </span>
-            </p>  <br>    
-            <p>Regards, <br> HomeServe</p>
-            `,
+      subject: buildEmailSubject(type),
+      html: buildEmailHtml(type, item),
     };
 
     try {

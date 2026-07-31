@@ -26,6 +26,7 @@
     "seed_admin:prod": "pnpm exec cross-env NODE_ENV=production node dist/src/main.js seed:admin"
   },
   "dependencies": {
+    "@getbrevo/brevo": "^6.0.2",
     "@nestjs-modules/mailer": "^2.0.2",
     "@nestjs/axios": "^4.0.0",
     "@nestjs/cache-manager": "^3.0.1",
