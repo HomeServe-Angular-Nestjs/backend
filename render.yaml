@@ -11,7 +11,7 @@ services:
     plan: free
     region: oregon
     rootDir: .
-    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm build
+    buildCommand: NODE_ENV=development pnpm install --frozen-lockfile && pnpm build
     startCommand: node dist/src/main.js
     autoDeploy: false
     envVars:
