@@ -6,7 +6,7 @@ import { IMailerUtility } from '../interface/mailer.utility.interface';
 
 @Injectable()
 export class MailerUtility implements IMailerUtility {
-  private mailTransporter: Transporter;
+  private mailTransporter!: Transporter;
 
   constructor() {
     this.initializeMailTransPorter();

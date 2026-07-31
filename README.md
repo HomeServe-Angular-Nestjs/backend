@@ -1,98 +1,120 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# HomeServe Backend — NestJS API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+REST API and real-time gateway layer for the HomeServe home services marketplace. Built with **NestJS 11**, **MongoDB (Mongoose)**, **Redis**, and **Socket.IO**, exposing the business logic for the Customer, Provider, and Admin portals.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Features
 
-## Description
+- **Authentication & Authorization** — JWT access/refresh tokens, Google OAuth (Passport), email OTP verification, argon2 password hashing, role-based guards, Redis-backed sessions.
+- **Booking Engine** — Slot-based bookings with slot reservations, rescheduling and cancellation flows, availability rules (default schedules, date overrides, slot rules).
+- **Commerce** — Cart, coupon engine, Razorpay payment integration, subscription plans, dual wallets (customer refunds / provider earnings) with withdrawal requests.
+- **Real-Time** — Namespaced Socket.IO gateways for chat, notifications, slot reservations, and video-call signaling; Redis socket adapter for multi-instance scaling; authenticated socket handshakes.
+- **Reports & Invoices** — Server-side PDF generation with Puppeteer (users, bookings, transaction reports; booking invoices).
+- **Admin Governance** — KYC approval workflows, category/profession/service management, user and transaction oversight, complaint handling.
+- **Media & Email** — Cloudinary uploads, Nodemailer with Handlebars templates.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Tech Stack
 
-## Project setup
+| Concern | Technology |
+| --- | --- |
+| Runtime | Node.js, NestJS 11, Express, TypeScript |
+| Database | MongoDB 8 (Mongoose 8) |
+| Caching / Sessions | Redis (cache-manager, connect-redis, `@socket.io/redis-adapter`) |
+| Auth | Passport (JWT, Local, Google OAuth 2.0), jsonwebtoken, argon2 |
+| Real-Time | Socket.IO |
+| Payments | Razorpay |
+| Files | Cloudinary, multer, streamifier |
+| Email | Nodemailer, @nestjs-modules/mailer, Handlebars |
+| PDF | Puppeteer |
+| Dates | Luxon |
+| Testing | Jest, Supertest, mongodb-memory-server |
 
-```bash
-$ pnpm install
+## Project Structure
+
+```
+src/
+├── core/              # Guards, interceptors, shared services (PDF, mail, uploads)
+├── configs/           # Environment and module configuration
+├── modules/
+│   ├── auth/                  # Authentication (JWT, OAuth, OTP)
+│   ├── users/                 # Customer and admin domain
+│   ├── providers/             # Provider domain, KYC, approvals
+│   ├── provider-service/      # Provider service catalog
+│   ├── category/              # Categories, professions, services
+│   ├── bookings/              # Booking lifecycle, invoices
+│   ├── slots/                 # Slot management
+│   ├── availability/          # Default schedules, date overrides, slot rules
+│   ├── cart/                  # Cart management
+│   ├── coupons/               # Discount engine
+│   ├── payment/               # Razorpay integration
+│   ├── plans/                 # Subscription plans
+│   ├── subscriptions/         # User subscriptions
+│   ├── wallet/                # Wallets and withdrawals
+│   ├── reports/               # Reporting and analytics endpoints
+│   └── websockets/            # Chat, notification, reservation, video-call gateways
+├── shared/            # Reusable DTOs, enums, utilities
+├── seed/              # Seed scripts
+└── main.ts
 ```
 
-## Compile and run the project
+Each module follows a layered architecture: **controllers → services (interface + implementation) → repositories**, with DTO validation via `class-validator`.
+
+## Getting Started
+
+### Prerequisites
+- Node.js ≥ 20 and pnpm
+- MongoDB instance
+- Redis instance
+- Keys for Razorpay, Cloudinary, Google OAuth, and an SMTP account
+
+### Setup
 
 ```bash
-# development
-$ pnpm run start
-
-# watch mode
-$ pnpm run start:dev
-
-# production mode
-$ pnpm run start:prod
+pnpm install
+cp .env.development .env   # or .env.production; fill in your values
+pnpm run start:dev         # hot-reload dev server
 ```
 
-## Run tests
+### Environment Variables
 
-```bash
-# unit tests
-$ pnpm run test
+| Group | Variables |
+| --- | --- |
+| Server | `PORT`, `NODE_ENV`, `FRONTEND_URL`, `BACKEND_URL`, `ALLOWED_URLS`, `VERIFICATION_LINK` |
+| Database | `MONGO_URI` |
+| JWT | `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `JWT_VERIFICATION_SECRET`, `JWT_ACCESS_EXPIRES_IN`, `JWT_REFRESH_EXPIRES_IN` |
+| Session | `SESSION_SECRET`, `MULTI_INSTANCE` |
+| Google OAuth | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL` |
+| SMTP | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` |
+| Cloudinary | `CLOUDINARY_NAME`, `CLOUDINARY_KEY`, `CLOUDINARY_SECRET` |
+| Redis | `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`, `REDIS_TLS`, `REDIS_TTL` |
+| Razorpay | `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` |
+| Admin seed | `ADMIN_EMAIL`, `ADMIN_PASSWORD` |
 
-# e2e tests
-$ pnpm run test:e2e
+## Scripts
 
-# test coverage
-$ pnpm run test:cov
-```
+| Script | Purpose |
+| --- | --- |
+| `pnpm run start` | Run the server |
+| `pnpm run start:dev` | Run with hot reload (ts-node-dev) |
+| `pnpm run start:prod` | Run the compiled production build |
+| `pnpm run build` | Compile with Nest CLI |
+| `pnpm run lint` | ESLint with autofix |
+| `pnpm run test` | Unit tests (Jest) |
+| `pnpm run test:e2e` | e2e tests (Jest + Supertest) |
+| `pnpm run test:cov` | Test coverage report |
+| `pnpm run seed:admin` | Seed the admin account |
+| `pnpm run console` | Interactive console |
 
 ## Deployment
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+Build the production bundle and run it with `NODE_ENV=production`:
 
 ```bash
-$ pnpm install -g mau
-$ mau deploy
+pnpm run build
+pnpm run start:prod
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+The API expects a MongoDB instance and a Redis instance (required for sessions, caching, and the Socket.IO adapter when `MULTI_INSTANCE` is enabled).
 
 ## License
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+Private / UNLICENSED.
