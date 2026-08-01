@@ -26,6 +26,14 @@ export interface ISubscription extends IEntity {
     metadata?: Record<string, any>;
 }
 
+export interface ISubscriptionUpgradeAmount {
+    upgradeAmount: number;
+    creditAmount: number;
+    monthlyPrice: number;
+    yearlyPrice: number;
+    daysUsed: number;
+}
+
 export interface IAdminSubscriptionList {
     subscriptionId: string;
     user: {

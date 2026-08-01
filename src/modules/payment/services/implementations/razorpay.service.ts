@@ -528,6 +528,12 @@ export class RazorPaymentService implements IRazorPaymentService {
                 verifyData
             );
 
+            // If this is a monthly -> yearly upgrade, cancel the previous
+            // subscription only after the payment is fully verified.
+            if (subscription.metadata?.previousSubscriptionId) {
+                await this._subscriptionRepository.cancelSubscriptionByUserId(userId, role);
+            }
+
             const updatePaymentStatus = await this._subscriptionRepository.updatePaymentStatus(orderData.subscriptionId, PaymentStatus.PAID);
             if (!updatePaymentStatus) {
                 this.logger.error('Failed to update payment status for subscription payment.');

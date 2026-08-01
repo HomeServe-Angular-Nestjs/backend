@@ -12,6 +12,7 @@ export interface ISubscriptionRepository extends IBaseRepository<SubscriptionDoc
     count(): Promise<number>;
     findFilteredSubscriptionWithPagination(filters: ISubscriptionFilters, options?: { page?: number, limit?: number }): Promise<IAdminSubscriptionList[]>;
     findActiveSubscriptionByUserId(userId: string, userType: string): Promise<SubscriptionDocument | null>;
+    findAllSubscriptionsByUserId(userId: string, userType: string): Promise<SubscriptionDocument[]>;
     findSubscription(userId: string, userType: string): Promise<SubscriptionDocument | null>;
     updatePaymentStatus(subscriptionId: string, status: PaymentStatus): Promise<boolean>;
     cancelSubscriptionByUserId(userId: string, userType: string): Promise<boolean>;

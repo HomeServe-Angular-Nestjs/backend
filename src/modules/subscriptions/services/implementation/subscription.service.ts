@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PLAN_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SUBSCRIPTION_REPOSITORY_NAME } from '@/core/constants/repository.constant';
-import { IAdminFilteredSubscriptionListWithPagination, IAdminSubscriptionList, ISubscription, ISubscriptionFilters, SubscriptionStatusType } from '@/core/entities/interfaces/subscription.entity.interface';
+import { IAdminFilteredSubscriptionListWithPagination, IAdminSubscriptionList, ISubscription, ISubscriptionFilters, ISubscriptionUpgradeAmount, SubscriptionStatusType } from '@/core/entities/interfaces/subscription.entity.interface';
 import { ErrorCodes, ErrorMessage } from '@/core/enum/error.enum';
 import { IResponse } from '@/core/misc/response.util';
 import { IPlanRepository } from '@/core/repositories/interfaces/plans-repo.interface';
@@ -69,7 +69,7 @@ export class SubscriptionService implements ISubscriptionService {
         return { email: userDoc.email, role: userType };
     }
 
-    private _calculateUpgradeAmount(monthlyPrice: number, yearlyPrice: number, startDateStr: string): number {
+    private _calculateUpgradeAmount(monthlyPrice: number, yearlyPrice: number, startDateStr: string): ISubscriptionUpgradeAmount {
         const startDate = new Date(startDateStr);
         const today = new Date();
 
@@ -78,20 +78,30 @@ export class SubscriptionService implements ISubscriptionService {
         today.setHours(0, 0, 0, 0);
 
         const msInDay = 1000 * 60 * 60 * 24;
-        const daysUsed = Math.floor((today.getTime() - startDate.getTime()) / msInDay);
+        const daysUsed = Math.max(Math.floor((today.getTime() - startDate.getTime()) / msInDay), 0);
 
-        // within 7 days, subtract full monthly
+        let creditAmount: number;
+
+        // within 7 days, credit full monthly
         if (daysUsed < 7) {
-            return yearlyPrice - monthlyPrice;
+            creditAmount = monthlyPrice;
+        } else {
+            // after 7 days, credit only unused portion
+            const totalDaysInMonth = 30;
+            const unusedDays = Math.max(totalDaysInMonth - daysUsed, 0);
+            const perDayPrice = monthlyPrice / totalDaysInMonth;
+            creditAmount = unusedDays * perDayPrice;
         }
 
-        // after 7 days, subtract only unused portion
-        const totalDaysInMonth = 30;
-        const unusedDays = Math.max(totalDaysInMonth - daysUsed, 0);
-        const perDayPrice = monthlyPrice / totalDaysInMonth;
-        const creditAmount = unusedDays * perDayPrice;
+        const upgradeAmount = Math.floor(yearlyPrice - creditAmount);
 
-        return Math.floor(yearlyPrice - creditAmount);
+        return {
+            upgradeAmount,
+            creditAmount,
+            monthlyPrice,
+            yearlyPrice,
+            daysUsed
+        };
     }
 
     private _getSubscriptionEndDateAndStartDate(duration: PlanDurationEnum): { startTime: Date; endDate: Date } {
@@ -218,7 +228,21 @@ export class SubscriptionService implements ISubscriptionService {
         }
     }
 
-    async getUpgradeAmount(role: UserType, currentSubscriptionId: string): Promise<IResponse<number>> {
+    async fetchSubscriptionHistory(userId: string, role: PlanRoleEnum): Promise<IResponse<ISubscription[]>> {
+        const subscriptions = await this._subscriptionRepository.findAllSubscriptionsByUserId(userId, role);
+
+        const history = subscriptions
+            .filter(subscription => subscription.paymentStatus !== PaymentStatus.UNPAID)
+            .map(subscription => this._subscriptionMapper.toEntity(subscription));
+
+        return {
+            success: true,
+            message: 'Subscription history fetched successfully.',
+            data: history
+        }
+    }
+
+    async getUpgradeAmount(role: UserType, currentSubscriptionId: string): Promise<IResponse<ISubscriptionUpgradeAmount>> {
         const currentSubscriptionDocument = await this._subscriptionRepository.fetchCurrentActiveSubscription(currentSubscriptionId);
 
         if (!currentSubscriptionDocument) {
@@ -242,10 +266,11 @@ export class SubscriptionService implements ISubscriptionService {
 
         const yearlyPlan = this._planMapper.toEntity(yearlyPlanDocument);
 
-        const yearlyPrice = yearlyPlan.price;
-        const monthlyPrice = currentSubscription.price;
-
-        const upgradeAmount = this._calculateUpgradeAmount(monthlyPrice, yearlyPrice, currentSubscription.startTime.toString());
+        const upgradeAmount = this._calculateUpgradeAmount(
+            currentSubscription.price,
+            yearlyPlan.price,
+            currentSubscription.startTime.toString()
+        );
 
         return {
             success: true,
@@ -269,11 +294,20 @@ export class SubscriptionService implements ISubscriptionService {
         }
 
         try {
-            const isSubscriptionExists = await this._subscriptionRepository.findActiveSubscriptionByUserId(userId, userType);
-            if (!isSubscriptionExists) {
+            const currentSubscriptionDocument = await this._subscriptionRepository.findActiveSubscriptionByUserId(userId, userType);
+            if (!currentSubscriptionDocument) {
                 throw new BadRequestException({
                     code: ErrorCodes.BAD_REQUEST,
                     message: 'You are not subscribed to any plans. Please subscribe a plan to upgrade.'
+                });
+            }
+
+            const currentSubscription = this._subscriptionMapper.toEntity(currentSubscriptionDocument);
+
+            if (currentSubscription.duration === 'yearly') {
+                throw new BadRequestException({
+                    code: ErrorCodes.BAD_REQUEST,
+                    message: 'Yearly subscription cannot be upgraded. Transitions are locked until the current term expires.'
                 });
             }
 
@@ -282,11 +316,26 @@ export class SubscriptionService implements ISubscriptionService {
                 throw new NotFoundException(ErrorMessage.DOCUMENT_NOT_FOUND);
             }
 
-            const cancelled = await this._subscriptionRepository.cancelSubscriptionByUserId(userId, userType);
-            if (!cancelled) throw new NotFoundException({
+            if (plan.duration !== 'yearly') {
+                throw new BadRequestException({
+                    code: ErrorCodes.BAD_REQUEST,
+                    message: 'Upgrade is only available from a monthly to a yearly plan.'
+                });
+            }
+
+            const yearlyPlanDocument = await this._planRepository.findOne({ role: userType, duration: 'yearly' });
+            if (!yearlyPlanDocument) throw new NotFoundException({
                 code: ErrorCodes.NOT_FOUND,
-                message: 'Failed to cancel subscription.'
+                messages: ErrorMessage.PLAN_NOT_FOUND
             });
+
+            const yearlyPlan = this._planMapper.toEntity(yearlyPlanDocument);
+
+            const { upgradeAmount, creditAmount } = this._calculateUpgradeAmount(
+                currentSubscription.price,
+                yearlyPlan.price,
+                currentSubscription.startTime.toString()
+            );
 
             const { startTime, endDate } = this._getSubscriptionEndDateAndStartDate(plan.duration);
             const newSubscription = await this._subscriptionRepository.create(
@@ -305,6 +354,13 @@ export class SubscriptionService implements ISubscriptionService {
                     cancelledAt: null,
                     endDate,
                     startTime,
+                    metadata: {
+                        previousSubscriptionId: currentSubscription.id,
+                        convertedFromDuration: currentSubscription.duration,
+                        creditAmount,
+                        upgradeAmount,
+                        convertedAt: new Date()
+                    }
                 })
             );
 

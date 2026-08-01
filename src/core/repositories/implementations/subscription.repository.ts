@@ -116,6 +116,16 @@ export class SubscriptionRepository extends BaseRepository<SubscriptionDocument>
         );
     }
 
+    async findAllSubscriptionsByUserId(userId: string, userType: string): Promise<SubscriptionDocument[]> {
+        return await this._subscriptionModel.find(
+            {
+                userId: this._toObjectId(userId),
+                role: userType,
+                isDeleted: false
+            }
+        ).sort({ createdAt: -1 });
+    }
+
     async findSubscriptionById(subscriptionId: string): Promise<SubscriptionDocument | null> {
         return await this._subscriptionModel.findOne({ _id: subscriptionId });
     }
@@ -130,7 +140,7 @@ export class SubscriptionRepository extends BaseRepository<SubscriptionDocument>
                 _id: subscriptionId,
                 isActive: true,
                 isDeleted: false,
-                endDate: { $lte: new Date() }
+                endDate: { $gte: new Date() }
             }
         );
     }
