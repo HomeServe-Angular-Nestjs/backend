@@ -1,6 +1,6 @@
-import { RevenueChartView, IRevenueTrendData, IRevenueMonthlyGrowthRateData, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData, ILocationRevenue, ITopAreaRevenue, IUnderperformingArea, IPeakServiceTime } from "@core/entities/interfaces/booking.entity.interface";
+import { RevenueChartView, IRevenueTrendData, IRevenueMonthlyGrowthRateData, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData, ILocationRevenue, ITopAreaRevenue, IUnderperformingArea, IPeakServiceTime, IAreaAnalyticsBundle } from "@core/entities/interfaces/booking.entity.interface";
 import { IDisputeAnalytics } from "@core/entities/interfaces/report.entity.interface";
-import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderPerformanceOverview, IProviderRevenueOverview, IResponseTimeChartData, IReviewChartData } from "@core/entities/interfaces/user.entity.interface";
+import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderPerformanceOverview, IProviderRevenueOverview, IResponseTimeChartData, IReviewChartData, IPerformanceAnalyticsBundle, IRevenueAnalyticsBundle } from "@core/entities/interfaces/user.entity.interface";
 import { IResponse } from "@core/misc/response.util";
 
 export interface IProviderAnalyticsService {
@@ -31,4 +31,10 @@ export interface IProviderAnalyticsService {
     getTopAreasRevenue(providerId: string): Promise<IResponse<ITopAreaRevenue[]>>;
     getUnderperformingAreas(providerId: string): Promise<IResponse<IUnderperformingArea[]>>;
     getPeakServiceTime(providerId: string): Promise<IResponse<IPeakServiceTime[]>>;
+
+    // ------------ Analytics Resource Bundles ------------
+
+    getPerformanceBundle(providerId: string): Promise<IResponse<IPerformanceAnalyticsBundle>>;
+    getRevenueBundle(providerId: string, view: RevenueChartView): Promise<IResponse<IRevenueAnalyticsBundle>>;
+    getAreaBundle(providerId: string): Promise<IResponse<IAreaAnalyticsBundle>>;
 }

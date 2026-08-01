@@ -4,7 +4,8 @@ import { AvailabilityEnum } from '@core/enum/slot.enum';
 import { SlotType } from '../../../modules/bookings/dtos/booking.dto';
 import { IBaseUserEntity } from '../base/interfaces/base-user.entity.interface';
 import { IAdmin } from './admin.entity.interface';
-import { IBookingsBreakdown, IPagination, IRatingDistribution, IRecentReviews, IRevenueBreakdown, IReview, ISlot } from './booking.entity.interface';
+import { IDisputeAnalytics } from './report.entity.interface';
+import { IBookingsBreakdown, INewOrReturningClientData, IPagination, IRatingDistribution, IRecentReviews, IRevenueBreakdown, IRevenueCompositionData, IRevenueMonthlyGrowthRateData, IRevenueTrendData, IReview, ISlot, ITopServicesByRevenue } from './booking.entity.interface';
 
 export type UserType = 'customer' | 'provider' | 'admin';
 export type ClientUserType = Exclude<UserType, 'admin'>;
@@ -271,6 +272,36 @@ export interface IProviderRevenueOverview {
   revenueGrowth: number;
   completedTransactions: number;
   avgTransactionValue: number;
+}
+
+// ----------- Analytics Resource Bundles ------------
+
+export interface IPerformanceAnalyticsBundle {
+  summary: { performanceAnalytics: IProviderPerformanceOverview };
+  bookings: {
+    bookingOverview: IBookingPerformanceData[];
+    trends: IReviewChartData;
+  };
+  quality: {
+    responseTimeDistribution: IResponseTimeChartData[];
+    onTimeArrival: IOnTimeArrivalChartData[];
+    monthlyDisputeStats: IDisputeAnalytics[];
+  };
+  comparison: {
+    comparisonOverview: IComparisonOverviewData;
+    comparisonStats: IComparisonChartData[];
+  };
+}
+
+export interface IRevenueAnalyticsBundle {
+  summary: { revenueOverview: IProviderRevenueOverview };
+  trends: { trend: IRevenueTrendData };
+  growth: {
+    monthlyGrowth: IRevenueMonthlyGrowthRateData[];
+    composition: IRevenueCompositionData[];
+    topServices: ITopServicesByRevenue[];
+  };
+  clients: { newAndReturning: INewOrReturningClientData[] };
 }
 
 export interface IProviderDashboardOverview {

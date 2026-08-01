@@ -9,6 +9,7 @@ export interface ISubscriptionService {
     fetchSubscription(userId: string, role: PlanRoleEnum): Promise<IResponse<ISubscription | null>>;
     getUpgradeAmount(role: UserType, currentSubscriptionId: string): Promise<IResponse<ISubscriptionUpgradeAmount>>;
     fetchSubscriptionHistory(userId: string, role: PlanRoleEnum): Promise<IResponse<ISubscription[]>>;
+    fetchLatestSubscription(userId: string, role: PlanRoleEnum): Promise<IResponse<ISubscription | null>>;
     upgradeSubscription(userId: string, userType: UserType, createSubscriptionDto: CreateSubscriptionDto): Promise<IResponse<ISubscription>>;
     updatePaymentStatus(userId: string, userType: UserType, data: UpdatePaymentStatusDto): Promise<IResponse>;
     removeSubscription(subscriptionId: string): Promise<IResponse>;

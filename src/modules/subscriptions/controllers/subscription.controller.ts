@@ -41,6 +41,11 @@ export class SubscriptionController {
         return await this._subscriptionService.fetchSubscriptionHistory(user.sub, user.type as PlanRoleEnum);
     }
 
+    @Get('latest')
+    async fetchLatestSubscription(@User() user: IPayload): Promise<IResponse<ISubscription | null>> {
+        return await this._subscriptionService.fetchLatestSubscription(user.sub, user.type as PlanRoleEnum);
+    }
+
     @Get('lists')
     async fetchSubscriptionList(@Query() query: SubscriptionFiltersDto): Promise<IResponse<IAdminFilteredSubscriptionListWithPagination>> {
         return await this._subscriptionService.fetchSubscriptionList(query);

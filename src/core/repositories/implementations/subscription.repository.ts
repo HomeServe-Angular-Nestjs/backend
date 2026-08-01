@@ -107,11 +107,16 @@ export class SubscriptionRepository extends BaseRepository<SubscriptionDocument>
     }
 
     async findSubscription(userId: string, userType: string): Promise<SubscriptionDocument | null> {
+        const now = new Date();
+
         return await this._subscriptionModel.findOne(
             {
                 userId: this._toObjectId(userId),
                 role: userType,
-                isActive: true
+                isActive: true,
+                isDeleted: false,
+                startTime: { $lte: now },
+                endDate: { $gte: now }
             }
         );
     }
@@ -128,6 +133,17 @@ export class SubscriptionRepository extends BaseRepository<SubscriptionDocument>
 
     async findSubscriptionById(subscriptionId: string): Promise<SubscriptionDocument | null> {
         return await this._subscriptionModel.findOne({ _id: subscriptionId });
+    }
+
+    async findLatestSubscriptionByUserId(userId: string, userType: string): Promise<SubscriptionDocument | null> {
+        return await this._subscriptionModel.findOne(
+            {
+                userId: this._toObjectId(userId),
+                role: userType,
+                isDeleted: false,
+                paymentStatus: { $ne: PaymentStatus.UNPAID }
+            }
+        ).sort({ createdAt: -1 });
     }
 
     async count(): Promise<number> {

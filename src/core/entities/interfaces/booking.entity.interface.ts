@@ -363,6 +363,19 @@ export interface IPeakServiceTime {
     weekendBookings: number;
 }
 
+export interface IAreaAnalyticsBundle {
+    summary: { areaSummary: IAreaSummary };
+    demand: {
+        serviceDemand: IServiceDemandData[];
+        byLocation: ILocationRevenue[];
+    };
+    revenue: {
+        topAreas: ITopAreaRevenue[];
+        underperforming: IUnderperformingArea[];
+    };
+    peak: { peakServiceTime: IPeakServiceTime[] };
+}
+
 export interface IRevenueBreakdown {
     totalEarnings: number;
     completedCount: number;

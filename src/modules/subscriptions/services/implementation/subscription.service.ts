@@ -242,6 +242,24 @@ export class SubscriptionService implements ISubscriptionService {
         }
     }
 
+    async fetchLatestSubscription(userId: string, role: PlanRoleEnum): Promise<IResponse<ISubscription | null>> {
+        const subscription = await this._subscriptionRepository.findLatestSubscriptionByUserId(userId, role);
+
+        if (!subscription) {
+            return {
+                success: false,
+                message: 'User has no subscription history',
+                data: null
+            }
+        }
+
+        return {
+            success: true,
+            message: 'Latest subscription fetched successfully.',
+            data: this._subscriptionMapper.toEntity(subscription)
+        }
+    }
+
     async getUpgradeAmount(role: UserType, currentSubscriptionId: string): Promise<IResponse<ISubscriptionUpgradeAmount>> {
         const currentSubscriptionDocument = await this._subscriptionRepository.fetchCurrentActiveSubscription(currentSubscriptionId);
 

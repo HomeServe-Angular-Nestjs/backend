@@ -4,10 +4,10 @@ import { PROVIDER_ANALYTICS_SERVICE_NAME } from "@core/constants/service.constan
 import { IResponse } from "@core/misc/response.util";
 import { Request } from "express";
 import { IPayload } from "@core/misc/payload.interface";
-import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderPerformanceOverview, IProviderRevenueOverview, IResponseTimeChartData, IReviewChartData } from "@core/entities/interfaces/user.entity.interface";
+import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderPerformanceOverview, IProviderRevenueOverview, IResponseTimeChartData, IReviewChartData, IPerformanceAnalyticsBundle, IRevenueAnalyticsBundle } from "@core/entities/interfaces/user.entity.interface";
 import { IDisputeAnalytics } from "@core/entities/interfaces/report.entity.interface";
 import { RevenueChartViewDto } from "@modules/providers/dtos/analytics.dto";
-import { IRevenueMonthlyGrowthRateData, IRevenueTrendData, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData, ILocationRevenue, ITopAreaRevenue, IUnderperformingArea, IPeakServiceTime } from "@core/entities/interfaces/booking.entity.interface";
+import { IRevenueMonthlyGrowthRateData, IRevenueTrendData, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData, ILocationRevenue, ITopAreaRevenue, IUnderperformingArea, IPeakServiceTime, IAreaAnalyticsBundle } from "@core/entities/interfaces/booking.entity.interface";
 import { SubscriptionGuard } from "@core/guards/subscription.guard";
 
 @UseGuards(SubscriptionGuard)
@@ -17,6 +17,26 @@ export class AnalyticsController {
         @Inject(PROVIDER_ANALYTICS_SERVICE_NAME)
         private readonly _analyticService: IProviderAnalyticsService,
     ) { }
+
+    // ------------ Analytics Resource Bundles ------------
+
+    @Get('performance')
+    async getPerformanceBundle(@Req() req: Request): Promise<IResponse<IPerformanceAnalyticsBundle>> {
+        const user = req.user as IPayload;
+        return await this._analyticService.getPerformanceBundle(user.sub);
+    }
+
+    @Get('revenue')
+    async getRevenueBundle(@Req() req: Request, @Query() { view }: RevenueChartViewDto): Promise<IResponse<IRevenueAnalyticsBundle>> {
+        const user = req.user as IPayload;
+        return await this._analyticService.getRevenueBundle(user.sub, view);
+    }
+
+    @Get('area')
+    async getAreaBundle(@Req() req: Request): Promise<IResponse<IAreaAnalyticsBundle>> {
+        const user = req.user as IPayload;
+        return await this._analyticService.getAreaBundle(user.sub);
+    }
 
     // ------------ Performance Analytics APIs ------------
     @Get('performance/summary')

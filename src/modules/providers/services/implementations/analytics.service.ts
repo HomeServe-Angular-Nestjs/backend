@@ -1,7 +1,7 @@
 import { BOOKING_REPOSITORY_NAME, REPORT_REPOSITORY_NAME } from "@core/constants/repository.constant";
-import { RevenueChartView, IRevenueTrendData, IRevenueMonthlyGrowthRateData, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData, ILocationRevenue, ITopAreaRevenue, IUnderperformingArea, IPeakServiceTime } from "@core/entities/interfaces/booking.entity.interface";
+import { RevenueChartView, IRevenueTrendData, IRevenueMonthlyGrowthRateData, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData, ILocationRevenue, ITopAreaRevenue, IUnderperformingArea, IPeakServiceTime, IAreaAnalyticsBundle } from "@core/entities/interfaces/booking.entity.interface";
 import { IDisputeAnalytics } from "@core/entities/interfaces/report.entity.interface";
-import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderPerformanceOverview, IProviderRevenueOverview, IResponseTimeChartData, IReviewChartData } from "@core/entities/interfaces/user.entity.interface";
+import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderPerformanceOverview, IProviderRevenueOverview, IResponseTimeChartData, IReviewChartData, IPerformanceAnalyticsBundle, IRevenueAnalyticsBundle } from "@core/entities/interfaces/user.entity.interface";
 import { IResponse } from "@core/misc/response.util";
 import { IBookingRepository } from "@core/repositories/interfaces/bookings-repo.interface";
 import { IReportRepository } from "@core/repositories/interfaces/report-repo.interface";
@@ -275,6 +275,105 @@ export class ProviderAnalyticsService implements IProviderAnalyticsService {
             success: true,
             message: 'Underperforming area data fetched successfully.',
             data: (await this._bookingRepository.getUnderperformingAreas(providerId)) || []
+        }
+    }
+
+    // ------------ Analytics Resource Bundles ------------
+
+    async getPerformanceBundle(providerId: string): Promise<IResponse<IPerformanceAnalyticsBundle>> {
+        const [summary, bookings, quality, comparison] = await Promise.all([
+            this.getPerformanceAnalytics(providerId),
+            Promise.all([
+                this.getPerformanceBookingOverview(providerId),
+                this.getPerformanceTrends(providerId),
+            ]),
+            Promise.all([
+                this.getResponseTimeDistributionData(providerId),
+                this.getOnTimeArrivalData(providerId),
+                this.getMonthlyDisputeStats(providerId),
+            ]),
+            Promise.all([
+                this.getComparisonOverviewData(providerId),
+                this.getComparisonStats(providerId),
+            ]),
+        ]);
+
+        return {
+            success: true,
+            message: 'Performance analytics resource fetched successfully.',
+            data: {
+                summary: { performanceAnalytics: summary.data! },
+                bookings: { bookingOverview: bookings[0].data!, trends: bookings[1].data! },
+                quality: {
+                    responseTimeDistribution: quality[0].data!,
+                    onTimeArrival: quality[1].data!,
+                    monthlyDisputeStats: quality[2].data!,
+                },
+                comparison: {
+                    comparisonOverview: comparison[0].data!,
+                    comparisonStats: comparison[1].data!,
+                },
+            }
+        }
+    }
+
+    async getRevenueBundle(providerId: string, view: RevenueChartView): Promise<IResponse<IRevenueAnalyticsBundle>> {
+        const [summary, trend, growth, clients] = await Promise.all([
+            this.getRevenueOverview(providerId),
+            this.getRevenueTrendOverTime(providerId, view),
+            Promise.all([
+                this.getRevenueGrowthByMonth(providerId),
+                this.getRevenueCompositionData(providerId),
+                this.getTopServicesByRevenue(providerId),
+            ]),
+            this.getNewAndReturningClientData(providerId),
+        ]);
+
+        return {
+            success: true,
+            message: 'Revenue analytics resource fetched successfully.',
+            data: {
+                summary: { revenueOverview: summary.data! },
+                trends: { trend: trend.data! },
+                growth: {
+                    monthlyGrowth: growth[0].data!,
+                    composition: growth[1].data!,
+                    topServices: growth[2].data!,
+                },
+                clients: { newAndReturning: clients.data! },
+            }
+        }
+    }
+
+    async getAreaBundle(providerId: string): Promise<IResponse<IAreaAnalyticsBundle>> {
+        const [summary, demand, revenue, peak] = await Promise.all([
+            this.getAreaSummaryData(providerId),
+            Promise.all([
+                this.getServiceDemandData(providerId),
+                this.getServiceDemandByLocation(providerId),
+            ]),
+            Promise.all([
+                this.getTopAreasRevenue(providerId),
+                this.getUnderperformingAreas(providerId),
+            ]),
+            this.getPeakServiceTime(providerId),
+        ]);
+
+        return {
+            success: true,
+            message: 'Area analytics resource fetched successfully.',
+            data: {
+                summary: { areaSummary: summary.data! },
+                demand: {
+                    serviceDemand: demand[0].data!,
+                    byLocation: demand[1].data!,
+                },
+                revenue: {
+                    topAreas: revenue[0].data!,
+                    underperforming: revenue[1].data!,
+                },
+                peak: { peakServiceTime: peak.data! },
+            }
         }
     }
 
