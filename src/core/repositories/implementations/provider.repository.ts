@@ -1,5 +1,6 @@
 import { FilterQuery, Model, PipelineStage, Types } from 'mongoose';
 import { PROVIDER_MODEL_NAME } from '@core/constants/model.constant';
+import { GeoEnum } from '@core/enum/geo.enum';
 import { IReportDownloadUserData, IReportProviderData, IStats } from '@core/entities/interfaces/admin.entity.interface';
 import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
 import { IProviderRepository } from '@core/repositories/interfaces/provider-repo.interface';
@@ -7,9 +8,6 @@ import { ProviderDocument } from '@core/schema/provider.schema';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Availability, IFilterFetchProviders } from '@core/entities/interfaces/user.entity.interface';
-
-const SEARCH_RADIUS_KM = 50;
-const EARTH_RADIUS_KM = 6378.1;
 
 @Injectable()
 export class ProviderRepository extends BaseRepository<ProviderDocument> implements IProviderRepository {
@@ -56,44 +54,40 @@ export class ProviderRepository extends BaseRepository<ProviderDocument> impleme
     return baseMatch;
   }
 
-  private async _applyLocationOrMatch(filter: IFilterFetchProviders, baseMatch: FilterQuery<ProviderDocument>): Promise<void> {
-    if (!filter.address || !filter.lat || !filter.lng) return;
-
+  private _geoNearStages(
+    filter: IFilterFetchProviders,
+    baseMatch: FilterQuery<ProviderDocument>,
+    searchRadiusMeters: number,
+  ): PipelineStage[] {
     const lat = filter.lat as number;
     const lng = filter.lng as number;
-    const addressRegex = this._escapeRegex(filter.address);
 
-    const { _id, ...rest } = baseMatch;
-
-    const branch = (extra: FilterQuery<ProviderDocument>): FilterQuery<ProviderDocument> => {
-      const query: FilterQuery<ProviderDocument> = { ...rest, ...extra };
-      if (_id) query._id = _id;
-      return query;
-    };
-
-    const [byAddress, byGeo] = await Promise.all([
-      this._providerModel.find(
-        branch({ address: { $regex: addressRegex, $options: 'i' } })
-      ).select('_id').lean(),
-      this._providerModel.find(
-        branch({
-          location: {
-            $geoWithin: {
-              $centerSphere: [
-                [lng, lat],
-                SEARCH_RADIUS_KM / EARTH_RADIUS_KM,
-              ],
-            },
+    return [
+      {
+        $geoNear: {
+          near: {
+            type: 'Point',
+            coordinates: [lng, lat],
           },
-        })
-      ).select('_id').lean(),
-    ]);
-
-    const union = new Set<string>();
-    [...byAddress, ...byGeo].forEach(doc => union.add(doc._id.toString()));
-
-    baseMatch._id = { $in: [...union].map(id => new Types.ObjectId(id)) };
-  }
+          key: 'location',
+          distanceField: 'distance',
+          spherical: true,
+          maxDistance: searchRadiusMeters,
+          query: baseMatch,
+        },
+      },
+      {
+        $match: {
+          $expr: {
+            $or: [
+              { $lte: [{ $ifNull: ['$serviceRadius', 0] }, 0] },
+              { $lte: ['$distance', { $multiply: ['$serviceRadius', GeoEnum.KM_TO_METERS] }] },
+            ],
+          },
+        },
+      },
+    ];
+    }
 
   private _escapeRegex(text: string): string {
     return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -136,67 +130,51 @@ export class ProviderRepository extends BaseRepository<ProviderDocument> impleme
     return result !== null;
   }
 
-  async fetchProvidersByFilterWithPagination(filter: IFilterFetchProviders, options: { page: number; limit: number; }): Promise<ProviderDocument[]> {
+  async fetchProvidersByFilterWithPagination(
+    filter: IFilterFetchProviders,
+    options: { page: number; limit: number; },
+    searchRadiusMeters: number,
+  ): Promise<ProviderDocument[]> {
     const limit = options.limit || 10;
     const skip = (options.page - 1) * limit;
 
     const baseMatch = this._buildBaseMatch(filter);
 
-    // OR(address text, coordinates within radius) for location-based search
-    if (filter.address && filter.lat && filter.lng) {
-      await this._applyLocationOrMatch(filter, baseMatch);
+    if (!filter.lat || !filter.lng) {
+      return this._providerModel
+        .find(baseMatch)
+        .skip(skip)
+        .limit(limit)
+        .lean();
     }
 
-    const hasGeo = !!filter.lat && !!filter.lng;
+    const nearestSortStages: PipelineStage[] = filter.status === 'nearest' ? [{ $sort: { distance: 1 } }] : [];
 
-    // "nearest" needs distance-based sorting → $geoNear pipeline
-    if (filter.status === 'nearest' && hasGeo) {
-      const lat = filter.lat as number;
-      const lng = filter.lng as number;
-
-      const matchingIds = await this._providerModel.find(baseMatch).select('_id').lean();
-      const ids = matchingIds.map(doc => doc._id);
-
-      if (!ids.length) return [];
-
-      const pipeline: PipelineStage[] = [
-        {
-          $geoNear: {
-            near: {
-              type: 'Point',
-              coordinates: [lng, lat], // lng, lat
-            },
-            key: 'location',
-            distanceField: 'distance', // meters
-            spherical: true,
-            query: { _id: { $in: ids } },
-          },
+    const pipeline: PipelineStage[] = [
+      ...this._geoNearStages(filter, baseMatch, searchRadiusMeters),
+      ...nearestSortStages,
+      { $skip: skip },
+      { $limit: limit },
+      {
+        $addFields: {
+          distanceKm: { $divide: ['$distance', GeoEnum.KM_TO_METERS] },
         },
-        { $sort: { distance: 1 } },
-        { $skip: skip },
-        { $limit: limit },
-        {
-          $addFields: {
-            distanceKm: { $divide: ['$distance', 1000] },
-          },
-        }
-      ];
+      },
+    ];
 
-      return this._providerModel.aggregate(pipeline);
-    }
-
-    return this._providerModel
-      .find(baseMatch)
-      .skip(skip)
-      .limit(limit)
-      .lean();
+    return this._providerModel.aggregate(pipeline);
   }
 
-  async countProvidersByFilter(filter: IFilterFetchProviders): Promise<number> {
+  async countProvidersByFilter(filter: IFilterFetchProviders, searchRadiusMeters: number): Promise<number> {
     const baseMatch = this._buildBaseMatch(filter);
 
-    if (filter.address && filter.lat && filter.lng) {
-      await this._applyLocationOrMatch(filter, baseMatch);
+    if (filter.lat && filter.lng) {
+      const pipeline: PipelineStage[] = [
+        ...this._geoNearStages(filter, baseMatch, searchRadiusMeters),
+        { $count: 'total' },
+      ];
+      const [result] = await this._providerModel.aggregate<{ total: number }>(pipeline);
+      return result?.total ?? 0;
     }
 
     return this._providerModel.countDocuments(baseMatch);

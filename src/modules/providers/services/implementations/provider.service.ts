@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { BOOKING_REPOSITORY_NAME, CART_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, DATE_OVERRIDES_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, PROVIDER_SERVICE_REPOSITORY_NAME, RESERVATION_REPOSITORY_NAME, SERVICE_CATEGORY_REPOSITORY_NAME, SERVICE_OFFERED_REPOSITORY_NAME, WEEKLY_AVAILABILITY_REPOSITORY_INTERFACE_NAME } from '@core/constants/repository.constant';
 import { ARGON_UTILITY_NAME, TIME_UTILITY_NAME, UPLOAD_UTILITY_NAME } from '@core/constants/utility.constant';
+import { GeoEnum } from '@core/enum/geo.enum';
 import { CloudinaryService } from '@configs/cloudinary/cloudinary.service';
 import { ICustomerProviderDetails, IDisplayReviews, IFilterFetchProviders, IProvider, IProviderCardView, IProviderCardWithPagination, UserType } from '@core/entities/interfaces/user.entity.interface';
 import { ErrorCodes, ErrorMessage, UploadErrorMessages } from '@core/enum/error.enum';
@@ -83,6 +84,10 @@ export class ProviderServices implements IProviderServices {
     this.logger = this.loggerFactory.createLogger(ProviderServices.name);
   }
 
+  private _customerSearchRadiusMeters(): number {
+    return GeoEnum.DEFAULT_CUSTOMER_SEARCH_RADIUS_KM * GeoEnum.KM_TO_METERS;
+  }
+
   async getProviders(filters: FilterDto): Promise<IResponse<IProviderCardWithPagination>> {
     const { page = 1, limit = 10, availability, date, categoryId, ...filter } = filters;
 
@@ -95,9 +100,11 @@ export class ProviderServices implements IProviderServices {
 
     const query: IFilterFetchProviders = { ...filter, providerIds };
 
+    const searchRadiusMeters = this._customerSearchRadiusMeters();
+
     const [providerDocs, totalProviders] = await Promise.all([
-      this._providerRepository.fetchProvidersByFilterWithPagination(query, { page, limit }),
-      this._providerRepository.countProvidersByFilter(query),
+      this._providerRepository.fetchProvidersByFilterWithPagination(query, { page, limit }, searchRadiusMeters),
+      this._providerRepository.countProvidersByFilter(query, searchRadiusMeters),
     ]);
 
     let providers: IProvider[] = [];
@@ -285,7 +292,7 @@ export class ProviderServices implements IProviderServices {
 
     const sanitizedUpdate = Object.fromEntries(
       Object.entries(updateData).filter(
-        ([_, value]) => value !== undefined && value !== null,
+        ([_, value]) => value !== undefined,
       ),
     );
 

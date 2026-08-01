@@ -74,7 +74,7 @@ export interface IProvider extends IBaseUserEntity {
   availability: Availability;
   profession: string;
   experience: number;
-  serviceRadius: number;
+  serviceRadius: number | null;
   bookingLimit: number | null;
   bufferTime: number | null;
   enableSR: boolean;
