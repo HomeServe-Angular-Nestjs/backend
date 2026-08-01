@@ -44,6 +44,10 @@ export class FilterDto extends PageDto {
 
     @IsOptional()
     @IsString()
+    address?: string;
+
+    @IsOptional()
+    @IsString()
     @IsIn(['nearest', 'all', 'best-rated'])
     status: FilterStatusType;
 

@@ -5,7 +5,7 @@ import { BadRequestException, Inject, Injectable, InternalServerErrorException, 
 import { BOOKING_REPOSITORY_NAME, CART_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, DATE_OVERRIDES_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, PROVIDER_SERVICE_REPOSITORY_NAME, RESERVATION_REPOSITORY_NAME, SERVICE_CATEGORY_REPOSITORY_NAME, SERVICE_OFFERED_REPOSITORY_NAME, WEEKLY_AVAILABILITY_REPOSITORY_INTERFACE_NAME } from '@core/constants/repository.constant';
 import { ARGON_UTILITY_NAME, TIME_UTILITY_NAME, UPLOAD_UTILITY_NAME } from '@core/constants/utility.constant';
 import { CloudinaryService } from '@configs/cloudinary/cloudinary.service';
-import { ICustomerProviderDetails, IDisplayReviews, IProvider, IProviderCardView, IProviderCardWithPagination, UserType } from '@core/entities/interfaces/user.entity.interface';
+import { ICustomerProviderDetails, IDisplayReviews, IFilterFetchProviders, IProvider, IProviderCardView, IProviderCardWithPagination, UserType } from '@core/entities/interfaces/user.entity.interface';
 import { ErrorCodes, ErrorMessage, UploadErrorMessages } from '@core/enum/error.enum';
 import { UploadsType } from '@core/enum/uploads.enum';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
@@ -86,9 +86,18 @@ export class ProviderServices implements IProviderServices {
   async getProviders(filters: FilterDto): Promise<IResponse<IProviderCardWithPagination>> {
     const { page = 1, limit = 10, availability, date, categoryId, ...filter } = filters;
 
+    let providerIds: string[] | undefined;
+
+    if (categoryId) {
+      const providerServices = await this._providerServiceRepository.findByCategoryId(categoryId);
+      providerIds = providerServices.map(services => services.providerId.toString());
+    }
+
+    const query: IFilterFetchProviders = { ...filter, providerIds };
+
     const [providerDocs, totalProviders] = await Promise.all([
-      this._providerRepository.fetchProvidersByFilterWithPagination(filter, { page, limit }),
-      this._providerRepository.count(),
+      this._providerRepository.fetchProvidersByFilterWithPagination(query, { page, limit }),
+      this._providerRepository.countProvidersByFilter(query),
     ]);
 
     let providers: IProvider[] = [];
@@ -98,18 +107,6 @@ export class ProviderServices implements IProviderServices {
       provider.avatar = avatar;
       return this._providerMapper.toEntity(provider);
     });
-
-    if (categoryId) {
-      const providerIds = new Set();
-
-      const providerServices = await this._providerServiceRepository.findByCategoryId(categoryId);
-
-      for (const services of providerServices) {
-        providerIds.add(services.providerId.toString());
-      }
-
-      providers = providers.filter(provider => providerIds.has(provider.id));
-    }
 
     // Filter by availability if specified
     if (availability && availability !== 'all') {

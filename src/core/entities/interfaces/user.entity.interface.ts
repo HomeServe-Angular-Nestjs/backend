@@ -96,10 +96,12 @@ export interface ICustomerProviderDetails extends IProvider {
 
 export interface IFilterFetchProviders {
   search?: string;
+  address?: string;
   status?: FilterStatusType;
   lng: number | null;
   lat: number | null;
   availability?: AvailabilityEnum | 'all';
+  providerIds?: string[];
 }
 
 export interface IVerificationStatusMetrics {

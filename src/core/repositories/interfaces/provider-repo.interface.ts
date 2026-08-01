@@ -10,6 +10,7 @@ export interface IProviderRepository extends IBaseRepository<ProviderDocument> {
   updateGoogleId(email: string, googleId: string): Promise<ProviderDocument | null>;
   findByEmail(email: string): Promise<ProviderDocument | null>;
   fetchProvidersByFilterWithPagination(filter: IFilterFetchProviders, options: { page: number, limit: number }): Promise<ProviderDocument[]>;
+  countProvidersByFilter(filter: IFilterFetchProviders): Promise<number>;
   updatePassword(email: string, hashedPassword: string): Promise<ProviderDocument | null>;
   count(filter?: FilterQuery<ProviderDocument>): Promise<number>;
   isExists(filter: FilterQuery<ProviderDocument>): Promise<boolean>;
