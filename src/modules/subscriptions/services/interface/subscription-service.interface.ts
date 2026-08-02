@@ -1,4 +1,4 @@
-import { IAdminFilteredSubscriptionListWithPagination, ISubscription, ISubscriptionFilters } from '@core/entities/interfaces/subscription.entity.interface';
+import { IAdminFilteredSubscriptionListWithPagination, ISubscription, ISubscriptionFilters, ISubscriptionUpgradeAmount } from '@core/entities/interfaces/subscription.entity.interface';
 import { UserType } from '@core/entities/interfaces/user.entity.interface';
 import { PlanRoleEnum } from '@core/enum/subscription.enum';
 import { IResponse } from '@core/misc/response.util';
@@ -7,7 +7,9 @@ import { CreateSubscriptionDto, SubscriptionFiltersDto, UpdatePaymentStatusDto }
 export interface ISubscriptionService {
     createSubscription(userId: string, userType: UserType, createSubscriptionDto: CreateSubscriptionDto): Promise<IResponse<ISubscription>>;
     fetchSubscription(userId: string, role: PlanRoleEnum): Promise<IResponse<ISubscription | null>>;
-    getUpgradeAmount(role: UserType, currentSubscriptionId: string): Promise<IResponse<number>>;
+    getUpgradeAmount(role: UserType, currentSubscriptionId: string): Promise<IResponse<ISubscriptionUpgradeAmount>>;
+    fetchSubscriptionHistory(userId: string, role: PlanRoleEnum): Promise<IResponse<ISubscription[]>>;
+    fetchLatestSubscription(userId: string, role: PlanRoleEnum): Promise<IResponse<ISubscription | null>>;
     upgradeSubscription(userId: string, userType: UserType, createSubscriptionDto: CreateSubscriptionDto): Promise<IResponse<ISubscription>>;
     updatePaymentStatus(userId: string, userType: UserType, data: UpdatePaymentStatusDto): Promise<IResponse>;
     removeSubscription(subscriptionId: string): Promise<IResponse>;

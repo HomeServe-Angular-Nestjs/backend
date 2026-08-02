@@ -44,6 +44,10 @@ export class FilterDto extends PageDto {
 
     @IsOptional()
     @IsString()
+    address?: string;
+
+    @IsOptional()
+    @IsString()
     @IsIn(['nearest', 'all', 'best-rated'])
     status: FilterStatusType;
 
@@ -59,6 +63,10 @@ export class FilterDto extends PageDto {
     @IsOptional()
     @IsString()
     categoryId?: string;
+
+    @IsOptional()
+    @IsString()
+    providerIds?: string;
 
     @Transform(({ value }) => value ? Number(value) : null)
     @IsOptional()
@@ -110,6 +118,10 @@ export class UpdateBioDto {
     @ValidateNested({ each: true })
     @Type(() => LanguageDto)
     languages?: LanguageDto[];
+
+    @IsOptional()
+    @IsString({ each: true })
+    awards?: string[];
 }
 
 export class UploadCertificateDto {

@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { SUBSCRIPTION_SERVICE_NAME } from '@core/constants/service.constant';
-import { IAdminFilteredSubscriptionListWithPagination, ISubscription, ISubscriptionFilters } from '@core/entities/interfaces/subscription.entity.interface';
+import { IAdminFilteredSubscriptionListWithPagination, ISubscription, ISubscriptionFilters, ISubscriptionUpgradeAmount } from '@core/entities/interfaces/subscription.entity.interface';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { IPayload } from '@core/misc/payload.interface';
@@ -36,6 +36,16 @@ export class SubscriptionController {
         return await this._subscriptionService.fetchSubscription(user.sub, user.type as PlanRoleEnum);
     }
 
+    @Get('history')
+    async fetchSubscriptionHistory(@User() user: IPayload): Promise<IResponse<ISubscription[]>> {
+        return await this._subscriptionService.fetchSubscriptionHistory(user.sub, user.type as PlanRoleEnum);
+    }
+
+    @Get('latest')
+    async fetchLatestSubscription(@User() user: IPayload): Promise<IResponse<ISubscription | null>> {
+        return await this._subscriptionService.fetchLatestSubscription(user.sub, user.type as PlanRoleEnum);
+    }
+
     @Get('lists')
     async fetchSubscriptionList(@Query() query: SubscriptionFiltersDto): Promise<IResponse<IAdminFilteredSubscriptionListWithPagination>> {
         return await this._subscriptionService.fetchSubscriptionList(query);
@@ -47,7 +57,7 @@ export class SubscriptionController {
     }
 
     @Get('upgrade_amount/:subscriptionId')
-    async getUpgradeAmount(@User() user: IPayload, @Param('subscriptionId') subscriptionId: string): Promise<IResponse<number>> {
+    async getUpgradeAmount(@User() user: IPayload, @Param('subscriptionId') subscriptionId: string): Promise<IResponse<ISubscriptionUpgradeAmount>> {
         return await this._subscriptionService.getUpgradeAmount(user.type, subscriptionId);
     }
 

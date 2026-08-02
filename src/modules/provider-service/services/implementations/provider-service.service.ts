@@ -157,7 +157,8 @@ export class ProviderServiceService implements IProviderServiceService {
                 },
                 category: {
                     id: service.category.id,
-                    name: service.category.name
+                    name: service.category.name,
+                    keywords: service.category.keywords ?? []
                 },
                 description: service.description,
                 price: service.price,

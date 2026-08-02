@@ -19,7 +19,7 @@ export class Provider extends BaseUserEntity implements IProvider {
   profession: string;
   experience: number;
   availability: Availability;
-  serviceRadius: number;
+  serviceRadius: number | null;
   defaultSlots: SlotType[];
   bookingLimit: number | null;
   bufferTime: number | null;

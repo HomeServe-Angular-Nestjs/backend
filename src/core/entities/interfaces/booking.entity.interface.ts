@@ -21,6 +21,7 @@ export interface IBookingResponse {
     expectedArrivalTime: Date | string;
     bookingStatus: BookingStatus;
     paymentStatus: PaymentStatus;
+    paymentSource: PaymentSource;
     cancelStatus: CancelStatus | null;
     totalAmount: number;
     createdAt: Date;
@@ -109,6 +110,7 @@ export interface IBooking extends IEntity {
     services: string[];
     transactionHistory: ITransaction[];
     paymentStatus: PaymentStatus;
+    paymentSource: PaymentSource;
     review: IReview | null;
     respondedAt: Date | null;
     couponId: string | null;
@@ -164,6 +166,7 @@ export interface IBookingDetailsBase {
         gst: number;
         providerCommission: number;
     } | null;
+    transactionHistory: ITransaction[];
     previousSchedules: Date[];
 }
 
@@ -361,6 +364,19 @@ export interface IPeakServiceTime {
     hour: number;
     weekdayBookings: number;
     weekendBookings: number;
+}
+
+export interface IAreaAnalyticsBundle {
+    summary: { areaSummary: IAreaSummary };
+    demand: {
+        serviceDemand: IServiceDemandData[];
+        byLocation: ILocationRevenue[];
+    };
+    revenue: {
+        topAreas: ITopAreaRevenue[];
+        underperforming: IUnderperformingArea[];
+    };
+    peak: { peakServiceTime: IPeakServiceTime[] };
 }
 
 export interface IRevenueBreakdown {

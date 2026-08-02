@@ -1,7 +1,7 @@
 import { NOTIFICATION_MODEL_NAME } from "@core/constants/model.constant";
 import { NotificationTemplateId, NotificationType } from "@core/enum/notification.enum";
 import { BaseRepository } from "@core/repositories/base/implementations/base.repository";
-import { INotificationRepository } from "@core/repositories/interfaces/notification-repo.interface";
+import { INotificationPageData, INotificationRepository } from "@core/repositories/interfaces/notification-repo.interface";
 import { NotificationDocument } from "@core/schema/notification.schema";
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
@@ -19,6 +19,52 @@ export class NotificationRepository extends BaseRepository<NotificationDocument>
     async findAll(userId: string): Promise<NotificationDocument[]> {
         return await this._notificationModel.find({ userId: this._toObjectId(userId) })
             .sort({ createdAt: -1 }).lean();
+    }
+
+    async findAllPaginated(userId: string, limit: number, cursor?: string): Promise<INotificationPageData> {
+        const filter: Record<string, any> = { userId: this._toObjectId(userId) };
+
+        if (cursor) {
+            const decoded = this._decodeCursor(cursor);
+            if (decoded) {
+                filter['$or'] = [
+                    { createdAt: { $lt: decoded.createdAt } },
+                    { createdAt: decoded.createdAt, _id: { $lt: this._toObjectId(decoded.id) } },
+                ];
+            }
+        }
+
+        const docs = await this._notificationModel.find(filter)
+            .sort({ createdAt: -1, _id: -1 })
+            .limit(limit + 1)
+            .lean();
+
+        const hasMore = docs.length > limit;
+        const data = hasMore ? docs.slice(0, limit) : docs;
+
+        return {
+            data,
+            hasMore,
+            nextCursor: hasMore && data.length > 0
+                ? this._encodeCursor(data[data.length - 1].createdAt, data[data.length - 1]._id.toString())
+                : null,
+        };
+    }
+
+    private _encodeCursor(createdAt: Date, id: string): string {
+        return Buffer.from(`${createdAt.toISOString()}::${id}`).toString('base64');
+    }
+
+    private _decodeCursor(cursor: string): { createdAt: Date; id: string } | null {
+        try {
+            const [createdAt, id] = Buffer.from(cursor, 'base64').toString('utf8').split('::');
+            if (!createdAt || !id) return null;
+            const date = new Date(createdAt);
+            if (isNaN(date.getTime())) return null;
+            return { createdAt: date, id };
+        } catch {
+            return null;
+        }
     }
 
     async findNotification(userId: string, type: NotificationType, templateId: NotificationTemplateId)

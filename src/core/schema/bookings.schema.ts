@@ -228,6 +228,13 @@ export class BookingDocument extends Document {
     @Prop({ type: String, enum: PaymentStatus, default: PaymentStatus.UNPAID })
     paymentStatus: PaymentStatus;
 
+    @Prop({
+        type: String,
+        enum: Object.values(PaymentSource),
+        default: PaymentSource.RAZORPAY
+    })
+    paymentSource: PaymentSource;
+
     @Prop({ type: ReviewDocument, default: null })
     review: ReviewDocument | null;
 

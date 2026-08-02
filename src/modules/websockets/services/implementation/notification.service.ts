@@ -1,7 +1,7 @@
 import { NOTIFICATION_MAPPER } from "@core/constants/mappers.constant";
 import { NOTIFICATION_REPOSITORY_NAME } from "@core/constants/repository.constant";
 import { INotificationMapper } from "@core/dto-mapper/interface/notification.mapper.interface";
-import { INotification } from "@core/entities/interfaces/notification.entity.interface";
+import { INotification, INotificationPage } from "@core/entities/interfaces/notification.entity.interface";
 import { NotificationType, NotificationTemplateId } from "@core/enum/notification.enum";
 import { IResponse } from "@core/misc/response.util";
 import { INotificationRepository } from "@core/repositories/interfaces/notification-repo.interface";
@@ -40,12 +40,16 @@ export class NotificationService implements INotificationService {
         return notificationEntity;
     }
 
-    async fetchAll(userId: string): Promise<IResponse<INotification[]>> {
-        const notificationDoc = await this._notificationRepository.findAll(userId);
+    async fetchAll(userId: string, cursor?: string, limit: number = 20): Promise<IResponse<INotificationPage>> {
+        const { data, nextCursor, hasMore } = await this._notificationRepository.findAllPaginated(userId, limit, cursor);
         return {
             success: true,
             message: 'Notifications fetched.',
-            data: (notificationDoc ?? []).map(notification => this._notificationMapper.toEntity(notification))
+            data: {
+                data: (data ?? []).map(notification => this._notificationMapper.toEntity(notification)),
+                nextCursor,
+                hasMore,
+            }
         }
     }
 

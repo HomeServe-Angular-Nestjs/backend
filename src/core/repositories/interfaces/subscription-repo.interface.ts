@@ -8,10 +8,12 @@ import { SubscriptionDocument } from '@core/schema/subscription.schema';
 export interface ISubscriptionRepository extends IBaseRepository<SubscriptionDocument> {
     getSubscriptionChartData(): Promise<Omit<IAdminDashboardSubscription, 'totalProviders'>>;
     findSubscriptionById(subscriptionId: string): Promise<SubscriptionDocument | null>;
+    findLatestSubscriptionByUserId(userId: string, userType: string): Promise<SubscriptionDocument | null>;
     fetchCurrentActiveSubscription(subscriptionId: string): Promise<SubscriptionDocument | null>;
     count(): Promise<number>;
     findFilteredSubscriptionWithPagination(filters: ISubscriptionFilters, options?: { page?: number, limit?: number }): Promise<IAdminSubscriptionList[]>;
     findActiveSubscriptionByUserId(userId: string, userType: string): Promise<SubscriptionDocument | null>;
+    findAllSubscriptionsByUserId(userId: string, userType: string): Promise<SubscriptionDocument[]>;
     findSubscription(userId: string, userType: string): Promise<SubscriptionDocument | null>;
     updatePaymentStatus(subscriptionId: string, status: PaymentStatus): Promise<boolean>;
     cancelSubscriptionByUserId(userId: string, userType: string): Promise<boolean>;

@@ -20,3 +20,9 @@ export interface ISendNewNotification {
     entityId?: string;
     metadata?: Record<string, any>;
 }
+
+export interface INotificationPage {
+    data: INotification[];
+    nextCursor: string | null;
+    hasMore: boolean;
+}

@@ -4,7 +4,8 @@ import { AvailabilityEnum } from '@core/enum/slot.enum';
 import { SlotType } from '../../../modules/bookings/dtos/booking.dto';
 import { IBaseUserEntity } from '../base/interfaces/base-user.entity.interface';
 import { IAdmin } from './admin.entity.interface';
-import { IBookingsBreakdown, IPagination, IRatingDistribution, IRecentReviews, IRevenueBreakdown, IReview, ISlot } from './booking.entity.interface';
+import { IDisputeAnalytics } from './report.entity.interface';
+import { IBookingsBreakdown, INewOrReturningClientData, IPagination, IRatingDistribution, IRecentReviews, IRevenueBreakdown, IRevenueCompositionData, IRevenueMonthlyGrowthRateData, IRevenueTrendData, IReview, ISlot, ITopServicesByRevenue } from './booking.entity.interface';
 
 export type UserType = 'customer' | 'provider' | 'admin';
 export type ClientUserType = Exclude<UserType, 'admin'>;
@@ -34,6 +35,14 @@ export interface ILocation {
 
 export interface ICustomer extends IBaseUserEntity {
   savedProviders?: string[] | null;
+}
+
+export interface IUpdateProfileData {
+  fullname?: string;
+  username?: string;
+  phone?: string;
+  address?: string;
+  coordinates?: [number, number];
 }
 
 export interface IExpertise {
@@ -73,7 +82,7 @@ export interface IProvider extends IBaseUserEntity {
   availability: Availability;
   profession: string;
   experience: number;
-  serviceRadius: number;
+  serviceRadius: number | null;
   bookingLimit: number | null;
   bufferTime: number | null;
   enableSR: boolean;
@@ -96,10 +105,12 @@ export interface ICustomerProviderDetails extends IProvider {
 
 export interface IFilterFetchProviders {
   search?: string;
+  address?: string;
   status?: FilterStatusType;
   lng: number | null;
   lat: number | null;
   availability?: AvailabilityEnum | 'all';
+  providerIds?: string[];
 }
 
 export interface IVerificationStatusMetrics {
@@ -269,6 +280,36 @@ export interface IProviderRevenueOverview {
   revenueGrowth: number;
   completedTransactions: number;
   avgTransactionValue: number;
+}
+
+// ----------- Analytics Resource Bundles ------------
+
+export interface IPerformanceAnalyticsBundle {
+  summary: { performanceAnalytics: IProviderPerformanceOverview };
+  bookings: {
+    bookingOverview: IBookingPerformanceData[];
+    trends: IReviewChartData;
+  };
+  quality: {
+    responseTimeDistribution: IResponseTimeChartData[];
+    onTimeArrival: IOnTimeArrivalChartData[];
+    monthlyDisputeStats: IDisputeAnalytics[];
+  };
+  comparison: {
+    comparisonOverview: IComparisonOverviewData;
+    comparisonStats: IComparisonChartData[];
+  };
+}
+
+export interface IRevenueAnalyticsBundle {
+  summary: { revenueOverview: IProviderRevenueOverview };
+  trends: { trend: IRevenueTrendData };
+  growth: {
+    monthlyGrowth: IRevenueMonthlyGrowthRateData[];
+    composition: IRevenueCompositionData[];
+    topServices: ITopServicesByRevenue[];
+  };
+  clients: { newAndReturning: INewOrReturningClientData[] };
 }
 
 export interface IProviderDashboardOverview {

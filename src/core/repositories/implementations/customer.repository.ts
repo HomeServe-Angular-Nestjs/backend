@@ -2,11 +2,13 @@ import { FilterQuery, Model, PipelineStage } from 'mongoose';
 
 import { CUSTOMER_MODEL_NAME } from '@core/constants/model.constant';
 import { IReportUserData, IReportDownloadUserData, IStats } from '@core/entities/interfaces/admin.entity.interface';
+import { IUpdateProfileData } from '@core/entities/interfaces/user.entity.interface';
 import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
 import { ICustomerRepository } from '@core/repositories/interfaces/customer-repo.interface';
 import { CustomerDocument } from '@core/schema/customer.schema';
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
+import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
 
 @Injectable()
 export class CustomerRepository extends BaseRepository<CustomerDocument> implements ICustomerRepository {
@@ -156,27 +158,88 @@ export class CustomerRepository extends BaseRepository<CustomerDocument> impleme
     return result.modifiedCount === 1;
   }
 
-  async updateProfile(customerId: string, data: { fullname?: string, username?: string, phone?: string, location?: { address: string, coordinates: [number, number] } }): Promise<CustomerDocument | null> {
-    const { fullname, username, phone } = data;
+  async partialUpdate(id: string, data: Record<string, unknown>): Promise<CustomerDocument | null> {
+    try {
+      return await this._customerModel.findOneAndUpdate(
+        { _id: id },
+        { $set: data },
+        { new: true }
+      ).lean();
+    } catch (error) {
+      throw this.mapDuplicateKeyError(error);
+    }
+  }
+
+  async toggleFavorite(customerId: string, providerId: string): Promise<CustomerDocument | null> {
+    const customer = await this.findById(customerId);
+    const alreadySaved = customer?.savedProviders?.includes(providerId);
+
+    const query = alreadySaved
+      ? { $pull: { savedProviders: providerId } }
+      : { $addToSet: { savedProviders: providerId } };
+
+    return await this._customerModel.findOneAndUpdate(
+      { _id: customerId },
+      query,
+      { new: true }
+    ).lean();
+  }
+
+  async updatePasswordById(customerId: string, hashedPassword: string): Promise<CustomerDocument | null> {
+    return await this._customerModel.findOneAndUpdate(
+      { _id: customerId },
+      { $set: { password: hashedPassword } },
+      { new: true }
+    ).lean();
+  }
+
+  async updateAvatar(customerId: string, publicId: string): Promise<CustomerDocument | null> {
+    try {
+      return await this._customerModel.findOneAndUpdate(
+        { _id: customerId },
+        { $set: { avatar: publicId } },
+        { new: true }
+      ).lean();
+    } catch (error) {
+      throw this.mapDuplicateKeyError(error);
+    }
+  }
+
+  async updateProfile(customerId: string, data: IUpdateProfileData): Promise<CustomerDocument | null> {
+    const { fullname, username, phone, address, coordinates } = data;
     const update: Record<string, string | object> = {};
 
     if (fullname) update.fullname = fullname;
     if (username) update.username = username;
     if (phone) update.phone = phone;
-    if (data.location && data.location.address && data.location.coordinates) {
-      update.address = data.location.address;
+    if (address) update.address = address;
+    if (coordinates) {
       update.location = {
         type: "Point",
-        coordinates: data.location.coordinates
+        coordinates
       };
     }
 
     if (Object.keys(update).length === 0) return null;
 
-    return await this._customerModel.findOneAndUpdate(
-      { _id: customerId },
-      { $set: update },
-      { new: true }
-    ).lean();
+    try {
+      return await this._customerModel.findOneAndUpdate(
+        { _id: customerId },
+        { $set: update },
+        { new: true }
+      ).lean();
+    } catch (error) {
+      throw this.mapDuplicateKeyError(error);
+    }
+  }
+
+  private mapDuplicateKeyError(error: unknown): Error {
+    if ((error as { code?: number })?.code === 11000) {
+      return new ConflictException({
+        code: ErrorCodes.CONFLICT,
+        message: ErrorMessage.USERNAME_CONFLICT_ERROR
+      });
+    }
+    return error instanceof Error ? error : new Error(String(error));
   }
 }

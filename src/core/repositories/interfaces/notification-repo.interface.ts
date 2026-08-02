@@ -2,9 +2,16 @@ import { NotificationTemplateId, NotificationType } from "@core/enum/notificatio
 import { IBaseRepository } from "@core/repositories/base/interfaces/base-repo.interface";
 import { NotificationDocument } from "@core/schema/notification.schema";
 
+export interface INotificationPageData {
+    data: NotificationDocument[];
+    nextCursor: string | null;
+    hasMore: boolean;
+}
+
 export interface INotificationRepository extends IBaseRepository<NotificationDocument> {
     findNotification(userId: string, type: NotificationType, templateId: NotificationTemplateId): Promise<NotificationDocument | null>;
     findAll(userId: string): Promise<NotificationDocument[]>;
+    findAllPaginated(userId: string, limit: number, cursor?: string): Promise<INotificationPageData>;
     markAsReadById(userId: string, notificationId: string): Promise<NotificationDocument | null>;
     markAllAsRead(userId: string): Promise<boolean>;
     deleteByUserIdAndTemplateId(userId: string, templateId: NotificationTemplateId): Promise<NotificationDocument | null>;

@@ -8,6 +8,7 @@ export enum ErrorMessage {
     UPDATE_FAILED = 'Update failed',
 
     EMAIL_CONFLICT_ERROR = 'User already exists.',
+    USERNAME_CONFLICT_ERROR = 'Username is already taken.',
     SERVICE_ALREADY_EXISTS = 'Service already exists',
     PLAN_ALREADY_EXISTS = 'Plan already exists',
     COUPON_ALREADY_EXISTS = 'Coupon code already exists.',
@@ -65,6 +66,7 @@ export enum ErrorCodes {
     DATABASE_OPERATION_FAILED = 'DATABASE_OPERATION_FAILED',
     BAD_REQUEST = 'BAD_REQUEST',
     CONFLICT = 'CONFLICT',
+    CART_ITEM_ALREADY_EXISTS = 'CART_ITEM_ALREADY_EXISTS',
     NOT_FOUND = 'NOT_FOUND',
     NO_ACTIVE_SUBSCRIPTION = 'NO_ACTIVE_SUBSCRIPTION',
     INTERNAL_SERVER_ERROR = 'INTERNAL_SERVER_ERROR',

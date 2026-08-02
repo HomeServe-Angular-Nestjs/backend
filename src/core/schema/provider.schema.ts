@@ -82,7 +82,7 @@ export class ProviderDocument extends BaseUserDocument {
   @Prop()
   experience: number;
 
-  @Prop()
+  @Prop({ default: null })
   serviceRadius: number;
 
   @Prop({

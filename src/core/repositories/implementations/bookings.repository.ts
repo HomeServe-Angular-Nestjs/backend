@@ -537,6 +537,7 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
             {
                 $match: {
                     providerId: this._toObjectId(providerId),
+                    'review.isActive': true
                 }
             },
             {
@@ -875,7 +876,8 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
     async countReviews(providerId: string): Promise<number> {
         return await this._bookingModel.countDocuments({
             providerId: this._toObjectId(providerId),
-            review: { $exists: true, $ne: null }
+            review: { $exists: true, $ne: null },
+            'review.isActive': true
         });
     }
 
@@ -2283,7 +2285,7 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
             }
         ]);
 
-        return result?.[0]?.completionRate ?? 0;
+        return Math.round(result?.[0]?.completionRate ?? 0);
     }
 
     async isAnyBookingOngoing(customerId: string, providerId: string): Promise<boolean> {

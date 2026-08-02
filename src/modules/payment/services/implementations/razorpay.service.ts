@@ -15,6 +15,7 @@ import { IRazorPaymentService } from '@modules/payment/services/interfaces/razor
 import { CurrencyType, PaymentDirection, PaymentSource, TransactionStatus, TransactionType } from '@core/enum/transaction.enum';
 import { IWalletRepository } from '@core/repositories/interfaces/wallet-repo.interface';
 import { ErrorCodes, ErrorMessage, WalletErrorCodes } from '@core/enum/error.enum';
+import { BookingErrorCodes, BookingErrorMessages } from '@core/enum/error.enum';
 import { IAdminSettingsRepository } from '@core/repositories/interfaces/admin-settings-repo.interface';
 import { ClientUserType, ICustomer, IProvider, UserType } from '@core/entities/interfaces/user.entity.interface';
 import { ICustomerMapper } from '@core/dto-mapper/interface/customer.mapper..interface';
@@ -31,7 +32,7 @@ import { IWalletLedgerMapper } from '@core/dto-mapper/interface/wallet-ledger.ma
 import { v4 as uuid } from 'uuid';
 import { IWalletMapper } from '@core/dto-mapper/interface/wallet.mapper.interface';
 import { IBookingRepository } from '@core/repositories/interfaces/bookings-repo.interface';
-import { PaymentStatus } from '@core/enum/bookings.enum';
+import { BookingStatus, PaymentStatus } from '@core/enum/bookings.enum';
 import { NOTIFICATION_SERVICE_NAME } from '@core/constants/service.constant';
 import { INotificationService } from '@modules/websockets/services/interface/notification-service.interface';
 import { NotificationTemplateId, NotificationType } from '@core/enum/notification.enum';
@@ -408,6 +409,26 @@ export class RazorPaymentService implements IRazorPaymentService {
         try {
             const user = await this._getUser(userId, role);
 
+            const existingBooking = await this._bookingRepository.findById(orderData.bookingId);
+            if (!existingBooking) {
+                throw new NotFoundException({
+                    code: BookingErrorCodes.BOOKING_NOT_FOUND_ERROR,
+                    message: BookingErrorMessages.BOOKING_NOT_FOUND,
+                });
+            }
+            if (existingBooking.paymentStatus === PaymentStatus.REFUNDED) {
+                throw new BadRequestException({
+                    code: BookingErrorCodes.BOOKING_ALREADY_REFUNDED,
+                    message: BookingErrorMessages.BOOKING_ALREADY_REFUNDED,
+                });
+            }
+            if (existingBooking.bookingStatus === BookingStatus.CANCELLED) {
+                throw new BadRequestException({
+                    code: BookingErrorCodes.BOOKING_ALREADY_CANCELLED,
+                    message: BookingErrorMessages.BOOKING_ALREADY_CANCELLED,
+                });
+            }
+
             const verified = this._paymentService.verifySignature(
                 verifyData.razorpay_order_id,
                 verifyData.razorpay_payment_id,
@@ -527,6 +548,12 @@ export class RazorPaymentService implements IRazorPaymentService {
                 transaction,
                 verifyData
             );
+
+            // If this is a monthly -> yearly upgrade, cancel the previous
+            // subscription only after the payment is fully verified.
+            if (subscription.metadata?.previousSubscriptionId) {
+                await this._subscriptionRepository.cancelSubscriptionByUserId(userId, role);
+            }
 
             const updatePaymentStatus = await this._subscriptionRepository.updatePaymentStatus(orderData.subscriptionId, PaymentStatus.PAID);
             if (!updatePaymentStatus) {

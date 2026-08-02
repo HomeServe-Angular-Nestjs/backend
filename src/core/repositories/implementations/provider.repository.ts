@@ -1,5 +1,6 @@
-import { FilterQuery, Model, PipelineStage } from 'mongoose';
+import { FilterQuery, Model, PipelineStage, Types } from 'mongoose';
 import { PROVIDER_MODEL_NAME } from '@core/constants/model.constant';
+import { GeoEnum } from '@core/enum/geo.enum';
 import { IReportDownloadUserData, IReportProviderData, IStats } from '@core/entities/interfaces/admin.entity.interface';
 import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
 import { IProviderRepository } from '@core/repositories/interfaces/provider-repo.interface';
@@ -15,6 +16,81 @@ export class ProviderRepository extends BaseRepository<ProviderDocument> impleme
     private _providerModel: Model<ProviderDocument>,
   ) {
     super(_providerModel);
+  }
+
+  private _buildBaseMatch(filter: IFilterFetchProviders): FilterQuery<ProviderDocument> {
+    const baseMatch: FilterQuery<ProviderDocument> = {
+      isDeleted: false,
+      isActive: true,
+    };
+
+    const searchOr: FilterQuery<ProviderDocument>[] = [];
+
+    if (filter.search) {
+      const regex = this._escapeRegex(filter.search);
+      searchOr.push(
+        { fullname: { $regex: regex, $options: 'i' } },
+        { username: { $regex: regex, $options: 'i' } },
+        { email: { $regex: regex, $options: 'i' } },
+        { phone: { $regex: regex, $options: 'i' } },
+        { profession: { $regex: regex, $options: 'i' } },
+      );
+    }
+
+    if (searchOr.length) {
+      baseMatch.$and = [...(baseMatch.$and ?? []), { $or: searchOr }];
+    }
+
+    if (filter.status === 'best-rated') {
+      baseMatch.avgRating = { $gte: 3 };
+    }
+
+    if (filter.providerIds?.length) {
+      baseMatch._id = {
+        $in: filter.providerIds.map(id => new Types.ObjectId(id)),
+      };
+    }
+
+    return baseMatch;
+  }
+
+  private _geoNearStages(
+    filter: IFilterFetchProviders,
+    baseMatch: FilterQuery<ProviderDocument>,
+    searchRadiusMeters: number,
+  ): PipelineStage[] {
+    const lat = filter.lat as number;
+    const lng = filter.lng as number;
+
+    return [
+      {
+        $geoNear: {
+          near: {
+            type: 'Point',
+            coordinates: [lng, lat],
+          },
+          key: 'location',
+          distanceField: 'distance',
+          spherical: true,
+          maxDistance: searchRadiusMeters,
+          query: baseMatch,
+        },
+      },
+      {
+        $match: {
+          $expr: {
+            $or: [
+              { $lte: [{ $ifNull: ['$serviceRadius', 0] }, 0] },
+              { $lte: ['$distance', { $multiply: ['$serviceRadius', GeoEnum.KM_TO_METERS] }] },
+            ],
+          },
+        },
+      },
+    ];
+    }
+
+  private _escapeRegex(text: string): string {
+    return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 
   async findByGoogleId(googleId: string): Promise<ProviderDocument | null> {
@@ -54,70 +130,57 @@ export class ProviderRepository extends BaseRepository<ProviderDocument> impleme
     return result !== null;
   }
 
-  async fetchProvidersByFilterWithPagination(filter: IFilterFetchProviders, options: { page: number; limit: number; }): Promise<ProviderDocument[]> {
+  async fetchProvidersByFilterWithPagination(
+    filter: IFilterFetchProviders,
+    options: { page: number; limit: number; },
+    searchRadiusMeters: number,
+  ): Promise<ProviderDocument[]> {
     const limit = options.limit || 10;
     const skip = (options.page - 1) * limit;
 
-    const baseMatch: FilterQuery<ProviderDocument> = {
-      isDeleted: false,
-      isActive: true,
-    };
+    const baseMatch = this._buildBaseMatch(filter);
 
-    if (filter.search) {
-      baseMatch.$or = [
-        { fullname: { $regex: filter.search, $options: 'i' } },
-        { username: { $regex: filter.search, $options: 'i' } },
-        { email: { $regex: filter.search, $options: 'i' } },
-        { phone: { $regex: filter.search, $options: 'i' } },
-        { profession: { $regex: filter.search, $options: 'i' } },
-      ];
+    if (!filter.lat || !filter.lng) {
+      return this._providerModel
+        .find(baseMatch)
+        .skip(skip)
+        .limit(limit)
+        .lean();
     }
 
-    if (filter.status === 'best-rated') {
-      baseMatch.avgRating = { $gte: 3 };
-    }
+    const nearestSortStages: PipelineStage[] = filter.status === 'nearest' ? [{ $sort: { distance: 1 } }] : [];
+
+    const pipeline: PipelineStage[] = [
+      ...this._geoNearStages(filter, baseMatch, searchRadiusMeters),
+      ...nearestSortStages,
+      { $skip: skip },
+      { $limit: limit },
+      {
+        $addFields: {
+          distanceKm: { $divide: ['$distance', GeoEnum.KM_TO_METERS] },
+        },
+      },
+    ];
+
+    return this._providerModel.aggregate(pipeline);
+  }
+
+  async countProvidersByFilter(filter: IFilterFetchProviders, searchRadiusMeters: number): Promise<number> {
+    const baseMatch = this._buildBaseMatch(filter);
 
     if (filter.lat && filter.lng) {
       const pipeline: PipelineStage[] = [
-        {
-          $geoNear: {
-            near: {
-              type: 'Point',
-              coordinates: [filter.lng, filter.lat], // lng, lat
-            },
-            key: 'location',
-            distanceField: 'distance', // meters
-            maxDistance: 50 * 1000, // 50 km
-            spherical: true,
-            query: baseMatch,
-          },
-        },
+        ...this._geoNearStages(filter, baseMatch, searchRadiusMeters),
+        { $count: 'total' },
       ];
-
-      if (filter.status === 'nearest') {
-        pipeline.push({ $sort: { distance: 1 } });
-      }
-
-      pipeline.push(
-        { $skip: skip },
-        { $limit: limit },
-        {
-          $addFields: {
-            distanceKm: { $divide: ['$distance', 1000] },
-          },
-        }
-      );
-
-      return this._providerModel.aggregate(pipeline);
+      const [result] = await this._providerModel.aggregate<{ total: number }>(pipeline);
+      return result?.total ?? 0;
     }
 
-    return this._providerModel
-      .find(baseMatch)
-      .skip(skip)
-      .limit(limit)
-      .lean();
+    return this._providerModel.countDocuments(baseMatch);
   }
 
+  
   async addWorkImage(providerId: string, publicId: string): Promise<ProviderDocument | null> {
     const result = await this._providerModel.findOneAndUpdate(
       { _id: providerId },

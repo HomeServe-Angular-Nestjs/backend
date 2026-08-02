@@ -85,7 +85,8 @@ export class ServiceCategoryRepository extends BaseRepository<ServiceCategoryDoc
     }
 
     async searchCategories(text: string): Promise<ServiceCategoryDocument[]> {
-        const prefix = `^${text}`;
+        const escaped = text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const prefix = `^${escaped}`;
 
         return this._serviceCategoryModel.find({
             isDeleted: false,
