@@ -17,18 +17,24 @@ export class ReservationService implements IReservationService {
         private readonly _reservationMapper: IReservationMapper
     ) { }
 
-    async createReservation(data: IReservation): Promise<ReservationDocument> {
-        return await this._reservationRepository.create(this._reservationMapper.toDocument({
+    async createReservation(data: Partial<IReservation>): Promise<ReservationDocument> {
+        const document = this._reservationMapper.toDocument({
             from: data.from,
             to: data.to,
             date: data.date,
             providerId: data.providerId,
             customerId: data.customerId,
-        }));
+        });
+
+        return await this._reservationRepository.createOrRefreshReservation(document);
     }
 
     async isReserved(providerId: string, from: string, to: string, date: string): Promise<boolean> {
         return await this._reservationRepository.isReserved(providerId, from, to, date);
+    }
+
+    async releaseReservation(providerId: string, from: string, to: string, date: string): Promise<{ deletedCount?: number }> {
+        return await this._reservationRepository.releaseReservation(providerId, from, to, date);
     }
 
 }

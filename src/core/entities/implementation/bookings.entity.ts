@@ -3,6 +3,7 @@ import { BaseEntity } from '@core/entities/base/implementation/base.entity';
 import { IBookedSlot, IBooking, IReview } from '@core/entities/interfaces/booking.entity.interface';
 import { SlotStatusEnum } from '@core/enum/slot.enum';
 import { ITransaction } from '@core/entities/interfaces/transaction.entity.interface';
+import { PaymentSource } from '@core/enum/transaction.enum';
 
 export class Booking extends BaseEntity implements IBooking {
     customerId: string;
@@ -20,6 +21,7 @@ export class Booking extends BaseEntity implements IBooking {
     slot: IBookedSlot;
     services: string[];
     paymentStatus: PaymentStatus;
+    paymentSource: PaymentSource;
     cancelStatus: CancelStatus | null;
     transactionHistory: ITransaction[];
     review: IReview | null;

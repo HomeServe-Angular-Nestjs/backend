@@ -1,6 +1,7 @@
 import { Transform, Type } from 'class-transformer';
 import { ArrayMaxSize, ArrayMinSize, ArrayNotEmpty, IsArray, IsDate, IsEnum, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, Matches, MaxLength, Min, MinLength, ValidateNested } from 'class-validator';
 import { BookingStatus, DateRange, PaymentStatus, SortBy } from '@core/enum/bookings.enum';
+import { PaymentSource } from '@core/enum/transaction.enum';
 
 export class SlotType {
     @IsString()
@@ -82,6 +83,12 @@ export class SaveBookingDto extends SelectedSlotDto {
     @IsOptional()
     @IsString()
     couponId?: string;
+
+    @IsOptional()
+    @IsEnum(PaymentSource, {
+        message: 'paymentSource must be one of: ' + Object.values(PaymentSource).join(', ')
+    })
+    paymentSource?: PaymentSource;
 }
 
 export class BookingPaginationFilterDto {

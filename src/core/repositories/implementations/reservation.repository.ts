@@ -29,12 +29,45 @@ export class ReservationRepository extends BaseRepository<ReservationDocument> i
         return !!isExists;
     }
 
+    async createOrRefreshReservation(data: Partial<ReservationDocument>): Promise<ReservationDocument> {
+        const existing = await this._reservationModel.findOne({
+            from: data.from,
+            to: data.to,
+            date: data.date,
+            providerId: data.providerId,
+            customerId: data.customerId,
+        });
+
+        if (existing) {
+            const refreshed = await this._reservationModel.findOneAndUpdate(
+                { _id: existing._id },
+                { $set: { createdAt: new Date() } },
+                { new: true }
+            );
+            return refreshed ?? existing;
+        }
+
+        return await this._reservationModel.create(data);
+    }
+
     async findAllForDate(providerId: string, date: string | Date): Promise<ReservationDocument[]> {
         const formattedDate = new Date(date);
         formattedDate.setHours(0, 0, 0, 0);
 
         return await this._reservationModel.find({
             providerId: this._toObjectId(providerId),
+            date: formattedDate
+        });
+    }
+
+    async releaseReservation(providerId: string, from: string, to: string, date: string | Date): Promise<{ deletedCount?: number }> {
+        const formattedDate = new Date(date);
+        formattedDate.setHours(0, 0, 0, 0);
+
+        return await this._reservationModel.deleteOne({
+            providerId: this._toObjectId(providerId),
+            from,
+            to,
             date: formattedDate
         });
     }

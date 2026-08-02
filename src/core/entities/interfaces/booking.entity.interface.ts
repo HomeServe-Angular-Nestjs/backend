@@ -21,6 +21,7 @@ export interface IBookingResponse {
     expectedArrivalTime: Date | string;
     bookingStatus: BookingStatus;
     paymentStatus: PaymentStatus;
+    paymentSource: PaymentSource;
     cancelStatus: CancelStatus | null;
     totalAmount: number;
     createdAt: Date;
@@ -109,6 +110,7 @@ export interface IBooking extends IEntity {
     services: string[];
     transactionHistory: ITransaction[];
     paymentStatus: PaymentStatus;
+    paymentSource: PaymentSource;
     review: IReview | null;
     respondedAt: Date | null;
     couponId: string | null;

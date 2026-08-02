@@ -281,6 +281,7 @@ export class BookingService implements IBookingService {
                 cancelledAt: null,
                 transactionHistory: [],
                 paymentStatus: PaymentStatus.UNPAID,
+                paymentSource: bookingData.paymentSource ?? PaymentSource.RAZORPAY,
                 review: null,
                 respondedAt: null,
                 couponId: bookingData.couponId ?? null,
@@ -378,6 +379,7 @@ export class BookingService implements IBookingService {
                     bookingStatus: booking.bookingStatus,
                     cancelStatus: booking.cancelStatus,
                     paymentStatus: booking.paymentStatus,
+                    paymentSource: booking.paymentSource,
                     totalAmount: booking.totalAmount / 100,
                     createdAt: booking.createdAt as Date,
                     review: booking.review,
@@ -441,7 +443,7 @@ export class BookingService implements IBookingService {
             .filter(t => t.transactionType === TransactionType.BOOKING_PAYMENT && t.status === TransactionStatus.SUCCESS)
             .sort((a, b) => (b.createdAt as Date).getTime() - (a.createdAt as Date).getTime())[0];
 
-        const gst = transaction.metadata?.breakup?.gst || 0;
+        const gst = transaction?.metadata?.breakup?.gst || 0;
 
 
         const bookingResponse: IBookingDetailCustomer = {
@@ -568,6 +570,7 @@ export class BookingService implements IBookingService {
             bookingId: updatedBooking.id,
             bookingStatus: updatedBooking.bookingStatus,
             paymentStatus: updatedBooking.paymentStatus,
+            paymentSource: updatedBooking.paymentSource,
             createdAt: updatedBooking.createdAt as Date,
             expectedArrivalTime: updatedBooking.expectedArrivalTime,
             totalAmount: updatedBooking.totalAmount / 100,
@@ -640,9 +643,10 @@ export class BookingService implements IBookingService {
         const updatedData: IBookingResponse = {
             bookingId: updatedBooking.id,
             bookingStatus: updatedBooking.bookingStatus,
+            paymentStatus: updatedBooking.paymentStatus,
+            paymentSource: updatedBooking.paymentSource,
             createdAt: updatedBooking.createdAt as Date,
             expectedArrivalTime: updatedBooking.expectedArrivalTime,
-            paymentStatus: updatedBooking.paymentStatus,
             cancelStatus: updatedBooking.cancelStatus,
             provider: {
                 email: provider?.email,
