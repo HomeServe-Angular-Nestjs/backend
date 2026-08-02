@@ -89,11 +89,15 @@ export class ProviderServices implements IProviderServices {
   }
 
   async getProviders(filters: FilterDto): Promise<IResponse<IProviderCardWithPagination>> {
-    const { page = 1, limit = 10, availability, date, categoryId, ...filter } = filters;
+    const { page = 1, limit = 10, availability, date, categoryId, providerIds: providerIdsParam, ...filter } = filters;
 
     let providerIds: string[] | undefined;
 
-    if (categoryId) {
+    if (providerIdsParam) {
+      providerIds = providerIdsParam.split(',').map(id => id.trim()).filter(Boolean);
+    }
+
+    if (!providerIds?.length && categoryId) {
       const providerServices = await this._providerServiceRepository.findByCategoryId(categoryId);
       providerIds = providerServices.map(services => services.providerId.toString());
     }

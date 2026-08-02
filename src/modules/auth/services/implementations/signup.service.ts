@@ -71,6 +71,13 @@ export class SignupService implements ISignupService {
         throw new BadRequestException(error);
       }
 
+      if ((error as { code?: number })?.code === 11000) {
+        throw new ConflictException({
+          code: ErrorCodes.CONFLICT,
+          message: ErrorMessage.USERNAME_CONFLICT_ERROR
+        });
+      }
+
       this.logger.error('Error while completing the signup.');
       throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
     }

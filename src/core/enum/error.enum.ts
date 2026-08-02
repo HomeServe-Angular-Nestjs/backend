@@ -8,6 +8,7 @@ export enum ErrorMessage {
     UPDATE_FAILED = 'Update failed',
 
     EMAIL_CONFLICT_ERROR = 'User already exists.',
+    USERNAME_CONFLICT_ERROR = 'Username is already taken.',
     SERVICE_ALREADY_EXISTS = 'Service already exists',
     PLAN_ALREADY_EXISTS = 'Plan already exists',
     COUPON_ALREADY_EXISTS = 'Coupon code already exists.',

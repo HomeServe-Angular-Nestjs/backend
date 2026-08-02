@@ -1,7 +1,7 @@
 import { Type } from 'class-transformer';
 import {
     ArrayMaxSize,
-    ArrayMinSize, IsArray, IsDefined, IsEmail, IsNotEmpty, IsNumber, IsString, Matches, Max, Min,
+    ArrayMinSize, IsArray, IsDefined, IsEmail, IsNotEmpty, IsNumber, IsString, Matches, Max, MaxLength, Min, MinLength,
     ValidateNested
 } from 'class-validator';
 
@@ -31,10 +31,13 @@ export class AddressDto {
 export class UpdateProfileDto {
     @IsNotEmpty()
     @IsString()
+    @MinLength(4, { message: 'Full name must be at least 4 characters.' })
+    @MaxLength(50, { message: 'Full name cannot exceed 50 characters.' })
     fullname: string;
 
     @IsNotEmpty()
     @IsString()
+    @MinLength(3, { message: 'Username must be at least 3 characters.' })
     username: string;
 
     @IsNotEmpty()

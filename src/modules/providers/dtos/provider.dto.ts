@@ -64,6 +64,10 @@ export class FilterDto extends PageDto {
     @IsString()
     categoryId?: string;
 
+    @IsOptional()
+    @IsString()
+    providerIds?: string;
+
     @Transform(({ value }) => value ? Number(value) : null)
     @IsOptional()
     // @IsNumber()

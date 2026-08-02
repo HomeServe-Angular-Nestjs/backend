@@ -1,6 +1,7 @@
 import { FilterQuery } from 'mongoose';
 
 import { IReportUserData, IReportDownloadUserData, IStats } from '@core/entities/interfaces/admin.entity.interface';
+import { IUpdateProfileData } from '@core/entities/interfaces/user.entity.interface';
 import { IBaseRepository } from '@core/repositories/base/interfaces/base-repo.interface';
 import { CustomerDocument } from '@core/schema/customer.schema';
 
@@ -16,5 +17,9 @@ export interface ICustomerRepository extends IBaseRepository<CustomerDocument> {
   generateCustomersReport(data: Partial<IReportDownloadUserData>): Promise<IReportUserData[]>;
   changeReviewStatus(id: string, status: boolean): Promise<void>;
   updateSubscriptionId(customerId: string, subscriptionId: string): Promise<boolean>;
-  updateProfile(customerId: string, data: { fullname?: string, username?: string, phone?: string, location?: { address: string, coordinates: [number, number] } }): Promise<CustomerDocument | null>;
+  partialUpdate(id: string, data: Record<string, unknown>): Promise<CustomerDocument | null>;
+  toggleFavorite(customerId: string, providerId: string): Promise<CustomerDocument | null>;
+  updatePasswordById(customerId: string, hashedPassword: string): Promise<CustomerDocument | null>;
+  updateAvatar(customerId: string, publicId: string): Promise<CustomerDocument | null>;
+  updateProfile(customerId: string, data: IUpdateProfileData): Promise<CustomerDocument | null>;
 }

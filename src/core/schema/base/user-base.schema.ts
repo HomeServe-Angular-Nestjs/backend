@@ -31,7 +31,7 @@ export class BaseUserDocument extends Document {
   @Prop({ type: String, required: true, unique: true, index: true })
   email: string;
 
-  @Prop({ type: String, required: true })
+  @Prop({ type: String, required: true, unique: true, index: true })
   username: string;
 
   @Prop({ type: String })

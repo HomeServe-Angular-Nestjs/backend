@@ -1,12 +1,12 @@
 import { Types } from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
 
-import { Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 
 import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, PROVIDER_SERVICE_REPOSITORY_NAME, SERVICE_CATEGORY_REPOSITORY_NAME } from '@core/constants/repository.constant';
 import { ARGON_UTILITY_NAME, UPLOAD_UTILITY_NAME } from '@core/constants/utility.constant';
 import { ICustomerSearchCategories } from '@core/entities/interfaces/service.entity.interface';
-import { ICustomer, ISearchedProviders } from '@core/entities/interfaces/user.entity.interface';
+import { ICustomer, ISearchedProviders, IUpdateProfileData } from '@core/entities/interfaces/user.entity.interface';
 import { ErrorCodes, ErrorMessage, UploadErrorMessages } from '@core/enum/error.enum';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
@@ -24,6 +24,7 @@ import { UploadsType } from '@core/enum/uploads.enum';
 import { IProviderServiceRepository } from '@core/repositories/interfaces/provider-service-repo.interface';
 import { IServiceCategoryRepository } from '@core/repositories/interfaces/service-category-repo.interface';
 import { IServiceCategoryMapper } from '@core/dto-mapper/interface/service-category.mapper.interface';
+import { CustomerDocument } from '@core/schema/customer.schema';
 
 @Injectable()
 export class CustomerService implements ICustomerService {
@@ -55,44 +56,33 @@ export class CustomerService implements ICustomerService {
     async fetchOneCustomer(id: string): Promise<ICustomer | null> {
         const customerDocument = await this._customerRepository.findOne({ _id: id });
         if (!customerDocument) return null;
-        const customer = this._customerMapper.toEntity(customerDocument);
-        customer.avatar = this._uploadsUtility.getSignedImageUrl(customer.avatar);
-        return customer;
+        return this.toEntityWithSignedAvatar(customerDocument);
+    }
+
+    private toEntityWithSignedAvatar(doc: CustomerDocument): ICustomer {
+        const entity = this._customerMapper.toEntity(doc);
+        entity.avatar = this._uploadsUtility.getSignedImageUrl(entity.avatar);
+        return entity;
     }
 
     async partialUpdate(id: string, data: Partial<ICustomer>): Promise<ICustomer> {
-        const updatedCustomerDocument = await this._customerRepository.findOneAndUpdate(
-            { _id: id },
-            { $set: data },
-            { new: true }
-        );
+        const updatedCustomerDocument = await this._customerRepository.partialUpdate(id, data);
 
         if (!updatedCustomerDocument) {
             throw new NotFoundException(`Customer with Id ${id} is not found`)
         }
 
-        return this._customerMapper.toEntity(updatedCustomerDocument);
+        return this.toEntityWithSignedAvatar(updatedCustomerDocument);
     }
 
     async toggleFavorite(id: string, providerId: string): Promise<ICustomer> {
-        const customer = await this._customerRepository.findById(id);
-        const alreadySaved = customer?.savedProviders?.includes(providerId);
-
-        const query = alreadySaved
-            ? { $pull: { savedProviders: providerId } }
-            : { $addToSet: { savedProviders: providerId } };
-
-        const updatedCustomerDocument = await this._customerRepository.findOneAndUpdate(
-            { _id: id },
-            query,
-            { new: true }
-        );
+        const updatedCustomerDocument = await this._customerRepository.toggleFavorite(id, providerId);
 
         if (!updatedCustomerDocument) {
             throw new NotFoundException(`Customer with ID ${id} not found`);
         }
 
-        return this._customerMapper.toEntity(updatedCustomerDocument);
+        return this.toEntityWithSignedAvatar(updatedCustomerDocument);
     }
 
     async searchProviders(search: string): Promise<IResponse> {
@@ -118,19 +108,15 @@ export class CustomerService implements ICustomerService {
     }
 
     async updateProfile(customerId: string, updateData: UpdateProfileDto): Promise<IResponse<ICustomer>> {
-        const updatedCustomer = await this._customerRepository.findOneAndUpdate(
-            { _id: customerId },
-            {
-                $set: {
-                    location: {
-                        coordinates: updateData.coordinates,
-                        type: 'Point'
-                    },
-                    ...updateData
-                }
-            },
-            { new: true }
-        );
+        const profileData: IUpdateProfileData = {
+            fullname: updateData.fullname,
+            username: updateData.username,
+            phone: updateData.phone,
+            address: updateData.address,
+            coordinates: updateData.coordinates as [number, number],
+        };
+
+        const updatedCustomer = await this._customerRepository.updateProfile(customerId, profileData);
 
         if (!updatedCustomer) {
             throw new NotFoundException({
@@ -142,7 +128,7 @@ export class CustomerService implements ICustomerService {
         return {
             success: !!updatedCustomer,
             message: 'update successful',
-            data: this._customerMapper.toEntity(updatedCustomer)
+            data: this.toEntityWithSignedAvatar(updatedCustomer)
         }
     }
 
@@ -150,6 +136,13 @@ export class CustomerService implements ICustomerService {
         const customer = await this._customerRepository.findById(customerId);
         if (!customer) {
             throw new NotFoundException(ErrorMessage.CUSTOMER_NOT_FOUND_WITH_ID, customerId);
+        }
+
+        if (customer.googleId || !customer.password) {
+            throw new BadRequestException({
+                code: ErrorCodes.BAD_REQUEST,
+                message: 'Password change is not available for Google-authenticated accounts.'
+            });
         }
 
         const result = await this._argonUtility.verify(customer.password, data.currentPassword);
@@ -162,13 +155,7 @@ export class CustomerService implements ICustomerService {
 
         const hashedPassword = await this._argonUtility.hash(data.newPassword);
 
-        const updatedCustomer = await this._customerRepository.findOneAndUpdate(
-            { _id: customerId },
-            {
-                $set: { password: hashedPassword }
-            },
-            { new: true }
-        );
+        const updatedCustomer = await this._customerRepository.updatePasswordById(customerId, hashedPassword);
 
         if (!updatedCustomer) {
             throw new Error('Failed to update password');
@@ -177,7 +164,7 @@ export class CustomerService implements ICustomerService {
         return {
             success: !!updatedCustomer,
             message: 'password changed successfully',
-            data: this._customerMapper.toEntity(updatedCustomer)
+            data: this.toEntityWithSignedAvatar(updatedCustomer)
         }
     }
 
@@ -190,13 +177,7 @@ export class CustomerService implements ICustomerService {
             throw new InternalServerErrorException(UploadErrorMessages.IMAGE_UPLOAD_FAILED);
         }
 
-        const updatedCustomer = await this._customerRepository.findOneAndUpdate(
-            { _id: customerId },
-            {
-                $set: { avatar: uploadResponse.public_id }
-            },
-            { nw: true }
-        );
+        const updatedCustomer = await this._customerRepository.updateAvatar(customerId, uploadResponse.public_id);
 
         if (!updatedCustomer) {
             throw new NotFoundException(ErrorMessage.CUSTOMER_NOT_FOUND_WITH_ID, customerId);
@@ -205,7 +186,7 @@ export class CustomerService implements ICustomerService {
         return {
             success: !!updatedCustomer,
             message: 'image updated',
-            data: this._customerMapper.toEntity(updatedCustomer)
+            data: this.toEntityWithSignedAvatar(updatedCustomer)
         }
     }
 

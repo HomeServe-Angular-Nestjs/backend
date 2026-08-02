@@ -37,6 +37,14 @@ export interface ICustomer extends IBaseUserEntity {
   savedProviders?: string[] | null;
 }
 
+export interface IUpdateProfileData {
+  fullname?: string;
+  username?: string;
+  phone?: string;
+  address?: string;
+  coordinates?: [number, number];
+}
+
 export interface IExpertise {
   specialization: string;
   label: string;
