@@ -1,13 +1,13 @@
 import { IResponse } from '@/core/misc/response.util';
 import { ICustomer, IFetchReviews } from '@core/entities/interfaces/user.entity.interface';
 import {
-    ChangePasswordDto, SubmitReviewDto, UpdateProfileDto, ProviderIdDto
+    ChangePasswordDto, SubmitReviewDto, UpdateProfileDto
 } from '@modules/customer/dtos/customer.dto';
 
 export interface ICustomerService {
     fetchOneCustomer(id: string): Promise<ICustomer | null>;
     partialUpdate(id: string, data: Partial<ICustomer>): Promise<ICustomer>;
-    updateSavedProviders(id: string, dto: ProviderIdDto): Promise<ICustomer>;
+    toggleFavorite(id: string, providerId: string): Promise<ICustomer>;
     searchProviders(search: string): Promise<IResponse>;
     updateProfile(customerId: string, updateData: UpdateProfileDto): Promise<IResponse<ICustomer>>;
     changePassword(customerId: string, data: ChangePasswordDto): Promise<IResponse<ICustomer>>;

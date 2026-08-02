@@ -361,6 +361,7 @@ export class ProviderServices implements IProviderServices {
       additionalSkills: updateBioDto.additionalSkills,
       expertise: updateBioDto.expertise,
       languages: updateBioDto.languages,
+      awards: updateBioDto.awards,
       bio: updateBioDto.providerBio,
     };
 

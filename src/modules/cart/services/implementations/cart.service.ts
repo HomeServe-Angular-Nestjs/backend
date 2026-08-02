@@ -58,7 +58,7 @@ export class CartService implements ICartService {
             const itemExists = cart.items.some(item => item === providerServiceId);
             if (itemExists) {
                 throw new ConflictException({
-                    code: ErrorCodes.CONFLICT,
+                    code: ErrorCodes.CART_ITEM_ALREADY_EXISTS,
                     message: "Item already exists in cart"
                 });
             }

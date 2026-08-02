@@ -5,7 +5,7 @@ import { ICustomer } from '@core/entities/interfaces/user.entity.interface';
 import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
 import { IPayload } from '@core/misc/payload.interface';
 import { IResponse } from '@core/misc/response.util';
-import { ChangePasswordDto, UpdateProfileDto, ProviderIdDto } from '@modules/customer/dtos/customer.dto';
+import { ChangePasswordDto, UpdateProfileDto } from '@modules/customer/dtos/customer.dto';
 import { ICustomerService } from '@modules/customer/services/interfaces/customer-service.interface';
 import { User } from '@core/decorators/extract-user.decorator';
 
@@ -41,9 +41,9 @@ export class CustomerController {
         return this._customerService.partialUpdate(id, updateData);
     }
 
-    @Patch('saved_providers')
-    async updateSavedProviders(@User() user: IPayload, @Body() providerIdDto: ProviderIdDto): Promise<ICustomer> {
-        return this._customerService.updateSavedProviders(user.sub, providerIdDto);
+    @Patch('favorites/:providerId')
+    async toggleFavorite(@User() user: IPayload, @Param('providerId') providerId: string): Promise<ICustomer> {
+        return this._customerService.toggleFavorite(user.sub, providerId);
     }
 
     @Patch('password')

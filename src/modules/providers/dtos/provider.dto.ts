@@ -114,6 +114,10 @@ export class UpdateBioDto {
     @ValidateNested({ each: true })
     @Type(() => LanguageDto)
     languages?: LanguageDto[];
+
+    @IsOptional()
+    @IsString({ each: true })
+    awards?: string[];
 }
 
 export class UploadCertificateDto {

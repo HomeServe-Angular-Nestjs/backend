@@ -17,7 +17,7 @@ import { IArgonUtility } from '@core/utilities/interface/argon.utility.interface
 import { IUploadsUtility } from '@core/utilities/interface/upload.utility.interface';
 import { ChangePasswordDto } from '@modules/customer/dtos/customer.dto';
 import { ICustomerService } from '@modules/customer/services/interfaces/customer-service.interface';
-import { UpdateProfileDto, ProviderIdDto } from '@modules/customer/dtos/customer.dto';
+import { UpdateProfileDto } from '@modules/customer/dtos/customer.dto';
 import { CUSTOMER_MAPPER, SERVICE_CATEGORY_MAPPER } from '@core/constants/mappers.constant';
 import { ICustomerMapper } from '@core/dto-mapper/interface/customer.mapper..interface';
 import { UploadsType } from '@core/enum/uploads.enum';
@@ -74,13 +74,13 @@ export class CustomerService implements ICustomerService {
         return this._customerMapper.toEntity(updatedCustomerDocument);
     }
 
-    async updateSavedProviders(id: string, dto: ProviderIdDto): Promise<ICustomer> {
-        const customers = await this._customerRepository.findById(id);
-        const alreadySaved = customers?.savedProviders?.includes(dto.providerId);
+    async toggleFavorite(id: string, providerId: string): Promise<ICustomer> {
+        const customer = await this._customerRepository.findById(id);
+        const alreadySaved = customer?.savedProviders?.includes(providerId);
 
         const query = alreadySaved
-            ? { $pull: { savedProviders: dto.providerId } }
-            : { $addToSet: { savedProviders: dto.providerId } };
+            ? { $pull: { savedProviders: providerId } }
+            : { $addToSet: { savedProviders: providerId } };
 
         const updatedCustomerDocument = await this._customerRepository.findOneAndUpdate(
             { _id: id },
