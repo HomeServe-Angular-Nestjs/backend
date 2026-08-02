@@ -166,6 +166,7 @@ export interface IBookingDetailsBase {
         gst: number;
         providerCommission: number;
     } | null;
+    transactionHistory: ITransaction[];
     previousSchedules: Date[];
 }
 

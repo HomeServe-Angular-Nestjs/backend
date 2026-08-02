@@ -477,6 +477,7 @@ export class BookingService implements IBookingService {
                 tax: gst / 100,
                 total: booking.totalAmount / 100
             },
+            transactionHistory: booking.transactionHistory,
             previousSchedules: this._getPreviousScheduledDates(booking.previousSlots),
         }
 

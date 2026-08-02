@@ -316,6 +316,7 @@ export class ProviderBookingService implements IProviderBookingService {
                 gst: (transaction.metadata?.breakup?.gst ?? 0) / 100,
                 providerCommission: (transaction?.metadata?.breakup?.providerCommission ?? 0) / 100,
             } : null,
+            transactionHistory: booking.transactionHistory,
             previousSchedules: this._getPreviousScheduledDates(booking.previousSlots)
         }
     }
@@ -444,6 +445,7 @@ export class ProviderBookingService implements IProviderBookingService {
                 gst: (transaction?.metadata?.breakup?.gst ?? 0) / 100,
                 providerCommission: (transaction?.metadata?.breakup?.providerCommission ?? 0) / 100,
             },
+            transactionHistory: updatedBooking.transactionHistory,
             previousSchedules: this._getPreviousScheduledDates(updatedBooking.previousSlots)
         }
 
@@ -949,6 +951,7 @@ export class ProviderBookingService implements IProviderBookingService {
                     gst: (transaction?.metadata?.breakup?.gst ?? 0) / 100,
                     providerCommission: (transaction?.metadata?.breakup?.providerCommission ?? 0) / 100,
                 },
+                transactionHistory: bookingResponseData.transactionHistory,
                 previousSchedules: this._getPreviousScheduledDates(booking.previousSlots)
             }
 
@@ -1094,6 +1097,7 @@ export class ProviderBookingService implements IProviderBookingService {
                 gst: (transaction.metadata?.breakup?.gst ?? 0) / 100,
                 providerCommission: (transaction.metadata?.breakup?.providerCommission ?? 0) / 100,
             },
+            transactionHistory: booking.transactionHistory,
             previousSchedules: this._getPreviousScheduledDates(booking.previousSlots),
         }
 

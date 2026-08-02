@@ -8,8 +8,9 @@ import { IPayload } from "@core/misc/payload.interface";
 import { IResponse } from "@core/misc/response.util";
 import { ITokenService } from "@modules/auth/services/interfaces/token-service.interface";
 import { INotificationService } from "@modules/websockets/services/interface/notification-service.interface";
-import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Req, Res, UnauthorizedException } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Query, Req, Res, UnauthorizedException } from "@nestjs/common";
 import { Request, Response } from "express";
+import { NotificationQueryDto } from "@modules/websockets/dto/notification.dto";
 
 @Controller('notification')
 export class NotificationController {
@@ -59,9 +60,9 @@ export class NotificationController {
     }
 
     @Get()
-    async fetchAllNotifications(@Req() req: Request) {
+    async fetchAllNotifications(@Req() req: Request, @Query() query: NotificationQueryDto) {
         const user = req.user as IPayload;
-        return this._notificationService.fetchAll(user.sub);
+        return this._notificationService.fetchAll(user.sub, query.cursor, query.limit);
     }
 
     @Patch('mark-read/:id')
