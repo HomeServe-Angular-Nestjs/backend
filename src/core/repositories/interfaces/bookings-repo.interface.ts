@@ -9,6 +9,11 @@ import { BookingStatus, CancelStatus, PaymentStatus } from '@core/enum/bookings.
 export interface IBookingRepository extends IBaseRepository<BookingDocument> {
     findBookingsByCustomerIdWithPagination(customerId: string | Types.ObjectId, skip: number, limit: number): Promise<BookingDocument[]>;
     findBookingsByProviderId(providerId: string | Types.ObjectId): Promise<BookingDocument[]>;
+    findBookingsByProviderIdWithCursor(
+        providerId: string | Types.ObjectId,
+        cursor: { writtenAt: Date; bookingId: string } | null,
+        limit: number
+    ): Promise<BookingDocument[]>;
     fetchFilteredBookingsWithPagination(filter: IAdminBookingFilter, option?: { page: number; limit: number }): Promise<IAdminBookingList[]>;
     findPaidBookings(bookingId: string): Promise<BookingDocument | null>;
     count(filter?: FilterQuery<BookingDocument>): Promise<number>;

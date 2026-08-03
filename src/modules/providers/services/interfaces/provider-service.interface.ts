@@ -6,7 +6,7 @@ import { FilterDto, SlotDto, UpdateBioDto } from '@modules/providers/dtos/provid
 
 export interface IProviderServices {
   getProviders(filter: FilterDto): Promise<IResponse<IProviderCardWithPagination>>;
-  getReviews(providerId: string, count: number): Promise<IResponse<IDisplayReviews>>;
+  getReviews(providerId: string, options?: { cursor?: string; limit?: number }): Promise<IResponse<IDisplayReviews>>;
   fetchOneProvider(providerId: string): Promise<IResponse<ICustomerProviderDetails>>;
   bulkUpdateProvider(id: string, updateData: Partial<IProvider>, file?: Express.Multer.File,): Promise<IProvider>;
   updateBio(providerId: string, updateBioDto: UpdateBioDto): Promise<IResponse<IProvider>>;
