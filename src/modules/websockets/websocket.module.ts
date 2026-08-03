@@ -13,10 +13,11 @@ import { NotificationController } from '@modules/websockets/controllers/notifica
 import { NotificationGateway } from '@modules/websockets/namespaces/notification.gateway';
 import { ReservationGateway } from '@modules/websockets/namespaces/reservation.gateway';
 import { VideoCallGateway } from '@modules/websockets/namespaces/video-call.gateway';
+import { VideoCallController } from '@modules/websockets/controllers/video-call.controller';
 
 @Module({
     imports: [JwtConfigModule, SharedModule, CloudinaryModule.registerAsync()],
-    controllers: [ChatController, MessagesController, NotificationController],
+    controllers: [ChatController, MessagesController, NotificationController, VideoCallController],
     providers: [
         ChatGateway,
         NotificationGateway,
