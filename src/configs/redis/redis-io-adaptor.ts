@@ -5,32 +5,32 @@ import { ConfigService } from '@nestjs/config';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory } from '@core/logger/interface/logger-factory.interface';
 import { createAdapter } from '@socket.io/redis-adapter';
+import { Server, ServerOptions } from 'socket.io';
 
 export class RedisIoAdapter extends IoAdapter {
     private readonly logger: ICustomLogger;
+    private adapterConstructor?: ReturnType<typeof createAdapter>;
 
     constructor(
         private readonly _loggerFactory: ILoggerFactory,
-        private app: INestApplication,
-        private configService: ConfigService,
+        private readonly _app: INestApplication,
+        private readonly _configService: ConfigService,
     ) {
-        super(app);
+        super(_app);
         this.logger = this._loggerFactory.createLogger(RedisIoAdapter.name);
     }
 
-    override createIOServer(port: number, options?: any) {
-        const server = super.createIOServer(port, options);
-
-        const multiInstance = this.configService.get<boolean>('MULTI_INSTANCE') ?? false;
+    async connectToRedis(): Promise<void> {
+        const multiInstance = this._configService.get<boolean>('MULTI_INSTANCE') ?? false;
         if (!multiInstance) {
             this.logger.log('RedisIoAdapter disabled (single-instance mode)');
-            return server;
+            return;
         }
 
-        const host = this.configService.get<string>('REDIS_HOST');
-        const redisPort = this.configService.get<string>('REDIS_PORT');
-        const password = this.configService.get<string>('REDIS_PASSWORD');
-        const rawTLS = this.configService.get<string>('REDIS_TLS') ?? 'false';
+        const host = this._configService.get<string>('REDIS_HOST');
+        const redisPort = this._configService.get<string>('REDIS_PORT');
+        const password = this._configService.get<string>('REDIS_PASSWORD');
+        const rawTLS = this._configService.get<string>('REDIS_TLS') ?? 'false';
         const useTLS = rawTLS === 'true';
 
         if (!host || !redisPort || !password) {
@@ -41,38 +41,28 @@ export class RedisIoAdapter extends IoAdapter {
         const protocol = useTLS ? 'rediss' : 'redis';
         const redisUrl = `${protocol}://default:${password}@${host}:${redisPort}`;
 
-        this.logger.debug(`🔄 Connecting Redis adapter...`);
-        this.logger.debug(`Adapter set: ${server.of('/video-call').adapter.constructor.name}`);
+        this.logger.debug('🔄 Connecting Socket.IO Redis adapter...');
 
-        (async () => {
-            try {
-                const pubClient = createClient({
-                    url: redisUrl,
-                    socket: useTLS ? { tls: true, rejectUnauthorized: false } : {},
-                });
-                const subClient = pubClient.duplicate();
+        const pubClient = createClient({
+            url: redisUrl,
+            socket: useTLS ? { tls: true, rejectUnauthorized: false } : {},
+        });
+        const subClient = pubClient.duplicate();
 
-                await Promise.all([pubClient.connect(), subClient.connect()]);
+        await Promise.all([pubClient.connect(), subClient.connect()]);
 
-                const redisAdapter = createAdapter(pubClient, subClient);
+        this.adapterConstructor = createAdapter(pubClient, subClient);
+        this.logger.log('✅ Socket.IO Redis adapter connected');
+    }
 
-                server.adapter(redisAdapter);
+    override createIOServer(port: number, options?: ServerOptions): Server {
+        const server = super.createIOServer(port, options);
 
-                const videoCallNsp = server._nsps.get('/video-call');
-                if (videoCallNsp) {
-                    // Assign the adapter instance (not call)
-                    videoCallNsp.adapter = server.of('/').adapter;
-                }
-
-                this.logger.debug(`Adapter set for /: ${server.of('/').adapter.constructor.name}`);
-                this.logger.debug(`Adapter set for /video-call: ${server.of('/video-call').adapter.constructor.name}`);
-
-                this.logger.log('✅ RedisIoAdapter successfully connected to Redis')
-            } catch (error) {
-                this.logger.error(`❌ Failed to connect to Redis at ${redisUrl}`);
-                this.logger.error(error);
-            }
-        })();
+        if (this.adapterConstructor) {
+            // Applies to every namespace, including /video-call and /chat.
+            server.adapter(this.adapterConstructor);
+            this.logger.log('🔄 Socket.IO Redis adapter applied to server');
+        }
 
         return server;
     }

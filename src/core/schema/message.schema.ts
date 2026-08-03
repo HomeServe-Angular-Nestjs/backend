@@ -18,6 +18,9 @@ export class MessageDocument extends Document {
     @Prop({ type: String, required: true })
     content: string;
 
+    @Prop({ type: String })
+    clientMessageId?: string;
+
     @Prop({
         type: String,
         enum: ['text', 'image', 'file', 'audio', 'video'],
@@ -44,6 +47,8 @@ export class MessageDocument extends Document {
 export const MessageSchema = SchemaFactory.createForClass(MessageDocument);
 
 MessageSchema.index({ chatId: 1, createdAt: -1 });
+
+MessageSchema.index({ chatId: 1, _id: -1 });
 
 MessageSchema.index({ senderId: 1, receiverId: 1, createdAt: -1 });
 

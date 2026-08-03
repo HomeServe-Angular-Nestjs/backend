@@ -55,6 +55,11 @@ export interface ICustomerTransactionData {
     method: PaymentDirection;
     source: PaymentSource,
     transactionType: TransactionType;
+    bookingId: string | null;
+    subscriptionId: string | null;
+    balanceBefore: number;
+    balanceAfter: number;
+    gatewayOrderId: string | null;
     createdAt: Date;
 }
 

@@ -630,16 +630,12 @@ export class BookingService implements IBookingService {
             throw new NotFoundException('Provider ', ErrorMessage.DOCUMENT_NOT_FOUND);
         }
 
-        const services = [];
-        // await Promise.all(
-        //     updatedBooking.services.flatMap(async (s) => {
-        //         const providerServices = await this._providerServiceRepository.findByIds(s.subserviceIds.map(String));
-        //         return providerServices.map(ps => ({
-        //             id: ps.id,
-        //             name: ps.description
-        //         }));
-        //     })
-        // ).then(results => results.flat());
+        const services = await Promise.all(
+            updatedBooking.services.map(async (serviceId) => {
+                const service = await this._providerServiceRepository.findOneAndPopulateById(serviceId.toString());
+                return service ? service.categoryId.name ?? service.description : '';
+            })
+        );
 
         const updatedData: IBookingResponse = {
             bookingId: updatedBooking.id,

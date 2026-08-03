@@ -5,5 +5,5 @@ export interface IChatSocketService {
     findChat(sender: IParticipant, receiver: IParticipant): Promise<IChat | null>;
     createChat(sender: IParticipant, receiver: IParticipant): Promise<IChat>;
     getAllChat(sender: IParticipant): Promise<IResponse<IChatData[]>>;
-    getChat(sender: IParticipant, receiver: IParticipant): Promise<IResponse<IChat>>;
+    getChat(sender: IParticipant, receiver: IParticipant): Promise<IResponse<IChatData>>;
 }

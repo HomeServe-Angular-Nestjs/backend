@@ -42,6 +42,32 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
             .lean();
     }
 
+    async findBookingsByProviderIdWithCursor(
+        providerId: string | Types.ObjectId,
+        cursor: { writtenAt: Date; bookingId: string } | null,
+        limit: number
+    ): Promise<BookingDocument[]> {
+        const query: FilterQuery<BookingDocument> = {
+            providerId: this._toObjectId(providerId),
+            paymentStatus: { $ne: PaymentStatus.UNPAID },
+            review: { $exists: true, $ne: null },
+            'review.isActive': true,
+        };
+
+        if (cursor) {
+            query.$or = [
+                { 'review.writtenAt': { $lt: cursor.writtenAt } },
+                { 'review.writtenAt': cursor.writtenAt, _id: { $lt: this._toObjectId(cursor.bookingId) } },
+            ];
+        }
+
+        return await this._bookingModel
+            .find(query)
+            .sort({ 'review.writtenAt': -1, _id: -1 })
+            .limit(limit)
+            .lean();
+    }
+
     async findPaidBookings(bookingId: string): Promise<BookingDocument | null> {
         return this._bookingModel.findOne({ _id: bookingId, paymentStatus: { $ne: PaymentStatus.UNPAID } });
     }

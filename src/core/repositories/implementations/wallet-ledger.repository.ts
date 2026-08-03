@@ -202,6 +202,11 @@ export class WalletLedgerRepository extends BaseRepository<WalletLedgerDocument>
                     method: "$direction",
                     source: "$source",
                     transactionType: "$type",
+                    bookingId: "$bookingId",
+                    subscriptionId: "$subscriptionId",
+                    balanceBefore: { $divide: ["$balanceBefore", 100] },
+                    balanceAfter: { $divide: ["$balanceAfter", 100] },
+                    gatewayOrderId: "$gatewayOrderId",
                 }
             }
         ];

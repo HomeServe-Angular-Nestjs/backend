@@ -35,11 +35,11 @@ export class ReservationGateway extends BaseSocketGateway {
 
     constructor(
         @Inject(LOGGER_FACTORY)
-        private readonly _loggerFactory: ILoggerFactory,
+        loggerFactory: ILoggerFactory,
         @Inject(AUTH_SOCKET_SERVICE_NAME)
-        private readonly _authSocketService: IAuthSocketService,
+        authSocketService: IAuthSocketService,
         @Inject(USER_SOCKET_STORE_SERVICE_NAME)
-        private readonly _userSocketService: IUserSocketStoreService,
+        userSocketService: IUserSocketStoreService,
         @Inject(CUSTOM_DTO_VALIDATOR_NAME)
         private readonly _customDtoValidatorUtility: ICustomDtoValidator,
         @Inject(RESERVATION_SERVICE_NAME)
@@ -47,31 +47,15 @@ export class ReservationGateway extends BaseSocketGateway {
         @Inject(BOOKING_REPOSITORY_NAME)
         private readonly _bookingRepository: IBookingRepository,
     ) {
-        super();
-        this.logger = this._loggerFactory.createLogger(ReservationGateway.name);
+        super(loggerFactory, authSocketService, userSocketService, namespace);
     }
 
     protected override async onClientConnect(client: Socket): Promise<void> {
-        try {
-            const payload = await this._authSocketService.validateToken(client);
-            const { sub: userId, type: userType } = payload;
-
-            client.data.user = { id: userId, type: userType };
-
-            await this._userSocketService.addSocket(userId, client.id, namespace);
-            this.logger.log(`User ${userId} connected to socket ID: ${client.id}`);
-        } catch (error) {
-            this.logger.error('Reservation token verification failed');
-            client.emit('token:expired');
-            setTimeout(() => client.disconnect(), 200);
-        }
+        await this._authenticate(client);
     }
 
     protected override async onClientDisConnect(client: Socket): Promise<void> {
-        const user = this._getClient(client);
-        if (user?.id) {
-            await this._userSocketService.removeSocket(user.id, client.id, namespace);
-        }
+        await this._unauthenticate(client);
     }
 
     @SubscribeMessage(CHECK_RESERVATION)

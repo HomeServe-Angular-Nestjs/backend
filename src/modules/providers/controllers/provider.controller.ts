@@ -47,7 +47,10 @@ export class ProviderController {
 
     @Get('reviews')
     async getReviews(@Query() getReviewsDto: GetReviewsDto) {
-        return await this._providerServices.getReviews(getReviewsDto.providerId, getReviewsDto.count);
+        return await this._providerServices.getReviews(getReviewsDto.providerId, {
+            cursor: getReviewsDto.cursor,
+            limit: getReviewsDto.limit,
+        });
     }
 
     @Put('bio')
@@ -103,7 +106,7 @@ export class ProviderController {
         if (!docId) {
             throw new BadRequestException(ErrorMessage.MISSING_FIELDS);
         }
-        // return await this._providerServices.uploadCertificate(user.sub, label, file);
+        return await this._providerServices.removeCertificate(user.sub, docId);
     }
 
     @Get('work_images')

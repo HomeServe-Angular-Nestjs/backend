@@ -19,6 +19,7 @@ export class MessageMapper implements IMessageMapper {
             isRead: doc.isRead,
             messageType: doc.messageType,
             isDeleted: doc.isDeleted,
+            clientMessageId: doc.clientMessageId,
             createdAt: doc.createdAt,
             updatedAt: doc.updatedAt
         });

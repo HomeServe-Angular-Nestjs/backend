@@ -489,17 +489,19 @@ export class ProviderServices implements IProviderServices {
     }
   }
 
-  async getReviews(providerId: string, count: number = 0): Promise<IResponse<IDisplayReviews>> {
+  async getReviews(providerId: string, options: { cursor?: string; limit?: number } = {}): Promise<IResponse<IDisplayReviews>> {
+    const limit = options.limit ?? 10;
+    const cursor = options.cursor ? this._parseReviewCursor(options.cursor) : null;
+
     const [bookingDocs, stats] = await Promise.all([
-      this._bookingRepository.findBookingsByProviderId(providerId),
+      this._bookingRepository.findBookingsByProviderIdWithCursor(providerId, cursor, limit + 1),
       this._bookingRepository.getAvgRatingAndTotalReviews(providerId)
     ]);
 
-    const customerIds = bookingDocs
-      .filter(b => b.review)
-      .map(b => b.customerId.toString());
+    const hasMore = bookingDocs.length > limit;
+    const pageDocs = bookingDocs.slice(0, limit);
 
-    const uniqueCustomerIds = [...new Set(customerIds)];
+    const uniqueCustomerIds = [...new Set(pageDocs.map(b => b.customerId.toString()))];
 
     const customerDocs = await this._customerRepository.findByIds(uniqueCustomerIds);
     const customers = (customerDocs ?? []).map(c => this._customerMapper.toEntity(c));
@@ -511,25 +513,30 @@ export class ProviderServices implements IProviderServices {
 
     const statsForProvider = stats[0] ?? { avgRating: 0, totalReviews: 0 };
 
-    const allReviews = bookingDocs.flatMap(b =>
+    const reviews = pageDocs.flatMap(b =>
       b.review && b.review.isActive
         ? [{
-          ...b.review,
-          name: customerMap[b.customerId.toString()]?.username,
-          avatar: customerMap[b.customerId.toString()]?.avatar ?? '',
-          email: customerMap[b.customerId.toString()]?.email,
-          writtenAt: new Date(b.review.writtenAt ?? b.createdAt)
-        }]
+            ...b.review,
+            name: customerMap[b.customerId.toString()]?.username,
+            avatar: customerMap[b.customerId.toString()]?.avatar ?? '',
+            email: customerMap[b.customerId.toString()]?.email,
+            writtenAt: new Date(b.review.writtenAt ?? b.createdAt)
+          }]
         : []
-    ).sort((a, b) => b.writtenAt.getTime() - a.writtenAt.getTime());
+    );
 
-    const limitedReviews = allReviews.slice(0, count + 10);
+    const last = pageDocs[pageDocs.length - 1];
+    const lastBookingId = last ? String((last as { _id: unknown })._id ?? '') : '';
+    const nextCursor = hasMore && last?.review?.writtenAt && lastBookingId
+      ? this._encodeReviewCursor(new Date(last.review.writtenAt), lastBookingId)
+      : null;
 
     const displayReviews: IDisplayReviews = {
-      reviews: limitedReviews,
+      reviews,
       avgRating: statsForProvider.avgRating,
       totalReviews: statsForProvider.totalReviews,
-      allFetched: allReviews.length <= count
+      allFetched: !hasMore,
+      nextCursor
     };
 
     return {
@@ -537,6 +544,19 @@ export class ProviderServices implements IProviderServices {
       message: 'Reviews fetched successfully.',
       data: displayReviews
     }
+  }
+
+  private _encodeReviewCursor(writtenAt: Date, bookingId: string): string {
+    return `${new Date(writtenAt).toISOString()}|${bookingId}`;
+  }
+
+  private _parseReviewCursor(cursor: string): { writtenAt: Date; bookingId: string } | null {
+    const separatorIndex = cursor.lastIndexOf('|');
+    if (separatorIndex <= 0) return null;
+    const writtenAt = new Date(cursor.slice(0, separatorIndex));
+    const bookingId = cursor.slice(separatorIndex + 1);
+    if (!bookingId || isNaN(writtenAt.getTime())) return null;
+    return { writtenAt, bookingId };
   }
 
   async updatePassword(providerId: string, currentPassword: string, newPassword: string): Promise<IResponse> {

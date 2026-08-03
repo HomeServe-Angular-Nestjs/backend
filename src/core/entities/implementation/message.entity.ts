@@ -12,6 +12,7 @@ export class Message extends BaseEntity implements IMessage {
     attachments?: string[];
     isRead: boolean;
     isDeleted: boolean;
+    clientMessageId?: string;
 
     constructor(partials: Partial<Message>) {
         super(partials);

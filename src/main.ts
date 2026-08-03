@@ -48,7 +48,10 @@ async function bootstrap() {
 
 
   const loggerFactory = app.get<ILoggerFactory>(LOGGER_FACTORY);
-  // app.useWebSocketAdapter(new RedisIoAdapter(loggerFactory, app, configService));
+
+  const redisIoAdapter = new RedisIoAdapter(loggerFactory, app, configService);
+  await redisIoAdapter.connectToRedis();
+  app.useWebSocketAdapter(redisIoAdapter);
 
   app.use(cookieParser());
 

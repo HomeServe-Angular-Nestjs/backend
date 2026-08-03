@@ -147,8 +147,17 @@ export class GetReviewsDto {
     @IsString()
     providerId: string;
 
+    @IsOptional()
+    @IsString()
+    cursor?: string;
+
+    @IsOptional()
+    @Transform(({ value }) => {
+        const limit = Number(value);
+        return Number.isFinite(limit) && limit > 0 ? limit : 10;
+    })
     @IsNumber()
-    count: number;
+    limit?: number;
 }
 
 export class UpdatePasswordDto {
