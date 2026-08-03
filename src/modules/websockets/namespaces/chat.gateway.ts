@@ -28,11 +28,11 @@ export class ChatGateway extends BaseSocketGateway {
 
     constructor(
         @Inject(LOGGER_FACTORY)
-        private readonly loggerFactory: ILoggerFactory,
+        loggerFactory: ILoggerFactory,
         @Inject(AUTH_SOCKET_SERVICE_NAME)
-        private readonly _authSocketService: IAuthSocketService,
+        authSocketService: IAuthSocketService,
         @Inject(USER_SOCKET_STORE_SERVICE_NAME)
-        private readonly _userSocketService: IUserSocketStoreService,
+        userSocketService: IUserSocketStoreService,
         @Inject(CHAT_SOCKET_SERVICE_NAME)
         private readonly _chatSocketService: IChatSocketService,
         @Inject(MESSAGE_SERVICE_NAME)
@@ -42,37 +42,15 @@ export class ChatGateway extends BaseSocketGateway {
         @Inject(BOOKING_REPOSITORY_NAME)
         private readonly _bookingRepository: IBookingRepository,
     ) {
-        super()
-        this.logger = this.loggerFactory.createLogger(ChatGateway.name);
-    }
-
-    private _roomKey(userId: string): string {
-        return `room:${userId}`
+        super(loggerFactory, authSocketService, userSocketService, 'chat', true)
     }
 
     protected override async onClientConnect(client: Socket): Promise<void> {
-        try {
-            const payload = await this._authSocketService.validateToken(client);
-
-            const { sub: userId, type: userType } = payload;
-            client.data.user = { id: userId, type: userType };
-
-            await this._userSocketService.addSocket(userId, client.id, 'chat');
-            client.join(this._roomKey(userId));
-
-            this.logger.log(`User ${userId} connected with socket ID: ${client.id}`);
-        } catch (error) {
-            this.logger.error(ErrorMessage.TOKEN_VERIFICATION_FAILED);
-            client.emit('token:expired');
-            setTimeout(() => client.disconnect(), 200);
-        }
+        await this._authenticate(client);
     }
 
     protected override async onClientDisConnect(client: Socket): Promise<void> {
-        const user = client.data.user;
-        if (user?.id) {
-            await this._userSocketService.removeSocket(user.id, client.id, 'chat');
-        }
+        await this._unauthenticate(client);
     }
 
     @SubscribeMessage('sendMessage')
@@ -119,6 +97,7 @@ export class ChatGateway extends BaseSocketGateway {
                 senderId: sender.id,
                 messageType: 'text',
                 receiverId: receiver.id,
+                clientMessageId: bodyPayload.clientMessageId,
             }
 
             const newMessage = await this._messageService.createMessage(messageData);

@@ -23,4 +23,14 @@ export class MessageRepository extends BaseRepository<MessageDocument> implement
     async updateMany(filter: FilterQuery<MessageDocument>, update: UpdateQuery<MessageDocument>): Promise<UpdateWriteOpResult> {
         return this.model.updateMany(filter, update).exec();
     }
+
+    async findMessagesBefore(chatId: string, beforeId: string | null, limit: number): Promise<MessageDocument[]> {
+        const filter: FilterQuery<MessageDocument> = { chatId: this._toObjectId(chatId) };
+
+        if (beforeId) {
+            filter._id = { $lt: this._toObjectId(beforeId) };
+        }
+
+        return this.model.find(filter).sort({ _id: -1 }).limit(limit).exec();
+    }
 }

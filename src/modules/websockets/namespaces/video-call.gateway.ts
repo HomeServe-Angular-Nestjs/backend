@@ -31,11 +31,11 @@ export class VideoCallGateway extends BaseSocketGateway {
 
   constructor(
     @Inject(LOGGER_FACTORY)
-    private readonly _loggerFactory: ILoggerFactory,
+    loggerFactory: ILoggerFactory,
     @Inject(AUTH_SOCKET_SERVICE_NAME)
-    private readonly _authSocketService: IAuthSocketService,
+    authSocketService: IAuthSocketService,
     @Inject(USER_SOCKET_STORE_SERVICE_NAME)
-    private readonly _userSocketService: IUserSocketStoreService,
+    userSocketService: IUserSocketStoreService,
     @Inject(CUSTOM_DTO_VALIDATOR_NAME)
     private readonly _customDtoValidatorUtility: ICustomDtoValidator,
     @Inject(VIDEO_CALL_SERVICE_NAME)
@@ -43,29 +43,18 @@ export class VideoCallGateway extends BaseSocketGateway {
     @Inject(BOOKING_REPOSITORY_NAME)
     private readonly _bookingRepository: IBookingRepository,
   ) {
-    super();
-    this.logger = this._loggerFactory.createLogger(VideoCallGateway.name);
+    super(loggerFactory, authSocketService, userSocketService, namespace, true);
   }
 
   protected override async onClientConnect(client: Socket): Promise<void> {
-    try {
-      const payload = await this._authSocketService.validateToken(client);
-      const { sub: userId, type: userType } = payload;
-
-      client.data.user = { id: userId, type: userType };
-      client.join(this._roomKey(userId));
-
-      await this._userSocketService.addSocket(userId, client.id, namespace);
-      this.logger.log(`User ${userId} connected with socket ID: ${client.id}`);
-    } catch (error) {
-      this.logger.error('Token verification failed during socket connection');
-      client.emit('token:expired');
-      setTimeout(() => client.disconnect(), 200);
-    }
+    await this._authenticate(client);
   }
 
   protected override async onClientDisConnect(client: Socket): Promise<void> {
     this.logger.debug(`Client disconnected: ${client.id}`);
+
+    await this._unauthenticate(client);
+
     const user = client.data?.user;
     if (!user) return;
 
@@ -77,10 +66,6 @@ export class VideoCallGateway extends BaseSocketGateway {
       const roomKey = this._roomKey(partnerId);
       this.server.to(roomKey).emit(VIDEO_CALL_USER_LEFT, { socketId: client.id });
     }
-  }
-
-  private _roomKey(userId: string): string {
-    return `room:${userId}`;
   }
 
   @SubscribeMessage(VIDEO_CALL_INITIATE)

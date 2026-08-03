@@ -18,6 +18,11 @@ export interface IParticipant {
     // lastMessage: string;
 }
 
+export interface IChatParticipant {
+    id: Types.ObjectId;
+    type: UserType;
+}
+
 
 export interface IBlockedInfo {
     by: Types.ObjectId;

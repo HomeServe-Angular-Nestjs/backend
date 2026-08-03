@@ -6,4 +6,5 @@ import { MessageDocument } from '@core/schema/message.schema';
 export interface IMessagesRepository extends IBaseRepository<MessageDocument> {
     count(filter?: FilterQuery<MessageDocument>): Promise<number>;
     updateMany(filter: FilterQuery<MessageDocument>, update: UpdateQuery<MessageDocument>): Promise<UpdateWriteOpResult>;
+    findMessagesBefore(chatId: string, beforeId: string | null, limit: number): Promise<MessageDocument[]>;
 }

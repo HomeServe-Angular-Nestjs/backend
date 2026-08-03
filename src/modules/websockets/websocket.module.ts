@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { CloudinaryModule } from '../../configs/cloudinary/cloudinary.module';
 import { JwtConfigModule } from '../../configs/jwt/jwt.module';
 import { SharedModule } from '../../shared/shared.module';
 import { ChatController } from './controllers/chat.controller';
@@ -14,7 +15,7 @@ import { ReservationGateway } from '@modules/websockets/namespaces/reservation.g
 import { VideoCallGateway } from '@modules/websockets/namespaces/video-call.gateway';
 
 @Module({
-    imports: [JwtConfigModule, SharedModule],
+    imports: [JwtConfigModule, SharedModule, CloudinaryModule.registerAsync()],
     controllers: [ChatController, MessagesController, NotificationController],
     providers: [
         ChatGateway,

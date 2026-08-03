@@ -8,6 +8,7 @@ import { GetMessagesDto } from '@modules/websockets/dto/message.dto';
 import { IMessageService } from '@modules/websockets/services/interface/message-service.interface';
 import { Controller, Get, Inject,  Post, Query, Req, Res, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { IPayload } from '@/core/misc/payload.interface';
 
 @Controller('messages')
 export class MessagesController {
@@ -58,7 +59,13 @@ export class MessagesController {
 
     @Get('')
     @UseGuards(CallOrChatAccessGuard)
-    async getAllMessages(@Query() getMessageDto: GetMessagesDto) {
-        return this._messagesService.getAllMessage(getMessageDto.chatId, getMessageDto.beforeMessageId);
+    async getAllMessages(@Req() req: Request, @Query() getMessageDto: GetMessagesDto) {
+        const user = req.user as IPayload;
+        return this._messagesService.getAllMessage(
+            getMessageDto.chatId,
+            user.sub,
+            getMessageDto.beforeMessageId,
+            getMessageDto.limit
+        );
     }
 }
