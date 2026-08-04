@@ -19,7 +19,7 @@ export class ReportDocument extends Document {
 
     @Prop({
         type: String,
-        enum: ['customer', 'provider'],
+        enum: ['customer', 'provider', 'review'],
         required: true
     })
     type: ReportedType;

@@ -5,14 +5,16 @@ import {
 } from '@core/entities/interfaces/admin.entity.interface';
 import { ITopProviders } from '@core/entities/interfaces/user.entity.interface';
 import { ErrorMessage } from '@core/enum/error.enum';
+import { AdminRoleGuard } from '@core/guards/admin-role.guard';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { IResponse } from '@core/misc/response.util';
 import {
     IAdminDashboardOverviewService
 } from '@modules/users/services/interfaces/admin-dashboard-overview-service.interface';
-import { Controller, Get, Inject, InternalServerErrorException } from '@nestjs/common';
+import { Controller, Get, Inject, InternalServerErrorException, UseGuards } from '@nestjs/common';
 
+@UseGuards(AdminRoleGuard)
 @Controller('admin/dashboard')
 export class AdminDashboardController {
     private readonly logger: ICustomLogger;

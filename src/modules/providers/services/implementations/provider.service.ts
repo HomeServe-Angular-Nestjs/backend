@@ -84,10 +84,6 @@ export class ProviderServices implements IProviderServices {
     this.logger = this.loggerFactory.createLogger(ProviderServices.name);
   }
 
-  private _customerSearchRadiusMeters(): number {
-    return GeoEnum.DEFAULT_CUSTOMER_SEARCH_RADIUS_KM * GeoEnum.KM_TO_METERS;
-  }
-
   async getProviders(filters: FilterDto): Promise<IResponse<IProviderCardWithPagination>> {
     const { page = 1, limit = 10, availability, date, categoryId, providerIds: providerIdsParam, ...filter } = filters;
 
@@ -516,12 +512,13 @@ export class ProviderServices implements IProviderServices {
     const reviews = pageDocs.flatMap(b =>
       b.review && b.review.isActive
         ? [{
-            ...b.review,
-            name: customerMap[b.customerId.toString()]?.username,
-            avatar: customerMap[b.customerId.toString()]?.avatar ?? '',
-            email: customerMap[b.customerId.toString()]?.email,
-            writtenAt: new Date(b.review.writtenAt ?? b.createdAt)
-          }]
+          ...b.review,
+          reviewId: String((b as { _id: unknown })._id ?? ''),
+          name: customerMap[b.customerId.toString()]?.username,
+          avatar: customerMap[b.customerId.toString()]?.avatar ?? '',
+          email: customerMap[b.customerId.toString()]?.email,
+          writtenAt: new Date(b.review.writtenAt ?? b.createdAt)
+        }]
         : []
     );
 
@@ -544,19 +541,6 @@ export class ProviderServices implements IProviderServices {
       message: 'Reviews fetched successfully.',
       data: displayReviews
     }
-  }
-
-  private _encodeReviewCursor(writtenAt: Date, bookingId: string): string {
-    return `${new Date(writtenAt).toISOString()}|${bookingId}`;
-  }
-
-  private _parseReviewCursor(cursor: string): { writtenAt: Date; bookingId: string } | null {
-    const separatorIndex = cursor.lastIndexOf('|');
-    if (separatorIndex <= 0) return null;
-    const writtenAt = new Date(cursor.slice(0, separatorIndex));
-    const bookingId = cursor.slice(separatorIndex + 1);
-    if (!bookingId || isNaN(writtenAt.getTime())) return null;
-    return { writtenAt, bookingId };
   }
 
   async updatePassword(providerId: string, currentPassword: string, newPassword: string): Promise<IResponse> {
@@ -926,5 +910,23 @@ export class ProviderServices implements IProviderServices {
       this._timeUtility.timeToMinutes(a.from) - this._timeUtility.timeToMinutes(b.from)
     );
   }
+
+  private _customerSearchRadiusMeters(): number {
+    return GeoEnum.DEFAULT_CUSTOMER_SEARCH_RADIUS_KM * GeoEnum.KM_TO_METERS;
+  }
+
+  private _encodeReviewCursor(writtenAt: Date, bookingId: string): string {
+    return `${new Date(writtenAt).toISOString()}|${bookingId}`;
+  }
+
+  private _parseReviewCursor(cursor: string): { writtenAt: Date; bookingId: string } | null {
+    const separatorIndex = cursor.lastIndexOf('|');
+    if (separatorIndex <= 0) return null;
+    const writtenAt = new Date(cursor.slice(0, separatorIndex));
+    const bookingId = cursor.slice(separatorIndex + 1);
+    if (!bookingId || isNaN(writtenAt.getTime())) return null;
+    return { writtenAt, bookingId };
+  }
+
 }
 

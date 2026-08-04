@@ -7,7 +7,7 @@ import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData,
 import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
 import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
 import { IBookingRepository } from '@core/repositories/interfaces/bookings-repo.interface';
-import { IAdminReviewStats, IBookingReportData, IReportCustomerMatrix, IReportDownloadBookingData, IReportProviderMatrix } from '@core/entities/interfaces/admin.entity.interface';
+import { IAdminReviewStats, IReviewDistribution, ILowestRatedProvider, IRatingTrendPoint, IBookingReportData, IReportCustomerMatrix, IReportDownloadBookingData, IReportProviderMatrix } from '@core/entities/interfaces/admin.entity.interface';
 import { SlotStatusEnum } from '@core/enum/slot.enum';
 import { BookingStatus, CancelStatus, PaymentStatus } from '@core/enum/bookings.enum';
 import { UpdateQuery } from 'mongoose';
@@ -2406,6 +2406,14 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
             match['review.rating'] = { $gte: Number(filter.minRating) };
         }
 
+        if (filter.status !== undefined && filter.status !== 'all') {
+            match['review.isActive'] = filter.status === true;
+        }
+
+        if (filter.isReported !== undefined && filter.isReported !== 'all') {
+            match['review.isReported'] = filter.isReported === true;
+        }
+
         const pipeline: PipelineStage[] = [];
 
         pipeline.push(
@@ -2438,8 +2446,8 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                         $expr: { $regexMatch: { input: { $toString: '$_id' }, regex: searchRegex } }
                     }
                 });
-                // } else if (filter.searchBy === 'customer') {
-                //     pipeline.push({ $match: { 'customer.username': searchRegex } });
+            } else if (filter.searchBy === 'customer') {
+                pipeline.push({ $match: { 'customer.username': searchRegex } });
             } else if (filter.searchBy === 'provider') {
                 pipeline.push({ $match: { 'provider.username': searchRegex } });
             } else if (filter.searchBy === 'content') {
@@ -2508,40 +2516,144 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
     }
 
     async getAdminReviewStats(): Promise<IAdminReviewStats> {
-        const result = await this._bookingModel.aggregate([
+        interface ReviewStatsFacet {
+            stats: { totalReviews: number; activeReviews: number; inactiveReviews: number; reportedReviews: number; averageRating: number }[];
+            distribution: { _id: number; count: number }[];
+        }
+
+        const [facetResult] = await this._bookingModel.aggregate<ReviewStatsFacet>([
             { $match: { review: { $exists: true, $ne: null } } },
             {
-                $group: {
-                    _id: null,
-                    totalReviews: { $sum: 1 },
-                    activeReviews: {
-                        $sum: { $cond: [{ $eq: ["$review.isActive", true] }, 1, 0] }
-                    },
-                    reportedReviews: {
-                        $sum: { $cond: [{ $eq: ["$review.isReported", true] }, 1, 0] }
-                    },
-                    averageRating: { $avg: "$review.rating" }
+                $facet: {
+                    stats: [
+                        {
+                            $group: {
+                                _id: null,
+                                totalReviews: { $sum: 1 },
+                                activeReviews: {
+                                    $sum: { $cond: [{ $eq: ["$review.isActive", true] }, 1, 0] }
+                                },
+                                inactiveReviews: {
+                                    $sum: { $cond: [{ $eq: ["$review.isActive", false] }, 1, 0] }
+                                },
+                                reportedReviews: {
+                                    $sum: { $cond: [{ $eq: ["$review.isReported", true] }, 1, 0] }
+                                },
+                                averageRating: {
+                                    $avg: {
+                                        $cond: [{ $eq: ["$review.isActive", true] }, "$review.rating", null]
+                                    }
+                                }
+                            }
+                        }
+                    ],
+                    distribution: [
+                        { $group: { _id: "$review.rating", count: { $sum: 1 } } }
+                    ]
                 }
             }
         ]);
 
-        return result[0] ? {
-            totalReviews: result[0].totalReviews,
-            activeReviews: result[0].activeReviews,
-            reportedReviews: result[0].reportedReviews,
-            averageRating: Math.round((result[0].averageRating || 0) * 10) / 10
+        const stats = facetResult?.stats?.[0];
+        const distributionMap = new Map<number, number>(
+            (facetResult?.distribution ?? []).map((item) => [item._id, item.count])
+        );
+        const distributionTotal = Array.from(distributionMap.values()).reduce((sum, count) => sum + count, 0);
+        const distribution: IReviewDistribution[] = [5, 4, 3, 2, 1].map((rating) => {
+            const count = distributionMap.get(rating) ?? 0;
+            return {
+                rating,
+                count,
+                percentage: distributionTotal > 0 ? Math.round((count / distributionTotal) * 100) : 0
+            };
+        });
+
+        return stats ? {
+            totalReviews: stats.totalReviews,
+            activeReviews: stats.activeReviews,
+            inactiveReviews: stats.inactiveReviews,
+            reportedReviews: stats.reportedReviews,
+            averageRating: Math.round((stats.averageRating || 0) * 10) / 10,
+            distribution
         } : {
             totalReviews: 0,
             activeReviews: 0,
+            inactiveReviews: 0,
             reportedReviews: 0,
-            averageRating: 0
+            averageRating: 0,
+            distribution
         };
+    }
+
+    async getLowestRatedProviders(limit: number = 5): Promise<ILowestRatedProvider[]> {
+        return await this._bookingModel.aggregate([
+            { $match: { review: { $exists: true, $ne: null }, 'review.isActive': true } },
+            {
+                $group: {
+                    _id: "$providerId",
+                    avgRating: { $avg: "$review.rating" },
+                    totalReviews: { $sum: 1 }
+                }
+            },
+            { $match: { totalReviews: { $gte: 5 } } },
+            { $lookup: { from: 'providers', localField: '_id', foreignField: '_id', as: 'provider' } },
+            { $unwind: '$provider' },
+            {
+                $project: {
+                    _id: 0,
+                    providerId: { $toString: '$_id' },
+                    providerName: '$provider.username',
+                    providerAvatar: { $ifNull: ['$provider.avatar', ''] },
+                    avgRating: { $round: ['$avgRating', 1] },
+                    totalReviews: 1
+                }
+            },
+            { $sort: { avgRating: 1, totalReviews: 1 } },
+            { $limit: limit }
+        ]);
+    }
+
+    async getRatingTrend(days: number = 30): Promise<IRatingTrendPoint[]> {
+        const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+        return await this._bookingModel.aggregate([
+            {
+                $match: {
+                    review: { $exists: true, $ne: null },
+                    'review.isActive': true,
+                    'review.writtenAt': { $gte: since }
+                }
+            },
+            {
+                $group: {
+                    _id: { $dateToString: { format: '%Y-%m-%d', date: '$review.writtenAt' } },
+                    avgRating: { $avg: '$review.rating' },
+                    count: { $sum: 1 }
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    date: '$_id',
+                    avgRating: { $round: ['$avgRating', 1] },
+                    count: 1
+                }
+            },
+            { $sort: { date: 1 } }
+        ]);
     }
 
     async updateReviewStatus(reviewId: string, status: boolean): Promise<boolean> {
         const result = await this._bookingModel.updateOne(
             { _id: this._toObjectId(reviewId) },
             { $set: { 'review.isActive': status } }
+        );
+        return result.matchedCount > 0;
+    }
+
+    async markReviewReported(reviewId: string): Promise<boolean> {
+        const result = await this._bookingModel.updateOne(
+            { _id: this._toObjectId(reviewId), review: { $exists: true, $ne: null } },
+            { $set: { 'review.isReported': true } }
         );
         return result.modifiedCount > 0;
     }

@@ -113,6 +113,42 @@ export class FilterWithPaginationDto extends PageDto {
     @IsOptional()
     @IsEnum(RatingSearchBy)
     searchBy?: RatingSearchBy;
+
+    @IsOptional()
+    @Transform(({ value }) => {
+        if (value === 'true') return true;
+        if (value === 'false') return false;
+        if (value === 'all') return 'all';
+        return value;
+    })
+    @IsIn([true, false, 'all'])
+    status?: FilterStatusType;
+
+    @IsOptional()
+    @Transform(({ value }) => {
+        if (value === 'true') return true;
+        if (value === 'false') return false;
+        if (value === 'all') return 'all';
+        return value;
+    })
+    @IsIn([true, false, 'all'])
+    isReported?: FilterStatusType;
+}
+
+export class LowestRatedQueryDto {
+    @IsOptional()
+    @Transform(({ value }) => Number(value) || 5)
+    @IsNumber()
+    @Min(1)
+    limit?: number;
+}
+
+export class RatingTrendQueryDto {
+    @IsOptional()
+    @Transform(({ value }) => Number(value) || 30)
+    @IsNumber()
+    @Min(1)
+    days?: number;
 }
 
 
@@ -120,10 +156,6 @@ export class UpdateReviewStatus {
     @IsNotEmpty()
     @IsString()
     reviewId: string;
-
-    @IsNotEmpty()
-    @IsString()
-    providerId: string;
 
     @IsNotEmpty()
     @IsBoolean()

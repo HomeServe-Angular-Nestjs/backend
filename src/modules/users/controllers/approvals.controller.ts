@@ -3,13 +3,15 @@ import {
     IApprovalOverviewData, IApprovalTableDetails
 } from '@core/entities/interfaces/user.entity.interface';
 import { ErrorMessage } from '@core/enum/error.enum';
+import { AdminRoleGuard } from '@core/guards/admin-role.guard';
 import { CustomLogger } from '@core/logger/implementation/custom-logger';
 import { IResponse } from '@core/misc/response.util';
 import {
     IAdminApprovalService
 } from '@modules/users/services/interfaces/admin-approval-service.interface';
-import { Controller, Get, Inject, InternalServerErrorException, Logger, Req } from '@nestjs/common';
+import { Controller, Get, Inject, InternalServerErrorException, Logger, Req, UseGuards } from '@nestjs/common';
 
+@UseGuards(AdminRoleGuard)
 @Controller('admin/approvals')
 export class AdminApprovalsController {
     private readonly logger = new CustomLogger(AdminApprovalsController.name);

@@ -7,6 +7,7 @@ export enum RatingsSortBy {
 
 export enum RatingSearchBy {
     ReviewId = 'review id',
+    Customer = 'customer',
     Provider = 'provider',
     Content = 'content',
 }

@@ -2,7 +2,7 @@ import { IEntity } from "@core/entities/base/interfaces/base-entity.entity.inter
 import { IPagination } from "@core/entities/interfaces/booking.entity.interface";
 import { ComplaintReason, ReportStatus } from "@core/enum/report.enum";
 
-export type ReportedType = 'customer' | 'provider';
+export type ReportedType = 'customer' | 'provider' | 'review';
 
 export interface IReport extends IEntity {
     reportedId: string;
