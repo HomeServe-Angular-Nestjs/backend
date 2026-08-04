@@ -1,13 +1,15 @@
 import { ADMIN_USER_MANAGEMENT_SERVICE_NAME } from '@core/constants/service.constant';
 import { IUserDataWithPagination } from '@core/entities/interfaces/admin.entity.interface';
 import { ErrorMessage } from '@core/enum/error.enum';
+import { AdminRoleGuard } from '@core/guards/admin-role.guard';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { GetUsersWithFilterDto, RemoveUserDto, StatusUpdateDto, UserReportDownloadDto } from '@modules/users/dtos/admin-user.dto';
 import { IAdminUserManagementService } from '@modules/users/services/interfaces/admin-user-service.interface';
-import { BadRequestException, Body, Controller, Get, Inject, InternalServerErrorException, Patch, Post, Query, Res } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Inject, InternalServerErrorException, Patch, Post, Query, Res, UseGuards } from '@nestjs/common';
 import { Response } from 'express';
 
+@UseGuards(AdminRoleGuard)
 @Controller('admin/users')
 export class AdminUserController {
   private readonly logger: ICustomLogger;

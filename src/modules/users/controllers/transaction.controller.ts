@@ -1,6 +1,7 @@
 import { ADMIN_TRANSACTION_SERVICE_NAME } from "@core/constants/service.constant";
 import { User } from "@core/decorators/extract-user.decorator";
 import { IAdminTransactionDataWithPagination, ITransactionStats } from "@core/entities/interfaces/wallet-ledger.entity.interface";
+import { AdminRoleGuard } from "@core/guards/admin-role.guard";
 import { ICustomLogger } from "@core/logger/interface/custom-logger.interface";
 import { ILoggerFactory, LOGGER_FACTORY } from "@core/logger/interface/logger-factory.interface";
 import { IPayload } from "@core/misc/payload.interface";
@@ -8,9 +9,10 @@ import { IResponse } from "@core/misc/response.util";
 import { TransactionReportDownloadDto } from "@modules/users/dtos/admin-user.dto";
 import { IAdminTransactionService } from "@modules/users/services/interfaces/admin-transaction-service.interface";
 import { ProviderWalletFilterDto } from "@modules/wallet/dto/wallet.dto";
-import { Body, Controller, Get, Inject, Post, Query, Res } from "@nestjs/common";
+import { Body, Controller, Get, Inject, Post, Query, Res, UseGuards } from "@nestjs/common";
 import { Response } from "express";
 
+@UseGuards(AdminRoleGuard)
 @Controller('admin/transactions')
 export class AdminTransactionController {
     private readonly logger: ICustomLogger;

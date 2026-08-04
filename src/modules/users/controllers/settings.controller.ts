@@ -1,10 +1,12 @@
 import { ADMIN_SETTINGS_SERVICE_NAME } from "@core/constants/service.constant";
 import { IAdminSettings } from "@core/entities/interfaces/admin-settings.entity.interface";
+import { AdminRoleGuard } from "@core/guards/admin-role.guard";
 import { IResponse } from "@core/misc/response.util";
 import { SettingsDto } from "@modules/users/dtos/admin-user.dto";
 import { IAdminSettingService } from "@modules/users/services/interfaces/settings-service.interface";
-import { Body, Controller, Get, Inject, Patch } from "@nestjs/common";
+import { Body, Controller, Get, Inject, Patch, UseGuards } from "@nestjs/common";
 
+@UseGuards(AdminRoleGuard)
 @Controller('admin/settings')
 export class AdminSettingsController {
     constructor(

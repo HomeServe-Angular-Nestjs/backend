@@ -151,6 +151,28 @@ export interface IReportTransactionData {
 export interface IAdminReviewStats {
   totalReviews: number;
   activeReviews: number;
+  inactiveReviews: number;
   reportedReviews: number;
   averageRating: number;
+  distribution: IReviewDistribution[];
+}
+
+export interface IReviewDistribution {
+  rating: number;
+  count: number;
+  percentage: number;
+}
+
+export interface ILowestRatedProvider {
+  providerId: string;
+  providerName: string;
+  providerAvatar: string;
+  avgRating: number;
+  totalReviews: number;
+}
+
+export interface IRatingTrendPoint {
+  date: string;
+  avgRating: number;
+  count: number;
 }

@@ -62,4 +62,35 @@ export class AdminReviewService implements IAdminReviewService {
             throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
         }
     }
+
+    async lowestRatedProviders(limit: number = 5): Promise<IResponse> {
+        try {
+            const providers = await this._bookingRepository.getLowestRatedProviders(limit);
+
+            for (const provider of providers) {
+                provider.providerAvatar = this._uploadUtility.getSignedImageUrl(provider.providerAvatar);
+            }
+
+            return {
+                success: true,
+                message: 'Lowest rated providers fetched successfully',
+                data: providers
+            };
+        } catch (error) {
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    async ratingTrend(days: number = 30): Promise<IResponse> {
+        try {
+            const trend = await this._bookingRepository.getRatingTrend(days);
+            return {
+                success: true,
+                message: 'Rating trend fetched successfully',
+                data: trend
+            };
+        } catch (error) {
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+        }
+    }
 }

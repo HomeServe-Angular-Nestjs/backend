@@ -177,6 +177,8 @@ export interface IReviewFilters {
   sortBy?: SortByRatingType;
   search?: string;
   searchBy?: SearchByReviewType;
+  status?: boolean | 'all';
+  isReported?: boolean | 'all';
   page?: number;
 }
 

@@ -1,14 +1,16 @@
 import { ADMIN_BOOKINGS_SERVICE_NAME } from '@core/constants/service.constant';
 import { IAdminBookingDetails, IBookingStats, IPaginatedBookingsResponse } from '@core/entities/interfaces/booking.entity.interface';
 import { ErrorMessage } from '@core/enum/error.enum';
+import { AdminRoleGuard } from '@core/guards/admin-role.guard';
 import { CustomLogger } from '@core/logger/implementation/custom-logger';
 import { IResponse } from '@core/misc/response.util';
 import { isValidIdPipe } from '@core/pipes/is-valid-id.pipe';
 import { BookingReportDownloadDto, AdminBookingFilterDto } from '@modules/users/dtos/admin-user.dto';
 import { IAdminBookingService } from '@modules/users/services/interfaces/admin-bookings-service.interface';
-import { Body, Controller, Get, Inject, InternalServerErrorException, Param, Post, Query, Res } from '@nestjs/common';
+import { Body, Controller, Get, Inject, InternalServerErrorException, Param, Post, Query, Res, UseGuards } from '@nestjs/common';
 import { Response } from 'express';
 
+@UseGuards(AdminRoleGuard)
 @Controller('admin/bookings')
 export class AdminBookingController {
     private readonly logger = new CustomLogger(AdminBookingController.name);

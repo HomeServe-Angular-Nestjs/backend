@@ -7,4 +7,6 @@ export interface IAdminReviewService {
     getReviews(filter: IReviewFilters): Promise<IResponse>;
     updateReviewStatus(updateReviewStatus: UpdateReviewStatus): Promise<IResponse>;
     reviewStats(): Promise<IResponse>;
+    lowestRatedProviders(limit?: number): Promise<IResponse>;
+    ratingTrend(days?: number): Promise<IResponse>;
 }
