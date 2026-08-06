@@ -235,6 +235,25 @@ export class BookingService implements IBookingService {
                 });
             }
 
+            const unavailableServices = populatedCartDoc.items.filter(
+                service => !service.isActive || service.categoryId?.isActive === false || service.professionId?.isActive === false
+            );
+
+            if (unavailableServices.length) {
+                throw new BadRequestException({
+                    code: ErrorCodes.BAD_REQUEST,
+                    message: ErrorMessage.SERVICE_NOT_FOUND
+                });
+            }
+
+            const providerDoc = await this._providerRepository.findById(bookingData.providerId);
+            if (!providerDoc || providerDoc.isActive === false) {
+                throw new BadRequestException({
+                    code: ErrorCodes.BAD_REQUEST,
+                    message: ErrorMessage.PROVIDER_NOT_FOUND
+                });
+            }
+
             const customer = this._customerMapper.toEntity(customerDoc);
             const populatedCart = this._cartMapper.toPopulatedEntity(populatedCartDoc);
 

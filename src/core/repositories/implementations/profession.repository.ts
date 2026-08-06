@@ -4,7 +4,7 @@ import { BaseRepository } from "../base/implementations/base.repository";
 import { ProfessionDocument } from "@core/schema/profession.schema";
 import { InjectModel } from "@nestjs/mongoose";
 import { PROFESSION_MODEL_NAME } from "@core/constants/model.constant";
-import { FilterQuery, Model } from "mongoose";
+import { FilterQuery, Model, Types } from "mongoose";
 import { IProfessionFilter } from "@core/entities/interfaces/profession.entity.interface";
 
 @Injectable()
@@ -50,13 +50,21 @@ export class ProfessionRepository extends BaseRepository<ProfessionDocument> imp
         return !!result;
     }
 
-    async removeProfession(professionId: string): Promise<boolean> {
-        const result = await this._professionModel.deleteOne({ _id: professionId });
-        return result.deletedCount === 1;
-    }
-
     async count(filter: FilterQuery<ProfessionDocument> = {}): Promise<number> {
         filter.isDeleted = false;
         return await this._professionModel.countDocuments(filter);
+    }
+
+    async findByName(name: string, excludeId?: string): Promise<ProfessionDocument | null> {
+        const escaped = name.toString().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const filter: FilterQuery<ProfessionDocument> = {
+            name: { $regex: `^${escaped}$`, $options: 'i' },
+            isDeleted: false
+        };
+        if (excludeId) {
+            filter._id = { $ne: new Types.ObjectId(excludeId) };
+        }
+
+        return this._professionModel.findOne(filter);
     }
 }

@@ -54,6 +54,21 @@ export enum ErrorMessage {
     DIFFERENT_PROVIDER_IN_CART = 'This service is from a different provider. To continue, please confirm your current cart or clear it first.',
     EMPTY_CART = 'Your cart is empty.',
 
+    PROFESSION_NOT_AVAILABLE = 'Selected profession is not available',
+    SERVICE_CATEGORY_NOT_AVAILABLE = 'Selected service category is not available',
+    CATEGORY_PROFESSION_MISMATCH = 'Selected service does not belong to the selected profession',
+    CATEGORY_ACTIVATION_BLOCKED = 'Cannot activate — the parent profession is inactive.',
+    SERVICE_ACTIVATION_BLOCKED = 'Cannot activate — linked category or profession is inactive.',
+
+    PROFESSION_ALREADY_EXISTS = 'Profession already exists',
+    PROFESSION_NOT_FOUND = 'Profession not found',
+    PROFESSION_CREATION_FAILED = 'Profession creation failed',
+    PROFESSION_UPDATE_FAILED = 'Profession update failed',
+    SERVICE_CATEGORY_NOT_FOUND = 'Service category not found',
+    SERVICE_CATEGORY_CREATION_FAILED = 'Service category creation failed',
+    SERVICE_CATEGORY_UPDATE_FAILED = 'Service category update failed',
+    SERVICE_CATEGORY_ALREADY_EXISTS = 'A service with this name already exists for the selected profession.',
+
     FINANCIAL_CONFIG_ERROR = "Financial configuration error. Please contact support."
 }
 
@@ -71,6 +86,8 @@ export enum ErrorCodes {
     NO_ACTIVE_SUBSCRIPTION = 'NO_ACTIVE_SUBSCRIPTION',
     INTERNAL_SERVER_ERROR = 'INTERNAL_SERVER_ERROR',
     INVALID_AVAILABILITY_TIME = 'INVALID_AVAILABILITY_TIME',
+    PARENT_PROFESSION_INACTIVE = 'PARENT_PROFESSION_INACTIVE',
+    SERVICE_ACTIVATION_BLOCKED = 'SERVICE_ACTIVATION_BLOCKED',
 
     INVALID_CREDENTIALS = 'INVALID_CREDENTIALS',
     RESOURCE_NOT_FOUND = 'RESOURCE_NOT_FOUND',

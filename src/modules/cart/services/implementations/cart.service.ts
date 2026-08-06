@@ -1,7 +1,8 @@
 import { BadRequestException, ConflictException, Inject, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
 import { ICartService } from "../interfaces/cart-service.interface";
-import { CART_REPOSITORY_NAME } from "@core/constants/repository.constant";
+import { CART_REPOSITORY_NAME, PROVIDER_SERVICE_REPOSITORY_NAME } from "@core/constants/repository.constant";
 import { ICartRepository } from "@core/repositories/interfaces/cart-repo.interface";
+import { IProviderServiceRepository } from "@core/repositories/interfaces/provider-service-repo.interface";
 import { CART_MAPPER } from "@core/constants/mappers.constant";
 import { ICartMapper } from "@core/dto-mapper/interface/cart-mapper.interface";
 import { ErrorCodes, ErrorMessage } from "@core/enum/error.enum";
@@ -20,6 +21,8 @@ export class CartService implements ICartService {
     constructor(
         @Inject(CART_REPOSITORY_NAME)
         private readonly _cartRepository: ICartRepository,
+        @Inject(PROVIDER_SERVICE_REPOSITORY_NAME)
+        private readonly _providerServiceRepository: IProviderServiceRepository,
         @Inject(CART_MAPPER)
         private readonly _cartMapper: ICartMapper,
         @Inject(LOGGER_FACTORY)
@@ -51,6 +54,20 @@ export class CartService implements ICartService {
     }
 
     async addItem(customerId: string, providerId: string, providerServiceId: string): Promise<IResponse<ICartPopulated>> {
+        const service = await this._providerServiceRepository.findOneAndPopulateById(providerServiceId);
+
+        if (
+            !service ||
+            service.isActive === false ||
+            service.categoryId?.isActive === false ||
+            service.professionId?.isActive === false
+        ) {
+            throw new BadRequestException({
+                code: ErrorCodes.BAD_REQUEST,
+                message: ErrorMessage.SERVICE_NOT_FOUND
+            });
+        }
+
         let cartDoc = await this._cartRepository.findByCustomerId(customerId);
         if (cartDoc) {
             const cart = this._cartMapper.toEntity(cartDoc);

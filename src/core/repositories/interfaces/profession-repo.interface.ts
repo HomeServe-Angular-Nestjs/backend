@@ -8,6 +8,6 @@ export interface IProfessionRepository extends IBaseRepository<ProfessionDocumen
     update(professionId: string, update: Partial<ProfessionDocument>): Promise<ProfessionDocument | null>;
     findAllWithFilter(filter: IProfessionFilter): Promise<ProfessionDocument[]>;
     toggleStatus(id: string): Promise<boolean>;
-    removeProfession(id: string): Promise<boolean>;
     count(filter?: FilterQuery<ServiceCategoryDocument>): Promise<number>;
+    findByName(name: string, excludeId?: string): Promise<ProfessionDocument | null>;
 }

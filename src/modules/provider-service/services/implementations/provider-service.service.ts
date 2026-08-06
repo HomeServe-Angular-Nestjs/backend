@@ -1,5 +1,5 @@
 import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException, ServiceUnavailableException } from "@nestjs/common";
-import { PLAN_REPOSITORY_INTERFACE_NAME, PROVIDER_SERVICE_REPOSITORY_NAME, SUBSCRIPTION_REPOSITORY_NAME } from "@core/constants/repository.constant";
+import { PLAN_REPOSITORY_INTERFACE_NAME, PROFESSION_REPOSITORY_NAME, PROVIDER_SERVICE_REPOSITORY_NAME, SERVICE_CATEGORY_REPOSITORY_NAME, SUBSCRIPTION_REPOSITORY_NAME } from "@core/constants/repository.constant";
 import { PROVIDER_SERVICE_MAPPER } from "@core/constants/mappers.constant";
 import { IProviderServiceRepository } from "@core/repositories/interfaces/provider-service-repo.interface";
 import { IProviderServiceMapper } from "@core/dto-mapper/interface/provider-service.mapper.interface";
@@ -17,6 +17,8 @@ import { ISubscriptionRepository } from "@core/repositories/interfaces/subscript
 import { FEATURE_REGISTRY } from "@modules/plans/registry/feature.registry";
 import { IPlanRepository } from "@core/repositories/interfaces/plans-repo.interface";
 import { ProviderServicePopulatedDocument } from "@core/schema/provider-service.schema";
+import { IProfessionRepository } from "@core/repositories/interfaces/profession-repo.interface";
+import { IServiceCategoryRepository } from "@core/repositories/interfaces/service-category-repo.interface";
 
 @Injectable()
 export class ProviderServiceService implements IProviderServiceService {
@@ -31,6 +33,10 @@ export class ProviderServiceService implements IProviderServiceService {
         private readonly _planRepository: IPlanRepository,
         @Inject(SUBSCRIPTION_REPOSITORY_NAME)
         private readonly _subscriptionRepository: ISubscriptionRepository,
+        @Inject(PROFESSION_REPOSITORY_NAME)
+        private readonly _professionRepository: IProfessionRepository,
+        @Inject(SERVICE_CATEGORY_REPOSITORY_NAME)
+        private readonly _serviceCategoryRepository: IServiceCategoryRepository,
     ) { }
 
     async createService(providerId: string, userType: UserType, createServiceDto: CreateProviderServiceDto, file: Express.Multer.File): Promise<IResponse<IProviderServiceUI>> {
@@ -41,6 +47,8 @@ export class ProviderServiceService implements IProviderServiceService {
                 message: UploadErrorMessages.IMAGE_NOT_FOUND
             });
         }
+
+        await this._validateCategoryAndProfession(createServiceDto.categoryId, createServiceDto.professionId);
 
         const publicId = this._uploadUtility.getPublicId(
             userType,
@@ -108,6 +116,26 @@ export class ProviderServiceService implements IProviderServiceService {
                 .filter(([_, value]) => value !== undefined && value !== null)
         ) as Partial<IProviderService>;
 
+        if (updateServiceDto.categoryId || updateServiceDto.professionId) {
+            let categoryId = updateServiceDto.categoryId;
+            let professionId = updateServiceDto.professionId;
+
+            if (!categoryId || !professionId) {
+                const existing = await this._providerServiceRepository.findOneAndPopulateById(serviceId);
+                if (!existing) {
+                    throw new BadRequestException({
+                        code: ErrorCodes.NOT_FOUND,
+                        message: ErrorMessage.SERVICE_NOT_FOUND,
+                    });
+                }
+                const populated = this._providerServiceMapper.toPopulatedEntity(existing);
+                categoryId = categoryId ?? populated.category.id;
+                professionId = professionId ?? populated.profession.id;
+            }
+
+            await this._validateCategoryAndProfession(categoryId, professionId);
+        }
+
         if (file) {
             const publicId = this._uploadUtility.getPublicId(
                 userType,
@@ -153,12 +181,14 @@ export class ProviderServiceService implements IProviderServiceService {
                 providerId,
                 profession: {
                     id: service.profession.id,
-                    name: service.profession.name
+                    name: service.profession.name,
+                    isActive: service.profession.isActive
                 },
                 category: {
                     id: service.category.id,
                     name: service.category.name,
-                    keywords: service.category.keywords ?? []
+                    keywords: service.category.keywords ?? [],
+                    isActive: service.category.isActive
                 },
                 description: service.description,
                 price: service.price,
@@ -180,6 +210,22 @@ export class ProviderServiceService implements IProviderServiceService {
     }
 
     async toggleStatus(serviceId: string): Promise<IResponse> {
+        const service = await this._providerServiceRepository.findOneAndPopulateById(serviceId);
+        if (!service) throw new BadRequestException({
+            code: ErrorCodes.NOT_FOUND,
+            message: ErrorMessage.SERVICE_NOT_FOUND,
+        });
+
+        if (
+            service.isActive === false &&
+            (service.categoryId?.isActive === false || service.professionId?.isActive === false)
+        ) {
+            throw new BadRequestException({
+                code: ErrorCodes.SERVICE_ACTIVATION_BLOCKED,
+                message: ErrorMessage.SERVICE_ACTIVATION_BLOCKED
+            });
+        }
+
         const updated = await this._providerServiceRepository.updateStatusByServiceId(serviceId);
         if (!updated) throw new BadRequestException({
             code: ErrorCodes.NOT_FOUND,
@@ -238,6 +284,34 @@ export class ProviderServiceService implements IProviderServiceService {
             message: 'Service creation allowed',
             data: true
         };
+    }
+
+    private async _validateCategoryAndProfession(categoryId: string, professionId: string): Promise<void> {
+        const [profession, category] = await Promise.all([
+            this._professionRepository.findById(professionId),
+            this._serviceCategoryRepository.findById(categoryId),
+        ]);
+
+        if (!profession || profession.isDeleted || !profession.isActive) {
+            throw new BadRequestException({
+                code: ErrorCodes.BAD_REQUEST,
+                message: ErrorMessage.PROFESSION_NOT_AVAILABLE
+            });
+        }
+
+        if (!category || category.isDeleted || !category.isActive) {
+            throw new BadRequestException({
+                code: ErrorCodes.BAD_REQUEST,
+                message: ErrorMessage.SERVICE_CATEGORY_NOT_AVAILABLE
+            });
+        }
+
+        if (category.professionId.toString() !== professionId) {
+            throw new BadRequestException({
+                code: ErrorCodes.BAD_REQUEST,
+                message: ErrorMessage.CATEGORY_PROFESSION_MISMATCH
+            });
+        }
     }
 
     private async _handleImageUpload(file: Express.Multer.File, publicId: string): Promise<string> {

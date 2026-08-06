@@ -80,6 +80,8 @@ export class ProviderServices implements IProviderServices {
     private readonly _cartMapper: ICartMapper,
     @Inject(RESERVATION_REPOSITORY_NAME)
     private readonly _reservationRepository: IReservationRepository,
+    @Inject(SERVICE_CATEGORY_REPOSITORY_NAME)
+    private readonly _serviceCategoryRepository: IServiceCategoryRepository,
   ) {
     this.logger = this.loggerFactory.createLogger(ProviderServices.name);
   }
@@ -94,6 +96,19 @@ export class ProviderServices implements IProviderServices {
     }
 
     if (!providerIds?.length && categoryId) {
+      const category = await this._serviceCategoryRepository.findById(categoryId);
+
+      if (!category || category.isDeleted || !category.isActive) {
+        return {
+          success: true,
+          message: 'Providers fetched successfully',
+          data: {
+            providerCards: [],
+            pagination: { total: 0, page, limit }
+          }
+        };
+      }
+
       const providerServices = await this._providerServiceRepository.findByCategoryId(categoryId);
       providerIds = providerServices.map(services => services.providerId.toString());
     }
@@ -192,7 +207,7 @@ export class ProviderServices implements IProviderServices {
     }
   }
 
-  // async getProvidersLocationBasedSearch(searchData: GetProvidersFromLocationSearch): Promise<IResponse<IProviderCardWithPagination>> {
+  //todo async getProvidersLocationBasedSearch(searchData: GetProvidersFromLocationSearch): Promise<IResponse<IProviderCardWithPagination>> {
   //   const { page = 1, lng, lat } = searchData;
   //   const limit = 10;
 

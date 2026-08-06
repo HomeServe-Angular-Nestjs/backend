@@ -6,12 +6,12 @@ import { IServiceCategoryMapper } from "@core/dto-mapper/interface/service-categ
 import { Profession } from "@core/entities/implementation/profession.entity";
 import { ServiceCategory } from "@core/entities/implementation/service-category.entity";
 import { CategoryFilterDto, CategoryServiceFilterDto, CreateProfessionDto, CreateServiceCategoryDto } from "../../dto/category.dto";
-import { PROFESSION_REPOSITORY_NAME } from "@core/constants/repository.constant";
-import { SERVICE_CATEGORY_REPOSITORY_NAME } from "@core/constants/repository.constant";
+import { PROFESSION_REPOSITORY_NAME, SERVICE_CATEGORY_REPOSITORY_NAME, PROVIDER_SERVICE_REPOSITORY_NAME } from "@core/constants/repository.constant";
+import { IProviderServiceRepository } from "@core/repositories/interfaces/provider-service-repo.interface";
 import { PROFESSION_MAPPER, SERVICE_CATEGORY_MAPPER } from "@core/constants/mappers.constant";
 import { ICategoryService } from "@modules/category/services/interfaces/category-service.interface";
 import { IResponse } from "@core/misc/response.util";
-import { ErrorCodes } from "@core/enum/error.enum";
+import { ErrorCodes, ErrorMessage } from "@core/enum/error.enum";
 import { IServiceCategory, IServiceCategoryWithPagination } from "@core/entities/interfaces/service-category.entity.interface";
 import { ICustomerSearchCategories } from "@core/entities/interfaces/service.entity.interface";
 
@@ -23,17 +23,44 @@ export class CategoryService implements ICategoryService {
         private readonly _professionRepository: IProfessionRepository,
         @Inject(SERVICE_CATEGORY_REPOSITORY_NAME)
         private readonly _serviceCategoryRepository: IServiceCategoryRepository,
+        @Inject(PROVIDER_SERVICE_REPOSITORY_NAME)
+        private readonly _providerServiceRepository: IProviderServiceRepository,
         @Inject(PROFESSION_MAPPER)
         private readonly _professionMapper: IProfessionMapper,
         @Inject(SERVICE_CATEGORY_MAPPER)
         private readonly _serviceCategoryMapper: IServiceCategoryMapper
     ) { }
 
-    private async _validateProfession(name: string): Promise<void> {
-        const existing = await this._professionRepository.count({ name: name.toString() })
-        if (existing !== 0) throw new ConflictException({
+    private async _isProfessionActive(professionId: string): Promise<boolean> {
+        if (!professionId) return false;
+        const profession = await this._professionRepository.findById(professionId);
+        return !!profession && profession.isActive !== false;
+    }
+
+    private async _validateServiceCategoryName(name: string, professionId: string, excludeId?: string): Promise<void> {
+        const existing = await this._serviceCategoryRepository.findByNameAndProfession(name, professionId, excludeId);
+        if (existing) throw new ConflictException({
             code: ErrorCodes.CONFLICT,
-            message: 'Profession already exists'
+            message: ErrorMessage.SERVICE_CATEGORY_ALREADY_EXISTS
+        });
+    }
+
+    private async _deactivateCategories(professionId: string): Promise<void> {
+        const categoryIds = await this._serviceCategoryRepository.deactivateByProfessionId(professionId);
+        if (categoryIds.length) {
+            await this._providerServiceRepository.deactivateByCategoryIds(categoryIds);
+        }
+    }
+
+    private async _deactivateProviderServices(categoryId: string): Promise<void> {
+        await this._providerServiceRepository.deactivateByCategoryIds([categoryId]);
+    }
+
+    private async _validateProfession(name: string, excludeId?: string): Promise<void> {
+        const existing = await this._professionRepository.findByName(name, excludeId);
+        if (existing) throw new ConflictException({
+            code: ErrorCodes.CONFLICT,
+            message: ErrorMessage.PROFESSION_ALREADY_EXISTS
         });
     }
 
@@ -51,7 +78,7 @@ export class CategoryService implements ICategoryService {
 
         if (!saved) throw new InternalServerErrorException({
             code: ErrorCodes.INTERNAL_SERVER_ERROR,
-            message: 'Profession creation failed'
+            message: ErrorMessage.PROFESSION_CREATION_FAILED
         });
 
         return {
@@ -62,7 +89,7 @@ export class CategoryService implements ICategoryService {
     }
 
     async updateProfession(updateProfessionData: CreateProfessionDto, professionId: string): Promise<IResponse<Profession>> {
-        await this._validateProfession(updateProfessionData.name);
+        await this._validateProfession(updateProfessionData.name, professionId);
 
         const profession = new Profession({
             name: updateProfessionData.name,
@@ -75,8 +102,12 @@ export class CategoryService implements ICategoryService {
 
         if (!saved) throw new InternalServerErrorException({
             code: ErrorCodes.INTERNAL_SERVER_ERROR,
-            message: 'Profession update failed'
+            message: ErrorMessage.PROFESSION_UPDATE_FAILED
         });
+
+        if (saved.isActive === false) {
+            await this._deactivateCategories(professionId);
+        }
 
         return {
             success: true,
@@ -95,11 +126,21 @@ export class CategoryService implements ICategoryService {
     }
 
     async toggleProfessionStatus(professionId: string): Promise<IResponse> {
+        const existing = await this._professionRepository.findById(professionId);
+        if (!existing) throw new BadRequestException({
+            code: ErrorCodes.NOT_FOUND,
+            message: ErrorMessage.PROFESSION_NOT_FOUND
+        });
+
         const updated = await this._professionRepository.toggleStatus(professionId);
         if (!updated) throw new BadRequestException({
             code: ErrorCodes.NOT_FOUND,
-            message: 'Profession not found'
+            message: ErrorMessage.PROFESSION_NOT_FOUND
         });
+
+        if (existing.isActive === true) {
+            await this._deactivateCategories(professionId);
+        }
 
         return {
             success: updated,
@@ -107,25 +148,15 @@ export class CategoryService implements ICategoryService {
         };
     }
 
-    async deleteProfession(professionId: string): Promise<IResponse> {
-        const deleted = await this._professionRepository.removeProfession(professionId);
-        if (!deleted) throw new BadRequestException({
-            code: ErrorCodes.NOT_FOUND,
-            message: 'Profession not found'
-        });
-
-        return {
-            success: deleted,
-            message: 'Profession deleted successfully',
-        };
-    }
-
     async createServiceCategory(dto: CreateServiceCategoryDto): Promise<IResponse<IServiceCategory>> {
+        await this._validateServiceCategoryName(dto.name, dto.professionId);
+
+        const professionActive = await this._isProfessionActive(dto.professionId);
         const serviceCategory = new ServiceCategory({
             name: dto.name,
             professionId: dto.professionId,
             keywords: dto.keywords ?? [],
-            isActive: dto.isActive ?? true,
+            isActive: professionActive ? (dto.isActive ?? true) : false,
             isDeleted: false
         });
         const doc = this._serviceCategoryMapper.toDocument(serviceCategory);
@@ -133,7 +164,7 @@ export class CategoryService implements ICategoryService {
 
         if (!saved) throw new InternalServerErrorException({
             code: ErrorCodes.INTERNAL_SERVER_ERROR,
-            message: 'Service category creation failed'
+            message: ErrorMessage.SERVICE_CATEGORY_CREATION_FAILED
         });
 
         return {
@@ -144,11 +175,14 @@ export class CategoryService implements ICategoryService {
     }
 
     async updateServiceCategory(dto: CreateServiceCategoryDto, serviceCategoryId: string): Promise<IResponse<IServiceCategory>> {
+        await this._validateServiceCategoryName(dto.name, dto.professionId, serviceCategoryId);
+
+        const professionActive = await this._isProfessionActive(dto.professionId);
         const serviceCategory = new ServiceCategory({
             name: dto.name,
             professionId: dto.professionId,
             keywords: dto.keywords ?? [],
-            isActive: dto.isActive ?? true,
+            isActive: professionActive ? (dto.isActive ?? true) : false,
             isDeleted: false
         });
         const doc = this._serviceCategoryMapper.toDocument(serviceCategory);
@@ -156,8 +190,12 @@ export class CategoryService implements ICategoryService {
 
         if (!saved) throw new InternalServerErrorException({
             code: ErrorCodes.INTERNAL_SERVER_ERROR,
-            message: 'Service category update failed'
+            message: ErrorMessage.SERVICE_CATEGORY_UPDATE_FAILED
         });
+
+        if (saved.isActive === false) {
+            await this._deactivateProviderServices(serviceCategoryId);
+        }
 
         return {
             success: true,
@@ -170,7 +208,7 @@ export class CategoryService implements ICategoryService {
         const { page = 1, limit = 10, ...restFilter } = filter;
         const [docs, total] = await Promise.all([
             this._serviceCategoryRepository.findAllWithFilterWithPagination(restFilter, { page, limit }),
-            this._serviceCategoryRepository.count()
+            this._serviceCategoryRepository.countWithFilter(restFilter)
         ]);
 
         return {
@@ -184,28 +222,35 @@ export class CategoryService implements ICategoryService {
     }
 
     async toggleServiceCategoryStatus(serviceCategoryId: string): Promise<IResponse> {
+        const existing = await this._serviceCategoryRepository.findById(serviceCategoryId);
+        if (!existing) throw new BadRequestException({
+            code: ErrorCodes.NOT_FOUND,
+            message: ErrorMessage.SERVICE_CATEGORY_NOT_FOUND
+        });
+
+        if (existing.isActive === false) {
+            const professionActive = await this._isProfessionActive(String(existing.professionId));
+            if (!professionActive) {
+                throw new BadRequestException({
+                    code: ErrorCodes.PARENT_PROFESSION_INACTIVE,
+                    message: ErrorMessage.CATEGORY_ACTIVATION_BLOCKED
+                });
+            }
+        }
+
         const updated = await this._serviceCategoryRepository.toggleStatus(serviceCategoryId);
         if (!updated) throw new BadRequestException({
             code: ErrorCodes.NOT_FOUND,
-            message: 'Service category not found'
+            message: ErrorMessage.SERVICE_CATEGORY_NOT_FOUND
         });
+
+        if (existing.isActive === true) {
+            await this._deactivateProviderServices(serviceCategoryId);
+        }
 
         return {
             success: updated,
             message: 'Service category status toggled successfully',
-        };
-    }
-
-    async deleteServiceCategory(id: string): Promise<IResponse> {
-        const deleted = await this._serviceCategoryRepository.removeServiceCategory(id);
-        if (!deleted) throw new BadRequestException({
-            code: ErrorCodes.NOT_FOUND,
-            message: 'Service category not found'
-        });
-
-        return {
-            success: deleted,
-            message: 'Service category deleted successfully',
         };
     }
 

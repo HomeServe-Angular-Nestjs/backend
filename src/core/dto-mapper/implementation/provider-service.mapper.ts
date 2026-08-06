@@ -47,11 +47,13 @@ export class ProviderServiceMapper implements IProviderServiceMapper {
             profession: {
                 id: (doc.professionId._id as Types.ObjectId).toString(),
                 name: doc.professionId.name,
+                isActive: doc.professionId.isActive,
             },
             category: {
                 id: (doc.categoryId._id as Types.ObjectId).toString(),
                 name: doc.categoryId.name,
                 keywords: doc.categoryId.keywords ?? [],
+                isActive: doc.categoryId.isActive,
             },
             description: doc.description,
             price: doc.price as number,

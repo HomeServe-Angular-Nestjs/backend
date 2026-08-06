@@ -21,27 +21,7 @@ export class ServiceCategoryRepository extends BaseRepository<ServiceCategoryDoc
         const limit = options?.limit || 10;
         const skip = (page - 1) * limit;
 
-        const query: FilterQuery<ServiceCategoryDocument> = { isDeleted: false };
-        if (filter.search) {
-            query.$or = [
-                { name: { $regex: filter.search, $options: 'i' } },
-                { keywords: { $regex: filter.search, $options: 'i' } }
-            ];
-        }
-
-        if (filter.isActive && filter.isActive !== 'all') {
-            query.isActive = filter.isActive === 'true';
-        }
-
-        if (filter.profession && filter.profession !== 'all') {
-            query.$expr = {
-                $eq: [
-                    { $toString: '$professionId' },
-                    filter.profession
-                ]
-            };
-        }
-
+        const query = this._buildQuery(filter);
 
         const docs = await this._serviceCategoryModel.aggregate([
             {
@@ -61,6 +41,37 @@ export class ServiceCategoryRepository extends BaseRepository<ServiceCategoryDoc
         return docs;
     }
 
+    async countWithFilter(filter: IServiceCategoryFilter = {}): Promise<number> {
+        return await this._serviceCategoryModel.countDocuments(this._buildQuery(filter));
+    }
+
+    private _buildQuery(filter: IServiceCategoryFilter): FilterQuery<ServiceCategoryDocument> {
+        const query: FilterQuery<ServiceCategoryDocument> = { isDeleted: false };
+        if (filter.search) {
+            query.$or = [
+                { name: { $regex: filter.search, $options: 'i' } },
+                { keywords: { $regex: filter.search, $options: 'i' } }
+            ];
+        }
+
+        if (filter.isActive === undefined) {
+            query.isActive = true;
+        } else if (filter.isActive !== 'all') {
+            query.isActive = filter.isActive === 'true';
+        }
+
+        if (filter.profession && filter.profession !== 'all') {
+            query.$expr = {
+                $eq: [
+                    { $toString: '$professionId' },
+                    filter.profession
+                ]
+            };
+        }
+
+        return query;
+    }
+
     async updateCategoryService(serviceCategoryId: string, update: Partial<ServiceCategoryDocument>): Promise<ServiceCategoryDocument | null> {
         return await this._serviceCategoryModel.findByIdAndUpdate(serviceCategoryId, update, { new: true }).lean();
     }
@@ -72,11 +83,6 @@ export class ServiceCategoryRepository extends BaseRepository<ServiceCategoryDoc
             { new: true }
         ).lean();
         return !!result;
-    }
-
-    async removeServiceCategory(serviceCategoryId: string): Promise<boolean> {
-        const result = await this._serviceCategoryModel.deleteOne({ _id: serviceCategoryId });
-        return result.deletedCount === 1;
     }
 
     async count(filter: FilterQuery<ServiceCategoryDocument> = {}): Promise<number> {
@@ -104,5 +110,42 @@ export class ServiceCategoryRepository extends BaseRepository<ServiceCategoryDoc
             isActive: true,
             isDeleted: false
         }).lean();
+    }
+
+    async deactivateByProfessionId(professionId: string): Promise<string[]> {
+        const activeCategories = await this._serviceCategoryModel.find({
+            professionId: this._toObjectId(professionId),
+            isActive: true,
+            isDeleted: false
+        }, { _id: 1 }).lean();
+
+        if (activeCategories.length === 0) {
+            return [];
+        }
+
+        await this._serviceCategoryModel.updateMany(
+            {
+                professionId: this._toObjectId(professionId),
+                isActive: true,
+                isDeleted: false
+            },
+            { $set: { isActive: false } }
+        );
+
+        return activeCategories.map(category => String(category._id));
+    }
+
+    async findByNameAndProfession(name: string, professionId: string, excludeId?: string): Promise<ServiceCategoryDocument | null> {
+        const escaped = name.toString().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const filter: FilterQuery<ServiceCategoryDocument> = {
+            name: { $regex: `^${escaped}$`, $options: 'i' },
+            professionId: this._toObjectId(professionId),
+            isDeleted: false
+        };
+        if (excludeId) {
+            filter._id = { $ne: this._toObjectId(excludeId) };
+        }
+
+        return this._serviceCategoryModel.findOne(filter).lean();
     }
 }

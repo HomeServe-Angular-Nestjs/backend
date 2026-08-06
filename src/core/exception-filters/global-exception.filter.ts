@@ -46,15 +46,13 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
         this.logger.error(`End Point: ${request.url} Status: ${status} Error: ${JSON.stringify(message)}`);
 
-        response
+response
             .status(status)
             .json({
                 statusCode: status,
-                timestamp: new Date().toISOString(),
-                path: request.url,
                 message: clientMessage,
                 code: clientError,
-                error: clientError
+                timestamp: new Date().toISOString()
             });
     }
 
