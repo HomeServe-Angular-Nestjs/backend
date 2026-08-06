@@ -6,6 +6,7 @@ import { IPdfService } from '@core/services/pdf/pdf.interface';
 import { ConfigService } from '@nestjs/config';
 import * as handlebars from 'handlebars';
 import { IBookingInvoice } from '@core/entities/interfaces/booking.entity.interface';
+import { ISalesReportBundle } from '@core/entities/interfaces/admin.entity.interface';
 
 @Injectable()
 export class PdfService implements IPdfService {
@@ -85,6 +86,51 @@ export class PdfService implements IPdfService {
             date: new Date().toLocaleString(),
             invoice: invoiceData,
             heading: invoiceData.userType === "customer" ? "Customer Details" : "Provider Details"
+        });
+
+        const browser = await this._getBrowser();
+        const page = await browser.newPage();
+        await page.setContent(html, { waitUntil: 'networkidle0' });
+
+        const buffer = await page.pdf({
+            format: 'A4',
+            printBackground: true,
+            margin: { top: '10mm', bottom: '10mm', left: '10mm', right: '10mm' },
+        });
+
+        await page.close();
+        return Buffer.from(buffer);
+    }
+
+    async generateSalesReportPdf(data: { report: ISalesReportBundle; generatedAt: string; dateRangeLabel: string; }): Promise<Buffer> {
+        const templatePath = this._mode === 'production'
+            ? path.join(__dirname, 'templates', 'sales-report-template.html')
+            : path.join(process.cwd(), 'src', 'core', 'services', 'pdf', 'templates', 'sales-report-template.html');
+
+        if (!fs.existsSync(templatePath)) {
+            throw new Error(`Template not found at path: ${templatePath}`);
+        }
+
+        const templateSource = fs.readFileSync(templatePath, 'utf8');
+        const template = handlebars.compile(templateSource);
+
+        handlebars.registerHelper('money', (value: number) => {
+            const num = Number(value) || 0;
+            return new Intl.NumberFormat('en-IN', {
+                style: 'currency',
+                currency: 'INR',
+                maximumFractionDigits: 0,
+            }).format(num);
+        });
+
+        const html = template({
+            generatedAt: data.generatedAt,
+            dateRangeLabel: data.dateRangeLabel,
+            report: data.report,
+            summary: data.report.summary,
+            services: data.report.services,
+            providers: data.report.providers,
+            cancellation: data.report.cancellation,
         });
 
         const browser = await this._getBrowser();

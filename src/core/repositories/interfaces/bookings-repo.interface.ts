@@ -3,7 +3,7 @@ import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRev
 import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderRevenueOverview, IResponseTimeChartData, IReviewFilters, ITopProviders, ITotalReviewAndAvgRating, PaginatedReviewResponse } from '@core/entities/interfaces/user.entity.interface';
 import { IBaseRepository } from '@core/repositories/base/interfaces/base-repo.interface';
 import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
-import { IAdminReviewStats, ILowestRatedProvider, IRatingTrendPoint, IBookingReportData, IReportCustomerMatrix, IReportDownloadBookingData, IReportProviderMatrix } from '@core/entities/interfaces/admin.entity.interface';
+import { IAdminReviewStats, ILowestRatedProvider, IRatingTrendPoint, IBookingReportData, IReportCustomerMatrix, IReportDownloadBookingData, IReportProviderMatrix, ISalesReportBundle, ISalesReportFilter } from '@core/entities/interfaces/admin.entity.interface';
 import { BookingStatus, CancelStatus, PaymentStatus } from '@core/enum/bookings.enum';
 
 export interface IBookingRepository extends IBaseRepository<BookingDocument> {
@@ -75,6 +75,7 @@ export interface IBookingRepository extends IBaseRepository<BookingDocument> {
     updateReviewStatus(reviewId: string, status: boolean): Promise<boolean>;
     markReviewReported(reviewId: string): Promise<boolean>;
     rescheduleBooking(bookingId: string, newExpectedArrivalTime:Date, newSlot: IBookedSlot): Promise<BookingDocument | null>;
+    aggregateSalesReport(filter: ISalesReportFilter): Promise<ISalesReportBundle>;
 }
 
 

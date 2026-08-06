@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Report</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            font-size: 12px;
+            margin: 0;
+            padding: 0;
+            background-color: #fff;
+            color: #000;
+        }
+
+        .report-header {
+            text-align: center;
+            border-bottom: 3px solid #1f2937;
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+        }
+
+        .report-header h1 {
+            font-size: 22px;
+            margin: 0 0 4px 0;
+        }
+
+        .report-header p {
+            margin: 2px 0;
+            font-size: 11px;
+            color: #4b5563;
+        }
+
+        .summary-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 18px;
+        }
+
+        .summary-card {
+            flex: 1 1 20%;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            padding: 8px 10px;
+            text-align: center;
+            min-width: 120px;
+        }
+
+        .summary-card .label {
+            font-size: 10px;
+            text-transform: uppercase;
+            color: #6b7280;
+            margin-bottom: 4px;
+        }
+
+        .summary-card .value {
+            font-size: 16px;
+            font-weight: bold;
+            color: #111827;
+        }
+
+        h3 {
+            border-bottom: 1px solid #000;
+            padding-bottom: 4px;
+            margin: 18px 0 8px 0;
+            font-size: 14px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 6px;
+        }
+
+        table th,
+        table td {
+            padding: 6px 8px;
+            border: 1px solid #000;
+            font-size: 11px;
+        }
+
+        table th {
+            background-color: #f3f4f6;
+            font-weight: bold;
+            text-align: left;
+        }
+
+        .footer {
+            margin-top: 24px;
+            text-align: center;
+            font-size: 10px;
+            color: #6b7280;
+            border-top: 1px solid #d1d5db;
+            padding-top: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="report-header">
+        <h1>Sales Report</h1>
+        <p>Generated: {{generatedAt}}</p>
+        <p>Period: {{dateRangeLabel}}</p>
+    </div>
+
+    <div class="summary-grid">
+        <div class="summary-card">
+            <div class="label">Total Sales</div>
+            <div class="value">{{money summary.totalSales}}</div>
+        </div>
+        <div class="summary-card">
+            <div class="label">Completed Sales</div>
+            <div class="value">{{summary.completedSales}}</div>
+        </div>
+        <div class="summary-card">
+            <div class="label">Cancelled Sales</div>
+            <div class="value">{{summary.cancelledSales}}</div>
+        </div>
+        <div class="summary-card">
+            <div class="label">Avg Order Value</div>
+            <div class="value">{{money summary.avgOrderValue}}</div>
+        </div>
+        <div class="summary-card">
+            <div class="label">Avg Daily Sales</div>
+            <div class="value">{{money summary.avgDailySales}}</div>
+        </div>
+    </div>
+
+    {{#if services.length}}
+    <h3>Top Selling Services</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Service</th>
+                <th>Profession</th>
+                <th>Provider</th>
+                <th>Bookings</th>
+                <th>Revenue</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#each services}}
+            <tr>
+                <td>{{serviceName}}</td>
+                <td>{{profession}}</td>
+                <td>{{providerName}}</td>
+                <td>{{bookings}}</td>
+                <td>{{money revenue}}</td>
+            </tr>
+            {{/each}}
+        </tbody>
+    </table>
+    {{/if}}
+
+    {{#if providers.length}}
+    <h3>Provider Performance</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Provider</th>
+                <th>Completed Jobs</th>
+                <th>Cancelled</th>
+                <th>Revenue</th>
+                <th>Completion Rate</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#each providers}}
+            <tr>
+                <td>{{providerName}}</td>
+                <td>{{completedJobs}}</td>
+                <td>{{cancelled}}</td>
+                <td>{{money revenue}}</td>
+                <td>{{completionRate}}%</td>
+            </tr>
+            {{/each}}
+        </tbody>
+    </table>
+    {{/if}}
+
+    {{#if cancellation.topCancelledCategories.length}}
+    <h3>Cancellation Analysis</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Category</th>
+                <th>Cancelled Bookings</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#each cancellation.topCancelledCategories}}
+            <tr>
+                <td>{{name}}</td>
+                <td>{{bookings}}</td>
+            </tr>
+            {{/each}}
+        </tbody>
+    </table>
+    {{/if}}
+
+    <div class="footer">
+        <p>Generated by Homeserve Admin</p>
+    </div>
+</body>
+
+</html>
