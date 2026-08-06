@@ -91,6 +91,21 @@ export interface IProviderTransactionOverview {
     netGain: number;
 }
 
+export interface IAdminLedgerRecord {
+    _id: string;
+    userId: string;
+    userRole: UserType | null;
+    type: TransactionType;
+    direction: PaymentDirection;
+    amount: number;
+    source: PaymentSource;
+    createdAt: Date;
+    bookingId: string | null;
+    subscriptionId: string | null;
+    gatewayPaymentId: string | null;
+    counterpartyEmail: string | null;
+}
+
 export interface ITransactionAdminList {
     dateTime: string;
     counterparty: {
@@ -102,6 +117,8 @@ export interface ITransactionAdminList {
     amount: number;
     referenceType: string;
     referenceId: string;
+    bookingId: string | null;
+    paymentId: string | null;
     source: PaymentSource;
 }
 

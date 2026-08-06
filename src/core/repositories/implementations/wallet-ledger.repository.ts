@@ -1,5 +1,5 @@
 import { WALLET_LEDGER_MODEL_NAME } from "@core/constants/model.constant";
-import { ICustomerTransactionData, IProviderTransactionData, IProviderTransactionOverview, ITransactionStats, IWalletTransactionFilter } from "@core/entities/interfaces/wallet-ledger.entity.interface";
+import { IAdminLedgerRecord, ICustomerTransactionData, IProviderTransactionData, IProviderTransactionOverview, ITransactionStats, IWalletTransactionFilter } from "@core/entities/interfaces/wallet-ledger.entity.interface";
 import { PaymentDirection, TransactionType } from "@core/enum/transaction.enum";
 import { BaseRepository } from "@core/repositories/base/implementations/base.repository";
 import { SortQuery } from "@core/repositories/base/interfaces/base-repo.interface";
@@ -120,13 +120,120 @@ export class WalletLedgerRepository extends BaseRepository<WalletLedgerDocument>
         return { match, sort };
     }
 
+    private _buildAdminBaseMatch(filters: IWalletTransactionFilter): FilterQuery<WalletLedgerDocument> {
+        const match: FilterQuery<WalletLedgerDocument> = {
+            $or: [
+                { userRole: 'admin' },
+                { type: TransactionType.SUBSCRIPTION_PAYMENT, direction: PaymentDirection.CREDIT },
+            ],
+        };
+
+        if (filters.date && filters.date !== 'all') {
+            const now = new Date();
+            let start: Date | null = null;
+
+            switch (filters.date) {
+                case 'last_six_months':
+                    start = new Date();
+                    start.setMonth(start.getMonth() - 6);
+                    break;
+                case 'last_year':
+                    start = new Date();
+                    start.setFullYear(start.getFullYear() - 1);
+                    break;
+                default:
+                    start = new Date(0);
+            }
+
+            if (start) {
+                match.createdAt = { $gte: start, $lte: now };
+            }
+        }
+
+        if (filters.method && filters.method !== 'all') {
+            match.direction = filters.method;
+        }
+
+        if (filters.type && filters.type !== 'all') {
+            const escaped = this._escapeRegex(filters.type);
+            match.type = new RegExp(escaped, 'i');
+        }
+
+        return match;
+    }
+
+    private _buildAdminSearchStage(filters: IWalletTransactionFilter): PipelineStage[] {
+        if (!filters.search) {
+            return [];
+        }
+
+        const searchRegex = new RegExp(this._escapeRegex(filters.search), 'i');
+
+        const regexMatch = (input: unknown): Record<string, unknown> => ({
+            $expr: {
+                $regexMatch: {
+                    input,
+                    regex: searchRegex,
+                },
+            },
+        });
+
+        return [
+            {
+                $match: {
+                    $or: [
+                        regexMatch({ $ifNull: [{ $toString: '$_id' }, ''] }),
+                        regexMatch({ $ifNull: [{ $toString: '$bookingId' }, ''] }),
+                        regexMatch({ $ifNull: [{ $toString: '$subscriptionId' }, ''] }),
+                        regexMatch({ $ifNull: ['$gatewayPaymentId', ''] }),
+                        regexMatch({ $ifNull: ['$gatewayOrderId', ''] }),
+                        regexMatch({
+                            $ifNull: [
+                                { $arrayElemAt: ['$customer.email', 0] },
+                                { $arrayElemAt: ['$provider.email', 0] },
+                                '',
+                            ],
+                        }),
+                    ],
+                },
+            },
+        ];
+    }
+
+    private _buildAdminStages(filters: IWalletTransactionFilter): PipelineStage[] {
+        return [
+            { $match: this._buildAdminBaseMatch(filters) },
+            { $lookup: { from: 'customers', localField: 'userId', foreignField: '_id', as: 'customer' } },
+            { $lookup: { from: 'providers', localField: 'userId', foreignField: '_id', as: 'provider' } },
+            ...this._buildAdminSearchStage(filters),
+        ];
+    }
+
+    private _buildAdminSort(filters: IWalletTransactionFilter): Record<string, 1 | -1> {
+        switch (filters.sort) {
+            case 'oldest':
+                return { createdAt: 1 };
+            case 'high':
+                return { amount: -1 };
+            case 'low':
+                return { amount: 1 };
+            default:
+                return { createdAt: -1 };
+        }
+    }
+
     async count(): Promise<number> {
         return this._walletLedgerModel.countDocuments();
     }
 
     async countFiltered(filters: IWalletTransactionFilter): Promise<number> {
-        const { match } = this._buildTransactionFilterQuery(filters);
-        return this._walletLedgerModel.countDocuments(match);
+        const pipeline: PipelineStage[] = [
+            ...this._buildAdminStages(filters),
+            { $count: 'total' },
+        ];
+
+        const result = await this._walletLedgerModel.aggregate(pipeline);
+        return result[0]?.total ?? 0;
     }
 
     async getTotalLedgerCountByUserId(userId: string): Promise<number> {
@@ -271,19 +378,41 @@ export class WalletLedgerRepository extends BaseRepository<WalletLedgerDocument>
         return result[0] ?? { totalCredit: 0, totalDebit: 0, netGain: 0 };
     }
 
-    async getAdminTransactionLists(filters: IWalletTransactionFilter, options: { page: number; limit: number }): Promise<WalletLedgerDocument[]> {
+    async getAdminTransactionLists(filters: IWalletTransactionFilter, options: { page: number; limit: number }): Promise<IAdminLedgerRecord[]> {
         const page = options?.page && options.page > 0 ? options.page : 1;
         const limit = options?.limit && options.limit > 0 ? options.limit : 10;
         const skip = (page - 1) * limit;
 
-        const { match, sort } = this._buildTransactionFilterQuery(filters);
+        const pipeline: PipelineStage[] = [
+            ...this._buildAdminStages(filters),
+            { $sort: this._buildAdminSort(filters) },
+            { $skip: skip },
+            { $limit: limit },
+            {
+                $project: {
+                    _id: 1,
+                    userId: 1,
+                    userRole: 1,
+                    type: 1,
+                    direction: 1,
+                    amount: 1,
+                    source: 1,
+                    createdAt: 1,
+                    bookingId: 1,
+                    subscriptionId: 1,
+                    gatewayPaymentId: 1,
+                    counterpartyEmail: {
+                        $ifNull: [
+                            { $arrayElemAt: ['$customer.email', 0] },
+                            { $arrayElemAt: ['$provider.email', 0] },
+                            null,
+                        ],
+                    },
+                },
+            },
+        ];
 
-        return await this._walletLedgerModel
-            .find(match)
-            .sort(sort)
-            .skip(skip)
-            .limit(limit)
-            .lean();
+        return await this._walletLedgerModel.aggregate(pipeline);
     }
 
     async getTransactionStats(): Promise<Omit<ITransactionStats, "balance">> {
