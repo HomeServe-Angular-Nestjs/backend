@@ -6,6 +6,7 @@ export const ADMIN_REVIEWS_SERVICE_NAME = 'IAdminReviewService';
 export const ADMIN_DASHBOARD_OVERVIEW_SERVICE_NAME = 'IAdminDashboardOverviewService';
 export const ADMIN_TRANSACTION_SERVICE_NAME = 'IAdminTransactionService';
 export const ADMIN_SALES_REPORT_SERVICE_NAME = 'IAdminSalesReportService';
+export const ADMIN_USER_DETAILS_SERVICE_NAME = 'IAdminUserDetailsService';
 export const ADMIN_SETTINGS_SERVICE_NAME = Symbol('ADMIN_SETTINGS_SERVICE_NAME');
 export const PLAN_SEED_SERVICE_NAME = Symbol('PLAN_SEED_SERVICE_NAME');
 

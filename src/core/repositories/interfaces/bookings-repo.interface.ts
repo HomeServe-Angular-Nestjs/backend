@@ -4,6 +4,7 @@ import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData,
 import { IBaseRepository } from '@core/repositories/base/interfaces/base-repo.interface';
 import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
 import { IAdminReviewStats, ILowestRatedProvider, IRatingTrendPoint, IBookingReportData, IReportCustomerMatrix, IReportDownloadBookingData, IReportProviderMatrix, ISalesReportBundle, ISalesReportFilter } from '@core/entities/interfaces/admin.entity.interface';
+import { IBookingOverview, ICustomerStatistics, IProviderStatistics, IReviewOverview } from '@core/entities/interfaces/admin-user-details.entity.interface';
 import { BookingStatus, CancelStatus, PaymentStatus } from '@core/enum/bookings.enum';
 
 export interface IBookingRepository extends IBaseRepository<BookingDocument> {
@@ -23,6 +24,13 @@ export interface IBookingRepository extends IBaseRepository<BookingDocument> {
     generateBookingReport(data: Partial<IReportDownloadBookingData>): Promise<IBookingReportData[]>;
     getCustomerReportMatrix(id: string): Promise<IReportCustomerMatrix>;
     getProviderReportMatrix(id: string): Promise<IReportProviderMatrix>;
+    getCustomerStatistics(id: string): Promise<ICustomerStatistics>;
+    getProviderStatistics(id: string): Promise<IProviderStatistics>;
+    getRecentBookingsByCustomer(customerId: string, limit?: number): Promise<IBookingOverview[]>;
+    getRecentBookingsByProvider(providerId: string, limit?: number): Promise<IBookingOverview[]>;
+    getRecentReviewsByCustomer(customerId: string, limit?: number): Promise<IReviewOverview[]>;
+    getRecentReviewsByProvider(providerId: string, limit?: number): Promise<IReviewOverview[]>;
+    getServiceBookingCounts(providerId: string): Promise<{ serviceId: string; count: number }[]>;
     findSlotsByDate(date: Date): Promise<SlotDocument[]>;
     findBookedSlots(ruleId: string): Promise<SlotDocument[]>; //todo-today
     isAlreadyBooked(ruleId: string, from: string, to: string, dateISO: string): Promise<boolean>;//todo-today

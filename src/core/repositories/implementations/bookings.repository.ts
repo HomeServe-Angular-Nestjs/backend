@@ -8,6 +8,7 @@ import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
 import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
 import { IBookingRepository } from '@core/repositories/interfaces/bookings-repo.interface';
 import { IAdminReviewStats, IReviewDistribution, ILowestRatedProvider, IRatingTrendPoint, IBookingReportData, IReportCustomerMatrix, IReportDownloadBookingData, IReportProviderMatrix, ISalesReportBundle, ISalesReportFilter, IBookingsSoldBuckets } from '@core/entities/interfaces/admin.entity.interface';
+import { IBookingOverview, ICustomerStatistics, IProviderStatistics, IReviewOverview } from '@core/entities/interfaces/admin-user-details.entity.interface';
 import { SlotStatusEnum } from '@core/enum/slot.enum';
 import { BookingStatus, CancelStatus, PaymentStatus } from '@core/enum/bookings.enum';
 import { UpdateQuery } from 'mongoose';
@@ -435,6 +436,255 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
             totalEarnings: 0,
             totalRefunds: 0
         };
+    }
+
+    async getCustomerStatistics(id: string): Promise<ICustomerStatistics> {
+        const objId = this._toObjectId(id);
+
+        const [result] = await this._bookingModel.aggregate([
+            { $match: { customerId: objId } },
+            {
+                $group: {
+                    _id: null,
+                    totalBookings: { $sum: 1 },
+                    completedBookings: { $sum: { $cond: [{ $eq: ['$bookingStatus', BookingStatus.COMPLETED] }, 1, 0] } },
+                    cancelledBookings: { $sum: { $cond: [{ $eq: ['$bookingStatus', BookingStatus.CANCELLED] }, 1, 0] } },
+                    totalAmountSpent: {
+                        $sum: {
+                            $cond: [{ $in: ['$paymentStatus', [PaymentStatus.PAID, PaymentStatus.REFUNDED]] }, '$totalAmount', 0]
+                        }
+                    },
+                    reviewsWritten: { $sum: { $cond: [{ $ne: ['$review', null] }, 1, 0] } },
+                },
+            },
+            {
+                $project: {
+                    _id: 0,
+                    totalBookings: 1,
+                    completedBookings: 1,
+                    cancelledBookings: 1,
+                    totalAmountSpent: { $ifNull: ['$totalAmountSpent', 0] },
+                    reviewsWritten: { $ifNull: ['$reviewsWritten', 0] },
+                },
+            },
+        ]);
+
+        return result ?? { totalBookings: 0, completedBookings: 0, cancelledBookings: 0, totalAmountSpent: 0, reviewsWritten: 0 };
+    }
+
+    async getProviderStatistics(id: string): Promise<IProviderStatistics> {
+        const objId = this._toObjectId(id);
+
+        const [result] = await this._bookingModel.aggregate([
+            { $match: { providerId: objId } },
+            {
+                $group: {
+                    _id: null,
+                    totalBookings: { $sum: 1 },
+                    completedJobs: { $sum: { $cond: [{ $eq: ['$bookingStatus', BookingStatus.COMPLETED] }, 1, 0] } },
+                    cancelledJobs: { $sum: { $cond: [{ $eq: ['$bookingStatus', BookingStatus.CANCELLED] }, 1, 0] } },
+                    totalRevenue: {
+                        $sum: {
+                            $cond: [{ $in: ['$paymentStatus', [PaymentStatus.PAID, PaymentStatus.REFUNDED]] }, '$totalAmount', 0]
+                        }
+                    },
+                    totalReviews: { $sum: { $cond: [{ $ne: ['$review', null] }, 1, 0] } },
+                },
+            },
+            {
+                $project: {
+                    _id: 0,
+                    totalBookings: 1,
+                    completedJobs: 1,
+                    cancelledJobs: 1,
+                    totalRevenue: { $ifNull: ['$totalRevenue', 0] },
+                    totalReviews: { $ifNull: ['$totalReviews', 0] },
+                },
+            },
+        ]);
+
+        return result ?? { totalBookings: 0, completedJobs: 0, cancelledJobs: 0, totalRevenue: 0, totalReviews: 0 };
+    }
+
+    async getRecentBookingsByCustomer(customerId: string, limit: number = 5): Promise<IBookingOverview[]> {
+        return this._bookingModel.aggregate(this._buildRecentBookingsPipeline(
+            { customerId: this._toObjectId(customerId) },
+            'provider',
+            limit,
+        ));
+    }
+
+    async getRecentBookingsByProvider(providerId: string, limit: number = 5): Promise<IBookingOverview[]> {
+        return this._bookingModel.aggregate(this._buildRecentBookingsPipeline(
+            { providerId: this._toObjectId(providerId) },
+            'customer',
+            limit,
+        ));
+    }
+
+    private _buildRecentBookingsPipeline(
+        match: Record<string, unknown>,
+        via: 'provider' | 'customer',
+        limit: number,
+    ): PipelineStage[] {
+        const partyCollection = via === 'provider' ? 'providers' : 'customers';
+        const otherField = via === 'provider' ? 'customer' : 'provider';
+        const otherSideCollection = via === 'provider' ? 'customers' : 'providers';
+
+        return [
+            { $match: match },
+            { $sort: { createdAt: -1 } },
+            { $limit: limit },
+            {
+                $lookup: {
+                    from: partyCollection,
+                    localField: via + 'Id',
+                    foreignField: '_id',
+                    as: via,
+                },
+            },
+            { $unwind: { path: '$' + via, preserveNullAndEmptyArrays: true } },
+            { $lookup: { from: otherSideCollection, localField: otherField + 'Id', foreignField: '_id', as: otherField } },
+            { $unwind: { path: '$' + otherField, preserveNullAndEmptyArrays: true } },
+            {
+                $lookup: {
+                    from: 'providerservices',
+                    localField: 'services',
+                    foreignField: '_id',
+                    as: 'serviceDocs',
+                },
+            },
+            {
+                $addFields: {
+                    firstService: { $arrayElemAt: ['$serviceDocs', 0] },
+                },
+            },
+            {
+                $lookup: {
+                    from: 'professions',
+                    let: { pid: '$firstService.professionId' },
+                    pipeline: [
+                        { $match: { $expr: { $eq: ['$_id', '$$pid'] } } },
+                        { $limit: 1 },
+                        { $project: { _id: 0, name: 1 } },
+                    ],
+                    as: 'serviceProfession',
+                },
+            },
+            { $unwind: { path: '$serviceProfession', preserveNullAndEmptyArrays: true } },
+            {
+                $lookup: {
+                    from: 'servicecategories',
+                    let: { cid: '$firstService.categoryId' },
+                    pipeline: [
+                        { $match: { $expr: { $eq: ['$_id', '$$cid'] } } },
+                        { $limit: 1 },
+                        { $project: { _id: 0, name: 1 } },
+                    ],
+                    as: 'serviceCategory',
+                },
+            },
+            { $unwind: { path: '$serviceCategory', preserveNullAndEmptyArrays: true } },
+            {
+                $project: {
+                    _id: 0,
+                    bookingId: { $toString: '$_id' },
+                    amount: { $divide: [{ $ifNull: ['$totalAmount', 0] }, 100] },
+                    status: '$bookingStatus',
+                    date: '$createdAt',
+                    [via]: {
+                        id: { $toString: '$' + via + '._id' },
+                        username: { $ifNull: ['$' + via + '.username', ''] },
+                        fullname: { $ifNull: ['$' + via + '.fullname', '$' + via + '.username'] },
+                        avatar: { $ifNull: ['$' + via + '.avatar', ''] },
+                        profession: { $ifNull: ['$' + via + '.profession', ''] },
+                    },
+                    [otherField]: {
+                        id: { $toString: '$' + otherField + '._id' },
+                        username: { $ifNull: ['$' + otherField + '.username', ''] },
+                        fullname: { $ifNull: ['$' + otherField + '.fullname', '$' + otherField + '.username'] },
+                        avatar: { $ifNull: ['$' + otherField + '.avatar', ''] },
+                    },
+                    service: {
+                        name: { $ifNull: ['$serviceProfession.name', ''] },
+                        category: { $ifNull: ['$serviceCategory.name', ''] },
+                    },
+                },
+            },
+        ];
+    }
+
+    async getRecentReviewsByCustomer(customerId: string, limit: number = 5): Promise<IReviewOverview[]> {
+        return await this._buildRecentReviewsPipeline(
+            { customerId: this._toObjectId(customerId), review: { $ne: null } },
+            'providers',
+            'provider',
+            limit,
+        );
+    }
+
+    async getRecentReviewsByProvider(providerId: string, limit: number = 5): Promise<IReviewOverview[]> {
+        return await this._buildRecentReviewsPipeline(
+            { providerId: this._toObjectId(providerId), review: { $ne: null } },
+            'customers',
+            'customer',
+            limit,
+        );
+    }
+
+    private async _buildRecentReviewsPipeline(
+        match: Record<string, unknown>,
+        userCollection: 'providers' | 'customers',
+        userField: 'provider' | 'customer',
+        limit: number,
+    ): Promise<IReviewOverview[]> {
+        return await this._bookingModel.aggregate([
+            { $match: match },
+            { $sort: { 'review.writtenAt': -1 } },
+            { $limit: limit },
+            {
+                $lookup: {
+                    from: userCollection,
+                    localField: userField + 'Id',
+                    foreignField: '_id',
+                    as: userField,
+                },
+            },
+            { $unwind: { path: '$' + userField, preserveNullAndEmptyArrays: true } },
+            {
+                $project: {
+                    _id: 0,
+                    reviewId: { $toString: '$_id' },
+                    rating: '$review.rating',
+                    desc: '$review.desc',
+                    date: '$review.writtenAt',
+                    'user.id': { $toString: '$' + userField + '._id' },
+                    'user.username': { $ifNull: ['$' + userField + '.username', ''] },
+                    'user.fullname': { $ifNull: ['$' + userField + '.fullname', '$' + userField + '.username'] },
+                    'user.avatar': { $ifNull: ['$' + userField + '.avatar', ''] },
+                },
+            },
+        ]);
+    }
+
+    async getServiceBookingCounts(providerId: string): Promise<{ serviceId: string; count: number }[]> {
+        return await this._bookingModel.aggregate([
+            { $match: { providerId: this._toObjectId(providerId) } },
+            { $unwind: '$services' },
+            {
+                $group: {
+                    _id: '$services',
+                    count: { $sum: 1 },
+                },
+            },
+            {
+                $project: {
+                    _id: 0,
+                    serviceId: { $toString: '$_id' },
+                    count: 1,
+                },
+            },
+        ]);
     }
 
     async findSlotsByDate(date: string | Date): Promise<SlotDocument[]> {

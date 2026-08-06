@@ -1,8 +1,9 @@
 import { PROVIDER_REPOSITORY_INTERFACE_NAME } from '@/core/constants/repository.constant';
 import { IApprovalOverviewData, IApprovalTableDetails, IProvider, VerificationStatusType } from '@/core/entities/interfaces/user.entity.interface';
+import { ErrorCodes } from '@/core/enum/error.enum';
 import { IResponse } from '@/core/misc/response.util';
 import { IProviderRepository } from '@/core/repositories/interfaces/provider-repo.interface';
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 
 import { IAdminApprovalService } from '../interfaces/admin-approval-service.interface';
 import { PROVIDER_MAPPER } from '@core/constants/mappers.constant';
@@ -86,6 +87,27 @@ export class AdminApprovalService implements IAdminApprovalService {
             message: 'table data fetched',
             data: tableData
         }
+    }
+
+    async updateProviderVerification(providerId: string, status: VerificationStatusType): Promise<IResponse<boolean>> {
+        const updated = await this._providerRepository.findOneAndUpdate(
+            { _id: providerId },
+            { $set: { verificationStatus: status } },
+            { new: true }
+        );
+
+        if (!updated) {
+            throw new NotFoundException({
+                code: ErrorCodes.NOT_FOUND,
+                message: `Provider with ID ${providerId} not found.`,
+            });
+        }
+
+        return {
+            success: true,
+            message: `Provider verification status updated to ${status}.`,
+            data: true,
+        };
     }
 
 }
