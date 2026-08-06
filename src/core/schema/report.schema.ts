@@ -43,6 +43,15 @@ export class ReportDocument extends Document {
     })
     status: ReportStatus;
 
+    @Prop({ type: String })
+    investigationNotes: string;
+
+    @Prop({ type: String })
+    resolutionNote: string;
+
+    @Prop({ type: Date })
+    resolvedAt: Date;
+
     @Prop({ type: Date })
     createdAt: Date;
 

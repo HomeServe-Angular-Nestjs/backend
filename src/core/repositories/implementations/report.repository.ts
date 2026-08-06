@@ -5,7 +5,7 @@ import { REPORT_MODEL_NAME } from "@core/constants/model.constant";
 import { BaseRepository } from "@core/repositories/base/implementations/base.repository";
 import { IReportRepository } from "@core/repositories/interfaces/report-repo.interface";
 import { ReportDocument } from "@core/schema/report.schema";
-import { IDisputeAnalyticsRaw, IReportFilter, IReportOverViewMatrix } from "@core/entities/interfaces/report.entity.interface";
+import { IDisputeAnalyticsRaw, IReportFilter, IReportOverViewMatrix, IReportTargetSummary } from "@core/entities/interfaces/report.entity.interface";
 import { PipelineStage } from "mongoose";
 import { ComplaintReason, ReportStatus } from "@core/enum/report.enum";
 import { stringify } from "node:querystring";
@@ -59,12 +59,45 @@ export class ReportRepository extends BaseRepository<ReportDocument> implements 
         return this._reportModel.aggregate(pipeline).exec();
     }
 
-    async updateReportStatus(reportId: string, status: ReportStatus): Promise<ReportDocument | null> {
+    async updateReportStatus(reportId: string, status: ReportStatus, resolutionNote?: string): Promise<ReportDocument | null> {
+        const isTerminal = status === ReportStatus.RESOLVED || status === ReportStatus.REJECTED;
         return await this._reportModel.findByIdAndUpdate(
             reportId,
-            { $set: { status } },
+            {
+                $set: {
+                    status,
+                    ...(resolutionNote !== undefined ? { resolutionNote } : {}),
+                    ...(isTerminal ? { resolvedAt: new Date() } : {})
+                }
+            },
             { new: true }
         );
+    }
+
+    async updateInvestigationNotes(reportId: string, investigationNotes: string): Promise<ReportDocument | null> {
+        return await this._reportModel.findByIdAndUpdate(
+            reportId,
+            { $set: { investigationNotes } },
+            { new: true }
+        );
+    }
+
+    async getTargetReportSummary(targetId: string): Promise<IReportTargetSummary> {
+        const [result] = await this._reportModel.aggregate([
+            { $match: { targetId: this._toObjectId(targetId) } },
+            {
+                $group: {
+                    _id: null,
+                    total: { $sum: 1 },
+                    pending: { $sum: { $cond: [{ $eq: ["$status", ReportStatus.PENDING] }, 1, 0] } },
+                    resolved: { $sum: { $cond: [{ $eq: ["$status", ReportStatus.RESOLVED] }, 1, 0] } },
+                    rejected: { $sum: { $cond: [{ $eq: ["$status", ReportStatus.REJECTED] }, 1, 0] } }
+                }
+            },
+            { $project: { _id: 0 } }
+        ]);
+
+        return result || { total: 0, pending: 0, resolved: 0, rejected: 0 };
     }
 
     async getReportOverviewDetails(): Promise<IReportOverViewMatrix> {
