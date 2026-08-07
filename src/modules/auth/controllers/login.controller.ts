@@ -39,7 +39,7 @@ export class LoginController {
       throw new UnauthorizedException('Access token is missing');
     }
 
-    const refreshToken = await this._tokenService.generateRefreshToken(user.id, user.email, loginDto.type);
+    const refreshToken = (await this._tokenService.createSession(user.id, user.email, loginDto.type)).refreshToken;
     if (!refreshToken) {
       throw new UnauthorizedException('Refresh token is missing');
     }
@@ -132,7 +132,7 @@ export class LoginController {
         throw new NotFoundException('Access token is missing');
       }
 
-      const refreshToken = await this._tokenService.generateRefreshToken(user.id, user.email, user.type);
+      const refreshToken = (await this._tokenService.createSession(user.id, user.email, user.type)).refreshToken;
       if (!refreshToken) {
         throw new NotFoundException('Refresh token is missing');
       }
@@ -175,8 +175,11 @@ export class LoginController {
 
       if (accessToken) {
         const decoded = this._tokenService.decode(accessToken);
-        if (decoded && typeof decoded === 'object' && decoded.sub && refreshToken) {
-          await this._tokenService.invalidateTokens(decoded.sub, refreshToken);
+        if (decoded && typeof decoded === 'object' && decoded.sub) {
+          await this._tokenService.invalidateAccessToken(accessToken);
+          if (refreshToken) {
+            await this._tokenService.invalidateRefreshToken(refreshToken);
+          }
         }
       }
 

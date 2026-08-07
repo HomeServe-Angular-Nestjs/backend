@@ -48,7 +48,7 @@ export class BlockGuard implements CanActivate {
             });
         }
 
-        const userType = (request.headers['x-user-type']) as UserType;
+        const userType = userPayload.type as UserType;
 
         if (!userType) {
             this.logger.error('User payload missing: Unable to validate authentication.');

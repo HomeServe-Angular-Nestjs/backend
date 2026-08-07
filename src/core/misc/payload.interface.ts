@@ -4,4 +4,6 @@ export interface IPayload {
   sub: string;
   email: string;
   type: UserType;
+  sid?: string;
+  jti?: string;
 }
