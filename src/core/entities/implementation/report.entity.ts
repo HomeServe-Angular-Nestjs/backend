@@ -9,6 +9,9 @@ export class Report extends BaseEntity implements IReport {
     reason: ComplaintReason;
     description: string;
     status: ReportStatus;
+    investigationNotes?: string;
+    resolutionNote?: string;
+    resolvedAt?: Date | string;
 
     constructor(partials: Partial<IReport>) {
         super(partials);

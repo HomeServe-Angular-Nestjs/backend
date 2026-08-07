@@ -6,6 +6,7 @@ import {
 import { BookingSearchBy, BookingStatus, PaymentStatus } from '@core/enum/bookings.enum';
 import { RatingSearchBy, RatingsSortBy } from '@core/enum/ratings.enum';
 import { ReportCategoryType } from '@core/entities/interfaces/admin.entity.interface';
+import { VerificationStatusType } from '@core/entities/interfaces/user.entity.interface';
 
 export type FilterStatusType = true | false | 'all';
 export type RoleType = 'customer' | 'provider';
@@ -215,4 +216,16 @@ export class SettingsDto {
     @IsOptional()
     @IsNumber()
     customerCommission: number;
+}
+
+export class UpdateProviderVerificationDto {
+    @IsNotEmpty()
+    @IsString()
+    providerId: string;
+
+    @IsNotEmpty()
+    @IsIn(['pending', 'verified', 'rejected'], {
+        message: 'Verification status must be "pending", "verified" or "rejected"',
+    })
+    status: VerificationStatusType;
 }

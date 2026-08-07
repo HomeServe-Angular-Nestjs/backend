@@ -6,9 +6,8 @@ import { IProviderMapper } from "@core/dto-mapper/interface/provider.mapper.inte
 import { IWalletLedgerMapper } from "@core/dto-mapper/interface/wallet-ledger.mapper.interface";
 import { ClientUserType, ICustomer, IProvider } from "@core/entities/interfaces/user.entity.interface";
 import { IAdminTransactionDataWithPagination, ITransactionAdminList, ITransactionStats, IWalletTransactionFilter } from "@core/entities/interfaces/wallet-ledger.entity.interface";
-import { ErrorCodes } from "@core/enum/error.enum";
-import { TransactionType } from "@core/enum/transaction.enum";
 import { IResponse } from "@core/misc/response.util";
+
 import { IBookingRepository } from "@core/repositories/interfaces/bookings-repo.interface";
 import { ICustomerRepository } from "@core/repositories/interfaces/customer-repo.interface";
 import { IProviderRepository } from "@core/repositories/interfaces/provider-repo.interface";
@@ -108,74 +107,77 @@ export class AdminTransactionService implements IAdminTransactionService {
         ]);
 
         const enrichedTransaction: ITransactionAdminList[] = await Promise.all(
-            (transactionDocs ?? [])
-                .filter(tx => (tx.type === TransactionType.SUBSCRIPTION_PAYMENT && tx.direction === 'credit') || tx.userRole === 'admin')
-                .map(async (tnxDoc) => {
-                    const userId = tnxDoc.userId.toString();
-                    const isCurrentAdmin = adminId === userId;
-                    let role: ClientUserType | null = null;
+            (transactionDocs ?? []).map(async (tnxDoc) => {
+                const userId = tnxDoc.userId.toString();
+                const isCurrentAdmin = adminId === userId;
+                let role: ClientUserType | null = null;
 
-                    let user: ICustomer | IProvider | null = null;
+                let user: ICustomer | IProvider | null = null;
 
-                    if (!isCurrentAdmin) {
-                        role = tnxDoc.userRole as ClientUserType;
-                        user = await this._getUserDetails(
-                            userId,
-                            role
-                        );
-                    } else {
-                        if (tnxDoc.bookingId) {
-                            const booking = await this._bookingRepository.findById(tnxDoc.bookingId.toString());
-                            if (booking) {
-                                role = 'customer';
-                                user = await this._getUserDetails(
-                                    booking.customerId.toString(),
-                                    'customer'
-                                );
-                            }
-                        } else if (tnxDoc.subscriptionId) {
-                            const subscription = await this._subscriptionRepository.findById(tnxDoc.subscriptionId.toString());
-                            if (subscription) {
-                                role = subscription.role;
-                                user = await this._getUserDetails(
-                                    subscription.userId.toString(),
-                                    role
-                                );
-                            }
+                if (!isCurrentAdmin) {
+                    role = tnxDoc.userRole as ClientUserType;
+                    user = await this._getUserDetails(
+                        userId,
+                        role
+                    );
+                } else {
+                    if (tnxDoc.bookingId) {
+                        const booking = await this._bookingRepository.findById(tnxDoc.bookingId.toString());
+                        if (booking) {
+                            role = 'customer';
+                            user = await this._getUserDetails(
+                                booking.customerId.toString(),
+                                'customer'
+                            );
+                        }
+                    } else if (tnxDoc.subscriptionId) {
+                        const subscription = await this._subscriptionRepository.findById(tnxDoc.subscriptionId.toString());
+                        if (subscription) {
+                            role = subscription.role;
+                            user = await this._getUserDetails(
+                                subscription.userId.toString(),
+                                role
+                            );
                         }
                     }
+                }
 
-                    let counterpartyEmail = '';
-                    let counterpartyRole: 'customer' | 'provider' | 'admin' = 'customer';
+                let counterpartyEmail = '';
+                let counterpartyRole: 'customer' | 'provider' | 'admin' = 'customer';
 
-                    if (user && role) {
-                        counterpartyEmail = user.email;
-                        counterpartyRole = role;
-                    } else {
-                        counterpartyEmail = isCurrentAdmin ? 'Internal' : '';
-                        counterpartyRole = isCurrentAdmin ? 'admin' : 'customer';
-                    }
+                if (user && role) {
+                    counterpartyEmail = user.email;
+                    counterpartyRole = role;
+                } else if (tnxDoc.counterpartyEmail) {
+                    counterpartyEmail = tnxDoc.counterpartyEmail;
+                    counterpartyRole = tnxDoc.userRole as 'customer' | 'provider' | 'admin' || 'customer';
+                } else {
+                    counterpartyEmail = isCurrentAdmin ? 'Internal' : '';
+                    counterpartyRole = isCurrentAdmin ? 'admin' : 'customer';
+                }
 
-                    return {
-                        dateTime: tnxDoc.createdAt.toString(),
-                        counterparty: {
-                            email: counterpartyEmail,
-                            role: counterpartyRole,
-                        },
-                        type: tnxDoc.type,
-                        direction: tnxDoc.direction,
-                        amount: tnxDoc.amount / 100,
-                        referenceType: tnxDoc.bookingId
-                            ? 'booking'
-                            : tnxDoc.subscriptionId
-                                ? 'subscription'
-                                : 'Internal',
-                        referenceId: tnxDoc.bookingId?.toString()
-                            || tnxDoc.subscriptionId?.toString()
-                            || (tnxDoc as any)._id.toString(),
-                        source: tnxDoc.source,
-                    };
-                })
+                return {
+                    dateTime: tnxDoc.createdAt.toString(),
+                    counterparty: {
+                        email: counterpartyEmail,
+                        role: counterpartyRole,
+                    },
+                    type: tnxDoc.type,
+                    direction: tnxDoc.direction,
+                    amount: tnxDoc.amount / 100,
+                    referenceType: tnxDoc.bookingId
+                        ? 'booking'
+                        : tnxDoc.subscriptionId
+                            ? 'subscription'
+                            : 'Internal',
+                    referenceId: tnxDoc.bookingId?.toString()
+                        || tnxDoc.subscriptionId?.toString()
+                        || tnxDoc._id.toString(),
+                    bookingId: tnxDoc.bookingId?.toString() ?? null,
+                    paymentId: tnxDoc.gatewayPaymentId ?? null,
+                    source: tnxDoc.source,
+                };
+            })
         );
 
         return {

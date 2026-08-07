@@ -2,7 +2,7 @@ import { Provider } from '@nestjs/common';
 
 import {
   ADMIN_APPROVAL_SERVICE_NAME, ADMIN_BOOKINGS_SERVICE_NAME, ADMIN_DASHBOARD_OVERVIEW_SERVICE_NAME,
-  ADMIN_REVIEWS_SERVICE_NAME, ADMIN_SETTINGS_SERVICE_NAME, ADMIN_TRANSACTION_SERVICE_NAME, ADMIN_USER_MANAGEMENT_SERVICE_NAME, TOKEN_SERVICE_NAME
+  ADMIN_REVIEWS_SERVICE_NAME, ADMIN_SALES_REPORT_SERVICE_NAME, ADMIN_SETTINGS_SERVICE_NAME, ADMIN_TRANSACTION_SERVICE_NAME, ADMIN_USER_DETAILS_SERVICE_NAME, ADMIN_USER_MANAGEMENT_SERVICE_NAME, TOKEN_SERVICE_NAME
 } from '../../../core/constants/service.constant';
 import { TokenService } from '../../auth/services/implementations/token.service';
 import { AdminApprovalService } from '../services/implementations/admin-approval.service';
@@ -14,6 +14,8 @@ import { AdminReviewService } from '../services/implementations/admin-reviews.se
 import { AdminUserManagementService } from '../services/implementations/admin-user.service';
 import { AdminTransactionService } from '@modules/users/services/implementations/admin-transaction.service';
 import { AdminSettingService } from '@modules/users/services/implementations/settings.service';
+import { AdminSalesReportService } from '@modules/users/services/implementations/admin-sales-report.service';
+import { AdminUserDetailsService } from '@modules/users/services/implementations/admin-user-details.service';
 
 export const userServiceProvider: Provider[] = [
   {
@@ -45,7 +47,15 @@ export const userServiceProvider: Provider[] = [
     useClass: AdminTransactionService
   },
   {
+    provide: ADMIN_SALES_REPORT_SERVICE_NAME,
+    useClass: AdminSalesReportService
+  },
+  {
     provide: ADMIN_SETTINGS_SERVICE_NAME,
     useClass: AdminSettingService
+  },
+  {
+    provide: ADMIN_USER_DETAILS_SERVICE_NAME,
+    useClass: AdminUserDetailsService
   }
 ];

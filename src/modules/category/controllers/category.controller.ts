@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Put, Query, Param, Inject, Patch, Delete, Post } from "@nestjs/common";
+import { Body, Controller, Get, Put, Query, Param, Inject, Patch, Post } from "@nestjs/common";
 import { CategoryFilterDto, CategoryServiceFilterDto, CreateProfessionDto, CreateServiceCategoryDto } from "../dto/category.dto";
 import { ICategoryService } from "@modules/category/services/interfaces/category-service.interface";
 import { CATEGORY_SERVICE_NAME } from "@core/constants/service.constant";
@@ -48,16 +48,6 @@ export class CategoryController {
     @Put('service/:id')
     async updateServiceCategory(@Body() createServiceCategoryDto: CreateServiceCategoryDto, @Param('id', new isValidIdPipe()) serviceCategoryId: string): Promise<IResponse<IServiceCategory>> {
         return await this._categoryService.updateServiceCategory(createServiceCategoryDto, serviceCategoryId);
-    }
-
-    @Delete('profession/:id')
-    async deleteProfession(@Param('id', new isValidIdPipe()) professionId: string): Promise<IResponse> {
-        return await this._categoryService.deleteProfession(professionId);
-    }
-
-    @Delete('service/:id')
-    async deleteServiceCategory(@Param('id', new isValidIdPipe()) serviceCategoryId: string): Promise<IResponse> {
-        return await this._categoryService.deleteServiceCategory(serviceCategoryId);
     }
 
     @Get('profession/:id/available-services')

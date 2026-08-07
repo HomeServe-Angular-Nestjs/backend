@@ -15,6 +15,9 @@ export class ReportMapper implements IReportMapper {
             reason: entity.reason,
             description: entity.description,
             status: entity.status,
+            investigationNotes: entity.investigationNotes,
+            resolutionNote: entity.resolutionNote,
+            resolvedAt: entity.resolvedAt ? new Date(entity.resolvedAt) : undefined,
         }
     }
 
@@ -27,6 +30,9 @@ export class ReportMapper implements IReportMapper {
             reason: doc.reason,
             description: doc.description,
             status: doc.status,
+            investigationNotes: doc.investigationNotes,
+            resolutionNote: doc.resolutionNote,
+            resolvedAt: doc.resolvedAt,
             createdAt: doc.createdAt,
             updatedAt: doc.updatedAt
         });

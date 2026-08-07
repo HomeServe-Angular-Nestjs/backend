@@ -1,4 +1,4 @@
-import { IsArray, IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
+import { ArrayMaxSize, IsArray, IsBoolean, IsMongoId, IsNotEmpty, IsNumber, IsOptional, IsString, MaxLength, MinLength } from "class-validator";
 import { Transform } from "class-transformer";
 
 export class CategoryFilterDto {
@@ -28,8 +28,11 @@ export class CategoryServiceFilterDto extends CategoryFilterDto {
 }
 
 export class CreateProfessionDto {
-    @IsString()
-    @IsNotEmpty()
+    @Transform(({ value }) => typeof value === 'string' ? value.trim() : value)
+    @IsString({ message: 'Profession name must be a string.' })
+    @IsNotEmpty({ message: 'Profession name is required.' })
+    @MinLength(3, { message: 'Profession name must be at least 3 characters.' })
+    @MaxLength(50, { message: 'Profession name cannot exceed 50 characters.' })
     name: string;
 
     @IsBoolean()
@@ -38,16 +41,22 @@ export class CreateProfessionDto {
 }
 
 export class CreateServiceCategoryDto {
-    @IsString()
-    @IsNotEmpty()
+    @Transform(({ value }) => typeof value === 'string' ? value.trim() : value)
+    @IsString({ message: 'Service name must be a string.' })
+    @IsNotEmpty({ message: 'Service name is required.' })
+    @MinLength(3, { message: 'Service name must be at least 3 characters.' })
+    @MaxLength(50, { message: 'Service name cannot exceed 50 characters.' })
     name: string;
 
-    @IsNotEmpty()
-    @IsString()
+    @IsString({ message: 'Profession id must be a string.' })
+    @IsNotEmpty({ message: 'Profession is required.' })
     professionId: string;
 
-    @IsArray()
-    @IsString({ each: true })
+    @Transform(({ value }) => Array.isArray(value) ? value.map((item: unknown) => typeof item === 'string' ? item.trim() : item) : value)
+    @IsArray({ message: 'Keywords must be an array.' })
+    @IsString({ each: true, message: 'Each keyword must be a string.' })
+    @MaxLength(30, { each: true, message: 'Each keyword cannot exceed 30 characters.' })
+    @ArrayMaxSize(20, { message: 'Keywords cannot exceed 20 items.' })
     @IsOptional()
     keywords?: string[];
 

@@ -7,7 +7,8 @@ import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData,
 import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
 import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
 import { IBookingRepository } from '@core/repositories/interfaces/bookings-repo.interface';
-import { IAdminReviewStats, IReviewDistribution, ILowestRatedProvider, IRatingTrendPoint, IBookingReportData, IReportCustomerMatrix, IReportDownloadBookingData, IReportProviderMatrix } from '@core/entities/interfaces/admin.entity.interface';
+import { IAdminReviewStats, IReviewDistribution, ILowestRatedProvider, IRatingTrendPoint, IBookingReportData, IReportCustomerMatrix, IReportDownloadBookingData, IReportProviderMatrix, ISalesReportBundle, ISalesReportFilter, IBookingsSoldBuckets } from '@core/entities/interfaces/admin.entity.interface';
+import { IBookingOverview, ICustomerStatistics, IProviderStatistics, IReviewOverview } from '@core/entities/interfaces/admin-user-details.entity.interface';
 import { SlotStatusEnum } from '@core/enum/slot.enum';
 import { BookingStatus, CancelStatus, PaymentStatus } from '@core/enum/bookings.enum';
 import { UpdateQuery } from 'mongoose';
@@ -435,6 +436,255 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
             totalEarnings: 0,
             totalRefunds: 0
         };
+    }
+
+    async getCustomerStatistics(id: string): Promise<ICustomerStatistics> {
+        const objId = this._toObjectId(id);
+
+        const [result] = await this._bookingModel.aggregate([
+            { $match: { customerId: objId } },
+            {
+                $group: {
+                    _id: null,
+                    totalBookings: { $sum: 1 },
+                    completedBookings: { $sum: { $cond: [{ $eq: ['$bookingStatus', BookingStatus.COMPLETED] }, 1, 0] } },
+                    cancelledBookings: { $sum: { $cond: [{ $eq: ['$bookingStatus', BookingStatus.CANCELLED] }, 1, 0] } },
+                    totalAmountSpent: {
+                        $sum: {
+                            $cond: [{ $in: ['$paymentStatus', [PaymentStatus.PAID, PaymentStatus.REFUNDED]] }, '$totalAmount', 0]
+                        }
+                    },
+                    reviewsWritten: { $sum: { $cond: [{ $ne: ['$review', null] }, 1, 0] } },
+                },
+            },
+            {
+                $project: {
+                    _id: 0,
+                    totalBookings: 1,
+                    completedBookings: 1,
+                    cancelledBookings: 1,
+                    totalAmountSpent: { $ifNull: ['$totalAmountSpent', 0] },
+                    reviewsWritten: { $ifNull: ['$reviewsWritten', 0] },
+                },
+            },
+        ]);
+
+        return result ?? { totalBookings: 0, completedBookings: 0, cancelledBookings: 0, totalAmountSpent: 0, reviewsWritten: 0 };
+    }
+
+    async getProviderStatistics(id: string): Promise<IProviderStatistics> {
+        const objId = this._toObjectId(id);
+
+        const [result] = await this._bookingModel.aggregate([
+            { $match: { providerId: objId } },
+            {
+                $group: {
+                    _id: null,
+                    totalBookings: { $sum: 1 },
+                    completedJobs: { $sum: { $cond: [{ $eq: ['$bookingStatus', BookingStatus.COMPLETED] }, 1, 0] } },
+                    cancelledJobs: { $sum: { $cond: [{ $eq: ['$bookingStatus', BookingStatus.CANCELLED] }, 1, 0] } },
+                    totalRevenue: {
+                        $sum: {
+                            $cond: [{ $in: ['$paymentStatus', [PaymentStatus.PAID, PaymentStatus.REFUNDED]] }, '$totalAmount', 0]
+                        }
+                    },
+                    totalReviews: { $sum: { $cond: [{ $ne: ['$review', null] }, 1, 0] } },
+                },
+            },
+            {
+                $project: {
+                    _id: 0,
+                    totalBookings: 1,
+                    completedJobs: 1,
+                    cancelledJobs: 1,
+                    totalRevenue: { $ifNull: ['$totalRevenue', 0] },
+                    totalReviews: { $ifNull: ['$totalReviews', 0] },
+                },
+            },
+        ]);
+
+        return result ?? { totalBookings: 0, completedJobs: 0, cancelledJobs: 0, totalRevenue: 0, totalReviews: 0 };
+    }
+
+    async getRecentBookingsByCustomer(customerId: string, limit: number = 5): Promise<IBookingOverview[]> {
+        return this._bookingModel.aggregate(this._buildRecentBookingsPipeline(
+            { customerId: this._toObjectId(customerId) },
+            'provider',
+            limit,
+        ));
+    }
+
+    async getRecentBookingsByProvider(providerId: string, limit: number = 5): Promise<IBookingOverview[]> {
+        return this._bookingModel.aggregate(this._buildRecentBookingsPipeline(
+            { providerId: this._toObjectId(providerId) },
+            'customer',
+            limit,
+        ));
+    }
+
+    private _buildRecentBookingsPipeline(
+        match: Record<string, unknown>,
+        via: 'provider' | 'customer',
+        limit: number,
+    ): PipelineStage[] {
+        const partyCollection = via === 'provider' ? 'providers' : 'customers';
+        const otherField = via === 'provider' ? 'customer' : 'provider';
+        const otherSideCollection = via === 'provider' ? 'customers' : 'providers';
+
+        return [
+            { $match: match },
+            { $sort: { createdAt: -1 } },
+            { $limit: limit },
+            {
+                $lookup: {
+                    from: partyCollection,
+                    localField: via + 'Id',
+                    foreignField: '_id',
+                    as: via,
+                },
+            },
+            { $unwind: { path: '$' + via, preserveNullAndEmptyArrays: true } },
+            { $lookup: { from: otherSideCollection, localField: otherField + 'Id', foreignField: '_id', as: otherField } },
+            { $unwind: { path: '$' + otherField, preserveNullAndEmptyArrays: true } },
+            {
+                $lookup: {
+                    from: 'providerservices',
+                    localField: 'services',
+                    foreignField: '_id',
+                    as: 'serviceDocs',
+                },
+            },
+            {
+                $addFields: {
+                    firstService: { $arrayElemAt: ['$serviceDocs', 0] },
+                },
+            },
+            {
+                $lookup: {
+                    from: 'professions',
+                    let: { pid: '$firstService.professionId' },
+                    pipeline: [
+                        { $match: { $expr: { $eq: ['$_id', '$$pid'] } } },
+                        { $limit: 1 },
+                        { $project: { _id: 0, name: 1 } },
+                    ],
+                    as: 'serviceProfession',
+                },
+            },
+            { $unwind: { path: '$serviceProfession', preserveNullAndEmptyArrays: true } },
+            {
+                $lookup: {
+                    from: 'servicecategories',
+                    let: { cid: '$firstService.categoryId' },
+                    pipeline: [
+                        { $match: { $expr: { $eq: ['$_id', '$$cid'] } } },
+                        { $limit: 1 },
+                        { $project: { _id: 0, name: 1 } },
+                    ],
+                    as: 'serviceCategory',
+                },
+            },
+            { $unwind: { path: '$serviceCategory', preserveNullAndEmptyArrays: true } },
+            {
+                $project: {
+                    _id: 0,
+                    bookingId: { $toString: '$_id' },
+                    amount: { $divide: [{ $ifNull: ['$totalAmount', 0] }, 100] },
+                    status: '$bookingStatus',
+                    date: '$createdAt',
+                    [via]: {
+                        id: { $toString: '$' + via + '._id' },
+                        username: { $ifNull: ['$' + via + '.username', ''] },
+                        fullname: { $ifNull: ['$' + via + '.fullname', '$' + via + '.username'] },
+                        avatar: { $ifNull: ['$' + via + '.avatar', ''] },
+                        profession: { $ifNull: ['$' + via + '.profession', ''] },
+                    },
+                    [otherField]: {
+                        id: { $toString: '$' + otherField + '._id' },
+                        username: { $ifNull: ['$' + otherField + '.username', ''] },
+                        fullname: { $ifNull: ['$' + otherField + '.fullname', '$' + otherField + '.username'] },
+                        avatar: { $ifNull: ['$' + otherField + '.avatar', ''] },
+                    },
+                    service: {
+                        name: { $ifNull: ['$serviceProfession.name', ''] },
+                        category: { $ifNull: ['$serviceCategory.name', ''] },
+                    },
+                },
+            },
+        ];
+    }
+
+    async getRecentReviewsByCustomer(customerId: string, limit: number = 5): Promise<IReviewOverview[]> {
+        return await this._buildRecentReviewsPipeline(
+            { customerId: this._toObjectId(customerId), review: { $ne: null } },
+            'providers',
+            'provider',
+            limit,
+        );
+    }
+
+    async getRecentReviewsByProvider(providerId: string, limit: number = 5): Promise<IReviewOverview[]> {
+        return await this._buildRecentReviewsPipeline(
+            { providerId: this._toObjectId(providerId), review: { $ne: null } },
+            'customers',
+            'customer',
+            limit,
+        );
+    }
+
+    private async _buildRecentReviewsPipeline(
+        match: Record<string, unknown>,
+        userCollection: 'providers' | 'customers',
+        userField: 'provider' | 'customer',
+        limit: number,
+    ): Promise<IReviewOverview[]> {
+        return await this._bookingModel.aggregate([
+            { $match: match },
+            { $sort: { 'review.writtenAt': -1 } },
+            { $limit: limit },
+            {
+                $lookup: {
+                    from: userCollection,
+                    localField: userField + 'Id',
+                    foreignField: '_id',
+                    as: userField,
+                },
+            },
+            { $unwind: { path: '$' + userField, preserveNullAndEmptyArrays: true } },
+            {
+                $project: {
+                    _id: 0,
+                    reviewId: { $toString: '$_id' },
+                    rating: '$review.rating',
+                    desc: '$review.desc',
+                    date: '$review.writtenAt',
+                    'user.id': { $toString: '$' + userField + '._id' },
+                    'user.username': { $ifNull: ['$' + userField + '.username', ''] },
+                    'user.fullname': { $ifNull: ['$' + userField + '.fullname', '$' + userField + '.username'] },
+                    'user.avatar': { $ifNull: ['$' + userField + '.avatar', ''] },
+                },
+            },
+        ]);
+    }
+
+    async getServiceBookingCounts(providerId: string): Promise<{ serviceId: string; count: number }[]> {
+        return await this._bookingModel.aggregate([
+            { $match: { providerId: this._toObjectId(providerId) } },
+            { $unwind: '$services' },
+            {
+                $group: {
+                    _id: '$services',
+                    count: { $sum: 1 },
+                },
+            },
+            {
+                $project: {
+                    _id: 0,
+                    serviceId: { $toString: '$_id' },
+                    count: 1,
+                },
+            },
+        ]);
     }
 
     async findSlotsByDate(date: string | Date): Promise<SlotDocument[]> {
@@ -2677,5 +2927,374 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
             ],
             { new: true }
         );
+    }
+
+    async aggregateSalesReport(option: ISalesReportFilter): Promise<ISalesReportBundle> {
+        const COMPLETED = BookingStatus.COMPLETED;
+        const CANCELLED = BookingStatus.CANCELLED;
+
+        // ---- Date windows ----
+        const year = new Date().getFullYear();
+        let windowStart: Date;
+        let windowEnd: Date;
+        let hasRange = false;
+
+        if (option.fromDate && option.toDate) {
+            windowStart = new Date(option.fromDate);
+            windowEnd = new Date(option.toDate);
+            if (isNaN(windowStart.getTime()) || isNaN(windowEnd.getTime())) {
+                windowStart = new Date(year, 0, 1);
+                windowEnd = new Date();
+            } else {
+                hasRange = true;
+            }
+        } else {
+            windowStart = new Date(year, 0, 1);
+            windowEnd = new Date();
+        }
+        windowEnd.setHours(23, 59, 59, 999);
+        const windowLenMs = Math.max(windowEnd.getTime() - windowStart.getTime(), 0);
+        const prevEnd = new Date(windowStart.getTime() - 1);
+        const prevStart = new Date(prevEnd.getTime() - windowLenMs);
+
+        // ---- Base match (provider / status filters; category & profession applied post-lookup) ----
+        const baseMatch: FilterQuery<BookingDocument> = {};
+        if (option.providerId) baseMatch.providerId = this._toObjectId(option.providerId);
+        if (option.bookingStatus) baseMatch.bookingStatus = option.bookingStatus;
+
+        const pipeline: PipelineStage[] = [];
+        if (Object.keys(baseMatch).length > 0) pipeline.push({ $match: baseMatch });
+
+        // ---- Flatten one row per ordered service ----
+        pipeline.push(
+            { $lookup: { from: 'providerservices', localField: 'services', foreignField: '_id', as: 'serviceFetch' } },
+            { $unwind: { path: '$serviceFetch', preserveNullAndEmptyArrays: true } },
+            { $lookup: { from: 'professions', localField: 'serviceFetch.professionId', foreignField: '_id', as: 'professionFetch' } },
+            { $unwind: { path: '$professionFetch', preserveNullAndEmptyArrays: true } },
+            { $lookup: { from: 'servicecategories', localField: 'serviceFetch.categoryId', foreignField: '_id', as: 'categoryFetch' } },
+            { $unwind: { path: '$categoryFetch', preserveNullAndEmptyArrays: true } },
+            { $lookup: { from: 'providers', localField: 'providerId', foreignField: '_id', as: 'providerFetch' } },
+            { $unwind: { path: '$providerFetch', preserveNullAndEmptyArrays: true } },
+        );
+
+        if (option.professionId) {
+            pipeline.push({ $match: { 'professionFetch._id': this._toObjectId(option.professionId) } });
+        }
+        if (option.categoryId) {
+            pipeline.push({ $match: { 'categoryFetch._id': this._toObjectId(option.categoryId) } });
+        }
+
+        const monthArr = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const dailyBucket = hasRange && windowLenMs <= 92 * 24 * 60 * 60 * 1000;
+        const trendGroupId = dailyBucket
+            ? { year: { $year: '$createdAt' }, month: { $month: '$createdAt' }, day: { $dayOfMonth: '$createdAt' } }
+            : { year: { $year: '$createdAt' }, month: { $month: '$createdAt' } };
+        const trendLabel = dailyBucket
+            ? { $concat: [{ $arrayElemAt: [monthArr, { $subtract: ['$_id.month', 1] }] }, ' ', { $toString: '$_id.day' }] }
+            : { $arrayElemAt: [monthArr, { $subtract: ['$_id.month', 1] }] };
+
+        pipeline.push({
+            $facet: {
+                // ---- Summary (dedup per booking) ----
+                summary: [
+                    { $match: { createdAt: { $gte: windowStart, $lte: windowEnd } } },
+                    { $sort: { createdAt: 1 } },
+                    { $group: { _id: '$_id', amount: { $first: '$totalAmount' }, status: { $first: '$bookingStatus' }, createdAt: { $first: '$createdAt' } } },
+                    {
+                        $group: {
+                            _id: null,
+                            totalBookings: { $sum: 1 },
+                            totalCompleted: { $sum: { $cond: [{ $eq: ['$status', COMPLETED] }, 1, 0] } },
+                            cancelled: { $sum: { $cond: [{ $eq: ['$status', CANCELLED] }, 1, 0] } },
+                            totalRevenue: { $sum: { $cond: [{ $eq: ['$status', COMPLETED] }, { $ifNull: ['$amount', 0] }, 0] } },
+                            firstDate: { $min: '$createdAt' },
+                            lastDate: { $max: '$createdAt' },
+                        }
+                    },
+                    {
+                        $project: {
+                            _id: 0,
+                            totalBookings: 1,
+                            completed: '$totalCompleted',
+                            cancelled: 1,
+                            totalRevenue: 1,
+                            days: {
+                                $max: [
+                                    { $ceil: { $divide: [{ $subtract: ['$lastDate', '$firstDate'] }, 86400000] } },
+                                    1
+                                ]
+                            }
+                        }
+                    }
+                ],
+                // ---- Previous period revenue (for growth) ----
+                previousRevenue: [
+                    { $match: { createdAt: { $gte: prevStart, $lte: prevEnd }, bookingStatus: COMPLETED } },
+                    { $sort: { createdAt: 1 } },
+                    { $group: { _id: '$_id', amount: { $first: '$totalAmount' } } },
+                    { $group: { _id: null, revenue: { $sum: { $ifNull: ['$amount', 0] } } } }
+                ],
+                // ---- Sales trend ----
+                trend: [
+                    { $match: { createdAt: { $gte: windowStart, $lte: windowEnd } } },
+                    { $sort: { createdAt: 1 } },
+                    { $group: { _id: '$_id', status: { $first: '$bookingStatus' }, amount: { $first: '$totalAmount' }, createdAt: { $first: '$createdAt' } } },
+                    { $addFields: { _bucket: trendGroupId } },
+                    {
+                        $group: {
+                            _id: '$_bucket',
+                            revenue: { $sum: { $cond: [{ $eq: ['$status', COMPLETED] }, { $ifNull: ['$amount', 0] }, 0] } },
+                            bookings: { $sum: 1 }
+                        }
+                    },
+                    { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 } },
+                    { $project: { _id: 0, label: trendLabel, revenue: 1, bookings: 1 } }
+                ],
+                // ---- Bookings sold buckets ----
+                bookingsSold: [
+                    { $match: { createdAt: { $gte: windowStart, $lte: windowEnd } } },
+                    { $sort: { createdAt: 1 } },
+                    { $group: { _id: '$_id', createdAt: { $first: '$createdAt' } } },
+                    { $group: { _id: null, buckets: { $push: '$createdAt' } } }
+                ],
+                // ---- Top professions ----
+                professions: [
+                    { $match: { createdAt: { $gte: windowStart, $lte: windowEnd } } },
+                    {
+                        $group: {
+                            _id: { p: '$professionFetch.name', b: '$_id' },
+                            revenue: { $first: { $cond: [{ $eq: ['$bookingStatus', COMPLETED] }, { $ifNull: ['$totalAmount', 0] }, 0] } }
+                        }
+                    },
+                    { $group: { _id: '$_id.p', bookings: { $sum: 1 }, revenue: { $sum: '$revenue' } } },
+                    { $sort: { bookings: -1 } },
+                    { $limit: 6 },
+                    { $project: { _id: 0, name: '$_id', bookings: 1, revenue: { $round: ['$revenue', 0] } } }
+                ],
+                // ---- Top categories ----
+                categories: [
+                    { $match: { createdAt: { $gte: windowStart, $lte: windowEnd } } },
+                    {
+                        $group: {
+                            _id: { c: '$categoryFetch.name', b: '$_id' },
+                            revenue: { $first: { $cond: [{ $eq: ['$bookingStatus', COMPLETED] }, { $ifNull: ['$totalAmount', 0] }, 0] } }
+                        }
+                    },
+                    { $group: { _id: '$_id.c', bookings: { $sum: 1 }, revenue: { $sum: '$revenue' } } },
+                    { $sort: { bookings: -1 } },
+                    { $limit: 6 },
+                    { $project: { _id: 0, name: '$_id', bookings: 1, revenue: { $round: ['$revenue', 0] } } }
+                ],
+                // ---- Top selling services ----
+                services: [
+                    { $match: { createdAt: { $gte: windowStart, $lte: windowEnd } } },
+                    {
+                        $group: {
+                            _id: { s: '$serviceFetch._id', b: '$_id' },
+                            revenue: { $first: { $cond: [{ $eq: ['$bookingStatus', COMPLETED] }, { $ifNull: ['$totalAmount', 0] }, 0] } },
+                            rating: { $first: { $ifNull: ['$review.rating', 0] } },
+                            providerId: { $first: '$providerFetch._id' },
+                            providerName: { $first: '$providerFetch.username' },
+                            serviceName: { $first: '$serviceFetch.description' },
+                            profession: { $first: '$professionFetch.name' }
+                        }
+                    },
+                    {
+                        $group: {
+                            _id: '$_id.s',
+                            bookings: { $sum: 1 },
+                            revenue: { $sum: '$revenue' },
+                            providerId: { $first: '$providerId' },
+                            providerName: { $first: '$providerName' },
+                            serviceName: { $first: '$serviceName' },
+                            profession: { $first: '$profession' },
+                            ratingSum: { $sum: { $cond: [{ $gt: ['$rating', 0] }, '$rating', 0] } },
+                            rated: { $sum: { $cond: [{ $gt: ['$rating', 0] }, 1, 0] } }
+                        }
+                    },
+                    {
+                        $addFields: {
+                            avgRating: { $round: [{ $cond: [{ $gt: ['$rated', 0] }, { $divide: ['$ratingSum', '$rated'] }, 0] }, 2] }
+                        }
+                    },
+                    { $sort: { bookings: -1 } },
+                    { $limit: 10 },
+                    {
+                        $project: {
+                            _id: 0,
+                            serviceId: { $toString: '$_id' },
+                            providerId: { $toString: '$providerId' },
+                            providerName: 1,
+                            serviceName: 1,
+                            profession: 1,
+                            bookings: 1,
+                            revenue: { $round: ['$revenue', 0] },
+                            avgRating: 1
+                        }
+                    }
+                ],
+                // ---- Provider performance ----
+                providers: [
+                    { $match: { createdAt: { $gte: windowStart, $lte: windowEnd } } },
+                    { $sort: { createdAt: 1 } },
+                    {
+                        $group: {
+                            _id: { p: '$providerFetch._id', b: '$_id' },
+                            providerName: { $first: '$providerFetch.username' },
+                            status: { $first: '$bookingStatus' },
+                            amount: { $first: '$totalAmount' },
+                            rating: { $first: { $ifNull: ['$review.rating', 0] } }
+                        }
+                    },
+                    {
+                        $group: {
+                            _id: '$_id.p',
+                            providerName: { $first: '$providerName' },
+                            total: { $sum: 1 },
+                            completedJobs: { $sum: { $cond: [{ $eq: ['$status', COMPLETED] }, 1, 0] } },
+                            cancelled: { $sum: { $cond: [{ $eq: ['$status', CANCELLED] }, 1, 0] } },
+                            revenue: { $sum: { $cond: [{ $eq: ['$status', COMPLETED] }, { $ifNull: ['$amount', 0] }, 0] } },
+                            ratingSum: { $sum: { $cond: [{ $gt: ['$rating', 0] }, '$rating', 0] } },
+                            rated: { $sum: { $cond: [{ $gt: ['$rating', 0] }, 1, 0] } }
+                        }
+                    },
+                    {
+                        $addFields: {
+                            completionRate: { $multiply: [{ $divide: ['$completedJobs', { $cond: [{ $gt: ['$total', 0] }, '$total', 1] }] }, 100] },
+                            avgRating: { $round: [{ $cond: [{ $gt: ['$rated', 0] }, { $divide: ['$ratingSum', '$rated'] }, 0] }, 2] }
+                        }
+                    },
+                    { $sort: { revenue: -1 } },
+                    {
+                        $project: {
+                            _id: 0,
+                            providerId: { $toString: '$_id' },
+                            providerName: 1,
+                            completedJobs: 1,
+                            cancelled: 1,
+                            revenue: { $round: ['$revenue', 0] },
+                            completionRate: { $round: ['$completionRate', 1] },
+                            avgRating: 1
+                        }
+                    }
+                ],
+                // ---- Sales distribution (by profession) ----
+                distribution: [
+                    { $match: { createdAt: { $gte: windowStart, $lte: windowEnd }, bookingStatus: COMPLETED } },
+                    { $group: { _id: { p: '$professionFetch.name', b: '$_id' }, amount: { $first: { $ifNull: ['$totalAmount', 0] } } } },
+                    { $group: { _id: '$_id.p', value: { $sum: '$amount' } } },
+                    { $sort: { value: -1 } },
+                    { $limit: 8 },
+                    { $project: { _id: 0, name: '$_id', value: { $round: ['$value', 0] } } }
+                ],
+                // ---- Cancellation analysis ----
+                cancellationCategories: [
+                    { $match: { createdAt: { $gte: windowStart, $lte: windowEnd }, bookingStatus: CANCELLED } },
+                    { $group: { _id: { c: '$categoryFetch.name', b: '$_id' } } },
+                    { $group: { _id: '$_id.c', bookings: { $sum: 1 } } },
+                    { $sort: { bookings: -1 } },
+                    { $limit: 5 },
+                    { $project: { _id: 0, name: '$_id', bookings: 1 } }
+                ],
+                cancellationProviders: [
+                    { $match: { createdAt: { $gte: windowStart, $lte: windowEnd }, bookingStatus: CANCELLED } },
+                    { $group: { _id: { p: '$providerFetch._id', b: '$_id' }, name: { $first: '$providerFetch.username' } } },
+                    { $group: { _id: '$_id.p', name: { $first: '$name' }, bookings: { $sum: 1 } } },
+                    { $sort: { bookings: -1 } },
+                    { $limit: 5 },
+                    { $project: { _id: 0, name: 1, bookings: 1 } }
+                ],
+                // ---- Filter options ----
+                filters: [
+                    { $sort: { createdAt: 1 } },
+                    {
+                        $group: {
+                            _id: null,
+                            professions: { $addToSet: { id: { $toString: '$professionFetch._id' }, name: '$professionFetch.name' } },
+                            categories: { $addToSet: { id: { $toString: '$categoryFetch._id' }, name: '$categoryFetch.name' } },
+                            providers: { $addToSet: { id: { $toString: '$providerFetch._id' }, name: '$providerFetch.username' } }
+                        }
+                    }
+                ]
+            }
+        });
+
+        const [result] = await this._bookingModel.aggregate(pipeline);
+        return this._mapSalesReport(result);
+    }
+
+    private _mapSalesReport(result: any): ISalesReportBundle {
+        const summary = result?.summary?.[0] ?? {
+            totalBookings: 0, completed: 0, cancelled: 0, totalRevenue: 0, days: 1
+        };
+        const prevRevenue = result?.previousRevenue?.[0]?.revenue ?? 0;
+        const totalDays = summary.days > 0 ? summary.days : 1;
+
+        const totalSales = Math.round(summary.totalRevenue || 0);
+        const completedSales = summary.completed ?? 0;
+        const cancelledSales = summary.cancelled ?? 0;
+        const totalBookings = summary.totalBookings ?? 0;
+
+        const avgOrderValue = totalSales > 0 && completedSales > 0 ? Math.round(totalSales / completedSales) : 0;
+        const avgDailySales = totalSales > 0 ? Math.round(totalSales / totalDays) : 0;
+        const salesGrowthPct = prevRevenue > 0 ? ((totalSales - prevRevenue) / prevRevenue) * 100 : 0;
+
+        const trend = (result?.trend ?? []).map((t: any) => ({
+            label: t.label,
+            revenue: Number(t.revenue || 0),
+            bookings: Number(t.bookings || 0),
+        }));
+
+        const bookingsSold = this._computeBuckets(result?.bookingsSold?.[0]?.buckets ?? []);
+
+        const filterOptions = result?.filters?.[0] || { professions: [], categories: [], providers: [] };
+
+        return {
+            summary: {
+                totalBookings,
+                totalSales,
+                completedSales,
+                cancelledSales,
+                avgOrderValue,
+                avgDailySales,
+                salesGrowthPct: Math.round(salesGrowthPct * 10) / 10,
+            },
+            trend,
+            bookingsSold,
+            professions: result?.professions || [],
+            categories: result?.categories || [],
+            services: result?.services || [],
+            providers: result?.providers || [],
+            distribution: result?.distribution || [],
+            cancellation: {
+                cancelledOrders: cancelledSales,
+                cancellationRate: totalBookings > 0 ? Math.round((cancelledSales / totalBookings) * 1000) / 10 : 0,
+                topCancelledCategories: result?.cancellationCategories || [],
+                topCancelledProviders: result?.cancellationProviders || [],
+            },
+            filters: {
+                professions: (filterOptions.professions || []).filter((p: any) => p.name),
+                categories: (filterOptions.categories || []).filter((c: any) => c.name),
+                providers: (filterOptions.providers || []).filter((p: any) => p.name),
+            },
+        };
+    }
+
+    private _computeBuckets(dates: Date[]): IBookingsSoldBuckets {
+        const now = new Date();
+        const startOfDay = new Date(now); startOfDay.setHours(0, 0, 0, 0);
+        const startOfWeek = new Date(startOfDay); startOfWeek.setDate(startOfDay.getDate() - startOfDay.getDay());
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const startOfYear = new Date(now.getFullYear(), 0, 1);
+
+        let today = 0, week = 0, month = 0, year = 0;
+        for (const d of dates) {
+            const dt = new Date(d);
+            if (dt >= startOfYear) year++;
+            if (dt >= startOfMonth) month++;
+            if (dt >= startOfWeek) week++;
+            if (dt >= startOfDay) today++;
+        }
+        return { today, week, month, year };
     }
 }

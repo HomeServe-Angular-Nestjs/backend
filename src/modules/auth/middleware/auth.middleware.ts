@@ -23,12 +23,17 @@ export class AuthMiddleware implements NestMiddleware {
     }
 
     async use(req: Request, res: Response, next: NextFunction): Promise<void> {
-        const isAuthRoute = ['login', 'signup'].some(route =>
+        const isAuthRoute = ['login', 'signup', 'landing'].some(route =>
             req.originalUrl.split('/').includes(route)
         );
-        this.logger.debug(req.body);
-        this.logger.debug(req.query);
-        this.logger.debug(req.params);
+
+        const isDevMode = process.env.NODE_ENV === 'development';
+        if (isDevMode) {
+            this.logger.debug(req.body);
+            this.logger.debug(req.query);
+            this.logger.debug(req.params);
+        }
+        
         if (isAuthRoute) {
             return next();
         }
@@ -68,11 +73,11 @@ export class AuthMiddleware implements NestMiddleware {
                     throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
                 }
 
-                const payload = await this.tokenService.validateRefreshToken(refreshToken);
-                if (!payload) throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
+                const rotated = await this.tokenService.rotateRefreshToken(refreshToken);
+                if (!rotated?.refreshToken) throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
 
-                const newAccessToken = this.tokenService.generateAccessToken(userId, payload.email, userType);
-                const newRefreshToken = this.tokenService.generateRefreshToken(userId, payload.email, userType);
+                const newAccessToken = this.tokenService.generateAccessToken(userId, rotated.payload.email, userType);
+                const newRefreshToken = rotated.refreshToken;
 
                 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 

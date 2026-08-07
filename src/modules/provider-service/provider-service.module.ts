@@ -12,7 +12,7 @@ import { CloudinaryModule } from "@configs/cloudinary/cloudinary.module";
     providers: [
         ...providerServiceRepositoryProvider,
         ...providerServiceServiceProvider,
-        ...providerServiceUtility
+        ...providerServiceUtility,
     ],
     exports: []
 })

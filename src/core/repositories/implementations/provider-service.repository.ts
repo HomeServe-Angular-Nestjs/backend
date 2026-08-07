@@ -138,7 +138,19 @@ export class ProviderServiceRepository extends BaseRepository<ProviderServiceDoc
     async findByCategoryId(categoryId: string): Promise<ProviderServiceDocument[]> {
         return await this._providerServiceModel.find({
             categoryId: new Types.ObjectId(categoryId),
+            isActive: true,
             isDeleted: false
         }).lean();
+    }
+
+    async deactivateByCategoryIds(categoryIds: string[]): Promise<void> {
+        await this._providerServiceModel.updateMany(
+            {
+                categoryId: { $in: categoryIds.map(id => new Types.ObjectId(id)) },
+                isActive: true,
+                isDeleted: false
+            },
+            { $set: { isActive: false } }
+        );
     }
 }

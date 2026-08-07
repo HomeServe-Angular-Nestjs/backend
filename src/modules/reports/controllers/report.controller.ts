@@ -3,7 +3,7 @@ import { IReport, IReportDetail, IReportOverViewMatrix, IReportWithPagination, R
 import { IPayload } from "@core/misc/payload.interface";
 import { IResponse } from "@core/misc/response.util";
 import { isValidIdPipe } from "@core/pipes/is-valid-id.pipe";
-import { ReportFilterDto, ReportStatusDto, ReportSubmitDto } from "@modules/reports/dto/report.dto";
+import { ReportFilterDto, ReportStatusDto, ReportSubmitDto, UpdateInvestigationNotesDto } from "@modules/reports/dto/report.dto";
 import { IReportService } from "@modules/reports/services/interfaces/report.service.interface";
 import { Body, Controller, Inject, Post, Req, Get, Query, Param, Patch } from "@nestjs/common";
 import { Request } from "express";
@@ -40,7 +40,12 @@ export class ReportController {
 
     @Patch(':reportId/status')
     async updateReportStatus(@Param('reportId', new isValidIdPipe()) reportId: string, @Body() body: ReportStatusDto): Promise<IResponse> {
-        return await this._reportService.updateReportStatus(reportId, body.status);
+        return await this._reportService.updateReportStatus(reportId, body.status, body.resolutionNote);
+    }
+
+    @Patch(':reportId/notes')
+    async updateInvestigationNotes(@Param('reportId', new isValidIdPipe()) reportId: string, @Body() body: UpdateInvestigationNotesDto): Promise<IResponse> {
+        return await this._reportService.updateInvestigationNotes(reportId, body.investigationNotes);
     }
 
 

@@ -1,12 +1,12 @@
 import {
   BOOKINGS_MODEL_NAME, CART_MODEL_NAME, CUSTOMER_MODEL_NAME, DATE_OVERRIDE_MODEL_NAME, PROVIDER_MODEL_NAME, PROVIDER_SERVICE_MODEL_NAME, REPORT_MODEL_NAME, SERVICE_OFFERED_MODEL_NAME,
-  WEEKLY_AVAILABILITY_MODEL_NAME, RESERVATION_MODEL_NAME
+  WEEKLY_AVAILABILITY_MODEL_NAME, RESERVATION_MODEL_NAME, SERVICE_CATEGORY_MODEL_NAME
 } from '@core/constants/model.constant';
 
 import {
   BOOKING_REPOSITORY_NAME, CART_REPOSITORY_NAME, DATE_OVERRIDES_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, PROVIDER_SERVICE_REPOSITORY_NAME,
   REPORT_REPOSITORY_NAME, SERVICE_OFFERED_REPOSITORY_NAME, WEEKLY_AVAILABILITY_REPOSITORY_INTERFACE_NAME, RESERVATION_REPOSITORY_NAME,
-  CUSTOMER_REPOSITORY_INTERFACE_NAME
+  CUSTOMER_REPOSITORY_INTERFACE_NAME, SERVICE_CATEGORY_REPOSITORY_NAME
 } from '@core/constants/repository.constant';
 
 import { Model } from 'mongoose';
@@ -32,6 +32,8 @@ import { CartRepository } from '@core/repositories/implementations/cart.reposito
 import { ReservationDocument } from '@core/schema/reservation.schema';
 import { ReservationRepository } from '@core/repositories/implementations/reservation.repository';
 import { CartDocument } from '@core/schema/cart.schema';
+import { ServiceCategoryDocument } from '@core/schema/service-category';
+import { ServiceCategoryRepository } from '@core/repositories/implementations/service-category.repository';
 
 export const repositoryProviders: Provider[] = [
   {
@@ -93,5 +95,11 @@ export const repositoryProviders: Provider[] = [
     useFactory: (reservationModel: Model<ReservationDocument>) =>
       new ReservationRepository(reservationModel),
     inject: [getModelToken(RESERVATION_MODEL_NAME)]
+  },
+  {
+    provide: SERVICE_CATEGORY_REPOSITORY_NAME,
+    useFactory: (serviceCategoryModel: Model<ServiceCategoryDocument>) =>
+      new ServiceCategoryRepository(serviceCategoryModel),
+    inject: [getModelToken(SERVICE_CATEGORY_MODEL_NAME)]
   }
 ];

@@ -9,7 +9,8 @@ import { IResponse } from '@core/misc/response.util';
 import {
     IAdminApprovalService
 } from '@modules/users/services/interfaces/admin-approval-service.interface';
-import { Controller, Get, Inject, InternalServerErrorException, Logger, Req, UseGuards } from '@nestjs/common';
+import { UpdateProviderVerificationDto } from '@modules/users/dtos/admin-user.dto';
+import { Body, Controller, Get, Inject, InternalServerErrorException, Logger, Patch, Req, UseGuards } from '@nestjs/common';
 
 @UseGuards(AdminRoleGuard)
 @Controller('admin/approvals')
@@ -37,6 +38,19 @@ export class AdminApprovalsController {
             return await this._adminApprovalService.fetchApprovalTableData();
         } catch (err) {
             this.logger.error(`Error fetching approval table data: ${err.message}`, err.stack);
+            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Patch('verify')
+    async updateProviderVerification(@Body() updateProviderVerificationDto: UpdateProviderVerificationDto): Promise<IResponse<boolean>> {
+        try {
+            return await this._adminApprovalService.updateProviderVerification(
+                updateProviderVerificationDto.providerId,
+                updateProviderVerificationDto.status,
+            );
+        } catch (err) {
+            this.logger.error(`Error updating provider verification: ${err.message}`, err.stack);
             throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
         }
     }

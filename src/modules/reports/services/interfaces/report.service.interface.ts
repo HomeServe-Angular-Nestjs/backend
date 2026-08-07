@@ -6,7 +6,8 @@ import { ReportSubmitDto } from "@modules/reports/dto/report.dto";
 export interface IReportService {
     submitReport(reportedId: string, type: ReportedType, report: ReportSubmitDto): Promise<IResponse>;
     fetchReports(page: number, filter: IReportFilter): Promise<IResponse<IReportWithPagination>>;
-    updateReportStatus(reportId: string, status: ReportStatus): Promise<IResponse>;
+    updateReportStatus(reportId: string, status: ReportStatus, resolutionNote?: string): Promise<IResponse>;
+    updateInvestigationNotes(reportId: string, investigationNotes: string): Promise<IResponse>;
     fetchOneReport(reportId: string): Promise<IResponse<IReportDetail>>;
     getReportOverviewData(): Promise<IResponse<IReportOverViewMatrix>>;
 }

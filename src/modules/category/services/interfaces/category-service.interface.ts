@@ -9,13 +9,11 @@ export interface ICategoryService {
     updateProfession(updateProfessionData: CreateProfessionDto, professionId: string): Promise<IResponse<IProfession>>;
     findAllProfessions(professionFilter: CategoryFilterDto): Promise<IResponse<IProfession[]>>;
     toggleProfessionStatus(professionId: string): Promise<IResponse>;
-    deleteProfession(professionId: string): Promise<IResponse>;
 
     createServiceCategory(createServiceCategoryDto: CreateServiceCategoryDto): Promise<IResponse<IServiceCategory>>;
     updateServiceCategory(updateServiceCategoryDto: CreateServiceCategoryDto, serviceCategoryId: string): Promise<IResponse<IServiceCategory>>;
     findAllServiceCategories(serviceCategoryFilter: CategoryServiceFilterDto): Promise<IResponse<IServiceCategoryWithPagination>>;
     toggleServiceCategoryStatus(serviceCategoryId: string): Promise<IResponse>;
-    deleteServiceCategory(serviceCategoryId: string): Promise<IResponse>;
     searchCategories(search: string): Promise<IResponse<ICustomerSearchCategories[]>>;
 
     fetchAvailableServiceByProfessionId(professionId:string): Promise<IResponse<IServiceCategory[]>>;

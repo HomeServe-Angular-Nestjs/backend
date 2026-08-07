@@ -22,6 +22,16 @@ export class ReportStatusDto {
     @IsString()
     @IsIn(Object.values(ReportStatus))
     status: ReportStatus;
+
+    @IsOptional()
+    @IsString()
+    resolutionNote?: string;
+}
+
+export class UpdateInvestigationNotesDto {
+    @IsNotEmpty()
+    @IsString()
+    investigationNotes: string;
 }
 
 export class ReportFilterDto {
