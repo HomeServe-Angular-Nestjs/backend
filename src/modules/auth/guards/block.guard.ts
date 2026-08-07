@@ -36,7 +36,7 @@ export class BlockGuard implements CanActivate {
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const request: Request = context.switchToHttp().getRequest();
 
-        const isAuthRoute = ['login', 'signup'].some(path => request.path.includes(path));
+        const isAuthRoute = ['login', 'signup', 'landing'].some(path => request.path.includes(path));
         if (isAuthRoute) return true;
 
         const userPayload = request.user as IPayload;

@@ -26,6 +26,7 @@ import { CategoryModule } from '@modules/category/category.module';
 import { ProviderServiceModule } from '@modules/provider-service/provider-service.module';
 import { CartModule } from '@modules/cart/cart.module';
 import { CouponModule } from '@modules/coupons/coupon.module';
+import { LandingModule } from '@modules/landing/landing.module';
 
 @Module({
   imports: [
@@ -61,6 +62,7 @@ import { CouponModule } from '@modules/coupons/coupon.module';
     ProviderServiceModule,
     CartModule,
     CouponModule,
+    LandingModule,
   ],
   controllers: [AppController],
   providers: [

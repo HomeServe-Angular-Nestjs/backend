@@ -23,7 +23,7 @@ export class AuthMiddleware implements NestMiddleware {
     }
 
     async use(req: Request, res: Response, next: NextFunction): Promise<void> {
-        const isAuthRoute = ['login', 'signup'].some(route =>
+        const isAuthRoute = ['login', 'signup', 'landing'].some(route =>
             req.originalUrl.split('/').includes(route)
         );
         this.logger.debug(req.body);
