@@ -131,7 +131,7 @@ export class ProviderBookingService implements IProviderBookingService {
         }
     }
 
-    async fetchOverviewData(providerId: string): Promise<IBookingOverviewData> {
+    async fetchOverviewData(providerId: string, scope: 'month' | 'total' = 'month'): Promise<IBookingOverviewData> {
         const bookings = await this._bookingRepository.findAllBookingsByProviderId(providerId)
         const now = new Date();
 
@@ -177,10 +177,12 @@ export class ProviderBookingService implements IProviderBookingService {
         // Calculate summaries for this and last month
         const summaryThisMonth = summarize(bookingsThisMonth);
         const summaryLastMonth = summarize(bookingsLastMonth);
+        const summaryAllTime = summarize(bookings);
 
-        // Total bookings for each month
+        // Total bookings for each month and all time
         const totalThisMonth = bookingsThisMonth.length;
         const totalLastMonth = bookingsLastMonth.length;
+        const totalAllTime = bookings.length;
 
         // Helper for percentage calculation with safe zero check
         const calcPercentChange = (current: number, previous: number): number => {
@@ -199,9 +201,11 @@ export class ProviderBookingService implements IProviderBookingService {
             cancelledBookingsChange: calcPercentChange(summaryThisMonth.cancelledBookings, summaryLastMonth.cancelledBookings),
         };
 
+        const isTotalScope = scope === 'total';
+
         return {
-            ...summaryThisMonth,
-            totalBookings: totalThisMonth,
+            ...(isTotalScope ? summaryAllTime : summaryThisMonth),
+            totalBookings: isTotalScope ? totalAllTime : totalThisMonth,
             changes,
         };
     }

@@ -6,7 +6,7 @@ import { FilterFields, ReviewFilterDto, SelectedSlotDto } from '@modules/booking
 
 export interface IProviderBookingService {
     fetchBookingsList(providerId: string, page: number, bookingFilters: FilterFields): Promise<IResponseProviderBookingLists>;
-    fetchOverviewData(providerId: string): Promise<IBookingOverviewData>;
+    fetchOverviewData(providerId: string, scope?: 'month' | 'total'): Promise<IBookingOverviewData>;
     fetchBookingDetails(bookingId: string): Promise<IBookingDetailProvider>;
     updateBookingStatus(bookingId: string, newStatus: BookingStatus): Promise<IResponse>;
     markBookingCancelledByProvider(providerId: string, bookingId: string, reason?: string): Promise<IResponse<IBookingDetailProvider>>;

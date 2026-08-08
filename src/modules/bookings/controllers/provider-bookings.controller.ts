@@ -34,8 +34,9 @@ export class ProviderBookingsController {
     }
 
     @Get('overview_data')
-    async getOverviewData(@User() user: IPayload) {
-        return await this._providerBookingService.fetchOverviewData(user.sub);
+    async getOverviewData(@User() user: IPayload, @Query('scope') scope?: string) {
+        const normalizedScope = scope === 'total' ? 'total' : 'month';
+        return await this._providerBookingService.fetchOverviewData(user.sub, normalizedScope);
     }
 
     @Get('fetch_details')
