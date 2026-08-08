@@ -37,6 +37,15 @@ export class TransactionMapper implements ITransactionMapper {
                     providerCommission: doc?.metadata?.breakup?.providerCommission ?? null,
                     customerCommission: doc?.metadata?.breakup?.customerCommission ?? null,
                     gst: doc?.metadata?.breakup?.gst ?? null,
+                    coupon: doc?.metadata?.breakup?.coupon ? {
+                        couponId: doc.metadata.breakup.coupon.couponId?.toString() ?? null,
+                        couponCode: doc.metadata.breakup.coupon.couponCode ?? null,
+                        couponName: doc.metadata.breakup.coupon.couponName ?? null,
+                        discountType: doc.metadata.breakup.coupon.discountType ?? null,
+                        discountValue: doc.metadata.breakup.coupon.discountValue ?? null,
+                        originalAmount: doc.metadata.breakup.coupon.originalAmount ?? null,
+                        deductedValue: doc.metadata.breakup.coupon.deductedValue ?? null,
+                    } : null,
                 }
             } : null
         });
@@ -74,6 +83,17 @@ export class TransactionMapper implements ITransactionMapper {
                     providerCommission: entity.metadata?.breakup?.providerCommission ?? null,
                     customerCommission: entity.metadata?.breakup?.customerCommission ?? null,
                     gst: entity.metadata?.breakup?.gst ?? null,
+                    coupon: entity.metadata?.breakup?.coupon ? {
+                        couponId: entity.metadata.breakup.coupon.couponId
+                            ? new Types.ObjectId(entity.metadata.breakup.coupon.couponId)
+                            : null,
+                        couponCode: entity.metadata.breakup.coupon.couponCode ?? null,
+                        couponName: entity.metadata.breakup.coupon.couponName ?? null,
+                        discountType: entity.metadata.breakup.coupon.discountType ?? null,
+                        discountValue: entity.metadata.breakup.coupon.discountValue ?? null,
+                        originalAmount: entity.metadata.breakup.coupon.originalAmount ?? null,
+                        deductedValue: entity.metadata.breakup.coupon.deductedValue ?? null,
+                    } : null,
                 }
             } : null,
         }

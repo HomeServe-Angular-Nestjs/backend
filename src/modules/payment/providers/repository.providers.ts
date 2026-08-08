@@ -1,8 +1,8 @@
 import { Provider } from '@nestjs/common';
 import { getModelToken } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { ADMIN_SETTINGS_MODEL_NAME, BOOKINGS_MODEL_NAME, CUSTOMER_MODEL_NAME, PROVIDER_MODEL_NAME, WALLET_LEDGER_MODEL_NAME, WALLET_MODEL_NAME } from '@core/constants/model.constant';
-import { ADMIN_SETTINGS_REPOSITORY_NAME, BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, TRANSACTION_REPOSITORY_NAME, WALLET_LEDGER_REPOSITORY_NAME, WALLET_REPOSITORY_NAME } from '@core/constants/repository.constant';
+import { ADMIN_SETTINGS_MODEL_NAME, BOOKINGS_MODEL_NAME, COUPON_MODEL_NAME, CUSTOMER_MODEL_NAME, PROVIDER_MODEL_NAME, WALLET_LEDGER_MODEL_NAME, WALLET_MODEL_NAME } from '@core/constants/model.constant';
+import { ADMIN_SETTINGS_REPOSITORY_NAME, BOOKING_REPOSITORY_NAME, COUPON_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, TRANSACTION_REPOSITORY_NAME, WALLET_LEDGER_REPOSITORY_NAME, WALLET_REPOSITORY_NAME } from '@core/constants/repository.constant';
 import { CustomerRepository } from '@core/repositories/implementations/customer.repository';
 import { ProviderRepository } from '@core/repositories/implementations/provider.repository';
 import { TransactionRepository } from '@core/repositories/implementations/transaction.repository';
@@ -17,6 +17,8 @@ import { BookingDocument } from '@core/schema/bookings.schema';
 import { WalletLedgerRepository } from '@core/repositories/implementations/wallet-ledger.repository';
 import { WalletLedgerDocument } from '@core/schema/wallet-ledger.schema';
 import { BookingRepository } from '@core/repositories/implementations/bookings.repository';
+import { CouponRepository } from '@core/repositories/implementations/coupon.repository';
+import { CouponDocument } from '@core/schema/coupon.schema';
 
 export const paymentRepositoryProviders: Provider[] = [
     {
@@ -60,5 +62,11 @@ export const paymentRepositoryProviders: Provider[] = [
         useFactory: (bookingModel: Model<BookingDocument>) =>
             new BookingRepository(bookingModel),
         inject: [getModelToken(BOOKINGS_MODEL_NAME)]
+    },
+    {
+        provide: COUPON_REPOSITORY_NAME,
+        useFactory: (couponModel: Model<CouponDocument>) =>
+            new CouponRepository(couponModel),
+        inject: [getModelToken(COUPON_MODEL_NAME)]
     },
 ]

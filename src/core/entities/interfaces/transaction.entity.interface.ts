@@ -35,6 +35,15 @@ export interface ITransactionMetadata {
         providerCommission?: number | null;
         customerCommission?: number | null;
         gst?: number | null;
+        coupon?: {
+            couponId?: string | null;
+            couponCode?: string | null;
+            couponName?: string | null;
+            discountType?: string | null;
+            discountValue?: number | null;
+            originalAmount?: number | null;
+            deductedValue?: number | null;
+        } | null;
     } | null;
 }
 

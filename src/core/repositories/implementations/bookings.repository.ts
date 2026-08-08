@@ -340,7 +340,7 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                 bookingId: '$_id',
                 customerEmail: '$customers.email',
                 providerEmail: '$providers.email',
-                totalAmount: '$totalAmount',
+                totalAmount: { $divide: ['$totalAmount', 100] },
                 date: '$createdAt',
                 phone: '$customers.phone',
                 bookingStatus: '$bookingStatus',

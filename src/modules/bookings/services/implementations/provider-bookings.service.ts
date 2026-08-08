@@ -13,8 +13,9 @@ import { ClientUserType, ICustomer, IProvider } from '@core/entities/interfaces/
 import { ICustomerMapper } from '@core/dto-mapper/interface/customer.mapper..interface';
 import { IProviderMapper } from '@core/dto-mapper/interface/provider.mapper.interface';
 import { IProviderRepository } from '@core/repositories/interfaces/provider-repo.interface';
-import { PAYMENT_LOCKING_UTILITY_NAME, TIME_UTILITY_NAME, UPLOAD_UTILITY_NAME } from '@core/constants/utility.constant';
+import { PAYMENT_LOCKING_UTILITY_NAME, PRICING_UTILITY_NAME, TIME_UTILITY_NAME, UPLOAD_UTILITY_NAME } from '@core/constants/utility.constant';
 import { IUploadsUtility } from '@core/utilities/interface/upload.utility.interface';
+import { IPricingUtility } from '@core/utilities/interface/pricing.utility.interface';
 import { IServiceOfferedMapper } from '@core/dto-mapper/interface/serviceOffered.mapper.interface';
 import { IProviderBookingService } from '@modules/bookings/services/interfaces/provider-booking-service.interface';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
@@ -96,6 +97,8 @@ export class ProviderBookingService implements IProviderBookingService {
         private readonly _notificationService: INotificationService,
         @Inject(TIME_UTILITY_NAME)
         private readonly _timeUtility: ITimeUtility,
+        @Inject(PRICING_UTILITY_NAME)
+        private readonly _pricingUtility: IPricingUtility,
         @Inject(RESERVATION_REPOSITORY_NAME)
         private readonly _reservationRepository: IReservationRepository,
         @Inject(CART_REPOSITORY_NAME)
@@ -152,7 +155,7 @@ export class ProviderBookingService implements IProviderBookingService {
                     },
                     bookingId: booking.id,
                     expectedArrivalTime: booking.expectedArrivalTime,
-                    totalAmount: booking.totalAmount,
+                    totalAmount: this._pricingUtility.paiseToRupees(booking.totalAmount),
                     createdAt: booking.createdAt as Date,
                     paymentStatus: booking.paymentStatus,
                     cancelStatus: booking.cancelStatus,
@@ -549,10 +552,10 @@ export class ProviderBookingService implements IProviderBookingService {
             },
 
             paymentBreakup: {
-                gst: transaction ? transaction.metadata?.breakup?.gst as number : 0,
-                total: booking.totalAmount,
-                providerAmount,
-                commission
+                gst: transaction ? this._pricingUtility.paiseToRupees(transaction.metadata?.breakup?.gst as number) : 0,
+                total: this._pricingUtility.paiseToRupees(booking.totalAmount),
+                providerAmount: this._pricingUtility.paiseToRupees(providerAmount),
+                commission: this._pricingUtility.paiseToRupees(commission)
             },
 
             paymentDetails: transaction && transaction.gateWayDetails ? {

@@ -54,6 +54,7 @@ export class NotificationGateway extends BaseSocketGateway {
         await this._customDtoValidatorUtility.validateDto(SendNewNotificationDto, body);
 
         const user = this._getClient(client);
+        if (!user?.id) return;
         if (body.type === NotificationType.SYSTEM) {
             let notification = await this._notificationService.findNotification(user.id, body.type, body.templateId);
 
@@ -74,6 +75,7 @@ export class NotificationGateway extends BaseSocketGateway {
     async markAsRead(@ConnectedSocket() client: Socket, @MessageBody() body: NotificationIdDto) {
         await this._customDtoValidatorUtility.validateDto(NotificationIdDto, body);
         const user = this._getClient(client);
+        if (!user?.id) return;
 
         const response = await this._notificationService.markAsReadById(user.id, body.id);
         if (!response.data) {
@@ -94,6 +96,7 @@ export class NotificationGateway extends BaseSocketGateway {
     async removeMessage(@ConnectedSocket() client: Socket, @MessageBody() body: TemplateIdDto) {
         await this._customDtoValidatorUtility.validateDto(TemplateIdDto, body);
         const user = this._getClient(client);
+        if (!user?.id) return;
 
         const removedNotification = await this._notificationService.deleteByUserIdAndTemplateId(user.id, body.templateId);
         if (!removedNotification) {

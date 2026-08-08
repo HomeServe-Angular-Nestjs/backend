@@ -472,4 +472,13 @@ export interface IPriceBreakupData {
     subTotal: number;
     tax: number;
     total: number;
+    discount?: number;
+    originalTotal?: number;
+    coupon?: {
+        couponId: string | null;
+        couponCode: string | null;
+        couponName: string | null;
+        discountType: string | null;
+        discountValue: number | null;
+    };
 }
