@@ -110,111 +110,29 @@ export class ProviderBookingService implements IProviderBookingService {
 
     async fetchBookingsList(providerId: string, page: number = 1, filters: FilterFields): Promise<IResponseProviderBookingLists> {
         const limit = 5;
-        const skip = (page - 1) * limit;
 
-        const bookingDocuments = await this._bookingRepository.findBookingsByProviderId(providerId);
-        if (!bookingDocuments.length) {
-            return {
-                bookingData: [],
-                paginationData: { total: 0, page, limit }
-            };
-        }
-
-        const bookings = bookingDocuments.map(booking => this._bookingMapper.toEntity(booking));
-
-        const enrichBookings = await Promise.all(
-            bookings.map(async (booking) => {
-                const customer = await this._customerRepository.findById(booking.customerId);
-                if (!customer) throw new InternalServerErrorException(`Customer not found: ${booking.customerId}`);
-
-                const services: IProviderBookingListService[] = await Promise.all(
-                    booking.services.map(async (id) => {
-                        const serviceDoc = await this._providerServiceRepository.findOneAndPopulateById(id);
-
-                        if (!serviceDoc) throw new InternalServerErrorException({
-                            code: ErrorCodes.INTERNAL_SERVER_ERROR,
-                            message: `Service not found: ${id}`,
-                        });
-
-                        const service = this._providerServiceMapper.toPopulatedEntity(serviceDoc);
-                        return {
-                            id: service.id,
-                            title: service.category.name as string,
-                            image: service.image
-                        };
-                    })
-                );
-
-                return {
-                    services,
-                    customer: {
-                        id: customer.id,
-                        name: customer.fullname || customer.username,
-                        email: customer.email,
-                        avatar: customer.avatar
-                    },
-                    bookingId: booking.id,
-                    expectedArrivalTime: booking.expectedArrivalTime,
-                    totalAmount: this._pricingUtility.paiseToRupees(booking.totalAmount),
-                    createdAt: booking.createdAt as Date,
-                    paymentStatus: booking.paymentStatus,
-                    cancelStatus: booking.cancelStatus,
-                    bookingStatus: booking.bookingStatus,
-                };
-            })
+        const { data, total } = await this._bookingRepository.fetchProviderBookingsWithPagination(
+            providerId,
+            filters,
+            { page, limit }
         );
 
-        let filteredBookings = enrichBookings;
-
-        // Filter by search
-        if (filters.search) {
-            const search = filters.search.trim().toLowerCase();
-            filteredBookings = enrichBookings.filter((booking) => {
-                return (
-                    booking.bookingId.toLowerCase().includes(search) ||
-                    booking.customer.name.toLowerCase().includes(search) ||
-                    booking.customer.email.toLowerCase().includes(search) ||
-                    booking.services.some((s) => s.title.toLowerCase().includes(search))
-                );
-            });
-        }
-
-        // Filter by bookingStatus
-        if (filters.bookingStatus) {
-            filteredBookings = filteredBookings.filter(
-                (booking) => booking.bookingStatus === filters.bookingStatus
-            );
-        }
-
-        // Filter by paymentStatus
-        if (filters.paymentStatus) {
-            filteredBookings = filteredBookings.filter(
-                (booking) => booking.paymentStatus === filters.paymentStatus
-            );
-        }
-
-        if (filters.date) {
-            const date = new Date(filters.date);
-            date.setHours(0, 0, 0, 0);
-
-            filteredBookings = filteredBookings.filter((booking) => {
-                const expectedArrivalTime = new Date(booking.expectedArrivalTime);
-                expectedArrivalTime.setHours(0, 0, 0, 0);
-                return date.getTime() === expectedArrivalTime.getTime();
-            });
-        }
-
-        const total = filteredBookings.length;
-        const paginated = filteredBookings.slice(skip, skip + limit);
+        const bookingData = data.map(booking => ({
+            ...booking,
+            customer: {
+                ...booking.customer,
+                avatar: this._uploadUtility.getSignedImageUrl(booking.customer.avatar)
+            }
+        }));
 
         return {
-            bookingData: paginated,
+            bookingData,
             paginationData: { page, limit, total }
         }
     }
 
     async fetchOverviewData(providerId: string): Promise<IBookingOverviewData> {
-        const bookings = await this._bookingRepository.findBookingsByProviderId(providerId)
+        const bookings = await this._bookingRepository.findAllBookingsByProviderId(providerId)
         const now = new Date();
 
         const getMonthRange = (date: Date) => ({
@@ -269,7 +187,7 @@ export class ProviderBookingService implements IProviderBookingService {
             if (previous === 0) {
                 return current === 0 ? 0 : 100;
             }
-            return ((current - previous) / previous) * 100;
+            return Math.round(((current - previous) / previous) * 100 * 10) / 10;
         };
 
         // Calculate percentage changes with correct property names matching IBookingOverviewChanges interface

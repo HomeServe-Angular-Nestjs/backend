@@ -1,21 +1,33 @@
 import { FilterQuery, Types } from 'mongoose';
-import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData, ILocationRevenue, ITopAreaRevenue, IUnderperformingArea, IPeakServiceTime, IRevenueBreakdown, IBookingsBreakdown, IReviewDetailsRaw, IReviewFilter, IAdminBookingFilter, IAdminBookingList, ISlot, IBookedSlot } from '@core/entities/interfaces/booking.entity.interface';
+import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData, ILocationRevenue, ITopAreaRevenue, IUnderperformingArea, IPeakServiceTime, IRevenueBreakdown, IBookingsBreakdown, IReviewDetailsRaw, IReviewFilter, IAdminBookingFilter, IAdminBookingList, ISlot, IBookedSlot, IProviderBookingLists } from '@core/entities/interfaces/booking.entity.interface';
 import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderRevenueOverview, IResponseTimeChartData, IReviewFilters, ITopProviders, ITotalReviewAndAvgRating, PaginatedReviewResponse } from '@core/entities/interfaces/user.entity.interface';
 import { IBaseRepository } from '@core/repositories/base/interfaces/base-repo.interface';
 import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
 import { IAdminReviewStats, ILowestRatedProvider, IRatingTrendPoint, IBookingReportData, IReportCustomerMatrix, IReportDownloadBookingData, IReportProviderMatrix, ISalesReportBundle, ISalesReportFilter } from '@core/entities/interfaces/admin.entity.interface';
 import { IBookingOverview, ICustomerStatistics, IProviderStatistics, IReviewOverview } from '@core/entities/interfaces/admin-user-details.entity.interface';
-import { BookingStatus, CancelStatus, PaymentStatus } from '@core/enum/bookings.enum';
+import { BookingStatus, CancelStatus, PaymentStatus, SortBy } from '@core/enum/bookings.enum';
 
 export interface IBookingRepository extends IBaseRepository<BookingDocument> {
     findBookingsByCustomerIdWithPagination(customerId: string | Types.ObjectId, skip: number, limit: number): Promise<BookingDocument[]>;
     findBookingsByProviderId(providerId: string | Types.ObjectId): Promise<BookingDocument[]>;
+    findAllBookingsByProviderId(providerId: string | Types.ObjectId): Promise<BookingDocument[]>;
     findBookingsByProviderIdWithCursor(
         providerId: string | Types.ObjectId,
         cursor: { writtenAt: Date; bookingId: string } | null,
         limit: number
     ): Promise<BookingDocument[]>;
     fetchFilteredBookingsWithPagination(filter: IAdminBookingFilter, option?: { page: number; limit: number }): Promise<IAdminBookingList[]>;
+    fetchProviderBookingsWithPagination(
+        providerId: string | Types.ObjectId,
+        filter: {
+            search?: string;
+            date?: Date | string;
+            sort?: SortBy;
+            bookingStatus?: BookingStatus | '';
+            paymentStatus?: PaymentStatus | '';
+        },
+        options: { page: number; limit: number }
+    ): Promise<{ data: IProviderBookingLists[]; total: number }>;
     findPaidBookings(bookingId: string): Promise<BookingDocument | null>;
     count(filter?: FilterQuery<BookingDocument>): Promise<number>;
     countDocumentsByCustomer(customerId: string | Types.ObjectId): Promise<number>;

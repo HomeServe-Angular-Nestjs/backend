@@ -2,7 +2,7 @@ import { FilterQuery, Model, PipelineStage, Types } from 'mongoose';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { BOOKINGS_MODEL_NAME } from '@core/constants/model.constant';
-import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData, ILocationRevenue, ITopAreaRevenue, IUnderperformingArea, IPeakServiceTime, IRevenueBreakdown, IBookingsBreakdown, IReviewDetailsRaw, IReviewFilter, IAdminBookingFilter, IAdminBookingList, ISlot, IBookedSlot } from '@core/entities/interfaces/booking.entity.interface';
+import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData, ILocationRevenue, ITopAreaRevenue, IUnderperformingArea, IPeakServiceTime, IRevenueBreakdown, IBookingsBreakdown, IReviewDetailsRaw, IReviewFilter, IAdminBookingFilter, IAdminBookingList, ISlot, IBookedSlot, IProviderBookingLists } from '@core/entities/interfaces/booking.entity.interface';
 import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderRevenueOverview, IResponseTimeChartData, IReviewFilters, ITopProviders, ITotalReviewAndAvgRating, PaginatedReviewResponse } from '@core/entities/interfaces/user.entity.interface';
 import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
 import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
@@ -10,7 +10,7 @@ import { IBookingRepository } from '@core/repositories/interfaces/bookings-repo.
 import { IAdminReviewStats, IReviewDistribution, ILowestRatedProvider, IRatingTrendPoint, IBookingReportData, IReportCustomerMatrix, IReportDownloadBookingData, IReportProviderMatrix, ISalesReportBundle, ISalesReportFilter, IBookingsSoldBuckets } from '@core/entities/interfaces/admin.entity.interface';
 import { IBookingOverview, ICustomerStatistics, IProviderStatistics, IReviewOverview } from '@core/entities/interfaces/admin-user-details.entity.interface';
 import { SlotStatusEnum } from '@core/enum/slot.enum';
-import { BookingStatus, CancelStatus, PaymentStatus } from '@core/enum/bookings.enum';
+import { BookingStatus, CancelStatus, PaymentStatus, SortBy } from '@core/enum/bookings.enum';
 import { UpdateQuery } from 'mongoose';
 import { PaymentDirection, TransactionType } from '@core/enum/transaction.enum';
 
@@ -41,6 +41,162 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
             .find({ providerId: this._toObjectId(providerId), paymentStatus: { $ne: PaymentStatus.UNPAID } })
             .sort({ createdAt: -1 })
             .lean();
+    }
+
+    async findAllBookingsByProviderId(providerId: string | Types.ObjectId): Promise<BookingDocument[]> {
+        return await this._bookingModel
+            .find({ providerId: this._toObjectId(providerId) })
+            .sort({ createdAt: -1 })
+            .lean();
+    }
+
+    async fetchProviderBookingsWithPagination(
+        providerId: string | Types.ObjectId,
+        filter: {
+            search?: string;
+            date?: Date | string;
+            sort?: SortBy;
+            bookingStatus?: BookingStatus | '';
+            paymentStatus?: PaymentStatus | '';
+        },
+        options: { page: number; limit: number }
+    ): Promise<{ data: IProviderBookingLists[]; total: number }> {
+        const page = options.page ?? 1;
+        const limit = options.limit ?? 5;
+        const skip = (page - 1) * limit;
+
+        const pipeline: PipelineStage[] = [
+            {
+                $match: {
+                    providerId: this._toObjectId(providerId),
+                    paymentStatus: { $ne: PaymentStatus.UNPAID },
+                }
+            },
+            { $lookup: { from: 'customers', localField: 'customerId', foreignField: '_id', as: 'customer' } },
+            { $unwind: '$customer' },
+            { $lookup: { from: 'providerservices', localField: 'services', foreignField: '_id', as: 'serviceDocs' } },
+            { $lookup: { from: 'servicecategories', localField: 'serviceDocs.categoryId', foreignField: '_id', as: 'categoryDocs' } },
+        ];
+
+        const match: FilterQuery<BookingDocument> = {};
+
+        if (filter.search) {
+            const escaped = this._escapeRegex(filter.search);
+            const searchRegex = new RegExp(escaped, 'i');
+            match.$or = [
+                { $expr: { $regexMatch: { input: { $toString: '$_id' }, regex: searchRegex } } },
+                { 'customer.fullname': searchRegex },
+                { 'customer.username': searchRegex },
+                { 'customer.email': searchRegex },
+                { 'categoryDocs.name': searchRegex },
+            ];
+        }
+
+        if (filter.bookingStatus) {
+            match.bookingStatus = filter.bookingStatus;
+        }
+
+        if (filter.paymentStatus) {
+            match.paymentStatus = filter.paymentStatus;
+        }
+
+        if (filter.date) {
+            const day = new Date(filter.date);
+            day.setHours(0, 0, 0, 0);
+            const nextDay = new Date(day);
+            nextDay.setDate(nextDay.getDate() + 1);
+            match.expectedArrivalTime = { $gte: day, $lt: nextDay };
+        }
+
+        if (Object.keys(match).length > 0) {
+            pipeline.push({ $match: match });
+        }
+
+        switch (filter.sort) {
+            case SortBy.OLDEST:
+                pipeline.push({ $sort: { createdAt: 1 } });
+                break;
+            case SortBy.NAME_ASCENDING:
+                pipeline.push({ $sort: { 'customer.fullname': 1, 'customer.username': 1 } });
+                break;
+            case SortBy.NAME_DESCENDING:
+                pipeline.push({ $sort: { 'customer.fullname': -1, 'customer.username': -1 } });
+                break;
+            default:
+                pipeline.push({ $sort: { createdAt: -1 } });
+                break;
+        }
+
+        const countPipeline = [...pipeline, { $count: 'total' }];
+        const [totalResult] = await this._bookingModel.aggregate<{ total: number }>(countPipeline);
+        const total = totalResult?.total ?? 0;
+
+        pipeline.push(
+            { $skip: skip },
+            { $limit: limit },
+            {
+                $project: {
+                    _id: 0,
+                    bookingId: { $toString: '$_id' },
+                    services: {
+                        $map: {
+                            input: '$serviceDocs',
+                            as: 'svc',
+                            in: {
+                                id: { $toString: '$$svc._id' },
+                                title: {
+                                    $let: {
+                                        vars: {
+                                            cat: {
+                                                $arrayElemAt: [
+                                                    {
+                                                        $filter: {
+                                                            input: '$categoryDocs',
+                                                            as: 'cat',
+                                                            cond: { $eq: ['$$cat._id', '$$svc.categoryId'] }
+                                                        }
+                                                    },
+                                                    0
+                                                ]
+                                            }
+                                        },
+                                        in: { $ifNull: ['$$cat.name', ''] }
+                                    }
+                                },
+                                image: { $ifNull: ['$$svc.image', ''] }
+                            }
+                        }
+                    },
+                    customer: {
+                        id: { $toString: '$customer._id' },
+                        name: {
+                            $cond: [
+                                {
+                                    $and: [
+                                        { $ne: ['$customer.fullname', null] },
+                                        { $ne: ['$customer.fullname', ''] }
+                                    ]
+                                },
+                                '$customer.fullname',
+                                '$customer.username'
+                            ]
+                        },
+                        email: { $ifNull: ['$customer.email', ''] },
+                        avatar: { $ifNull: ['$customer.avatar', ''] }
+                    },
+                    expectedArrivalTime: '$expectedArrivalTime',
+                    totalAmount: { $round: [{ $divide: ['$totalAmount', 100] }, 2] },
+                    createdAt: '$createdAt',
+                    paymentStatus: '$paymentStatus',
+                    cancelStatus: '$cancelStatus',
+                    bookingStatus: '$bookingStatus',
+                }
+            }
+        );
+
+        const data = await this._bookingModel.aggregate<IProviderBookingLists>(pipeline);
+
+        return { data, total };
     }
 
     async findBookingsByProviderIdWithCursor(
