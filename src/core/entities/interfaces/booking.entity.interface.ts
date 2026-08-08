@@ -195,6 +195,13 @@ export interface IBookingDetailProvider extends IBookingDetailsBase {
         phone: string;
         location: string;
     };
+    breakup: IPriceBreakupData;
+    settlement: {
+        customerPaid: number;
+        providerAmount: number;
+        commissionEarned: number;
+        gst: number;
+    } | null;
 }
 
 export interface IAdminBookingList {

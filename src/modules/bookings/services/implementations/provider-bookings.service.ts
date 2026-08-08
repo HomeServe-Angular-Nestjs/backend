@@ -25,7 +25,7 @@ import { IProviderServiceRepository } from '@core/repositories/interfaces/provid
 import { IBookingRepository } from '@core/repositories/interfaces/bookings-repo.interface';
 import { ICustomerRepository } from '@core/repositories/interfaces/customer-repo.interface';
 import { ITransactionRepository } from '@core/repositories/interfaces/transaction-repo.interface';
-import { IBookedService, IBookedSlot, IBooking, IBookingDetailProvider, IBookingInvoice, IBookingOverviewChanges, IBookingOverviewData, IProviderBookingListService, IResponseProviderBookingLists, IReviewDetails, IReviewFilter, IReviewWithPagination } from '@core/entities/interfaces/booking.entity.interface';
+import { IBookedService, IBookedSlot, IBooking, IBookingDetailProvider, IBookingInvoice, IBookingOverviewChanges, IBookingOverviewData, IPriceBreakupData, IProviderBookingListService, IResponseProviderBookingLists, IReviewDetails, IReviewFilter, IReviewWithPagination } from '@core/entities/interfaces/booking.entity.interface';
 import { FilterFields, ReviewFilterDto, SelectedSlotDto } from '@modules/bookings/dtos/booking.dto';
 import { BookingStatus, CancelStatus, DateRange, PaymentStatus } from '@core/enum/bookings.enum';
 import { IResponse } from '@core/misc/response.util';
@@ -319,6 +319,8 @@ export class ProviderBookingService implements IProviderBookingService {
                 gst: (transaction.metadata?.breakup?.gst ?? 0) / 100,
                 providerCommission: (transaction?.metadata?.breakup?.providerCommission ?? 0) / 100,
             } : null,
+            breakup: this._buildPriceBreakup(booking, transaction, orderedServices),
+            settlement: this._buildCommissionSplit(transaction),
             transactionHistory: booking.transactionHistory,
             previousSchedules: this._getPreviousScheduledDates(booking.previousSlots)
         }
@@ -429,7 +431,7 @@ export class ProviderBookingService implements IProviderBookingService {
             createdAt: updatedBooking.createdAt as Date,
             expectedArrivalTime: updatedBooking.expectedArrivalTime,
             actualArrivalTime: updatedBooking.actualArrivalTime,
-            totalAmount: updatedBooking.totalAmount,
+            totalAmount: updatedBooking.totalAmount / 100,
             cancelStatus: updatedBooking.cancelStatus,
             cancelReason: updatedBooking.cancellationReason,
             cancelledAt: updatedBooking.cancelledAt,
@@ -448,6 +450,8 @@ export class ProviderBookingService implements IProviderBookingService {
                 gst: (transaction?.metadata?.breakup?.gst ?? 0) / 100,
                 providerCommission: (transaction?.metadata?.breakup?.providerCommission ?? 0) / 100,
             },
+            breakup: this._buildPriceBreakup(updatedBooking, transaction, orderedServices),
+            settlement: this._buildCommissionSplit(transaction),
             transactionHistory: updatedBooking.transactionHistory,
             previousSchedules: this._getPreviousScheduledDates(updatedBooking.previousSlots)
         }
@@ -951,10 +955,12 @@ export class ProviderBookingService implements IProviderBookingService {
                     id: transaction.id,
                     paymentDate: transaction.createdAt as Date,
                     paymentMethod: transaction.source,
-                    gst: (transaction?.metadata?.breakup?.gst ?? 0) / 100,
-                    providerCommission: (transaction?.metadata?.breakup?.providerCommission ?? 0) / 100,
-                },
-                transactionHistory: bookingResponseData.transactionHistory,
+                gst: (transaction?.metadata?.breakup?.gst ?? 0) / 100,
+                providerCommission: (transaction?.metadata?.breakup?.providerCommission ?? 0) / 100,
+            },
+            breakup: this._buildPriceBreakup(booking, transaction, orderedServices),
+            settlement: this._buildCommissionSplit(transaction),
+            transactionHistory: bookingResponseData.transactionHistory,
                 previousSchedules: this._getPreviousScheduledDates(booking.previousSlots)
             }
 
@@ -1100,6 +1106,8 @@ export class ProviderBookingService implements IProviderBookingService {
                 gst: (transaction.metadata?.breakup?.gst ?? 0) / 100,
                 providerCommission: (transaction.metadata?.breakup?.providerCommission ?? 0) / 100,
             },
+            breakup: this._buildPriceBreakup(booking, transaction, orderedServices),
+            settlement: this._buildCommissionSplit(transaction),
             transactionHistory: booking.transactionHistory,
             previousSchedules: this._getPreviousScheduledDates(booking.previousSlots),
         }
@@ -1309,6 +1317,40 @@ export class ProviderBookingService implements IProviderBookingService {
             refundAmount,   // amount to credit customer (paisa)
             customerFine,   // fee charged to customer (paisa)
             providerFine,   // fee to be charged to provider (paisa) — handle separately
+        };
+    }
+
+    private _buildPriceBreakup(booking: IBooking, transaction: ITransaction | null, orderedServices: IBookedService[]): IPriceBreakupData {
+        const subTotal = orderedServices.reduce((sum, svc) => sum + svc.price, 0);
+        const totalAmount = booking.totalAmount / 100;
+        const coupon = transaction?.metadata?.breakup?.coupon ?? null;
+
+        return {
+            subTotal,
+            tax: Math.max(0, totalAmount - subTotal),
+            originalTotal: totalAmount,
+            total: (transaction?.amount ?? booking.totalAmount) / 100,
+            ...(coupon ? {
+                discount: Math.max(0, booking.totalAmount - (transaction?.amount ?? booking.totalAmount)) / 100,
+                coupon: {
+                    couponId: (coupon.couponId as string) ?? null,
+                    couponCode: coupon.couponCode ?? null,
+                    couponName: coupon.couponName ?? null,
+                    discountType: coupon.discountType ?? null,
+                    discountValue: coupon.discountValue ?? null,
+                }
+            } : {})
+        };
+    }
+
+    private _buildCommissionSplit(transaction: ITransaction | null): IBookingDetailProvider['settlement'] {
+        if (!transaction) return null;
+
+        return {
+            customerPaid: (transaction.amount ?? 0) / 100,
+            providerAmount: this._pricingUtility.paiseToRupees(transaction.metadata?.breakup?.providerAmount ?? 0),
+            commissionEarned: this._pricingUtility.paiseToRupees(transaction.metadata?.breakup?.providerCommission ?? 0),
+            gst: this._pricingUtility.paiseToRupees(transaction.metadata?.breakup?.gst ?? 0),
         };
     }
 
