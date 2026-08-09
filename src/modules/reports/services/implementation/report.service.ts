@@ -1,6 +1,6 @@
 import { REPORT_MAPPER } from "@core/constants/mappers.constant";
 import { BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, REPORT_REPOSITORY_NAME } from "@core/constants/repository.constant";
-import { UPLOAD_UTILITY_NAME } from "@core/constants/utility.constant";
+import { UPLOAD_UTILITY_NAME, PRICING_UTILITY_NAME } from "@core/constants/utility.constant";
 import { IReportMapper } from "@core/dto-mapper/interface/report.mapper.interface";
 import { IReport, IReportBookingInfo, IReportDetail, IReportFilter, IReportOverViewMatrix, IReportWithPagination, ReportedType } from "@core/entities/interfaces/report.entity.interface";
 import { ErrorCodes, ErrorMessage } from "@core/enum/error.enum";
@@ -12,6 +12,7 @@ import { IProviderRepository } from "@core/repositories/interfaces/provider-repo
 import { IReportRepository } from "@core/repositories/interfaces/report-repo.interface";
 import { BookingDocument } from "@core/schema/bookings.schema";
 import { IUploadsUtility } from "@core/utilities/interface/upload.utility.interface";
+import { IPricingUtility } from "@core/utilities/interface/pricing.utility.interface";
 import { ReportSubmitDto } from "@modules/reports/dto/report.dto";
 import { IReportService } from "@modules/reports/services/interfaces/report.service.interface";
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
@@ -31,7 +32,9 @@ export class ReportService implements IReportService {
         @Inject(UPLOAD_UTILITY_NAME)
         private readonly _uploadsUtility: IUploadsUtility,
         @Inject(REPORT_MAPPER)
-        private readonly _reportMapper: IReportMapper
+        private readonly _reportMapper: IReportMapper,
+        @Inject(PRICING_UTILITY_NAME)
+        private readonly _pricingUtility: IPricingUtility,
     ) { }
 
     async submitReport(reportedId: string, type: ReportedType, report: ReportSubmitDto): Promise<IResponse> {
@@ -257,7 +260,7 @@ export class ReportService implements IReportService {
             bookingId: String(b._id),
             createdAt: b.createdAt,
             bookingStatus: b.bookingStatus,
-            totalAmount: b.totalAmount,
+            totalAmount: this._pricingUtility.paiseToRupees(b.totalAmount),
             hasReview: !!b.review
         }));
     }

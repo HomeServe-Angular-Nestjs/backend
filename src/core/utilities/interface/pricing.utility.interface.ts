@@ -17,4 +17,5 @@ export interface IPricingUtility {
     calculateFee(subtotal: number): Promise<number>;
     calculateTotal(subtotal: number, tax: number): number;
     computeBreakup(prices: number[]): Promise<IPricingBreakup>;
+    paiseToRupees(amountInPaisa: number): number;
 }

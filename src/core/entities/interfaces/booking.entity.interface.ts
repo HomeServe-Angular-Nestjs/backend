@@ -195,6 +195,13 @@ export interface IBookingDetailProvider extends IBookingDetailsBase {
         phone: string;
         location: string;
     };
+    breakup: IPriceBreakupData;
+    settlement: {
+        customerPaid: number;
+        providerAmount: number;
+        commissionEarned: number;
+        gst: number;
+    } | null;
 }
 
 export interface IAdminBookingList {
@@ -472,4 +479,13 @@ export interface IPriceBreakupData {
     subTotal: number;
     tax: number;
     total: number;
+    discount?: number;
+    originalTotal?: number;
+    coupon?: {
+        couponId: string | null;
+        couponCode: string | null;
+        couponName: string | null;
+        discountType: string | null;
+        discountValue: number | null;
+    };
 }

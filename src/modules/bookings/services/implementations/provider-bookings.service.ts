@@ -13,8 +13,9 @@ import { ClientUserType, ICustomer, IProvider } from '@core/entities/interfaces/
 import { ICustomerMapper } from '@core/dto-mapper/interface/customer.mapper..interface';
 import { IProviderMapper } from '@core/dto-mapper/interface/provider.mapper.interface';
 import { IProviderRepository } from '@core/repositories/interfaces/provider-repo.interface';
-import { PAYMENT_LOCKING_UTILITY_NAME, TIME_UTILITY_NAME, UPLOAD_UTILITY_NAME } from '@core/constants/utility.constant';
+import { PAYMENT_LOCKING_UTILITY_NAME, PRICING_UTILITY_NAME, TIME_UTILITY_NAME, UPLOAD_UTILITY_NAME } from '@core/constants/utility.constant';
 import { IUploadsUtility } from '@core/utilities/interface/upload.utility.interface';
+import { IPricingUtility } from '@core/utilities/interface/pricing.utility.interface';
 import { IServiceOfferedMapper } from '@core/dto-mapper/interface/serviceOffered.mapper.interface';
 import { IProviderBookingService } from '@modules/bookings/services/interfaces/provider-booking-service.interface';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
@@ -24,7 +25,7 @@ import { IProviderServiceRepository } from '@core/repositories/interfaces/provid
 import { IBookingRepository } from '@core/repositories/interfaces/bookings-repo.interface';
 import { ICustomerRepository } from '@core/repositories/interfaces/customer-repo.interface';
 import { ITransactionRepository } from '@core/repositories/interfaces/transaction-repo.interface';
-import { IBookedService, IBookedSlot, IBooking, IBookingDetailProvider, IBookingInvoice, IBookingOverviewChanges, IBookingOverviewData, IProviderBookingListService, IResponseProviderBookingLists, IReviewDetails, IReviewFilter, IReviewWithPagination } from '@core/entities/interfaces/booking.entity.interface';
+import { IBookedService, IBookedSlot, IBooking, IBookingDetailProvider, IBookingInvoice, IBookingOverviewChanges, IBookingOverviewData, IPriceBreakupData, IProviderBookingListService, IResponseProviderBookingLists, IReviewDetails, IReviewFilter, IReviewWithPagination } from '@core/entities/interfaces/booking.entity.interface';
 import { FilterFields, ReviewFilterDto, SelectedSlotDto } from '@modules/bookings/dtos/booking.dto';
 import { BookingStatus, CancelStatus, DateRange, PaymentStatus } from '@core/enum/bookings.enum';
 import { IResponse } from '@core/misc/response.util';
@@ -96,6 +97,8 @@ export class ProviderBookingService implements IProviderBookingService {
         private readonly _notificationService: INotificationService,
         @Inject(TIME_UTILITY_NAME)
         private readonly _timeUtility: ITimeUtility,
+        @Inject(PRICING_UTILITY_NAME)
+        private readonly _pricingUtility: IPricingUtility,
         @Inject(RESERVATION_REPOSITORY_NAME)
         private readonly _reservationRepository: IReservationRepository,
         @Inject(CART_REPOSITORY_NAME)
@@ -107,111 +110,29 @@ export class ProviderBookingService implements IProviderBookingService {
 
     async fetchBookingsList(providerId: string, page: number = 1, filters: FilterFields): Promise<IResponseProviderBookingLists> {
         const limit = 5;
-        const skip = (page - 1) * limit;
 
-        const bookingDocuments = await this._bookingRepository.findBookingsByProviderId(providerId);
-        if (!bookingDocuments.length) {
-            return {
-                bookingData: [],
-                paginationData: { total: 0, page, limit }
-            };
-        }
-
-        const bookings = bookingDocuments.map(booking => this._bookingMapper.toEntity(booking));
-
-        const enrichBookings = await Promise.all(
-            bookings.map(async (booking) => {
-                const customer = await this._customerRepository.findById(booking.customerId);
-                if (!customer) throw new InternalServerErrorException(`Customer not found: ${booking.customerId}`);
-
-                const services: IProviderBookingListService[] = await Promise.all(
-                    booking.services.map(async (id) => {
-                        const serviceDoc = await this._providerServiceRepository.findOneAndPopulateById(id);
-
-                        if (!serviceDoc) throw new InternalServerErrorException({
-                            code: ErrorCodes.INTERNAL_SERVER_ERROR,
-                            message: `Service not found: ${id}`,
-                        });
-
-                        const service = this._providerServiceMapper.toPopulatedEntity(serviceDoc);
-                        return {
-                            id: service.id,
-                            title: service.category.name as string,
-                            image: service.image
-                        };
-                    })
-                );
-
-                return {
-                    services,
-                    customer: {
-                        id: customer.id,
-                        name: customer.fullname || customer.username,
-                        email: customer.email,
-                        avatar: customer.avatar
-                    },
-                    bookingId: booking.id,
-                    expectedArrivalTime: booking.expectedArrivalTime,
-                    totalAmount: booking.totalAmount,
-                    createdAt: booking.createdAt as Date,
-                    paymentStatus: booking.paymentStatus,
-                    cancelStatus: booking.cancelStatus,
-                    bookingStatus: booking.bookingStatus,
-                };
-            })
+        const { data, total } = await this._bookingRepository.fetchProviderBookingsWithPagination(
+            providerId,
+            filters,
+            { page, limit }
         );
 
-        let filteredBookings = enrichBookings;
-
-        // Filter by search
-        if (filters.search) {
-            const search = filters.search.trim().toLowerCase();
-            filteredBookings = enrichBookings.filter((booking) => {
-                return (
-                    booking.bookingId.toLowerCase().includes(search) ||
-                    booking.customer.name.toLowerCase().includes(search) ||
-                    booking.customer.email.toLowerCase().includes(search) ||
-                    booking.services.some((s) => s.title.toLowerCase().includes(search))
-                );
-            });
-        }
-
-        // Filter by bookingStatus
-        if (filters.bookingStatus) {
-            filteredBookings = filteredBookings.filter(
-                (booking) => booking.bookingStatus === filters.bookingStatus
-            );
-        }
-
-        // Filter by paymentStatus
-        if (filters.paymentStatus) {
-            filteredBookings = filteredBookings.filter(
-                (booking) => booking.paymentStatus === filters.paymentStatus
-            );
-        }
-
-        if (filters.date) {
-            const date = new Date(filters.date);
-            date.setHours(0, 0, 0, 0);
-
-            filteredBookings = filteredBookings.filter((booking) => {
-                const expectedArrivalTime = new Date(booking.expectedArrivalTime);
-                expectedArrivalTime.setHours(0, 0, 0, 0);
-                return date.getTime() === expectedArrivalTime.getTime();
-            });
-        }
-
-        const total = filteredBookings.length;
-        const paginated = filteredBookings.slice(skip, skip + limit);
+        const bookingData = data.map(booking => ({
+            ...booking,
+            customer: {
+                ...booking.customer,
+                avatar: this._uploadUtility.getSignedImageUrl(booking.customer.avatar)
+            }
+        }));
 
         return {
-            bookingData: paginated,
+            bookingData,
             paginationData: { page, limit, total }
         }
     }
 
-    async fetchOverviewData(providerId: string): Promise<IBookingOverviewData> {
-        const bookings = await this._bookingRepository.findBookingsByProviderId(providerId)
+    async fetchOverviewData(providerId: string, scope: 'month' | 'total' = 'month'): Promise<IBookingOverviewData> {
+        const bookings = await this._bookingRepository.findAllBookingsByProviderId(providerId)
         const now = new Date();
 
         const getMonthRange = (date: Date) => ({
@@ -256,17 +177,19 @@ export class ProviderBookingService implements IProviderBookingService {
         // Calculate summaries for this and last month
         const summaryThisMonth = summarize(bookingsThisMonth);
         const summaryLastMonth = summarize(bookingsLastMonth);
+        const summaryAllTime = summarize(bookings);
 
-        // Total bookings for each month
+        // Total bookings for each month and all time
         const totalThisMonth = bookingsThisMonth.length;
         const totalLastMonth = bookingsLastMonth.length;
+        const totalAllTime = bookings.length;
 
         // Helper for percentage calculation with safe zero check
         const calcPercentChange = (current: number, previous: number): number => {
             if (previous === 0) {
                 return current === 0 ? 0 : 100;
             }
-            return ((current - previous) / previous) * 100;
+            return Math.round(((current - previous) / previous) * 100 * 10) / 10;
         };
 
         // Calculate percentage changes with correct property names matching IBookingOverviewChanges interface
@@ -278,9 +201,11 @@ export class ProviderBookingService implements IProviderBookingService {
             cancelledBookingsChange: calcPercentChange(summaryThisMonth.cancelledBookings, summaryLastMonth.cancelledBookings),
         };
 
+        const isTotalScope = scope === 'total';
+
         return {
-            ...summaryThisMonth,
-            totalBookings: totalThisMonth,
+            ...(isTotalScope ? summaryAllTime : summaryThisMonth),
+            totalBookings: isTotalScope ? totalAllTime : totalThisMonth,
             changes,
         };
     }
@@ -316,6 +241,8 @@ export class ProviderBookingService implements IProviderBookingService {
                 gst: (transaction.metadata?.breakup?.gst ?? 0) / 100,
                 providerCommission: (transaction?.metadata?.breakup?.providerCommission ?? 0) / 100,
             } : null,
+            breakup: this._buildPriceBreakup(booking, transaction, orderedServices),
+            settlement: this._buildCommissionSplit(transaction),
             transactionHistory: booking.transactionHistory,
             previousSchedules: this._getPreviousScheduledDates(booking.previousSlots)
         }
@@ -426,7 +353,7 @@ export class ProviderBookingService implements IProviderBookingService {
             createdAt: updatedBooking.createdAt as Date,
             expectedArrivalTime: updatedBooking.expectedArrivalTime,
             actualArrivalTime: updatedBooking.actualArrivalTime,
-            totalAmount: updatedBooking.totalAmount,
+            totalAmount: updatedBooking.totalAmount / 100,
             cancelStatus: updatedBooking.cancelStatus,
             cancelReason: updatedBooking.cancellationReason,
             cancelledAt: updatedBooking.cancelledAt,
@@ -445,6 +372,8 @@ export class ProviderBookingService implements IProviderBookingService {
                 gst: (transaction?.metadata?.breakup?.gst ?? 0) / 100,
                 providerCommission: (transaction?.metadata?.breakup?.providerCommission ?? 0) / 100,
             },
+            breakup: this._buildPriceBreakup(updatedBooking, transaction, orderedServices),
+            settlement: this._buildCommissionSplit(transaction),
             transactionHistory: updatedBooking.transactionHistory,
             previousSchedules: this._getPreviousScheduledDates(updatedBooking.previousSlots)
         }
@@ -549,10 +478,10 @@ export class ProviderBookingService implements IProviderBookingService {
             },
 
             paymentBreakup: {
-                gst: transaction ? transaction.metadata?.breakup?.gst as number : 0,
-                total: booking.totalAmount,
-                providerAmount,
-                commission
+                gst: transaction ? this._pricingUtility.paiseToRupees(transaction.metadata?.breakup?.gst as number) : 0,
+                total: this._pricingUtility.paiseToRupees(booking.totalAmount),
+                providerAmount: this._pricingUtility.paiseToRupees(providerAmount),
+                commission: this._pricingUtility.paiseToRupees(commission)
             },
 
             paymentDetails: transaction && transaction.gateWayDetails ? {
@@ -948,10 +877,12 @@ export class ProviderBookingService implements IProviderBookingService {
                     id: transaction.id,
                     paymentDate: transaction.createdAt as Date,
                     paymentMethod: transaction.source,
-                    gst: (transaction?.metadata?.breakup?.gst ?? 0) / 100,
-                    providerCommission: (transaction?.metadata?.breakup?.providerCommission ?? 0) / 100,
-                },
-                transactionHistory: bookingResponseData.transactionHistory,
+                gst: (transaction?.metadata?.breakup?.gst ?? 0) / 100,
+                providerCommission: (transaction?.metadata?.breakup?.providerCommission ?? 0) / 100,
+            },
+            breakup: this._buildPriceBreakup(booking, transaction, orderedServices),
+            settlement: this._buildCommissionSplit(transaction),
+            transactionHistory: bookingResponseData.transactionHistory,
                 previousSchedules: this._getPreviousScheduledDates(booking.previousSlots)
             }
 
@@ -1097,6 +1028,8 @@ export class ProviderBookingService implements IProviderBookingService {
                 gst: (transaction.metadata?.breakup?.gst ?? 0) / 100,
                 providerCommission: (transaction.metadata?.breakup?.providerCommission ?? 0) / 100,
             },
+            breakup: this._buildPriceBreakup(booking, transaction, orderedServices),
+            settlement: this._buildCommissionSplit(transaction),
             transactionHistory: booking.transactionHistory,
             previousSchedules: this._getPreviousScheduledDates(booking.previousSlots),
         }
@@ -1306,6 +1239,40 @@ export class ProviderBookingService implements IProviderBookingService {
             refundAmount,   // amount to credit customer (paisa)
             customerFine,   // fee charged to customer (paisa)
             providerFine,   // fee to be charged to provider (paisa) — handle separately
+        };
+    }
+
+    private _buildPriceBreakup(booking: IBooking, transaction: ITransaction | null, orderedServices: IBookedService[]): IPriceBreakupData {
+        const subTotal = orderedServices.reduce((sum, svc) => sum + svc.price, 0);
+        const totalAmount = booking.totalAmount / 100;
+        const coupon = transaction?.metadata?.breakup?.coupon ?? null;
+
+        return {
+            subTotal,
+            tax: Math.max(0, totalAmount - subTotal),
+            originalTotal: totalAmount,
+            total: (transaction?.amount ?? booking.totalAmount) / 100,
+            ...(coupon ? {
+                discount: Math.max(0, booking.totalAmount - (transaction?.amount ?? booking.totalAmount)) / 100,
+                coupon: {
+                    couponId: (coupon.couponId as string) ?? null,
+                    couponCode: coupon.couponCode ?? null,
+                    couponName: coupon.couponName ?? null,
+                    discountType: coupon.discountType ?? null,
+                    discountValue: coupon.discountValue ?? null,
+                }
+            } : {})
+        };
+    }
+
+    private _buildCommissionSplit(transaction: ITransaction | null): IBookingDetailProvider['settlement'] {
+        if (!transaction) return null;
+
+        return {
+            customerPaid: (transaction.amount ?? 0) / 100,
+            providerAmount: this._pricingUtility.paiseToRupees(transaction.metadata?.breakup?.providerAmount ?? 0),
+            commissionEarned: this._pricingUtility.paiseToRupees(transaction.metadata?.breakup?.providerCommission ?? 0),
+            gst: this._pricingUtility.paiseToRupees(transaction.metadata?.breakup?.gst ?? 0),
         };
     }
 

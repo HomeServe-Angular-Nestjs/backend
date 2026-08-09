@@ -135,6 +135,19 @@ export class TransactionDocument {
                     providerCommission: { type: Number },
                     customerCommission: { type: Number },
                     gst: { type: Number },
+                    coupon: {
+                        type: {
+                            couponId: { type: Types.ObjectId },
+                            couponCode: { type: String },
+                            couponName: { type: String },
+                            discountType: { type: String },
+                            discountValue: { type: Number },
+                            originalAmount: { type: Number },
+                            deductedValue: { type: Number },
+                        },
+                        default: null,
+                        _id: false
+                    }
                 },
                 default: null
             }
@@ -150,6 +163,15 @@ export class TransactionDocument {
             providerCommission: number | null;
             customerCommission: number | null;
             gst: number | null;
+            coupon: {
+                couponId: Types.ObjectId | null;
+                couponCode: string | null;
+                couponName: string | null;
+                discountType: string | null;
+                discountValue: number | null;
+                originalAmount: number | null;
+                deductedValue: number | null;
+            } | null;
         }
     } | null;
 

@@ -399,7 +399,7 @@ export class BookingService implements IBookingService {
                     cancelStatus: booking.cancelStatus,
                     paymentStatus: booking.paymentStatus,
                     paymentSource: booking.paymentSource,
-                    totalAmount: booking.totalAmount / 100,
+            totalAmount: (transaction?.amount ?? booking.totalAmount) / 100,
                     createdAt: booking.createdAt as Date,
                     review: booking.review,
                     transaction: transaction ? {
@@ -463,6 +463,7 @@ export class BookingService implements IBookingService {
             .sort((a, b) => (b.createdAt as Date).getTime() - (a.createdAt as Date).getTime())[0];
 
         const gst = transaction?.metadata?.breakup?.gst || 0;
+        const coupon = transaction?.metadata?.breakup?.coupon ?? null;
 
 
         const bookingResponse: IBookingDetailCustomer = {
@@ -488,13 +489,25 @@ export class BookingService implements IBookingService {
                 id: transaction.id,
                 paymentMethod: transaction.source,
                 paymentDate: transaction.createdAt as Date,
-                gst: transaction?.metadata?.breakup?.gst ?? 0,
-                providerCommission: (transaction?.metadata?.breakup?.providerCommission ?? 0) / 100,
+                gst: this._pricingUtility.paiseToRupees(transaction?.metadata?.breakup?.gst ?? 0),
+                providerCommission: this._pricingUtility.paiseToRupees(transaction?.metadata?.breakup?.providerCommission ?? 0),
             } : null,
             breakup: {
-                subTotal: (booking.totalAmount / 100) - (gst / 100),
-                tax: gst / 100,
-                total: booking.totalAmount / 100
+                subTotal: orderedServices.reduce((sum, svc) => sum + svc.price, 0),
+                tax: Math.max(0, (booking.totalAmount / 100) -
+                    orderedServices.reduce((sum, svc) => sum + svc.price, 0)),
+                originalTotal: booking.totalAmount / 100,
+                total: (transaction?.amount ?? booking.totalAmount) / 100,
+                ...(coupon ? {
+                    discount: Math.max(0, booking.totalAmount - (transaction?.amount ?? booking.totalAmount)) / 100,
+                    coupon: {
+                        couponId: (coupon.couponId as string) ?? null,
+                        couponCode: coupon.couponCode ?? null,
+                        couponName: coupon.couponName ?? null,
+                        discountType: coupon.discountType ?? null,
+                        discountValue: coupon.discountValue ?? null,
+                    }
+                } : {})
             },
             transactionHistory: booking.transactionHistory,
             previousSchedules: this._getPreviousScheduledDates(booking.previousSlots),

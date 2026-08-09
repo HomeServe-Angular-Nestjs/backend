@@ -53,4 +53,8 @@ export class PricingUtility implements IPricingUtility {
             feeRate: await this._adminSettingsRepository.getCustomerCommission()
         };
     }
+
+    paiseToRupees(amountInPaisa: number): number {
+        return Math.round((amountInPaisa / 100) * 100) / 100;
+    }
 }

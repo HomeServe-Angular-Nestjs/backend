@@ -1,5 +1,5 @@
 import { BadRequestException, ForbiddenException, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
-import { ADMIN_SETTINGS_REPOSITORY_NAME, BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SUBSCRIPTION_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME, WALLET_LEDGER_REPOSITORY_NAME, WALLET_REPOSITORY_NAME } from '@core/constants/repository.constant';
+import { ADMIN_SETTINGS_REPOSITORY_NAME, BOOKING_REPOSITORY_NAME, COUPON_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SUBSCRIPTION_REPOSITORY_NAME, TRANSACTION_REPOSITORY_NAME, WALLET_LEDGER_REPOSITORY_NAME, WALLET_REPOSITORY_NAME } from '@core/constants/repository.constant';
 import { CUSTOMER_MAPPER, PROVIDER_MAPPER, SUBSCRIPTION_MAPPER, TRANSACTION_MAPPER, WALLET_LEDGER_MAPPER, WALLET_MAPPER } from '@core/constants/mappers.constant';
 import { PAYMENT_LOCKING_UTILITY_NAME, PAYMENT_UTILITY_NAME } from '@core/constants/utility.constant';
 import { ITransactionMapper } from '@core/dto-mapper/interface/transaction.mapper.interface';
@@ -32,6 +32,7 @@ import { IWalletLedgerMapper } from '@core/dto-mapper/interface/wallet-ledger.ma
 import { v4 as uuid } from 'uuid';
 import { IWalletMapper } from '@core/dto-mapper/interface/wallet.mapper.interface';
 import { IBookingRepository } from '@core/repositories/interfaces/bookings-repo.interface';
+import { ICouponRepository } from '@core/repositories/interfaces/coupon-repo.interface';
 import { BookingStatus, PaymentStatus } from '@core/enum/bookings.enum';
 import { NOTIFICATION_SERVICE_NAME } from '@core/constants/service.constant';
 import { INotificationService } from '@modules/websockets/services/interface/notification-service.interface';
@@ -76,6 +77,8 @@ export class RazorPaymentService implements IRazorPaymentService {
         private readonly _walletMapper: IWalletMapper,
         @Inject(BOOKING_REPOSITORY_NAME)
         private readonly _bookingRepository: IBookingRepository,
+        @Inject(COUPON_REPOSITORY_NAME)
+        private readonly _couponRepository: ICouponRepository,
         @Inject(NOTIFICATION_SERVICE_NAME)
         private readonly _notificationService: INotificationService,
     ) {
@@ -140,6 +143,33 @@ export class RazorPaymentService implements IRazorPaymentService {
 
         const gstAmount = totalAmount - baseAmount;
 
+        let couponBreakup: {
+            couponId: string;
+            couponCode: string;
+            couponName: string;
+            discountType: string;
+            discountValue: number;
+            originalAmount: number;
+            deductedValue: number;
+        } | null = null;
+
+        const bookingDoc = await this._bookingRepository.findById(orderData.bookingId);
+        if (bookingDoc?.couponId) {
+            const couponDoc = await this._couponRepository.findById(bookingDoc.couponId);
+            if (couponDoc) {
+                const originalAmount = Math.round(bookingDoc.totalAmount);
+                couponBreakup = {
+                    couponId: String(couponDoc._id), //todo
+                    couponCode: couponDoc.couponCode,
+                    couponName: couponDoc.couponName,
+                    discountType: couponDoc.discountType,
+                    discountValue: couponDoc.discountValue,
+                    originalAmount,
+                    deductedValue: Math.max(0, originalAmount - totalAmount),
+                };
+            }
+        }
+
         const customerTxDoc: TransactionDocument | null = await this._transactionRepository.createNewTransaction(
             orderData.bookingId,
             this._transactionMapper.toDocument({
@@ -163,7 +193,8 @@ export class RazorPaymentService implements IRazorPaymentService {
                         providerAmount,
                         customerCommission: customerCommissionAmount,
                         providerCommission: providerCommissionAmount,
-                        gst: gstAmount
+                        gst: gstAmount,
+                        coupon: couponBreakup
                     }
                 }
             }),
