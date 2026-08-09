@@ -2,6 +2,7 @@ import { DATE_OVERRIDE_MODEL_NAME } from "@core/constants/model.constant";
 import { BaseRepository } from "@core/repositories/base/implementations/base.repository";
 import { IDateOverridesRepository } from "@core/repositories/interfaces/date-overrides.repo.interface";
 import { DateOverrideDocument } from "@core/schema/date-overrides.schema";
+import { toUtcMidnight } from "@core/utilities/date.utility";
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
@@ -27,8 +28,7 @@ export class DateOverridesRepository extends BaseRepository<DateOverrideDocument
     }
 
     async deleteOneByProviderIdAndDate(providerId: string, date: Date): Promise<boolean> {
-        const targetDate = new Date(date);
-        targetDate.setHours(0, 0, 0, 0);
+        const targetDate = toUtcMidnight(date);
 
         const result = await this._dateOverrideModel.deleteOne(
             {
@@ -36,28 +36,23 @@ export class DateOverridesRepository extends BaseRepository<DateOverrideDocument
                 date: targetDate,
             });
 
+            console.log(result)
+
         return result.deletedCount === 1;
     }
 
     async isValidOverrideDate(providerId: string, date: Date): Promise<boolean> {
-        const targetDate = new Date(date);
-        targetDate.setHours(0, 0, 0, 0);
-
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        const targetDate = toUtcMidnight(date);
+        const today = toUtcMidnight(new Date());
 
         if (targetDate <= today) {
             return false;
         }
 
-        const exists = await this._dateOverrideModel.exists({
-            providerId: this._toObjectId(providerId),
-            date: {
-                $gte: targetDate,
-                $lt: new Date(targetDate.getTime() + 24 * 60 * 60 * 1000)
-            }
-        });
+        const overrides = await this.fetchOverridesByProviderId(providerId);
 
-        return !!exists;
+        return overrides.some(override =>
+            toUtcMidnight(override.date).getTime() === targetDate.getTime()
+        );
     }
 }

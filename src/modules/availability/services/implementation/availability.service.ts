@@ -12,6 +12,7 @@ import { ITimeUtility } from "@core/utilities/interface/time.utility.interface";
 import { CreateDateOverrideDto, UpdateWeeklyAvailabilityDto } from "@modules/availability/dto/availability.dto";
 import { IAvailabilityService } from "@modules/availability/services/interface/availability-service.interface";
 import { BadRequestException, Inject, Injectable, InternalServerErrorException } from "@nestjs/common";
+import { toUtcMidnight } from "@core/utilities/date.utility";
 
 @Injectable()
 export class AvailabilityService implements IAvailabilityService {
@@ -103,7 +104,20 @@ export class AvailabilityService implements IAvailabilityService {
     }
 
     async createDateOverride(providerId: string, dateOverrideDto: CreateDateOverrideDto): Promise<IResponse<IDateOverride>> {
-        const isValidOverrideDate = await this._dateOverrideRepository.isValidOverrideDate(providerId, new Date(dateOverrideDto.date));
+        const targetDate = toUtcMidnight(new Date(dateOverrideDto.date));
+        const today = toUtcMidnight(new Date());
+
+        if (Number.isNaN(targetDate.getTime())) throw new BadRequestException({
+            code: ErrorCodes.BAD_REQUEST,
+            message: 'Invalid date',
+        });
+
+        if (targetDate < today) throw new BadRequestException({
+            code: ErrorCodes.BAD_REQUEST,
+            message: 'Past dates cannot be scheduled',
+        });
+
+        const isValidOverrideDate = await this._dateOverrideRepository.isValidOverrideDate(providerId, targetDate);
         if (isValidOverrideDate) throw new BadRequestException({
             code: ErrorCodes.BAD_REQUEST,
             message: 'Date override already exists or Invalid date',
@@ -134,8 +148,12 @@ export class AvailabilityService implements IAvailabilityService {
     }
 
     async deleteDateOverride(providerId: string, date: string): Promise<IResponse> {
-        const dateSent = new Date(date);
-        dateSent.setHours(0, 0, 0, 0);
+        const dateSent = toUtcMidnight(date);
+
+        if (Number.isNaN(dateSent.getTime())) throw new BadRequestException({
+            code: ErrorCodes.BAD_REQUEST,
+            message: 'Invalid date',
+        });
 
         const isDeleted = await this._dateOverrideRepository.deleteOneByProviderIdAndDate(providerId, dateSent);
 

@@ -7,6 +7,7 @@ import { DateOverrideDocument } from "@core/schema/date-overrides.schema";
 import { WeeklyAvailabilityDocument } from "@core/schema/weekly-availability.schema";
 import { Injectable } from "@nestjs/common";
 import { Types } from "mongoose";
+import { toUtcMidnight } from "@core/utilities/date.utility";
 
 @Injectable()
 export class AvailabilityMapper implements IAvailabilityMapper {
@@ -87,12 +88,9 @@ export class AvailabilityMapper implements IAvailabilityMapper {
     }
 
     toDateOverrideDocument(entity: Omit<IDateOverride, 'id'>): Partial<DateOverrideDocument> {
-        const date = new Date(entity.date);
-        date.setHours(0, 0, 0, 0);
-
         return {
             providerId: new Types.ObjectId(entity.providerId),
-            date,
+            date: toUtcMidnight(entity.date),
             reason: entity.reason ?? '',
             timeRanges: entity.timeRanges,
             isAvailable: entity.isAvailable,
