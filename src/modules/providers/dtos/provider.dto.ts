@@ -1,5 +1,5 @@
 import { Transform, Type } from 'class-transformer';
-import { IsDefined, IsIn, isNotEmpty, IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator';
+import { IsDefined, IsIn, isNotEmpty, IsNotEmpty, IsNumber, IsOptional, IsString, Max, Min, ValidateNested } from 'class-validator';
 import { UploadsType } from '@core/enum/uploads.enum';
 import { FilterStatusType } from '@core/entities/interfaces/user.entity.interface';
 import { AvailabilityEnum } from '@core/enum/slot.enum';
@@ -173,6 +173,8 @@ export class UpdatePasswordDto {
 export class UpdateBufferTimeDto {
     @IsNotEmpty()
     @IsNumber()
+    @Min(0, { message: 'Buffer time must be a positive number' })
+    @Max(1440, { message: 'Buffer time cannot exceed 1440 minutes' })
     bufferTime: number;
 }
 
