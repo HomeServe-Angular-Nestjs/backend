@@ -36,6 +36,8 @@ export class DateOverridesRepository extends BaseRepository<DateOverrideDocument
                 date: targetDate,
             });
 
+            console.log(result)
+
         return result.deletedCount === 1;
     }
 
