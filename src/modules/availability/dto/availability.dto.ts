@@ -2,7 +2,7 @@ import { Type } from 'class-transformer';
 import { ArrayMinSize, IsArray, IsBoolean, IsDateString, IsOptional, IsString, Matches, MaxLength, MinLength, ValidateIf, ValidateNested } from 'class-validator';
 
 export class DateDto {
-    @IsString()
+    @IsDateString()
     date: string;
 }
 
