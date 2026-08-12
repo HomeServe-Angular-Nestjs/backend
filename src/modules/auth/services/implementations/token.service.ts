@@ -201,13 +201,20 @@ export class TokenService implements ITokenService {
   }
 
   async validateAccessToken(token: string): Promise<IPayload> {
-    const blacklistKey = this.getBlacklistTokenKey(token);
-    const hasBlacklisted = await this._redis.get(blacklistKey);
-    if (hasBlacklisted) {
-      throw new UnauthorizedException({
-        code: ErrorCodes.SESSION_EXPIRED,
-        message: ErrorMessage.UNAUTHORIZED_ACCESS,
-      });
+    try {
+      const blacklistKey = this.getBlacklistTokenKey(token);
+      const hasBlacklisted = await this._redis.get(blacklistKey);
+      if (hasBlacklisted) {
+        throw new UnauthorizedException({
+          code: ErrorCodes.SESSION_EXPIRED,
+          message: ErrorMessage.UNAUTHORIZED_ACCESS,
+        });
+      }
+    } catch (err) {
+      // Best-effort blacklist check: a Redis outage at startup should not
+      // invalidate a stateless access token that is still valid by signature.
+      if (err instanceof UnauthorizedException) throw err;
+      this.logger.warn(`Redis unavailable during access token validation, skipping blacklist check: ${err}`);
     }
 
     return await this._jwtService.verifyAsync<IPayload>(token, {
