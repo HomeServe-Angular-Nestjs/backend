@@ -46,7 +46,7 @@ export class ProviderServiceRepository extends BaseRepository<ProviderServiceDoc
             .lean<ProviderServicePopulatedDocument | null>()
     }
 
-    async findAllAndPopulateByProviderId(providerId: string, filters: { search?: string, status?: string, sort?: string }, options: { page: number, limit: number }): Promise<ProviderServicePopulatedDocument[]> {
+    async findAllAndPopulateByProviderId(providerId: string, filters: { search?: string, status?: string, sort?: string }, options: { page: number, limit: number }): Promise<{ services: ProviderServicePopulatedDocument[]; total: number }> {
         const skip = (options.page - 1) * options.limit;
         const query: FilterQuery<ProviderServiceDocument> = {
             providerId: this._toObjectId(providerId),
@@ -57,27 +57,64 @@ export class ProviderServiceRepository extends BaseRepository<ProviderServiceDoc
             query.isActive = filters.status === 'true';
         }
 
-        const categoryMatch = filters.search
-            ? { name: { $regex: filters.search, $options: 'i' } }
-            : undefined;
-
         const sort = this._getSortObject(filters.sort) || { createdAt: -1 };
 
-        const services = await this._providerServiceModel
-            .find(query)
-            .populate({
-                path: 'categoryId',
-                match: categoryMatch
-            })
-            .populate('professionId')
-            .sort(sort)
-            .skip(skip)
-            .limit(options.limit)
-            .lean();
+        if (!filters.search) {
+            const total = await this._providerServiceModel.countDocuments(query);
+            const services = await this._providerServiceModel
+                .find(query)
+                .populate('categoryId')
+                .populate('professionId')
+                .sort(sort)
+                .skip(skip)
+                .limit(options.limit)
+                .lean<ProviderServicePopulatedDocument[]>();
 
-        return filters.search
-            ? (services.filter(s => s.categoryId) as unknown as ProviderServicePopulatedDocument[])
-            : (services as unknown as ProviderServicePopulatedDocument[]);
+            return { services, total };
+        }
+
+        const pipeline: PipelineStage[] = [
+            { $match: query },
+            {
+                $lookup: {
+                    from: 'servicecategories',
+                    localField: 'categoryId',
+                    foreignField: '_id',
+                    as: 'categoryId'
+                }
+            },
+            { $unwind: { path: '$categoryId' } },
+            { $match: { 'categoryId.name': { $regex: filters.search, $options: 'i' } } },
+            {
+                $lookup: {
+                    from: 'professions',
+                    localField: 'professionId',
+                    foreignField: '_id',
+                    as: 'professionId'
+                }
+            },
+            { $unwind: { path: '$professionId' } },
+            { $sort: sort },
+            {
+                $facet: {
+                    total: [{ $count: 'count' }],
+                    docs: [
+                        { $skip: skip },
+                        { $limit: options.limit }
+                    ]
+                }
+            }
+        ];
+
+        const [result] = await this._providerServiceModel.aggregate<{
+            total: { count: number }[];
+            docs: ProviderServicePopulatedDocument[];
+        }>(pipeline);
+
+        return {
+            services: result?.docs ?? [],
+            total: result?.total?.[0]?.count ?? 0
+        };
     }
 
     async count(filter: FilterQuery<ProviderServiceDocument> = {}): Promise<number> {
@@ -90,7 +127,7 @@ export class ProviderServiceRepository extends BaseRepository<ProviderServiceDoc
 
     async updateStatusByServiceId(serviceId: string): Promise<boolean> {
         const updated = await this._providerServiceModel.updateOne(
-            { _id: this._toObjectId(serviceId) },
+            { _id: this._toObjectId(serviceId), isDeleted: false },
             [{ $set: { isActive: { $not: '$isActive' } } }]
         );
         return updated.modifiedCount > 0;
@@ -115,7 +152,7 @@ export class ProviderServiceRepository extends BaseRepository<ProviderServiceDoc
 
     async deleteService(serviceId: string): Promise<boolean> {
         const deleted = await this._providerServiceModel.findOneAndUpdate(
-            { _id: this._toObjectId(serviceId) },
+            { _id: this._toObjectId(serviceId), isDeleted: false },
             { $set: { isDeleted: true } },
             { new: true }
         );

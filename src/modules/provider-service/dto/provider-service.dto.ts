@@ -41,11 +41,7 @@ export class CreateProviderServiceDto {
     isActive: boolean;
 }
 
-export class UpdateProviderServiceDto extends CreateProviderServiceDto {
-    @IsNotEmpty()
-    @IsString()
-    id: string;
-}
+export class UpdateProviderServiceDto extends PartialType(CreateProviderServiceDto) { }
 
 export class ProviderServiceFilterDto {
     @IsString()

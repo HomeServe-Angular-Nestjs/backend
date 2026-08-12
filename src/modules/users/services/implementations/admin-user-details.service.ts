@@ -151,7 +151,7 @@ export class AdminUserDetailsService implements IAdminUserDetailsService {
 
         const bookingCountMap = new Map(serviceBookingCounts.map(entry => [entry.serviceId, entry.count]));
 
-        const serviceOverview: IProviderServiceOverview[] = services.map((service: ProviderServicePopulatedDocument) => ({
+        const serviceOverview: IProviderServiceOverview[] = services.services.map((service: ProviderServicePopulatedDocument) => ({
             serviceId: (service as any)._id?.toString() ?? (service as any).id,
             service: (service as any).professionId?.name ?? '',
             category: (service as any).categoryId?.name ?? '',
