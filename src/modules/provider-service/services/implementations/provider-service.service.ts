@@ -193,14 +193,15 @@ export class ProviderServiceService implements IProviderServiceService {
         };
     }
 
-    async findAllByProviderId(providerId: string, filters: ProviderServiceFilterDto): Promise<IResponse<IProviderServiceUI[]>> {
+    async findAllByProviderId(providerId: string, filters: ProviderServiceFilterDto, activeOnly = false): Promise<IResponse<IProviderServiceUI[]>> {
         const page = Math.max(1, parseInt(filters.page || '1', 10) || 1);
         const limit = Math.min(100, Math.max(1, parseInt(filters.limit || '10', 10) || 10));
 
         const { services: serviceDocs, total } = await this._providerServiceRepository.findAllAndPopulateByProviderId(
             providerId,
             { search: filters.search, status: filters.status, sort: filters.sort },
-            { page, limit }
+            { page, limit },
+            activeOnly
         );
 
         const services: IProviderServiceUI[] = (serviceDocs ?? []).map(doc => {

@@ -46,7 +46,7 @@ export class ProviderServiceRepository extends BaseRepository<ProviderServiceDoc
             .lean<ProviderServicePopulatedDocument | null>()
     }
 
-    async findAllAndPopulateByProviderId(providerId: string, filters: { search?: string, status?: string, sort?: string }, options: { page: number, limit: number }): Promise<{ services: ProviderServicePopulatedDocument[]; total: number }> {
+    async findAllAndPopulateByProviderId(providerId: string, filters: { search?: string, status?: string, sort?: string }, options: { page: number, limit: number }, activeOnly = false): Promise<{ services: ProviderServicePopulatedDocument[]; total: number }> {
         const skip = (options.page - 1) * options.limit;
         const query: FilterQuery<ProviderServiceDocument> = {
             providerId: this._toObjectId(providerId),
@@ -55,11 +55,63 @@ export class ProviderServiceRepository extends BaseRepository<ProviderServiceDoc
 
         if (filters.status && filters.status !== 'all') {
             query.isActive = filters.status === 'true';
+        } else if (activeOnly) {
+            query.isActive = true;
         }
 
         const sort = this._getSortObject(filters.sort) || { createdAt: -1 };
 
         if (!filters.search) {
+            if (activeOnly) {
+                const [facet] = await this._providerServiceModel.aggregate<{
+                    total: { count: number }[];
+                    docs: ProviderServicePopulatedDocument[];
+                }>([
+                    { $match: query },
+                    {
+                        $lookup: {
+                            from: 'servicecategories',
+                            localField: 'categoryId',
+                            foreignField: '_id',
+                            as: 'categoryId'
+                        }
+                    },
+                    { $unwind: { path: '$categoryId' } },
+                    {
+                        $lookup: {
+                            from: 'professions',
+                            localField: 'professionId',
+                            foreignField: '_id',
+                            as: 'professionId'
+                        }
+                    },
+                    { $unwind: { path: '$professionId' } },
+                    {
+                        $match: {
+                            'categoryId.isActive': true,
+                            'categoryId.isDeleted': false,
+                            'professionId.isActive': true,
+                            'professionId.isDeleted': false,
+                        }
+                    },
+                    { $sort: sort },
+                    {
+                        $facet: {
+                            total: [{ $count: 'count' }],
+                            docs: [
+                                { $skip: skip },
+                                { $limit: options.limit }
+                            ]
+                        }
+                    }
+                ]);
+
+                return {
+                    services: facet?.docs ?? [],
+                    total: facet?.total?.[0]?.count ?? 0
+                };
+            }
+
             const total = await this._providerServiceModel.countDocuments(query);
             const services = await this._providerServiceModel
                 .find(query)
@@ -94,6 +146,7 @@ export class ProviderServiceRepository extends BaseRepository<ProviderServiceDoc
                 }
             },
             { $unwind: { path: '$professionId' } },
+            ...(activeOnly ? [{ $match: { 'categoryId.isActive': true, 'categoryId.isDeleted': false, 'professionId.isActive': true, 'professionId.isDeleted': false } }] : []),
             { $sort: sort },
             {
                 $facet: {
