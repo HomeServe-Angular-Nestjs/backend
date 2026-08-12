@@ -1,5 +1,5 @@
 import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException, ServiceUnavailableException } from "@nestjs/common";
-import { PLAN_REPOSITORY_INTERFACE_NAME, PROFESSION_REPOSITORY_NAME, PROVIDER_SERVICE_REPOSITORY_NAME, SERVICE_CATEGORY_REPOSITORY_NAME, SUBSCRIPTION_REPOSITORY_NAME } from "@core/constants/repository.constant";
+import { PLAN_REPOSITORY_INTERFACE_NAME, PROFESSION_REPOSITORY_NAME, PROVIDER_SERVICE_REPOSITORY_NAME, SERVICE_CATEGORY_REPOSITORY_NAME, SUBSCRIPTION_REPOSITORY_NAME, ADMIN_SETTINGS_REPOSITORY_NAME } from "@core/constants/repository.constant";
 import { PROVIDER_SERVICE_MAPPER } from "@core/constants/mappers.constant";
 import { IProviderServiceRepository } from "@core/repositories/interfaces/provider-service-repo.interface";
 import { IProviderServiceMapper } from "@core/dto-mapper/interface/provider-service.mapper.interface";
@@ -14,8 +14,9 @@ import { IUploadsUtility } from "@core/utilities/interface/upload.utility.interf
 import { UserType } from "@core/entities/interfaces/user.entity.interface";
 import { UploadsType } from "@core/enum/uploads.enum";
 import { ISubscriptionRepository } from "@core/repositories/interfaces/subscription-repo.interface";
-import { FEATURE_REGISTRY } from "@modules/plans/registry/feature.registry";
+import { FEATURE_REGISTRY, SERVICE_LISTING_UNLIMITED } from "@modules/plans/registry/feature.registry";
 import { IPlanRepository } from "@core/repositories/interfaces/plans-repo.interface";
+import { IAdminSettingsRepository } from "@core/repositories/interfaces/admin-settings-repo.interface";
 import { ProviderServicePopulatedDocument } from "@core/schema/provider-service.schema";
 import { IProfessionRepository } from "@core/repositories/interfaces/profession-repo.interface";
 import { IServiceCategoryRepository } from "@core/repositories/interfaces/service-category-repo.interface";
@@ -37,6 +38,8 @@ export class ProviderServiceService implements IProviderServiceService {
         private readonly _professionRepository: IProfessionRepository,
         @Inject(SERVICE_CATEGORY_REPOSITORY_NAME)
         private readonly _serviceCategoryRepository: IServiceCategoryRepository,
+        @Inject(ADMIN_SETTINGS_REPOSITORY_NAME)
+        private readonly _settingsRepository: IAdminSettingsRepository,
     ) { }
 
     async createService(providerId: string, userType: UserType, createServiceDto: CreateProviderServiceDto, file: Express.Multer.File): Promise<IResponse<IProviderServiceUI>> {
@@ -190,14 +193,15 @@ export class ProviderServiceService implements IProviderServiceService {
         };
     }
 
-    async findAllByProviderId(providerId: string, filters: ProviderServiceFilterDto): Promise<IResponse<IProviderServiceUI[]>> {
+    async findAllByProviderId(providerId: string, filters: ProviderServiceFilterDto, activeOnly = false): Promise<IResponse<IProviderServiceUI[]>> {
         const page = Math.max(1, parseInt(filters.page || '1', 10) || 1);
         const limit = Math.min(100, Math.max(1, parseInt(filters.limit || '10', 10) || 10));
 
         const { services: serviceDocs, total } = await this._providerServiceRepository.findAllAndPopulateByProviderId(
             providerId,
             { search: filters.search, status: filters.status, sort: filters.sort },
-            { page, limit }
+            { page, limit },
+            activeOnly
         );
 
         const services: IProviderServiceUI[] = (serviceDocs ?? []).map(doc => {
@@ -291,23 +295,24 @@ export class ProviderServiceService implements IProviderServiceService {
     }
 
     async canProviderCreateService(providerId: string, userType: UserType): Promise<IResponse<boolean>> {
-        const DEFAULT_SERVICE_LIMIT = 5;
-
-        const [subscriptionDoc, totalServiceCount, freePlanDoc] = await Promise.all([
+        const [subscriptionDoc, totalServiceCount, freePlanDoc, defaultServiceLimit] = await Promise.all([
             this._subscriptionRepository.findActiveSubscriptionByUserId(providerId, userType),
             this._providerServiceRepository.count({ providerId }),
             this._planRepository.findFreePlan(),
+            this._settingsRepository.getDefaultServiceLimit(),
         ]);
 
         const features = (subscriptionDoc?.features || freePlanDoc?.features || {}) as Record<string, unknown>;
         const configuredLimit = features[FEATURE_REGISTRY.SERVICE_LISTING_LIMIT.key];
 
         const serviceLimit =
-            typeof configuredLimit === 'number' && configuredLimit > 0
-                ? configuredLimit
-                : DEFAULT_SERVICE_LIMIT;
+            configuredLimit === SERVICE_LISTING_UNLIMITED
+                ? SERVICE_LISTING_UNLIMITED
+                : (typeof configuredLimit === 'number' && configuredLimit > 0
+                    ? configuredLimit
+                    : defaultServiceLimit);
 
-        if (totalServiceCount >= serviceLimit) {
+        if (serviceLimit !== SERVICE_LISTING_UNLIMITED && totalServiceCount >= serviceLimit) {
             throw new BadRequestException({
                 code: ErrorCodes.SERVICE_LIMIT_EXCEEDED,
                 message: 'You’ve exceeded the service limit. Upgrade your plan to add more services.'

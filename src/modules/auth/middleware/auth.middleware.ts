@@ -101,7 +101,9 @@ export class AuthMiddleware implements NestMiddleware {
                 this.logger.debug('New access token issued');
                 return next();
             } catch (refreshError) {
-                if (refreshError instanceof UnauthorizedException) {
+                const isRevocation = refreshError instanceof UnauthorizedException;
+
+                if (isRevocation) {
                     res.clearCookie('access_token', {
                         httpOnly: true,
                         secure: false,
@@ -115,10 +117,19 @@ export class AuthMiddleware implements NestMiddleware {
                         sameSite: 'strict',
                         path: '/',
                     });
+
+                    this.logger.error('Refresh token flow failed:', refreshError instanceof Error ? refreshError.message : String(refreshError));
+                    throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
                 }
 
-                this.logger.error('Refresh token flow failed:', refreshError);
-                throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
+                // Transient failure (e.g. Redis not ready / network) — do not burn the
+                // session or force the client to log out. Respond with a retryable 503.
+                this.logger.error('Transient failure during refresh token flow:', refreshError instanceof Error ? refreshError.message : String(refreshError));
+                res.status(503).json({
+                    statusCode: 503,
+                    message: 'Service temporarily unavailable. Please retry.',
+                });
+                return;
             }
         }
     }

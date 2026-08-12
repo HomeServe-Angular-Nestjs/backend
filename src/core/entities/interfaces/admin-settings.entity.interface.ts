@@ -6,4 +6,5 @@ export interface IAdminSettings extends IEntity {
     customerCommission: number;
     cancellationFee: number;
     providerCancellationFine: number;
+    defaultServiceLimit: number;
 }

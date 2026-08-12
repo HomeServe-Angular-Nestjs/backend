@@ -6,7 +6,7 @@ export interface IPlanRepository extends IBaseRepository<PlanDocument> {
     countDocuments(): Promise<number>;
     findPlan(planId: string): Promise<PlanDocument | null>;
     updatePlanByPlanId(planId: string, updateData: Partial<IPlan>, options?: { new?: boolean }): Promise<PlanDocument | null>;
-    isPlanExists(filter: { role: string, name: string }): Promise<boolean>;
+    isPlanExists(filter: { role: string, name: string }, excludeId?: string): Promise<boolean>;
     deletePlan(planId: string): Promise<boolean>;
     findFreePlan(): Promise<PlanDocument | null>;
 }

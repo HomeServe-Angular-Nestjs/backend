@@ -54,6 +54,65 @@ export class ProviderRepository extends BaseRepository<ProviderDocument> impleme
     return baseMatch;
   }
 
+  private _searchPriorityStages(): PipelineStage[] {
+    const now = new Date();
+
+    return [
+      {
+        $lookup: {
+          from: 'subscriptions',
+          localField: '_id',
+          foreignField: 'userId',
+          as: 'subs'
+        }
+      },
+      {
+        $addFields: {
+          activePriority: {
+            $arrayElemAt: [
+              {
+                $map: {
+                  input: {
+                    $filter: {
+                      input: '$subs',
+                      cond: {
+                        $and: [
+                          { $eq: ['$$this.isActive', true] },
+                          { $eq: ['$$this.isDeleted', false] },
+                          { $eq: ['$$this.paymentStatus', 'paid'] },
+                          { $eq: ['$$this.role', 'provider'] },
+                          { $lte: ['$$this.startTime', now] },
+                          { $gte: ['$$this.endDate', now] }
+                        ]
+                      }
+                    }
+                  },
+                  as: 's',
+                  in: '$$s.features.search_priority'
+                }
+              },
+              0
+            ]
+          }
+        }
+      },
+      {
+        $addFields: {
+          priorityRank: {
+            $switch: {
+              branches: [
+                { case: { $eq: ['$activePriority', 'high'] }, then: 0 },
+                { case: { $eq: ['$activePriority', 'medium'] }, then: 1 },
+                { case: { $eq: ['$activePriority', 'low'] }, then: 2 }
+              ],
+              default: 3
+            }
+          }
+        }
+      }
+    ];
+  }
+
   private _geoNearStages(
     filter: IFilterFetchProviders,
     baseMatch: FilterQuery<ProviderDocument>,
@@ -141,18 +200,20 @@ export class ProviderRepository extends BaseRepository<ProviderDocument> impleme
     const baseMatch = this._buildBaseMatch(filter);
 
     if (!filter.lat || !filter.lng) {
-      return this._providerModel
-        .find(baseMatch)
-        .skip(skip)
-        .limit(limit)
-        .lean();
+      const pipeline: PipelineStage[] = [
+        { $match: baseMatch },
+        ...this._searchPriorityStages(),
+        { $sort: { priorityRank: 1, createdAt: -1 } },
+        { $skip: skip },
+        { $limit: limit },
+      ];
+      return this._providerModel.aggregate(pipeline);
     }
-
-    const nearestSortStages: PipelineStage[] = filter.status === 'nearest' ? [{ $sort: { distance: 1 } }] : [];
 
     const pipeline: PipelineStage[] = [
       ...this._geoNearStages(filter, baseMatch, searchRadiusMeters),
-      ...nearestSortStages,
+      ...this._searchPriorityStages(),
+      { $sort: { distance: 1, priorityRank: 1, createdAt: -1 } },
       { $skip: skip },
       { $limit: limit },
       {

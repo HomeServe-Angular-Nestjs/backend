@@ -1,11 +1,9 @@
-import { Types } from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
 
 import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 
-import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, PROVIDER_SERVICE_REPOSITORY_NAME, SERVICE_CATEGORY_REPOSITORY_NAME } from '@core/constants/repository.constant';
+import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SUBSCRIPTION_REPOSITORY_NAME } from '@core/constants/repository.constant';
 import { ARGON_UTILITY_NAME, UPLOAD_UTILITY_NAME } from '@core/constants/utility.constant';
-import { ICustomerSearchCategories } from '@core/entities/interfaces/service.entity.interface';
 import { ICustomer, ISearchedProviders, IUpdateProfileData } from '@core/entities/interfaces/user.entity.interface';
 import { ErrorCodes, ErrorMessage, UploadErrorMessages } from '@core/enum/error.enum';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
@@ -18,13 +16,11 @@ import { IUploadsUtility } from '@core/utilities/interface/upload.utility.interf
 import { ChangePasswordDto } from '@modules/customer/dtos/customer.dto';
 import { ICustomerService } from '@modules/customer/services/interfaces/customer-service.interface';
 import { UpdateProfileDto } from '@modules/customer/dtos/customer.dto';
-import { CUSTOMER_MAPPER, SERVICE_CATEGORY_MAPPER } from '@core/constants/mappers.constant';
+import { CUSTOMER_MAPPER } from '@core/constants/mappers.constant';
 import { ICustomerMapper } from '@core/dto-mapper/interface/customer.mapper..interface';
 import { UploadsType } from '@core/enum/uploads.enum';
-import { IProviderServiceRepository } from '@core/repositories/interfaces/provider-service-repo.interface';
-import { IServiceCategoryRepository } from '@core/repositories/interfaces/service-category-repo.interface';
-import { IServiceCategoryMapper } from '@core/dto-mapper/interface/service-category.mapper.interface';
 import { CustomerDocument } from '@core/schema/customer.schema';
+import { ISubscriptionRepository } from '@core/repositories/interfaces/subscription-repo.interface';
 
 @Injectable()
 export class CustomerService implements ICustomerService {
@@ -43,12 +39,8 @@ export class CustomerService implements ICustomerService {
         private readonly _uploadsUtility: IUploadsUtility,
         @Inject(CUSTOMER_MAPPER)
         private readonly _customerMapper: ICustomerMapper,
-        @Inject(PROVIDER_SERVICE_REPOSITORY_NAME)
-        private readonly _providerServiceRepository: IProviderServiceRepository,
-        @Inject(SERVICE_CATEGORY_REPOSITORY_NAME)
-        private readonly _serviceCategoryRepository: IServiceCategoryRepository,
-        @Inject(SERVICE_CATEGORY_MAPPER)
-        private readonly _serviceCategoryMapper: IServiceCategoryMapper,
+        @Inject(SUBSCRIPTION_REPOSITORY_NAME)
+        private readonly _subscriptionRepository: ISubscriptionRepository,
     ) {
         this.logger = this.loggerFactory.createLogger(CustomerService.name);
     }
@@ -90,7 +82,10 @@ export class CustomerService implements ICustomerService {
 
         if (search) {
             const regex = new RegExp(search, 'i');
-            const providers = await this._providerRepository.find({ address: regex });
+            const providers = await this._providerRepository.find(
+                { address: regex },
+                { sort: { createdAt: -1 } }
+            );
 
             result = providers.map(prov => ({
                 id: prov.id,
@@ -98,6 +93,25 @@ export class CustomerService implements ICustomerService {
                 name: prov?.fullname ?? prov.username,
                 address: prov?.address ?? ''
             }));
+
+            const activeSubs = await this._subscriptionRepository.findActiveByUserIds(result.map(r => r.id));
+
+            const priorityRank = new Map<string, number>();
+            for (const sub of activeSubs) {
+                const providerId = sub.userId.toString();
+                const priority = sub.features?.search_priority as string;
+                const rank = priority === 'high' ? 0 : priority === 'medium' ? 1 : priority === 'low' ? 2 : 3;
+                const current = priorityRank.get(providerId);
+                if (current === undefined || rank < current) {
+                    priorityRank.set(providerId, rank);
+                }
+            }
+
+            result = result.sort((a, b) => {
+                const rankA = priorityRank.get(a.id) ?? 3;
+                const rankB = priorityRank.get(b.id) ?? 3;
+                return rankA - rankB;
+            });
         }
 
         return {
@@ -189,70 +203,6 @@ export class CustomerService implements ICustomerService {
             data: this.toEntityWithSignedAvatar(updatedCustomer)
         }
     }
-
-    // async submitReview(customerId: string, dto: SubmitReviewDto): Promise<IResponse<IFetchReviews>> {
-    //     const review: IReview = {
-    //         desc: dto.desc,
-    //         isReported: false,
-    //         reviewedBy: customerId,
-    //         writtenAt: new Date(),
-    //         rating: dto.ratings,
-    //         isActive: true,
-    //     };
-
-    //     const currentRating = await this._providerRepository.getCurrentRatingCountAndAverage(dto.providerId);
-
-    //     if (!currentRating) {
-    //         throw new NotFoundException('Current rating not found.');
-    //     }
-
-    //     const newRatingCount = currentRating.currentRatingCount + 1;
-    //     const newAverageRating = (currentRating.currentRatingAvg * currentRating.currentRatingCount + dto.ratings) / newRatingCount;
-
-    //     const [updatedProvider, updatedCustomer] = await Promise.all([
-    //         this._providerRepository.findOneAndUpdate(
-    //             { _id: dto.providerId },
-    //             {
-    //                 $set: {
-    //                     ratingCount: newRatingCount,
-    //                     avgRating: newAverageRating
-    //                 },
-    //                 $push: {
-    //                     reviews: { $each: [review] }
-    //                 }
-    //             },
-    //             { new: true }
-    //         ),
-
-    //         this._customerRepository.findOneAndUpdate(
-    //             { _id: customerId },
-    //             { $set: { isReviewed: true } },
-    //             { new: true }
-    //         )
-    //     ]);
-
-    //     if (!updatedProvider) {
-    //         throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
-    //     }
-
-    //     if (!updatedCustomer) {
-    //         throw new NotFoundException(ErrorMessage.CUSTOMER_NOT_FOUND_WITH_ID, customerId);
-    //     }
-
-    //     const enrichedReview: IFetchReviews = {
-    //         avatar: updatedCustomer.avatar,
-    //         name: updatedCustomer.fullname ?? updatedCustomer.username,
-    //         avgRating: newAverageRating,
-    //         desc: review.desc,
-    //         writtenAt: review.writtenAt,
-    //     }
-
-    //     return {
-    //         success: true,
-    //         message: 'Review Submitted successfully.',
-    //         data: enrichedReview
-    //     }
-    // }
 
     async getProviderGalleryImages(providerId: string): Promise<IResponse<string[]>> {
         const workImages = await this._providerRepository.getWorkImages(providerId);

@@ -7,4 +7,5 @@ export interface IAdminSettingsRepository extends IBaseRepository<AdminSettingsD
     getTax(): Promise<number>;
     getCustomerCommission(): Promise<number>;
     getProviderCommission(): Promise<number>;
+    getDefaultServiceLimit(): Promise<number>;
 } 

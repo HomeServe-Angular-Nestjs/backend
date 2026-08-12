@@ -55,7 +55,7 @@ export class ProviderServiceController {
 
     @Get('/:providerId')
     async getProviderServices(@Param('providerId', new isValidIdPipe()) providerId: string, @Query() filterDto: ProviderServiceFilterDto): Promise<IResponse<IProviderServiceUI[]>> {
-        return await this._service.findAllByProviderId(providerId, filterDto);
+        return await this._service.findAllByProviderId(providerId, filterDto, true);
     }
 
     @Patch(':id/toggle-status')

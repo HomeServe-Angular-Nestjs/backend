@@ -1,6 +1,7 @@
 export enum SubsDurationEnum {
     Monthly = 'monthly',
     Yearly = 'yearly',
+    FreeTier = 'freetier',
 }
 
 export enum PlanRoleEnum {
@@ -16,5 +17,5 @@ export enum RenewalEnum {
 export enum PlanDurationEnum {
     Monthly = 'monthly',
     Yearly = 'yearly',
-    Lifetime = 'lifetime',
+    FreeTier = 'freetier',
 }

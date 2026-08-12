@@ -216,6 +216,19 @@ export class SettingsDto {
     @IsOptional()
     @IsNumber()
     customerCommission: number;
+
+    @IsOptional()
+    @IsNumber()
+    cancellationFee: number;
+
+    @IsOptional()
+    @IsNumber()
+    providerCancellationFine: number;
+
+    @IsOptional()
+    @IsNumber()
+    @Min(-1)
+    defaultServiceLimit: number;
 }
 
 export class UpdateProviderVerificationDto {

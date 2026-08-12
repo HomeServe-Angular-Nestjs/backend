@@ -8,6 +8,7 @@ import { SubscriptionDocument } from '@core/schema/subscription.schema';
 export interface ISubscriptionRepository extends IBaseRepository<SubscriptionDocument> {
     getSubscriptionChartData(): Promise<Omit<IAdminDashboardSubscription, 'totalProviders'>>;
     findSubscriptionById(subscriptionId: string): Promise<SubscriptionDocument | null>;
+    findActiveByUserIds(userIds: string[]): Promise<SubscriptionDocument[]>;
     findLatestSubscriptionByUserId(userId: string, userType: string): Promise<SubscriptionDocument | null>;
     fetchCurrentActiveSubscription(subscriptionId: string): Promise<SubscriptionDocument | null>;
     count(): Promise<number>;

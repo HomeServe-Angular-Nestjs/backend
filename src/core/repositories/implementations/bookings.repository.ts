@@ -1049,7 +1049,7 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                         }
                     ],
                     onTimeArrival: [
-                        { $match: { actualArrivalTime: { $exists: true, $ne: null } } },
+                        { $match: { bookingStatus: BookingStatus.COMPLETED, actualArrivalTime: { $exists: true, $ne: null }, expectedArrivalTime: { $exists: true, $ne: null } } },
                         {
                             $addFields: {
                                 arrivalDelayMins: {
@@ -1065,7 +1065,7 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                                 _id: null,
                                 onTimePercent: {
                                     $avg: {
-                                        $cond: [{ $lte: ["$arrivalDelayMins", 5] }, 100, 0]
+                                        $cond: [{ $lte: ["$arrivalDelayMins", 10] }, 100, 0]
                                     }
                                 }
                             }
@@ -1151,7 +1151,7 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                             [
                                 "",
                                 "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                                "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"
+                                "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
                             ],
                             "$_id"
                         ]
@@ -1656,14 +1656,20 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                     totalRevenue: { $round: { $cond: [{ $eq: ["$totalRevenue", 0] }, 0, "$totalRevenue"] } },
                     revenueGrowth: {
                         $round: {
-                            $multiply: [
+                            $cond: [
+                                { $gt: [{ $round: "$previousPeriodRevenue" }, 0] },
                                 {
-                                    $divide: [
-                                        { $subtract: ["$currentPeriodRevenue", "$previousPeriodRevenue"] },
-                                        { $round: "$previousPeriodRevenue" }
+                                    $multiply: [
+                                        {
+                                            $divide: [
+                                                { $subtract: ["$currentPeriodRevenue", "$previousPeriodRevenue"] },
+                                                { $round: "$previousPeriodRevenue" }
+                                            ]
+                                        },
+                                        100
                                     ]
                                 },
-                                100
+                                0
                             ]
                         }
                     },
@@ -1919,7 +1925,7 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                     avgRevenue: 1
                 }
             },
-            { $sort: { revenue: 1 } },
+            { $sort: { revenue: -1 } },
             { $limit: 10 }
         ]);
     }
@@ -2027,10 +2033,24 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                     areaName: {
                         $trim: {
                             input: {
-                                $ifNull: [
-                                    { $arrayElemAt: [{ $split: ["$location.address", ","] }, 3] },
-                                    "Unknown"
-                                ]
+                                $let: {
+                                    vars: {
+                                        region: { $arrayElemAt: [{ $split: ["$location.address", ","] }, 3] },
+                                        lastRegion: { $arrayElemAt: [{ $split: ["$location.address", ","] }, -1] }
+                                    },
+                                    in: {
+                                        $ifNull: [
+                                            {
+                                                $cond: [
+                                                    { $in: ["$$region", [null, ""]] },
+                                                    "$$lastRegion",
+                                                    "$$region"
+                                                ]
+                                            },
+                                            "Unknown"
+                                        ]
+                                    }
+                                }
                             }
                         }
                     }
@@ -2073,7 +2093,12 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                 $lookup: {
                     from: "bookings",
                     pipeline: [
-                        { $match: { bookingStatus: "completed" } },
+                        {
+                            $match: {
+                                providerId: this._toObjectId(providerId),
+                                bookingStatus: "completed"
+                            }
+                        },
                         {
                             $group: {
                                 _id: "$slot.from",
@@ -2139,6 +2164,11 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
     async getServiceDemandByLocation(providerId: string): Promise<ILocationRevenue[]> {
         const now = new Date();
         const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const currentMonth = now.getMonth() + 1;
+        const currentYear = now.getFullYear();
+        const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const prevMonth = prevMonthDate.getMonth() + 1;
+        const prevYear = prevMonthDate.getFullYear();
 
         return await this._bookingModel.aggregate([
             {
@@ -2190,7 +2220,12 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                             {
                                 $filter: {
                                     input: "$monthlyData",
-                                    cond: { $eq: ["$$this.month", now.getMonth() + 1] }
+                                    cond: {
+                                        $and: [
+                                            { $eq: ["$$this.month", currentMonth] },
+                                            { $eq: ["$$this.year", currentYear] }
+                                        ]
+                                    }
                                 }
                             },
                             0
@@ -2201,7 +2236,12 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                             {
                                 $filter: {
                                     input: "$monthlyData",
-                                    cond: { $eq: ["$$this.month", now.getMonth()] }
+                                    cond: {
+                                        $and: [
+                                            { $eq: ["$$this.month", prevMonth] },
+                                            { $eq: ["$$this.year", prevYear] }
+                                        ]
+                                    }
                                 }
                             },
                             0
@@ -2247,6 +2287,11 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
         const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
         const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
         const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+        const currentMonth = now.getMonth() + 1;
+        const currentYear = now.getFullYear();
+        const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const prevMonth = prevMonthDate.getMonth() + 1;
+        const prevYear = prevMonthDate.getFullYear();
 
         return await this._bookingModel.aggregate([
             {
@@ -2294,8 +2339,8 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                                             as: 'm',
                                             cond: {
                                                 $and: [
-                                                    { $eq: ['$$m.month', now.getMonth() + 1] },
-                                                    { $eq: ['$$m.year', now.getFullYear()] }
+                                                    { $eq: ['$$m.month', currentMonth] },
+                                                    { $eq: ['$$m.year', currentYear] }
                                                 ]
                                             }
                                         }
@@ -2308,8 +2353,8 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                                             as: 'm',
                                             cond: {
                                                 $and: [
-                                                    { $eq: ['$$m.month', now.getMonth()] },
-                                                    { $eq: ['$$m.year', now.getFullYear()] }
+                                                    { $eq: ['$$m.month', prevMonth] },
+                                                    { $eq: ['$$m.year', prevYear] }
                                                 ]
                                             }
                                         }
@@ -2329,8 +2374,8 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                                             as: 'm',
                                             cond: {
                                                 $and: [
-                                                    { $eq: ['$$m.month', now.getMonth()] },
-                                                    { $eq: ['$$m.year', now.getFullYear()] }
+                                                    { $eq: ['$$m.month', prevMonth] },
+                                                    { $eq: ['$$m.year', prevYear] }
                                                 ]
                                             }
                                         }

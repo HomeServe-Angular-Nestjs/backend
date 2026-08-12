@@ -39,5 +39,12 @@ export class AdminSettingsDocument extends Document {
         set: toPaisa,
     })
     providerCancellationFine: number;
+
+    @Prop({
+        type: Number,
+        default: 5,
+        min: 1,
+    })
+    defaultServiceLimit: number;
 }
 export const AdminSettingSchema = SchemaFactory.createForClass(AdminSettingsDocument);
