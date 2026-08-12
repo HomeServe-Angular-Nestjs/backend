@@ -62,10 +62,17 @@ export class ProviderAnalyticsService implements IProviderAnalyticsService {
 
     async getResponseTimeDistributionData(providerId: string): Promise<IResponse<IResponseTimeChartData[]>> {
         const responseTimeStats = (await this._bookingRepository.getResponseDistributionTime(providerId)) || [];
-        const labels = ["< 1 min", "1–10 min", "10–60 min", "1–24 hrs", "> 1 day"];
+        const labelByBucket: Record<string, string> = {
+            "0": "< 1 min",
+            "60": "1–10 min",
+            "600": "10–60 min",
+            "3600": "1–24 hrs",
+            "86400": "> 1 day",
+            "> 1 day": "> 1 day",
+        };
 
-        const chartData = responseTimeStats.map((r, i) => ({
-            name: labels[i],
+        const chartData = responseTimeStats.map(r => ({
+            name: labelByBucket[String((r as any)._id)] ?? "> 1 day",
             count: r.count
         }));
 
