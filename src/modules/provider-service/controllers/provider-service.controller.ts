@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, FileTypeValidator, Get, Inject, MaxFileSizeValidator, Param, ParseFilePipe, Patch, Post, Put, Query, Req, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Delete, FileTypeValidator, Get, Inject, MaxFileSizeValidator, Param, ParseFilePipe, Patch, Post, Query, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { PROVIDER_OFFER_SERVICE_NAME } from "@core/constants/service.constant";
 import { IProviderServiceService } from "../services/interfaces/provider-service.interface";
 import { CreateProviderServiceDto, UpdateProviderServiceDto, ProviderServiceFilterDto } from "../dto/provider-service.dto";
@@ -22,6 +22,7 @@ export class ProviderServiceController {
         @User() user: IPayload,
         @Body() createServiceDto: CreateProviderServiceDto,
         @UploadedFile(new ParseFilePipe({
+            fileIsRequired: false,
             validators: [
                 new MaxFileSizeValidator({ maxSize: 2 * 1024 * 1024 }), // 2MB
                 new FileTypeValidator({ fileType: 'jpg|jpeg|png' }),
@@ -30,13 +31,14 @@ export class ProviderServiceController {
         return await this._service.createService(user.sub, user.type, createServiceDto, file);
     }
 
-    @Put(':id')
+    @Patch(':id')
     @UseInterceptors(FileInterceptor('image'))
     async update(
         @User() user: IPayload,
         @Param('id', new isValidIdPipe()) serviceId: string,
         @Body() updateServiceDto: UpdateProviderServiceDto,
         @UploadedFile(new ParseFilePipe({
+            fileIsRequired: false,
             validators: [
                 new MaxFileSizeValidator({ maxSize: 2 * 1024 * 1024 }), // 2MB
                 new FileTypeValidator({ fileType: 'jpg|jpeg|png' }),

@@ -41,6 +41,8 @@ export class ProviderServiceService implements IProviderServiceService {
 
     async createService(providerId: string, userType: UserType, createServiceDto: CreateProviderServiceDto, file: Express.Multer.File): Promise<IResponse<IProviderServiceUI>> {
 
+        await this.canProviderCreateService(providerId, userType);
+
         if (!file) {
             throw new BadRequestException({
                 code: ErrorCodes.BAD_REQUEST,
@@ -116,12 +118,13 @@ export class ProviderServiceService implements IProviderServiceService {
                 .filter(([_, value]) => value !== undefined && value !== null)
         ) as Partial<IProviderService>;
 
-        if (updateServiceDto.categoryId || updateServiceDto.professionId) {
-            let categoryId = updateServiceDto.categoryId;
-            let professionId = updateServiceDto.professionId;
+        let categoryId = updateServiceDto.categoryId;
+        let professionId = updateServiceDto.professionId;
+        let existing: ProviderServicePopulatedDocument | null = null;
 
+        if (updateServiceDto.categoryId || updateServiceDto.professionId || file) {
             if (!categoryId || !professionId) {
-                const existing = await this._providerServiceRepository.findOneAndPopulateById(serviceId);
+                existing = await this._providerServiceRepository.findOneAndPopulateById(serviceId);
                 if (!existing) {
                     throw new BadRequestException({
                         code: ErrorCodes.NOT_FOUND,
@@ -133,15 +136,32 @@ export class ProviderServiceService implements IProviderServiceService {
                 professionId = professionId ?? populated.profession.id;
             }
 
-            await this._validateCategoryAndProfession(categoryId, professionId);
+            if (updateServiceDto.categoryId || updateServiceDto.professionId) {
+                await this._validateCategoryAndProfession(categoryId!, professionId!);
+            }
         }
 
+        let previousImage: string | null = null;
         if (file) {
+            if (!existing) {
+                existing = await this._providerServiceRepository.findOneAndPopulateById(serviceId);
+                if (!existing) {
+                    throw new BadRequestException({
+                        code: ErrorCodes.NOT_FOUND,
+                        message: ErrorMessage.SERVICE_NOT_FOUND,
+                    });
+                }
+            }
+
+            const populated = this._providerServiceMapper.toPopulatedEntity(existing);
+            previousImage = populated.image || null;
+            categoryId = categoryId ?? populated.category.id;
+
             const publicId = this._uploadUtility.getPublicId(
                 userType,
                 providerId,
                 UploadsType.SERVICE,
-                updateServiceDto.categoryId
+                categoryId!
             );
 
             updateData.image = await this._handleImageUpload(file, publicId);
@@ -156,6 +176,10 @@ export class ProviderServiceService implements IProviderServiceService {
             });
         }
 
+        if (previousImage && updateData.image && previousImage !== updateData.image) {
+            await this._uploadUtility.deleteImageByPublicId(previousImage);
+        }
+
         const updated = this._providerServiceMapper.toPopulatedEntity(updatedDoc)
         updated.image = this._uploadUtility.getSignedImageUrl(updated.image) || '';
 
@@ -167,10 +191,13 @@ export class ProviderServiceService implements IProviderServiceService {
     }
 
     async findAllByProviderId(providerId: string, filters: ProviderServiceFilterDto): Promise<IResponse<IProviderServiceUI[]>> {
-        const serviceDocs = await this._providerServiceRepository.findAllAndPopulateByProviderId(
+        const page = Math.max(1, parseInt(filters.page || '1', 10) || 1);
+        const limit = Math.min(100, Math.max(1, parseInt(filters.limit || '10', 10) || 10));
+
+        const { services: serviceDocs, total } = await this._providerServiceRepository.findAllAndPopulateByProviderId(
             providerId,
             { search: filters.search, status: filters.status, sort: filters.sort },
-            { page: parseInt(filters.page || '1'), limit: parseInt(filters.limit || '10') }
+            { page, limit }
         );
 
         const services: IProviderServiceUI[] = (serviceDocs ?? []).map(doc => {
@@ -205,7 +232,8 @@ export class ProviderServiceService implements IProviderServiceService {
         return {
             success: true,
             message: 'Provider services fetched successfully',
-            data: services
+            data: services,
+            meta: { total }
         };
     }
 
@@ -239,11 +267,22 @@ export class ProviderServiceService implements IProviderServiceService {
     }
 
     async deleteService(serviceId: string): Promise<IResponse> {
+        const existing = await this._providerServiceRepository.findOneAndPopulateById(serviceId);
+        if (!existing) throw new BadRequestException({
+            code: ErrorCodes.NOT_FOUND,
+            message: ErrorMessage.SERVICE_NOT_FOUND,
+        });
+
         const deleted = await this._providerServiceRepository.deleteService(serviceId);
         if (!deleted) throw new BadRequestException({
             code: ErrorCodes.NOT_FOUND,
             message: ErrorMessage.SERVICE_NOT_FOUND,
         });
+
+        const image = this._providerServiceMapper.toPopulatedEntity(existing).image;
+        if (image) {
+            await this._uploadUtility.deleteImageByPublicId(image);
+        }
 
         return {
             success: true,
@@ -252,29 +291,25 @@ export class ProviderServiceService implements IProviderServiceService {
     }
 
     async canProviderCreateService(providerId: string, userType: UserType): Promise<IResponse<boolean>> {
+        const DEFAULT_SERVICE_LIMIT = 5;
+
         const [subscriptionDoc, totalServiceCount, freePlanDoc] = await Promise.all([
             this._subscriptionRepository.findActiveSubscriptionByUserId(providerId, userType),
             this._providerServiceRepository.count({ providerId }),
             this._planRepository.findFreePlan(),
         ]);
 
-        const features = subscriptionDoc
-            ? subscriptionDoc.features
-            : freePlanDoc?.features || {};
+        const features = (subscriptionDoc?.features || freePlanDoc?.features || {}) as Record<string, unknown>;
+        const configuredLimit = features[FEATURE_REGISTRY.SERVICE_LISTING_LIMIT.key];
 
         const serviceLimit =
-            features[FEATURE_REGISTRY.SERVICE_LISTING_LIMIT.key];
-
-        if (!serviceLimit || typeof serviceLimit !== 'number') {
-            throw new InternalServerErrorException({
-                code: ErrorCodes.INTERNAL_SERVER_ERROR,
-                message: 'Invalid service limit configuration. Check if there is a free plan.'
-            });
-        }
+            typeof configuredLimit === 'number' && configuredLimit > 0
+                ? configuredLimit
+                : DEFAULT_SERVICE_LIMIT;
 
         if (totalServiceCount >= serviceLimit) {
             throw new BadRequestException({
-                code: ErrorCodes.BAD_REQUEST,
+                code: ErrorCodes.SERVICE_LIMIT_EXCEEDED,
                 message: 'You’ve exceeded the service limit. Upgrade your plan to add more services.'
             });
         }
