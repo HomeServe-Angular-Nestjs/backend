@@ -34,8 +34,8 @@ export class AnalyticsGuard implements CanActivate {
         const analyticsEnabled = subscription.features?.[FEATURE_REGISTRY.ANALYTICS_DASHBOARD.key];
         if (analyticsEnabled !== true) {
             throw new ForbiddenException({
-                code: ErrorCodes.NO_ACTIVE_SUBSCRIPTION,
-                message: 'Analytics dashboard is not included in your plan.',
+                code: ErrorCodes.FEATURE_NOT_INCLUDED,
+                message: 'Analytics dashboard is not included in your plan. Upgrade to unlock it.',
             });
         }
 
