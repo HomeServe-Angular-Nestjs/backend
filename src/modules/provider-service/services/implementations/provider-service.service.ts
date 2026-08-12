@@ -41,6 +41,8 @@ export class ProviderServiceService implements IProviderServiceService {
 
     async createService(providerId: string, userType: UserType, createServiceDto: CreateProviderServiceDto, file: Express.Multer.File): Promise<IResponse<IProviderServiceUI>> {
 
+        await this.canProviderCreateService(providerId, userType);
+
         if (!file) {
             throw new BadRequestException({
                 code: ErrorCodes.BAD_REQUEST,
@@ -289,29 +291,25 @@ export class ProviderServiceService implements IProviderServiceService {
     }
 
     async canProviderCreateService(providerId: string, userType: UserType): Promise<IResponse<boolean>> {
+        const DEFAULT_SERVICE_LIMIT = 5;
+
         const [subscriptionDoc, totalServiceCount, freePlanDoc] = await Promise.all([
             this._subscriptionRepository.findActiveSubscriptionByUserId(providerId, userType),
             this._providerServiceRepository.count({ providerId }),
             this._planRepository.findFreePlan(),
         ]);
 
-        const features = subscriptionDoc
-            ? subscriptionDoc.features
-            : freePlanDoc?.features || {};
+        const features = (subscriptionDoc?.features || freePlanDoc?.features || {}) as Record<string, unknown>;
+        const configuredLimit = features[FEATURE_REGISTRY.SERVICE_LISTING_LIMIT.key];
 
         const serviceLimit =
-            features[FEATURE_REGISTRY.SERVICE_LISTING_LIMIT.key];
-
-        if (!serviceLimit || typeof serviceLimit !== 'number') {
-            throw new InternalServerErrorException({
-                code: ErrorCodes.INTERNAL_SERVER_ERROR,
-                message: 'Invalid service limit configuration. Check if there is a free plan.'
-            });
-        }
+            typeof configuredLimit === 'number' && configuredLimit > 0
+                ? configuredLimit
+                : DEFAULT_SERVICE_LIMIT;
 
         if (totalServiceCount >= serviceLimit) {
             throw new BadRequestException({
-                code: ErrorCodes.BAD_REQUEST,
+                code: ErrorCodes.SERVICE_LIMIT_EXCEEDED,
                 message: 'You’ve exceeded the service limit. Upgrade your plan to add more services.'
             });
         }

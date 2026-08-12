@@ -1,34 +1,37 @@
 import { PricingUnitType } from "@core/entities/interfaces/provider-service.entity.interface";
 import { PartialType } from "@nestjs/mapped-types";
-import { IsBoolean, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from "class-validator";
+import { IsBoolean, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, MaxLength, Min, MinLength } from "class-validator";
 import { Type, Transform } from 'class-transformer';
 
 export class CreateProviderServiceDto {
     @IsString()
-    @IsNotEmpty()
+    @IsNotEmpty({ message: 'Please select a profession.' })
     professionId: string;
 
     @IsString()
-    @IsNotEmpty()
+    @IsNotEmpty({ message: 'Please select a service category.' })
     categoryId: string;
 
     @IsString()
-    @IsNotEmpty()
+    @IsNotEmpty({ message: 'Description is required.' })
+    @MinLength(20, { message: 'Description must be at least 20 characters.' })
+    @MaxLength(2000, { message: 'Description must be at most 2000 characters.' })
     description: string;
 
     @Type(() => Number)
-    @IsNumber()
-    @IsNotEmpty()
+    @IsNumber({}, { message: 'Price must be a number.' })
+    @Min(0, { message: 'Price must be 0 or greater.' })
+    @IsNotEmpty({ message: 'Price is required.' })
     price: number;
 
-    @IsIn(['hour', 'day'])
-    @IsNotEmpty()
+    @IsIn(['hour', 'day'], { message: 'Pricing unit must be either hour or day.' })
+    @IsNotEmpty({ message: 'Pricing unit is required.' })
     pricingUnit: PricingUnitType;
 
     @Type(() => Number)
-    @IsNumber()
-    @Min(1)
-    @IsNotEmpty()
+    @IsNumber({}, { message: 'Duration must be a number.' })
+    @Min(1, { message: 'Duration must be at least 1 minute.' })
+    @IsNotEmpty({ message: 'Duration is required.' })
     estimatedTimeInMinutes: number;
 
     @Transform(({ value }) => {
@@ -36,8 +39,8 @@ export class CreateProviderServiceDto {
         if (value === 'false' || value === false) return false;
         return Boolean(value);
     })
-    @IsBoolean()
-    @IsNotEmpty()
+    @IsBoolean({ message: 'Active status must be true or false.' })
+    @IsNotEmpty({ message: 'Active status is required.' })
     isActive: boolean;
 }
 
