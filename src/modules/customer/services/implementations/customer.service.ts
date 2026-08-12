@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 
-import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, PROVIDER_SERVICE_REPOSITORY_NAME, SERVICE_CATEGORY_REPOSITORY_NAME } from '@core/constants/repository.constant';
+import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, PROVIDER_SERVICE_REPOSITORY_NAME, SERVICE_CATEGORY_REPOSITORY_NAME, SUBSCRIPTION_REPOSITORY_NAME } from '@core/constants/repository.constant';
 import { ARGON_UTILITY_NAME, UPLOAD_UTILITY_NAME } from '@core/constants/utility.constant';
 import { ICustomerSearchCategories } from '@core/entities/interfaces/service.entity.interface';
 import { ICustomer, ISearchedProviders, IUpdateProfileData } from '@core/entities/interfaces/user.entity.interface';
@@ -25,6 +25,7 @@ import { IProviderServiceRepository } from '@core/repositories/interfaces/provid
 import { IServiceCategoryRepository } from '@core/repositories/interfaces/service-category-repo.interface';
 import { IServiceCategoryMapper } from '@core/dto-mapper/interface/service-category.mapper.interface';
 import { CustomerDocument } from '@core/schema/customer.schema';
+import { ISubscriptionRepository } from '@core/repositories/interfaces/subscription-repo.interface';
 
 @Injectable()
 export class CustomerService implements ICustomerService {
@@ -49,6 +50,8 @@ export class CustomerService implements ICustomerService {
         private readonly _serviceCategoryRepository: IServiceCategoryRepository,
         @Inject(SERVICE_CATEGORY_MAPPER)
         private readonly _serviceCategoryMapper: IServiceCategoryMapper,
+        @Inject(SUBSCRIPTION_REPOSITORY_NAME)
+        private readonly _subscriptionRepository: ISubscriptionRepository,
     ) {
         this.logger = this.loggerFactory.createLogger(CustomerService.name);
     }
@@ -90,7 +93,10 @@ export class CustomerService implements ICustomerService {
 
         if (search) {
             const regex = new RegExp(search, 'i');
-            const providers = await this._providerRepository.find({ address: regex });
+            const providers = await this._providerRepository.find(
+                { address: regex },
+                { sort: { createdAt: -1 } }
+            );
 
             result = providers.map(prov => ({
                 id: prov.id,
@@ -98,6 +104,25 @@ export class CustomerService implements ICustomerService {
                 name: prov?.fullname ?? prov.username,
                 address: prov?.address ?? ''
             }));
+
+            const activeSubs = await this._subscriptionRepository.findActiveByUserIds(result.map(r => r.id));
+
+            const priorityRank = new Map<string, number>();
+            for (const sub of activeSubs) {
+                const providerId = sub.userId.toString();
+                const priority = sub.features?.search_priority as string;
+                const rank = priority === 'high' ? 0 : priority === 'medium' ? 1 : priority === 'low' ? 2 : 3;
+                const current = priorityRank.get(providerId);
+                if (current === undefined || rank < current) {
+                    priorityRank.set(providerId, rank);
+                }
+            }
+
+            result = result.sort((a, b) => {
+                const rankA = priorityRank.get(a.id) ?? 3;
+                const rankB = priorityRank.get(b.id) ?? 3;
+                return rankA - rankB;
+            });
         }
 
         return {

@@ -135,6 +135,23 @@ export class SubscriptionRepository extends BaseRepository<SubscriptionDocument>
         return await this._subscriptionModel.findOne({ _id: subscriptionId });
     }
 
+    async findActiveByUserIds(userIds: string[]): Promise<SubscriptionDocument[]> {
+        if (!userIds.length) return [];
+        const now = new Date();
+
+        return await this._subscriptionModel.find(
+            {
+                userId: { $in: userIds.map(id => this._toObjectId(id)) },
+                role: 'provider',
+                isActive: true,
+                isDeleted: false,
+                paymentStatus: PaymentStatus.PAID,
+                startTime: { $lte: now },
+                endDate: { $gte: now }
+            }
+        );
+    }
+
     async findLatestSubscriptionByUserId(userId: string, userType: string): Promise<SubscriptionDocument | null> {
         return await this._subscriptionModel.findOne(
             {
