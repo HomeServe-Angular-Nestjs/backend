@@ -8,9 +8,9 @@ import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData,
 import { IDisputeAnalytics } from "@core/entities/interfaces/report.entity.interface";
 import { RevenueChartViewDto } from "@modules/providers/dtos/analytics.dto";
 import { IRevenueMonthlyGrowthRateData, IRevenueTrendData, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData, ILocationRevenue, ITopAreaRevenue, IUnderperformingArea, IPeakServiceTime, IAreaAnalyticsBundle } from "@core/entities/interfaces/booking.entity.interface";
-import { SubscriptionGuard } from "@core/guards/subscription.guard";
+import { AnalyticsGuard } from "@core/guards/analytics.guard";
 
-@UseGuards(SubscriptionGuard)
+@UseGuards(AnalyticsGuard)
 @Controller('analytics')
 export class AnalyticsController {
     constructor(

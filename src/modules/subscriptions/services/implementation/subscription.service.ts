@@ -78,7 +78,16 @@ export class SubscriptionService implements ISubscriptionService {
         today.setHours(0, 0, 0, 0);
 
         const msInDay = 1000 * 60 * 60 * 24;
-        const daysUsed = Math.max(Math.floor((today.getTime() - startDate.getTime()) / msInDay), 0);
+
+        // Actual length of the current billing month (start date → same day next month).
+        const nextMonthStart = new Date(startDate);
+        nextMonthStart.setMonth(nextMonthStart.getMonth() + 1);
+        const totalDaysInMonth = Math.round((nextMonthStart.getTime() - startDate.getTime()) / msInDay);
+
+        const daysUsed = Math.min(
+            Math.max(Math.floor((today.getTime() - startDate.getTime()) / msInDay), 0),
+            totalDaysInMonth
+        );
 
         let creditAmount: number;
 
@@ -87,13 +96,16 @@ export class SubscriptionService implements ISubscriptionService {
             creditAmount = monthlyPrice;
         } else {
             // after 7 days, credit only unused portion
-            const totalDaysInMonth = 30;
             const unusedDays = Math.max(totalDaysInMonth - daysUsed, 0);
             const perDayPrice = monthlyPrice / totalDaysInMonth;
             creditAmount = unusedDays * perDayPrice;
         }
 
-        const upgradeAmount = Math.floor(yearlyPrice - creditAmount);
+        // never credit more than what was paid for the current month
+        creditAmount = Math.min(creditAmount, monthlyPrice);
+        creditAmount = Math.round(creditAmount * 100) / 100;
+
+        const upgradeAmount = Math.max(Math.floor(yearlyPrice - creditAmount), 0);
 
         return {
             upgradeAmount,
@@ -115,6 +127,10 @@ export class SubscriptionService implements ISubscriptionService {
 
             case PlanDurationEnum.Yearly:
                 endDate.setFullYear(endDate.getFullYear() + 1);
+                break;
+
+            case PlanDurationEnum.FreeTier:
+                endDate.setFullYear(endDate.getFullYear() + 100);
                 break;
 
             default:
@@ -173,6 +189,8 @@ export class SubscriptionService implements ISubscriptionService {
 
             const { endDate, startTime } = this._getSubscriptionEndDateAndStartDate(plan.duration)
 
+            const isFreeTier = plan.duration === PlanDurationEnum.FreeTier;
+
             const newSubscription = await this._subscriptionRepository.create(
                 this._subscriptionMapper.toDocument({
                     userId,
@@ -182,10 +200,10 @@ export class SubscriptionService implements ISubscriptionService {
                     price: plan.price,
                     duration: createSubscriptionDto.duration,
                     features: plan.features,
-                    isActive: false,
+                    isActive: isFreeTier,
                     isDeleted: false,
                     transactionHistory: [],
-                    paymentStatus: PaymentStatus.UNPAID,
+                    paymentStatus: isFreeTier ? PaymentStatus.PAID : PaymentStatus.UNPAID,
                     cancelledAt: null,
                     startTime,
                     endDate,
@@ -197,6 +215,10 @@ export class SubscriptionService implements ISubscriptionService {
                     code: ErrorCodes.INTERNAL_SERVER_ERROR,
                     message: 'Failed to create the subscription.'
                 });
+            }
+
+            if (isFreeTier) {
+                await this._isUpdatedUserSubscriptionStatus(userId, userType, String(newSubscription._id));
             }
 
             return {

@@ -84,4 +84,17 @@ export class AdminSettingsRepository extends BaseRepository<AdminSettingsDocumen
 
         return settings.providerCommission;
     }
+
+    async getDefaultServiceLimit(): Promise<number> {
+        const settings = await this._settingsModel.findOne().lean();
+        if (!settings || typeof settings.defaultServiceLimit !== 'number') {
+            this.logger.error('Failed to get settings or invalid default service limit value.');
+            throw new NotFoundException({
+                code: ErrorCodes.NOT_FOUND,
+                message: 'Failed to get the default service limit.'
+            });
+        }
+
+        return settings.defaultServiceLimit;
+    }
 }

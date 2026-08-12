@@ -29,15 +29,16 @@ export class PlanRepository extends BaseRepository<PlanDocument> implements IPla
         return this._planModel.findOneAndUpdate({ _id: planId }, updateData, options);
     }
 
-    async isPlanExists(filter: { role: string, name: string }): Promise<boolean> {
+    async isPlanExists(filter: { role: string, name: string }, excludeId?: string): Promise<boolean> {
         return !!(await this._planModel.exists({
             role: filter.role,
             name: filter.name,
+            ...(excludeId ? { _id: { $ne: excludeId } } : {}),
         }));
     }
 
     async findFreePlan(): Promise<PlanDocument | null> {
-        return await this._planModel.findOne({ duration: PlanDurationEnum.Lifetime });
+        return await this._planModel.findOne({ duration: PlanDurationEnum.FreeTier });
     }
 
     async deletePlan(planId: string): Promise<boolean> {

@@ -1,7 +1,7 @@
-import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Put, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Query } from '@nestjs/common';
 import { IResponse } from '@core/misc/response.util';
 import { PLAN_SERVICE_NAME } from '@core/constants/service.constant';
-import { IPlan } from '@core/entities/interfaces/plans.entity.interface';
+import { IPlan, PlanFeatures } from '@core/entities/interfaces/plans.entity.interface';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { GetOnePlanDto, SavePlanDto, UpdatePlanDto, UpdatePlanStatusDto } from '@modules/plans/dto/plans.dto';
@@ -26,6 +26,11 @@ export class PlanController {
         return await this._planService.fetchPlans();
     }
 
+    @Get('free-tier-defaults')
+    async getFreeTierDefaults(): Promise<IResponse<{ price: number; features: PlanFeatures }>> {
+        return await this._planService.getFreeTierDefaults();
+    }
+
     @Post('save')
     async savePlan(@Body() savePlanDto: SavePlanDto): Promise<IResponse<IPlan>> {
         return await this._planService.createPlan(savePlanDto);
@@ -41,7 +46,7 @@ export class PlanController {
         return await this._planService.updateStatus(updatePlanDto);
     }
 
-    @Put('update')
+    @Patch('update')
     async updatePlan(@Body() updatePlanDto: UpdatePlanDto): Promise<IResponse<IPlan>> {
         return await this._planService.updatePlan(updatePlanDto);
     }

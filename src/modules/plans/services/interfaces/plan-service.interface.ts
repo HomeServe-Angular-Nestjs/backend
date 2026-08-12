@@ -1,4 +1,4 @@
-import { IPlan } from '@core/entities/interfaces/plans.entity.interface';
+import { IPlan, PlanFeatures } from '@core/entities/interfaces/plans.entity.interface';
 import { IResponse } from '@core/misc/response.util';
 import { GetOnePlanDto, SavePlanDto, UpdatePlanDto, UpdatePlanStatusDto } from '@modules/plans/dto/plans.dto';
 
@@ -9,4 +9,5 @@ export interface IPlanService {
     updateStatus(updatePlan: UpdatePlanStatusDto): Promise<IResponse>;
     updatePlan(updatePlanData: UpdatePlanDto): Promise<IResponse<IPlan>>;
     deletePlan(planId: string): Promise<IResponse>;
+    getFreeTierDefaults(): Promise<IResponse<{ price: number; features: PlanFeatures }>>;
 }

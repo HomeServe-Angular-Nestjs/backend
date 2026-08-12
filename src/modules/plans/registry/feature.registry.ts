@@ -1,5 +1,7 @@
 import { FeatureDefinition } from "@core/entities/interfaces/plans.entity.interface";
 
+export const SERVICE_LISTING_UNLIMITED = -1;
+
 export const FEATURE_REGISTRY: Readonly<Record<string, FeatureDefinition>> =
     Object.freeze({
         BASIC_SUPPORT: {

@@ -1,9 +1,10 @@
 import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { PLAN_REPOSITORY_INTERFACE_NAME } from '@core/constants/repository.constant';
+import { ADMIN_SETTINGS_REPOSITORY_NAME, PLAN_REPOSITORY_INTERFACE_NAME } from '@core/constants/repository.constant';
 import { IPlan, PlanFeatures } from '@core/entities/interfaces/plans.entity.interface';
 import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
 import { IResponse } from '@core/misc/response.util';
 import { IPlanRepository } from '@core/repositories/interfaces/plans-repo.interface';
+import { IAdminSettingsRepository } from '@core/repositories/interfaces/admin-settings-repo.interface';
 import { GetOnePlanDto, SavePlanDto, UpdatePlanDto, UpdatePlanStatusDto } from '@modules/plans/dto/plans.dto';
 import { IPlanService } from '@modules/plans/services/interfaces/plan-service.interface';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
@@ -11,6 +12,7 @@ import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-fa
 import { PLAN_MAPPER } from '@core/constants/mappers.constant';
 import { IPlanMapper } from '@core/dto-mapper/interface/plan.mapper.interface';
 import { FEATURE_REGISTRY } from '@modules/plans/registry/feature.registry';
+import { PlanDurationEnum } from '@core/enum/subscription.enum';
 
 @Injectable()
 export class PlanService implements IPlanService {
@@ -21,6 +23,8 @@ export class PlanService implements IPlanService {
         private readonly loggerFactory: ILoggerFactory,
         @Inject(PLAN_REPOSITORY_INTERFACE_NAME)
         private readonly _planRepository: IPlanRepository,
+        @Inject(ADMIN_SETTINGS_REPOSITORY_NAME)
+        private readonly _settingsRepository: IAdminSettingsRepository,
         @Inject(PLAN_MAPPER)
         private readonly _planMapper: IPlanMapper
     ) {
@@ -57,10 +61,10 @@ export class PlanService implements IPlanService {
                     break;
 
                 case 'number':
-                    if (typeof value !== 'number') {
+                    if (typeof value !== 'number' || !Number.isInteger(value) || (value < 1 && value !== -1)) {
                         throw new BadRequestException({
                             code: ErrorCodes.BAD_REQUEST,
-                            message: `"${key}" must be number`
+                            message: `"${key}" must be a positive integer or -1 for unlimited`
                         });
                     }
                     break;
@@ -77,6 +81,41 @@ export class PlanService implements IPlanService {
         }
     }
 
+    private async _applyFreeTierDefaults(planData: { name?: string; price?: number; duration?: PlanDurationEnum; features?: PlanFeatures }): Promise<void> {
+        if (planData.duration !== PlanDurationEnum.FreeTier) {
+            return;
+        }
+
+        const defaultServiceLimit = await this._settingsRepository.getDefaultServiceLimit();
+
+        planData.name = 'Free Tier';
+        planData.price = 0;
+        planData.features = {
+            [FEATURE_REGISTRY.BASIC_SUPPORT.key]: true,
+            [FEATURE_REGISTRY.SERVICE_LISTING_LIMIT.key]: defaultServiceLimit,
+            [FEATURE_REGISTRY.ANALYTICS_DASHBOARD.key]: false,
+            [FEATURE_REGISTRY.SEARCH_PRIORITY.key]: 'low',
+        };
+    }
+
+    async getFreeTierDefaults(): Promise<IResponse<{ price: number; features: PlanFeatures }>> {
+        const defaultServiceLimit = await this._settingsRepository.getDefaultServiceLimit();
+
+        return {
+            success: true,
+            message: 'Free tier defaults fetched successfully.',
+            data: {
+                price: 0,
+                features: {
+                    [FEATURE_REGISTRY.BASIC_SUPPORT.key]: true,
+                    [FEATURE_REGISTRY.SERVICE_LISTING_LIMIT.key]: defaultServiceLimit,
+                    [FEATURE_REGISTRY.ANALYTICS_DASHBOARD.key]: false,
+                    [FEATURE_REGISTRY.SEARCH_PRIORITY.key]: 'low',
+                }
+            }
+        };
+    }
+
     async createPlan(createPlanDto: SavePlanDto): Promise<IResponse<IPlan>> {
         this._validateFeature(createPlanDto.features);
 
@@ -91,6 +130,8 @@ export class PlanService implements IPlanService {
                 message: ErrorMessage.PLAN_ALREADY_EXISTS
             });
         }
+
+        await this._applyFreeTierDefaults(createPlanDto);
 
         const plan = this._planMapper.toDocument({
             name: createPlanDto.name,
@@ -179,7 +220,7 @@ export class PlanService implements IPlanService {
         const isAlreadyExists = await this._planRepository.isPlanExists({
             name: updatePlanData.name,
             role: updatePlanData.role
-        });
+        }, updatePlanDto.id);
 
         if (isAlreadyExists) {
             throw new ConflictException({
@@ -187,6 +228,8 @@ export class PlanService implements IPlanService {
                 message: ErrorMessage.PLAN_ALREADY_EXISTS
             });
         }
+
+        await this._applyFreeTierDefaults(updatePlanData);
 
         const updatedPlan = await this._planRepository.updatePlanByPlanId(
             planId,

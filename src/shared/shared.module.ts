@@ -5,15 +5,17 @@ import {
 } from '@core/constants/mappers.constant';
 import { SUBSCRIPTION_REPOSITORY_NAME } from '@core/constants/repository.constant';
 import { SubscriptionGuard } from '@core/guards/subscription.guard';
+import { AnalyticsGuard } from '@core/guards/analytics.guard';
 import { CUSTOM_LOGGER } from '@core/logger/interface/custom-logger.interface';
 import { LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { Module } from '@nestjs/common';
 import { sharedProviders } from '@shared/shared.provider';
 
 @Module({
-    providers: [...sharedProviders, SubscriptionGuard],
+    providers: [...sharedProviders, SubscriptionGuard, AnalyticsGuard],
     exports: [
         SubscriptionGuard,
+        AnalyticsGuard,
         CUSTOM_LOGGER,
         LOGGER_FACTORY,
         ADMIN_MAPPER,

@@ -15,6 +15,7 @@ export class AdminSettingsMapper implements IAdminSettingMapper {
             customerCommission: doc.customerCommission,
             cancellationFee: doc.cancellationFee,
             providerCancellationFine: doc.providerCancellationFine,
+            defaultServiceLimit: doc.defaultServiceLimit,
         });
     }
 
@@ -25,6 +26,7 @@ export class AdminSettingsMapper implements IAdminSettingMapper {
             customerCommission: entity.customerCommission,
             cancellationFee: entity.cancellationFee,
             providerCancellationFine: entity.providerCancellationFine,
+            defaultServiceLimit: entity.defaultServiceLimit,
         }
     }
 }

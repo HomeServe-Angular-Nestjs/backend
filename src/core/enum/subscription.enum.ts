@@ -16,5 +16,5 @@ export enum RenewalEnum {
 export enum PlanDurationEnum {
     Monthly = 'monthly',
     Yearly = 'yearly',
-    Lifetime = 'lifetime',
+    FreeTier = 'freetier',
 }
