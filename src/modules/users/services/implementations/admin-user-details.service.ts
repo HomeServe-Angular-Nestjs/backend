@@ -174,7 +174,6 @@ export class AdminUserDetailsService implements IAdminUserDetailsService {
                 label: doc.label,
                 fileUrl: this._uploadUtility.getSignedImageUrl(doc.fileUrl),
                 uploadedAt: doc.uploadedAt,
-                verificationStatus: doc.verificationStatus,
             }));
 
         const avgRating = avgRatingResult?.[0]?.avgRating ?? 0;

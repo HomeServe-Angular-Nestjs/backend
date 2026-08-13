@@ -40,6 +40,7 @@ export enum ErrorMessage {
     MUST_BE_STRING = 'must be a string',
     SHOULD_NOT_BE_EMPTY = 'should not be empty',
     FORBIDDEN_ACTION = 'You are not allowed to perform this action',
+    NO_DOCUMENTS_TO_VERIFY = 'Provider has no submitted documents to verify.',
     USER_BLOCKED = 'You are blocked by the admin.',
     INTERNAL_SERVER_ERROR = 'An unexpected error occurred. Please try again later',
     SOCKET_CONNECTION_REJECTED = 'Socket connection rejected: ',

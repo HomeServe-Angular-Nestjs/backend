@@ -7,7 +7,7 @@ import { IProviderRepository } from '@core/repositories/interfaces/provider-repo
 import { ProviderDocument } from '@core/schema/provider.schema';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Availability, IFilterFetchProviders } from '@core/entities/interfaces/user.entity.interface';
+import { Availability, IFilterFetchProviders, VerificationStatusType } from '@core/entities/interfaces/user.entity.interface';
 
 @Injectable()
 export class ProviderRepository extends BaseRepository<ProviderDocument> implements IProviderRepository {
@@ -407,5 +407,20 @@ export class ProviderRepository extends BaseRepository<ProviderDocument> impleme
       .select('bufferTime')
       .lean();
     return provider?.bufferTime ?? 0;
+  }
+
+  async hasSubmittedDocuments(providerId: string): Promise<boolean> {
+    const provider = await this._providerModel.findById(providerId)
+      .select('docs')
+      .lean();
+    return !!provider && (provider.docs ?? []).some(doc => !doc.isDeleted);
+  }
+
+  async updateVerificationStatus(providerId: string, status: VerificationStatusType): Promise<ProviderDocument | null> {
+    return await this._providerModel.findOneAndUpdate(
+      { _id: providerId },
+      { $set: { verificationStatus: status } },
+      { new: true }
+    );
   }
 }

@@ -8,6 +8,10 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { IAdminApprovalService } from '../interfaces/admin-approval-service.interface';
 import { PROVIDER_MAPPER } from '@core/constants/mappers.constant';
 import { IProviderMapper } from '@core/dto-mapper/interface/provider.mapper.interface';
+import { UPLOAD_UTILITY_NAME } from '@core/constants/utility.constant';
+import { IUploadsUtility } from '@core/utilities/interface/upload.utility.interface';
+import { BadRequestException } from '@nestjs/common';
+import { ErrorMessage } from '@core/enum/error.enum';
 
 @Injectable()
 export class AdminApprovalService implements IAdminApprovalService {
@@ -16,7 +20,9 @@ export class AdminApprovalService implements IAdminApprovalService {
         @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
         private readonly _providerRepository: IProviderRepository,
         @Inject(PROVIDER_MAPPER)
-        private readonly _providerMapper: IProviderMapper
+        private readonly _providerMapper: IProviderMapper,
+        @Inject(UPLOAD_UTILITY_NAME)
+        private readonly _uploadUtility: IUploadsUtility
     ) { }
 
     async fetchApprovalOverviewDetails(): Promise<IResponse<IApprovalOverviewData>> {
@@ -74,7 +80,7 @@ export class AdminApprovalService implements IAdminApprovalService {
 
         const tableData: IApprovalTableDetails[] = providers.map(provider => ({
             id: provider.id,
-            avatar: provider.avatar,
+            avatar: provider.avatar ? this._uploadUtility.getSignedImageUrl(provider.avatar) : '',
             date: provider.createdAt as Date,
             documentCount: provider.docs.length,
             email: provider.email,
@@ -90,11 +96,14 @@ export class AdminApprovalService implements IAdminApprovalService {
     }
 
     async updateProviderVerification(providerId: string, status: VerificationStatusType): Promise<IResponse<boolean>> {
-        const updated = await this._providerRepository.findOneAndUpdate(
-            { _id: providerId },
-            { $set: { verificationStatus: status } },
-            { new: true }
-        );
+        if (status !== 'pending' && !(await this._providerRepository.hasSubmittedDocuments(providerId))) {
+            throw new BadRequestException({
+                code: ErrorCodes.BAD_REQUEST,
+                message: ErrorMessage.NO_DOCUMENTS_TO_VERIFY,
+            });
+        }
+
+        const updated = await this._providerRepository.updateVerificationStatus(providerId, status);
 
         if (!updated) {
             throw new NotFoundException({

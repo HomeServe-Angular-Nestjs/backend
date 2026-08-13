@@ -61,8 +61,6 @@ export interface IDoc {
   label: string;
   fileUrl: string;
   uploadedAt: Date;
-  verificationStatus: VerificationStatusType;
-  verifiedAt?: Date;
   isDeleted: boolean
 };
 

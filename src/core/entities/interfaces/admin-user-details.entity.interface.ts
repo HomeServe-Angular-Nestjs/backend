@@ -115,7 +115,6 @@ export interface IDocumentDetail {
   label: string;
   fileUrl: string;
   uploadedAt: Date | string;
-  verificationStatus: VerificationStatusType;
 }
 
 export interface IProviderDetailsProfile extends ICustomerDetailsProfile {

@@ -47,8 +47,6 @@ export class ProviderMapper implements IProviderMapper {
                 isDeleted: d.isDeleted,
                 label: d.label,
                 uploadedAt: d.uploadedAt,
-                verificationStatus: d.verificationStatus,
-                verifiedAt: d.verifiedAt
             })),
             // ratingCount: doc.ratingCount,
             // avgRating: doc.avgRating,

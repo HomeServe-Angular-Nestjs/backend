@@ -55,12 +55,6 @@ export class ProviderDocument extends BaseUserDocument {
         label: { type: String },
         fileUrl: { type: String },
         uploadedAt: { type: Date },
-        verificationStatus: {
-          type: String,
-          enum: ['pending', 'verified', 'rejected'],
-          default: 'pending'
-        },
-        verifiedAt: { type: Date },
         isDeleted: { type: Boolean, default: false }
       }
     ]
