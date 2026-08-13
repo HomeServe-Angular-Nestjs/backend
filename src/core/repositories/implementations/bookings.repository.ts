@@ -381,7 +381,7 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
     }
 
     async getTopProviders(): Promise<ITopProviders[]> {
-        const result = await this._bookingModel.aggregate([
+const result = await this._bookingModel.aggregate([
             {
                 $match: {
                     bookingStatus: { $ne: 'cancelled' },
@@ -1385,7 +1385,7 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                                 _id: { providerId: "$providerId", month: "$month" },
                                 totalCompleted: { $sum: 1 },
                                 avgRating: { $avg: "$rating" },
-                                revenue: { $sum: "$totalAmount" }
+                                revenue: { $sum: { $divide: ["$totalAmount", 100] } }
                             }
                         },
                         { $sort: { "_id.providerId": 1, "_id.month": 1 } },
@@ -1445,7 +1445,7 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                         {
                             $group: {
                                 _id: { $month: "$createdAt" },
-                                totalRevenue: { $sum: "$totalAmount" }
+totalRevenue: { $sum: { $divide: ["$totalAmount", 100] } }
                             }
                         },
                         { $sort: { _id: -1 } },
@@ -1629,17 +1629,17 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
             {
                 $group: {
                     _id: null,
-                    totalRevenue: { $sum: "$totalAmount" },
+                    totalRevenue: { $sum: { $divide: ["$totalAmount", 100] } },
                     currentPeriodRevenue: {
                         $sum: {
-                            $cond: [{ $eq: [{ $month: "$createdAt" }, new Date().getMonth() + 1] }, "$totalAmount", 0]
+                            $cond: [{ $eq: [{ $month: "$createdAt" }, new Date().getMonth() + 1] }, { $divide: ["$totalAmount", 100] }, 0]
                         }
                     },
                     previousPeriodRevenue: {
                         $sum: {
                             $cond: [
                                 { $eq: [{ $month: "$createdAt" }, new Date().getMonth() === 0 ? 12 : new Date().getMonth()] },
-                                "$totalAmount", 0
+                                { $divide: ["$totalAmount", 100] }, 0
                             ]
                         }
                     },
@@ -1720,7 +1720,7 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                 $facet: {
                     providerRevenue: [
                         { $match: { ...matchStage, providerId: this._toObjectId(providerId) } },
-                        { $group: { _id: getGroupId(), totalRevenue: { $sum: "$totalAmount" } } },
+                        { $group: { _id: getGroupId(), totalRevenue: { $sum: { $divide: ["$totalAmount", 100] } } } },
                         {
                             $sort: view === 'monthly' ? { "_id.month": 1 } :
                                 view === 'quarterly' ? { "_id.quarter": 1 } :
@@ -1734,7 +1734,7 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                                 providerId: { $ne: this._toObjectId(providerId) }
                             }
                         },
-                        { $group: { _id: getGroupId(), totalRevenue: { $avg: "$totalAmount" } } },
+                        { $group: { _id: getGroupId(), totalRevenue: { $avg: { $divide: ["$totalAmount", 100] } } } },
                         {
                             $sort: view === 'monthly' ? { "_id.month": 1 } :
                                 view === 'quarterly' ? { "_id.quarter": 1 } :
@@ -1781,7 +1781,7 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
             {
                 $group: {
                     _id: { month: { $month: "$createdAt" } },
-                    totalRevenue: { $sum: "$totalAmount" }
+                    totalRevenue: { $sum: { $divide: ["$totalAmount", 100] } }
                 }
             },
             { $sort: { "_id.month": 1 } },
@@ -1863,7 +1863,7 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
             {
                 $group: {
                     _id: "$categoryDetails.name",
-                    totalRevenue: { $sum: "$totalAmount" }
+                    totalRevenue: { $sum: { $divide: ["$totalAmount", 100] } }
                 }
             },
             {
@@ -1901,7 +1901,7 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
             {
                 $group: {
                     _id: "$professionDetails.name",
-                    revenue: { $sum: "$totalAmount" },
+                    revenue: { $sum: { $divide: ["$totalAmount", 100] } },
                     totalBookings: { $sum: 1 },
                 }
             },
@@ -2025,7 +2025,8 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
             {
                 $match: {
                     providerId: this._toObjectId(providerId),
-                    bookingStatus: BookingStatus.COMPLETED
+                    bookingStatus: BookingStatus.COMPLETED,
+                    'location.address': { $exists: true, $type: 'string', $nin: ['', null] }
                 }
             },
             {
@@ -2191,7 +2192,7 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                         year: "$year",
                         month: "$month"
                     },
-                    totalRevenue: { $sum: "$totalAmount" }
+                    totalRevenue: { $sum: { $divide: ["$totalAmount", 100] } }
                 }
             },
             {
@@ -2310,7 +2311,7 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
             {
                 $group: {
                     _id: { locationName: '$location.address', month: '$month', year: '$year' },
-                    totalRevenue: { $sum: '$totalAmount' }
+                    totalRevenue: { $sum: { $divide: ['$totalAmount', 100] } }
                 }
             },
             {
@@ -2437,7 +2438,7 @@ export class BookingRepository extends BaseRepository<BookingDocument> implement
                         month: { $month: '$createdAt' },
                         year: { $year: '$createdAt' }
                     },
-                    totalRevenue: { $sum: '$totalAmount' }
+                    totalRevenue: { $sum: { $divide: ['$totalAmount', 100] } }
                 }
             },
             {

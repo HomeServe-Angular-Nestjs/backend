@@ -6,7 +6,7 @@ import { Request } from "express";
 import { IPayload } from "@core/misc/payload.interface";
 import { IPerformanceAnalyticsBundle, IRevenueAnalyticsBundle } from "@core/entities/interfaces/user.entity.interface";
 import { RevenueChartViewDto } from "@modules/providers/dtos/analytics.dto";
-import { IAreaAnalyticsBundle } from "@core/entities/interfaces/booking.entity.interface";
+import { IAreaAnalyticsBundle, IRevenueTrendData } from "@core/entities/interfaces/booking.entity.interface";
 import { AnalyticsGuard } from "@core/guards/analytics.guard";
 
 @UseGuards(AnalyticsGuard)
@@ -27,6 +27,12 @@ export class AnalyticsController {
     async getRevenueBundle(@Req() req: Request, @Query() { view }: RevenueChartViewDto): Promise<IResponse<IRevenueAnalyticsBundle>> {
         const user = req.user as IPayload;
         return await this._analyticService.getRevenueBundle(user.sub, view);
+    }
+
+    @Get('revenue/trend')
+    async getRevenueTrend(@Req() req: Request, @Query() { view }: RevenueChartViewDto): Promise<IResponse<IRevenueTrendData>> {
+        const user = req.user as IPayload;
+        return await this._analyticService.getRevenueTrendOverTime(user.sub, view);
     }
 
     @Get('area')
