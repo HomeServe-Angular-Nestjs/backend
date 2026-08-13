@@ -1,5 +1,5 @@
 import { FilterQuery, Types } from 'mongoose';
-import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData, ILocationRevenue, ITopAreaRevenue, IUnderperformingArea, IPeakServiceTime, IRevenueBreakdown, IBookingsBreakdown, IReviewDetailsRaw, IReviewFilter, IAdminBookingFilter, IAdminBookingList, ISlot, IBookedSlot, IProviderBookingLists } from '@core/entities/interfaces/booking.entity.interface';
+import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData, ILocationRevenue, ITopAreaRevenue, IUnderperformingArea, IPeakServiceTime, IRevenueBreakdown, IBookingsBreakdown, IReviewDetailsRaw, IReviewFilter, IAdminBookingFilter, IAdminBookingList, ISlot, IBookedSlot, IProviderBookingLists, IUpcomingBooking } from '@core/entities/interfaces/booking.entity.interface';
 import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderRevenueOverview, IResponseTimeChartData, IReviewFilters, ITopProviders, ITotalReviewAndAvgRating, PaginatedReviewResponse } from '@core/entities/interfaces/user.entity.interface';
 import { IBaseRepository } from '@core/repositories/base/interfaces/base-repo.interface';
 import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
@@ -40,6 +40,7 @@ export interface IBookingRepository extends IBaseRepository<BookingDocument> {
     getProviderStatistics(id: string): Promise<IProviderStatistics>;
     getRecentBookingsByCustomer(customerId: string, limit?: number): Promise<IBookingOverview[]>;
     getRecentBookingsByProvider(providerId: string, limit?: number): Promise<IBookingOverview[]>;
+    getUpcomingBookings(providerId: string, limit?: number): Promise<IUpcomingBooking[]>;
     getRecentReviewsByCustomer(customerId: string, limit?: number): Promise<IReviewOverview[]>;
     getRecentReviewsByProvider(providerId: string, limit?: number): Promise<IReviewOverview[]>;
     getServiceBookingCounts(providerId: string): Promise<{ serviceId: string; count: number }[]>;

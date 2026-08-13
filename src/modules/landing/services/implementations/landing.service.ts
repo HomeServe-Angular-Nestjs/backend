@@ -27,7 +27,7 @@ export class LandingService implements ILandingService {
         const providers = featuredProviders.map(provider => ({
             ...provider,
             avatar: provider.avatar
-                ? this._uploadsUtility.getSignedImageUrl(provider.avatar, 5)
+                ? this._uploadsUtility.getSignedImageUrl(provider.avatar)
                 : '',
         }));
 

@@ -66,7 +66,7 @@ export class UploadsUtility implements IUploadsUtility {
     }
   }
 
-  getSignedImageUrl(publicId: string, expiresIn: number = 300): string {
+  getSignedImageUrl(publicId: string, expiresIn: number = 31536000): string {
     if (!publicId || !publicId.trim()) return '';
 
     const googleDomains = [
