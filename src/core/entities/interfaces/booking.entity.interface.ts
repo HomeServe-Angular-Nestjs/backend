@@ -399,6 +399,23 @@ export interface IBookingsBreakdown {
     averageBookingValue: number;
 }
 
+export interface IUpcomingBooking {
+    bookingId: string;
+    amount: number;
+    status: BookingStatus;
+    slot: ISlot & { date: Date | string };
+    customer: {
+        id: string;
+        username: string;
+        fullname: string;
+        avatar: string;
+    };
+    service: {
+        name: string;
+        category: string;
+    };
+}
+
 export interface IReviewDetailsRaw {
     bookingId: string;
     desc: string;

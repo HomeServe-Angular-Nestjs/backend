@@ -2,7 +2,7 @@ import { FilterQuery, Model, PipelineStage, Types } from 'mongoose';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { BOOKINGS_MODEL_NAME } from '@core/constants/model.constant';
-import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData, ILocationRevenue, ITopAreaRevenue, IUnderperformingArea, IPeakServiceTime, IRevenueBreakdown, IBookingsBreakdown, IReviewDetailsRaw, IReviewFilter, IAdminBookingFilter, IAdminBookingList, ISlot, IBookedSlot, IProviderBookingLists } from '@core/entities/interfaces/booking.entity.interface';
+import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData, ILocationRevenue, ITopAreaRevenue, IUnderperformingArea, IPeakServiceTime, IRevenueBreakdown, IBookingsBreakdown, IReviewDetailsRaw, IReviewFilter, IAdminBookingFilter, IAdminBookingList, ISlot, IBookedSlot, IProviderBookingLists, IUpcomingBooking } from '@core/entities/interfaces/booking.entity.interface';
 import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderRevenueOverview, IResponseTimeChartData, IReviewFilters, ITopProviders, ITotalReviewAndAvgRating, PaginatedReviewResponse } from '@core/entities/interfaces/user.entity.interface';
 import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
 import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
@@ -2698,7 +2698,12 @@ totalRevenue: { $sum: { $divide: ["$totalAmount", 100] } }
             }
         ]);
 
-        return result[0]
+        return result?.[0] ?? {
+            totalBookings: 0,
+            upcomingBookings: 0,
+            cancelledBookings: 0,
+            averageBookingValue: 0,
+        }
     }
 
     async getBookingsCompletionRate(providerId: string): Promise<number> {
@@ -2842,6 +2847,98 @@ totalRevenue: { $sum: { $divide: ["$totalAmount", 100] } }
         ]);
 
         return result?.[0]?.slot;
+    }
+
+    async getUpcomingBookings(providerId: string, limit: number = 5): Promise<IUpcomingBooking[]> {
+        const providerObjId = this._toObjectId(providerId);
+
+        return this._bookingModel.aggregate<IUpcomingBooking>([
+            {
+                $match: {
+                    providerId: providerObjId,
+                    bookingStatus: {
+                        $in: [
+                            BookingStatus.PENDING,
+                            BookingStatus.CONFIRMED,
+                            BookingStatus.IN_PROGRESS,
+                        ]
+                    },
+                }
+            },
+            { $sort: { 'slot.date': 1, 'slot.from': 1 } },
+            { $limit: limit },
+            {
+                $lookup: {
+                    from: 'customers',
+                    localField: 'customerId',
+                    foreignField: '_id',
+                    as: 'customerDoc',
+                },
+            },
+            { $unwind: { path: '$customerDoc', preserveNullAndEmptyArrays: true } },
+            {
+                $lookup: {
+                    from: 'providerservices',
+                    localField: 'services',
+                    foreignField: '_id',
+                    as: 'serviceDocs',
+                },
+            },
+            {
+                $addFields: {
+                    firstService: { $arrayElemAt: ['$serviceDocs', 0] },
+                },
+            },
+            {
+                $lookup: {
+                    from: 'professions',
+                    let: { pid: '$firstService.professionId' },
+                    pipeline: [
+                        { $match: { $expr: { $eq: ['$_id', '$$pid'] } } },
+                        { $limit: 1 },
+                        { $project: { _id: 0, name: 1 } },
+                    ],
+                    as: 'serviceProfession',
+                },
+            },
+            { $unwind: { path: '$serviceProfession', preserveNullAndEmptyArrays: true } },
+            {
+                $lookup: {
+                    from: 'servicecategories',
+                    let: { cid: '$firstService.categoryId' },
+                    pipeline: [
+                        { $match: { $expr: { $eq: ['$_id', '$$cid'] } } },
+                        { $limit: 1 },
+                        { $project: { _id: 0, name: 1 } },
+                    ],
+                    as: 'serviceCategory',
+                },
+            },
+            { $unwind: { path: '$serviceCategory', preserveNullAndEmptyArrays: true } },
+            {
+                $project: {
+                    _id: 0,
+                    bookingId: { $toString: '$_id' },
+                    amount: { $divide: [{ $ifNull: ['$totalAmount', 0] }, 100] },
+                    status: '$bookingStatus',
+                    slot: {
+                        from: '$slot.from',
+                        to: '$slot.to',
+                        date: '$slot.date',
+                    },
+                    customer: {
+                        id: { $toString: '$customerDoc._id' },
+                        username: { $ifNull: ['$customerDoc.username', ''] },
+                        fullname: { $ifNull: ['$customerDoc.fullname', '$customerDoc.username'] },
+                        avatar: { $ifNull: ['$customerDoc.avatar', ''] },
+                    },
+                    service: {
+                        name: { $ifNull: ['$serviceProfession.name', ''] },
+                        category: { $ifNull: ['$serviceCategory.name', ''] },
+                    },
+                },
+            },
+        ]);
     }
 
     async getAdminReviews(filter: IReviewFilters): Promise<PaginatedReviewResponse> {

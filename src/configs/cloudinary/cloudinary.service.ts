@@ -73,7 +73,7 @@ export class CloudinaryService {
     return await this._cloudinary.uploader.destroy(publicId);
   }
 
-  generateSignedUrl(publicId: string, expiresIn = 300): string {
+  generateSignedUrl(publicId: string, expiresIn = 31536000): string {
     return this._cloudinary.url(publicId, {
       type: 'authenticated',
       sign_url: true,

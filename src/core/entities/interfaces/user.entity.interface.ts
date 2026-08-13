@@ -5,7 +5,8 @@ import { SlotType } from '../../../modules/bookings/dtos/booking.dto';
 import { IBaseUserEntity } from '../base/interfaces/base-user.entity.interface';
 import { IAdmin } from './admin.entity.interface';
 import { IDisputeAnalytics } from './report.entity.interface';
-import { IBookingsBreakdown, INewOrReturningClientData, IPagination, IRatingDistribution, IRecentReviews, IRevenueBreakdown, IRevenueCompositionData, IRevenueMonthlyGrowthRateData, IRevenueTrendData, IReview, ISlot, ITopServicesByRevenue } from './booking.entity.interface';
+import { IBookingsBreakdown, INewOrReturningClientData, IPagination, IRatingDistribution, IRecentReviews, IRevenueBreakdown, IRevenueCompositionData, IRevenueMonthlyGrowthRateData, IRevenueTrendData, IReview, ISlot, ITopServicesByRevenue, IUpcomingBooking } from './booking.entity.interface';
+import { IBookingOverview } from './admin-user-details.entity.interface';
 
 export type UserType = 'customer' | 'provider' | 'admin';
 export type ClientUserType = Exclude<UserType, 'admin'>;
@@ -323,4 +324,10 @@ export interface IProviderDashboardOverview {
   workingHours: Availability | null;
   nextAvailableSlot: ISlot & { date: Date | string } | null;
   activeServiceCount: number;
+  nextBooking: IUpcomingBooking | null;
+  upcomingBookingCount: number;
+  recentBookings: IBookingOverview[];
+  wallet: {
+    balance: number;
+  } | null;
 }

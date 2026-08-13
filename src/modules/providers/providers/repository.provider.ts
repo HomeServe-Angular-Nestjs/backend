@@ -1,12 +1,12 @@
 import {
   BOOKINGS_MODEL_NAME, CART_MODEL_NAME, CUSTOMER_MODEL_NAME, DATE_OVERRIDE_MODEL_NAME, PROVIDER_MODEL_NAME, PROVIDER_SERVICE_MODEL_NAME, REPORT_MODEL_NAME, SERVICE_OFFERED_MODEL_NAME,
-  WEEKLY_AVAILABILITY_MODEL_NAME, RESERVATION_MODEL_NAME, SERVICE_CATEGORY_MODEL_NAME
+  WEEKLY_AVAILABILITY_MODEL_NAME, RESERVATION_MODEL_NAME, SERVICE_CATEGORY_MODEL_NAME, WALLET_MODEL_NAME
 } from '@core/constants/model.constant';
 
 import {
   BOOKING_REPOSITORY_NAME, CART_REPOSITORY_NAME, DATE_OVERRIDES_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, PROVIDER_SERVICE_REPOSITORY_NAME,
   REPORT_REPOSITORY_NAME, SERVICE_OFFERED_REPOSITORY_NAME, WEEKLY_AVAILABILITY_REPOSITORY_INTERFACE_NAME, RESERVATION_REPOSITORY_NAME,
-  CUSTOMER_REPOSITORY_INTERFACE_NAME, SERVICE_CATEGORY_REPOSITORY_NAME
+  CUSTOMER_REPOSITORY_INTERFACE_NAME, SERVICE_CATEGORY_REPOSITORY_NAME, WALLET_REPOSITORY_NAME
 } from '@core/constants/repository.constant';
 
 import { Model } from 'mongoose';
@@ -34,6 +34,9 @@ import { ReservationRepository } from '@core/repositories/implementations/reserv
 import { CartDocument } from '@core/schema/cart.schema';
 import { ServiceCategoryDocument } from '@core/schema/service-category';
 import { ServiceCategoryRepository } from '@core/repositories/implementations/service-category.repository';
+import { WalletRepository } from '@core/repositories/implementations/wallet.repository';
+import { WalletDocument } from '@core/schema/wallet.schema';
+import { LoggerFactory } from '@core/logger/implementation/logger.factory';
 
 export const repositoryProviders: Provider[] = [
   {
@@ -101,5 +104,11 @@ export const repositoryProviders: Provider[] = [
     useFactory: (serviceCategoryModel: Model<ServiceCategoryDocument>) =>
       new ServiceCategoryRepository(serviceCategoryModel),
     inject: [getModelToken(SERVICE_CATEGORY_MODEL_NAME)]
+  },
+  {
+    provide: WALLET_REPOSITORY_NAME,
+    useFactory: (walletModel: Model<WalletDocument>) =>
+      new WalletRepository(new LoggerFactory(), walletModel),
+    inject: [getModelToken(WALLET_MODEL_NAME)]
   }
 ];
