@@ -1,5 +1,5 @@
-import { IEntity } from '../base/interfaces/base-entity.entity.interface';
-import { IPagination } from './booking.entity.interface';
+import type { IEntity } from '../base/interfaces/base-entity.entity.interface';
+import type { IPagination } from './booking.entity.interface';
 
 export interface ISubService {
   id?: string;

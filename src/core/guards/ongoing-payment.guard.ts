@@ -19,7 +19,7 @@ export class OngoingPaymentGuard implements CanActivate {
     this.logger = this._loggerFactory.createLogger(OngoingPaymentGuard.name);
   }
 
-  async canActivate(context: ExecutionContext,): Promise<boolean> {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
     const user = request.user as IPayload;
 

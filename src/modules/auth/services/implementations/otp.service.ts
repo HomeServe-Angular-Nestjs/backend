@@ -2,19 +2,11 @@ import { OTP_REPOSITORY_INTERFACE_NAME } from '@core/constants/repository.consta
 import { MAIL_SERVICE } from '@core/constants/service.constant';
 import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
-import {
-  ILoggerFactory,
-  LOGGER_FACTORY,
-} from '@core/logger/interface/logger-factory.interface';
+import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { IOtpRepository } from '@core/repositories/interfaces/otp-repo.interface';
 import { IMailService } from '@core/services/mail/mail.service.interface';
 import { IOtpService } from '@modules/auth/services/interfaces/otp-service.interface';
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  InternalServerErrorException,
-} from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
 
 @Injectable()
 export class OtpService implements IOtpService {
@@ -52,10 +44,7 @@ export class OtpService implements IOtpService {
     try {
       await this.mailService.sendEmail(email, code, 'otp');
     } catch (error) {
-      this.logger.error(
-        `Failed to send OTP email to ${email}.`,
-        error instanceof Error ? error.stack : String(error),
-      );
+      this.logger.error(`Failed to send OTP email to ${email}.`, error instanceof Error ? error.stack : String(error));
       throw error;
     }
   }

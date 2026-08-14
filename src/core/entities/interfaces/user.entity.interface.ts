@@ -1,12 +1,26 @@
-import { RatingSearchBy, RatingsSortBy } from '@core/enum/ratings.enum';
-import { AvailabilityEnum } from '@core/enum/slot.enum';
+import type { RatingSearchBy, RatingsSortBy } from '@core/enum/ratings.enum';
+import type { AvailabilityEnum } from '@core/enum/slot.enum';
 
-import { SlotType } from '../../../modules/bookings/dtos/booking.dto';
-import { IBaseUserEntity } from '../base/interfaces/base-user.entity.interface';
-import { IAdmin } from './admin.entity.interface';
-import { IDisputeAnalytics } from './report.entity.interface';
-import { IBookingsBreakdown, INewOrReturningClientData, IPagination, IRatingDistribution, IRecentReviews, IRevenueBreakdown, IRevenueCompositionData, IRevenueMonthlyGrowthRateData, IRevenueTrendData, IReview, ISlot, ITopServicesByRevenue, IUpcomingBooking } from './booking.entity.interface';
-import { IBookingOverview } from './admin-user-details.entity.interface';
+import type { SlotType } from '../../../modules/bookings/dtos/booking.dto';
+import type { IBaseUserEntity } from '../base/interfaces/base-user.entity.interface';
+import type { IAdmin } from './admin.entity.interface';
+import type { IDisputeAnalytics } from './report.entity.interface';
+import type {
+  IBookingsBreakdown,
+  INewOrReturningClientData,
+  IPagination,
+  IRatingDistribution,
+  IRecentReviews,
+  IRevenueBreakdown,
+  IRevenueCompositionData,
+  IRevenueMonthlyGrowthRateData,
+  IRevenueTrendData,
+  IReview,
+  ISlot,
+  ITopServicesByRevenue,
+  IUpcomingBooking,
+} from './booking.entity.interface';
+import type { IBookingOverview } from './admin-user-details.entity.interface';
 
 export type UserType = 'customer' | 'provider' | 'admin';
 export type ClientUserType = Exclude<UserType, 'admin'>;
@@ -16,7 +30,6 @@ export type SortByRatingType = RatingsSortBy;
 export type SearchByReviewType = RatingSearchBy;
 
 export type FilterStatusType = 'nearest' | 'best-rated' | 'all';
-
 
 export type Availability = {
   day: {
@@ -30,7 +43,7 @@ export type Availability = {
 };
 
 export interface ILocation {
-  type: 'Point',
+  type: 'Point';
   coordinates: [number, number];
 }
 
@@ -49,7 +62,7 @@ export interface IUpdateProfileData {
 export interface IExpertise {
   specialization: string;
   label: string;
-};
+}
 
 export interface ILanguage {
   language: string;
@@ -61,8 +74,8 @@ export interface IDoc {
   label: string;
   fileUrl: string;
   uploadedAt: Date;
-  isDeleted: boolean
-};
+  isDeleted: boolean;
+}
 
 export interface IProvider extends IBaseUserEntity {
   verificationStatus: VerificationStatusType;
@@ -130,7 +143,7 @@ export interface IApprovalTableDetails {
   email: string;
   documentCount: number;
   date: Date;
-  verificationStatus: VerificationStatusType
+  verificationStatus: VerificationStatusType;
 }
 
 export interface IFetchReviews {
@@ -169,7 +182,7 @@ export interface IAdminReviewData {
 
 export interface PaginatedReviewResponse {
   reviews: IAdminReviewData[];
-  pagination: IPagination
+  pagination: IPagination;
 }
 export interface IReviewFilters {
   minRating?: string;
@@ -320,7 +333,7 @@ export interface IProviderDashboardOverview {
   avgRating: number;
   completionRate: number;
   workingHours: Availability | null;
-  nextAvailableSlot: ISlot & { date: Date | string } | null;
+  nextAvailableSlot: (ISlot & { date: Date | string }) | null;
   activeServiceCount: number;
   nextBooking: IUpcomingBooking | null;
   upcomingBookingCount: number;

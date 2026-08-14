@@ -1,129 +1,126 @@
-import { ITransaction } from '@core/entities/interfaces/transaction.entity.interface';
-import { BookingStatus, CancelStatus, PaymentStatus } from '../../enum/bookings.enum';
-import { IEntity } from '../base/interfaces/base-entity.entity.interface';
-import { SlotStatusEnum } from '@core/enum/slot.enum';
-import { PaymentDirection, PaymentSource, TransactionStatus, TransactionType } from '@core/enum/transaction.enum';
+import type { ITransaction } from '@core/entities/interfaces/transaction.entity.interface';
+import type { BookingStatus, CancelStatus, PaymentStatus } from '../../enum/bookings.enum';
+import type { IEntity } from '../base/interfaces/base-entity.entity.interface';
+import type { SlotStatusEnum } from '@core/enum/slot.enum';
+import type { PaymentDirection, PaymentSource, TransactionStatus, TransactionType } from '@core/enum/transaction.enum';
 import { ServiceDocument } from '@core/schema/service.schema';
-import { ClientUserType } from '@core/entities/interfaces/user.entity.interface';
+import type { ClientUserType } from '@core/entities/interfaces/user.entity.interface';
 
 export type RevenueChartView = 'monthly' | 'quarterly' | 'yearly';
 
-
 export interface IBookingResponse {
-    bookingId: string;
-    provider: {
-        id: string;
-        name: string;
-        email: string;
-        phone: string;
-    };
-    services: string[];
-    expectedArrivalTime: Date | string;
-    bookingStatus: BookingStatus;
-    paymentStatus: PaymentStatus;
+  bookingId: string;
+  provider: {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+  };
+  services: string[];
+  expectedArrivalTime: Date | string;
+  bookingStatus: BookingStatus;
+  paymentStatus: PaymentStatus;
+  paymentSource: PaymentSource;
+  cancelStatus: CancelStatus | null;
+  totalAmount: number;
+  createdAt: Date;
+  transaction: {
+    transactionId: string;
     paymentSource: PaymentSource;
-    cancelStatus: CancelStatus | null;
-    totalAmount: number;
-    createdAt: Date;
-    transaction: {
-        transactionId: string,
-        paymentSource: PaymentSource
-    } | null;
-    review: IReview | null;
+  } | null;
+  review: IReview | null;
 }
 
 export interface IPagination {
-    total: number;
-    page: number;
-    limit: number
+  total: number;
+  page: number;
+  limit: number;
 }
 
-
 export interface IBookingWithPagination {
-    bookingData: IBookingResponse[];
-    paginationData: IPagination;
+  bookingData: IBookingResponse[];
+  paginationData: IPagination;
 }
 
 export interface IProviderBookingLists {
-    services: IProviderBookingListService[];
-    customer: {
-        id: string;
-        name: string;
-        avatar: string;
-        email: string;
-    },
-    bookingId: string;
-    expectedArrivalTime: Date;
-    totalAmount: number;
-    createdAt: Date;
-    paymentStatus: PaymentStatus;
-    cancelStatus: CancelStatus | null;
-    bookingStatus: BookingStatus;
+  services: IProviderBookingListService[];
+  customer: {
+    id: string;
+    name: string;
+    avatar: string;
+    email: string;
+  };
+  bookingId: string;
+  expectedArrivalTime: Date;
+  totalAmount: number;
+  createdAt: Date;
+  paymentStatus: PaymentStatus;
+  cancelStatus: CancelStatus | null;
+  bookingStatus: BookingStatus;
 }
 
 export interface IProviderBookingListService {
-    id: string;
-    title: string;
-    image: string;
+  id: string;
+  title: string;
+  image: string;
 }
 
 export interface IPagination {
-    page: number;
-    limit: number;
-    total: number;
+  page: number;
+  limit: number;
+  total: number;
 }
 
-
 export interface IResponseProviderBookingLists {
-    bookingData: IProviderBookingLists[];
-    paginationData: IPagination;
+  bookingData: IProviderBookingLists[];
+  paginationData: IPagination;
 }
 
 export interface IBookedSlot extends ISlot {
-    date: Date;
-    status: SlotStatusEnum;
+  date: Date;
+  status: SlotStatusEnum;
 }
 
 export interface IReview {
-    desc: string;
-    rating: number;
-    writtenAt: Date | string;
-    isActive: boolean;
-    isReported: boolean;
+  desc: string;
+  rating: number;
+  writtenAt: Date | string;
+  isActive: boolean;
+  isReported: boolean;
 }
 
 export interface IBooking extends IEntity {
-    customerId: string;
-    providerId: string;
-    totalAmount: number;
-    expectedArrivalTime: Date;
-    actualArrivalTime: Date | null;
-    bookingStatus: BookingStatus;
-    cancellationReason: string | null;
-    cancelStatus: CancelStatus | null;
-    cancelledAt: Date | null;
-    location: {
-        address: string;
-        coordinates: [number, number];
-    };
-    slot: IBookedSlot;
-    services: string[];
-    transactionHistory: ITransaction[];
-    paymentStatus: PaymentStatus;
-    paymentSource: PaymentSource;
-    review: IReview | null;
-    respondedAt: Date | null;
-    couponId: string | null;
-    previousSlots: IBookedSlot[];
+  customerId: string;
+  providerId: string;
+  totalAmount: number;
+  expectedArrivalTime: Date;
+  actualArrivalTime: Date | null;
+  bookingStatus: BookingStatus;
+  cancellationReason: string | null;
+  cancelStatus: CancelStatus | null;
+  cancelledAt: Date | null;
+  location: {
+    address: string;
+    coordinates: [number, number];
+  };
+  slot: IBookedSlot;
+  services: string[];
+  transactionHistory: ITransaction[];
+  paymentStatus: PaymentStatus;
+  paymentSource: PaymentSource;
+  review: IReview | null;
+  respondedAt: Date | null;
+  couponId: string | null;
+  previousSlots: IBookedSlot[];
 }
 
 export interface ISlot {
-    from: string;
-    to: string;
+  from: string;
+  to: string;
 }
 
 export interface ISlotUI extends ISlot {
-    isAvailable?: boolean;
+  isAvailable?: boolean;
 }
 
 // export interface ISelectedSlot extends ISlot{
@@ -131,378 +128,378 @@ export interface ISlotUI extends ISlot {
 // }
 
 export interface IBookingOverviewChanges {
-    totalBookingsChange: number;
-    pendingRequestsChange: number;
-    completedJobsChange: number;
-    pendingPaymentsChange: number;
-    cancelledBookingsChange: number;
+  totalBookingsChange: number;
+  pendingRequestsChange: number;
+  completedJobsChange: number;
+  pendingPaymentsChange: number;
+  cancelledBookingsChange: number;
 }
 
 export interface IBookingOverviewData {
-    pendingRequests: number;
-    completedJobs: number;
-    pendingPayments: number;
-    cancelledBookings: number;
-    totalBookings: number;
-    changes?: IBookingOverviewChanges;
+  pendingRequests: number;
+  completedJobs: number;
+  pendingPayments: number;
+  cancelledBookings: number;
+  totalBookings: number;
+  changes?: IBookingOverviewChanges;
 }
 
 export interface IBookingDetailsBase {
-    bookingId: string;
-    bookingStatus: BookingStatus;
-    paymentStatus: PaymentStatus;
-    createdAt: Date;
-    cancelStatus: CancelStatus | null;
-    cancelReason: string | null;
-    cancelledAt: Date | null;
-    expectedArrivalTime: Date;
-    actualArrivalTime: Date | null;
-    totalAmount: number;
-    orderedServices: IBookedService[];
-    transaction: {
-        id: string;
-        paymentDate: Date | string;
-        paymentMethod: PaymentSource;
-        gst: number;
-        providerCommission: number;
-    } | null;
-    transactionHistory: ITransaction[];
-    previousSchedules: Date[];
+  bookingId: string;
+  bookingStatus: BookingStatus;
+  paymentStatus: PaymentStatus;
+  createdAt: Date;
+  cancelStatus: CancelStatus | null;
+  cancelReason: string | null;
+  cancelledAt: Date | null;
+  expectedArrivalTime: Date;
+  actualArrivalTime: Date | null;
+  totalAmount: number;
+  orderedServices: IBookedService[];
+  transaction: {
+    id: string;
+    paymentDate: Date | string;
+    paymentMethod: PaymentSource;
+    gst: number;
+    providerCommission: number;
+  } | null;
+  transactionHistory: ITransaction[];
+  previousSchedules: Date[];
 }
 
 export interface IBookedService {
-    title: string;
-    price: number;
-    estimatedTime: number;
+  title: string;
+  price: number;
+  estimatedTime: number;
 }
 
 export interface IBookingDetailCustomer extends IBookingDetailsBase {
-    provider: {
-        id: string;
-        name: string;
-        email: string;
-        phone: string;
-        location: string;
-    };
-    breakup: IPriceBreakupData;
+  provider: {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    location: string;
+  };
+  breakup: IPriceBreakupData;
 }
 
 export interface IBookingDetailProvider extends IBookingDetailsBase {
-    customer: {
-        id: string;
-        name: string;
-        email: string;
-        phone: string;
-        location: string;
-    };
-    breakup: IPriceBreakupData;
-    settlement: {
-        customerPaid: number;
-        providerAmount: number;
-        commissionEarned: number;
-        gst: number;
-    } | null;
+  customer: {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    location: string;
+  };
+  breakup: IPriceBreakupData;
+  settlement: {
+    customerPaid: number;
+    providerAmount: number;
+    commissionEarned: number;
+    gst: number;
+  } | null;
 }
 
 export interface IAdminBookingList {
-    bookingId: string;
-    customer: {
-        avatar: string;
-        id: string;
-        username: string;
-        email: string;
-    };
-    provider: {
-        avatar: string;
-        id: string;
-        username: string;
-        email: string;
-    };
-    date: Date;
-    status: BookingStatus;
-    paymentStatus: PaymentStatus;
+  bookingId: string;
+  customer: {
+    avatar: string;
+    id: string;
+    username: string;
+    email: string;
+  };
+  provider: {
+    avatar: string;
+    id: string;
+    username: string;
+    email: string;
+  };
+  date: Date;
+  status: BookingStatus;
+  paymentStatus: PaymentStatus;
 }
 
 export interface IPaginatedBookingsResponse {
-    bookingData: IAdminBookingList[];
-    pagination: IPagination;
+  bookingData: IAdminBookingList[];
+  pagination: IPagination;
 }
 
 export interface IBookingStats {
-    total: number;
-    completed: number
-    pending: number;
-    cancelled: number;
-    unpaid: number;
-    refunded: number;
+  total: number;
+  completed: number;
+  pending: number;
+  cancelled: number;
+  unpaid: number;
+  refunded: number;
 }
 
 export interface IBookingInvoice {
-    invoiceId: string;
-    transactionId: string | null;
-    transactionType: TransactionType | null;
-    paymentStatus: PaymentStatus;
-    paymentSource: PaymentSource | null;
-    currency: string | null;
-    services: IBookedService[];
-    userType: 'customer' | 'provider';
+  invoiceId: string;
+  transactionId: string | null;
+  transactionType: TransactionType | null;
+  paymentStatus: PaymentStatus;
+  paymentSource: PaymentSource | null;
+  currency: string | null;
+  services: IBookedService[];
+  userType: 'customer' | 'provider';
 
-    user: {
-        name: string;
-        email: string;
-        contact?: string;
+  user: {
+    name: string;
+    email: string;
+    contact?: string;
+  };
+
+  bookingDetails: {
+    status: BookingStatus;
+    expectedArrivalTime: string;
+    actualArrivalTime?: string | null;
+    slot: {
+      from: string;
+      to: string;
     };
+  };
 
-    bookingDetails: {
-        status: BookingStatus;
-        expectedArrivalTime: string;
-        actualArrivalTime?: string | null;
-        slot: {
-            from: string;
-            to: string;
-        };
-    };
+  location: {
+    address: string;
+    coordinates: [number, number];
+  };
 
-    location: {
-        address: string;
-        coordinates: [number, number];
-    };
+  paymentBreakup: {
+    providerAmount: number;
+    commission: number;
+    gst: number;
+    total: number;
+  };
 
-    paymentBreakup: {
-        providerAmount: number;
-        commission: number;
-        gst: number;
-        total: number;
-    };
-
-    paymentDetails: {
-        orderId: string;
-        paymentId: string;
-        receipt: string;
-        signature: string;
-    } | null;
+  paymentDetails: {
+    orderId: string;
+    paymentId: string;
+    receipt: string;
+    signature: string;
+  } | null;
 }
 
 export interface IRatingDistribution {
-    rating: string;
-    count: number;
+  rating: string;
+  count: number;
 }
 
 export interface IRecentReviews {
-    name: string;
-    desc: string;
-    rating: number;
+  name: string;
+  desc: string;
+  rating: number;
 }
 
 export interface IRevenueTrendData {
-    providerRevenue: number[];
-    platformAvg: number[];
-    labels: string[];
+  providerRevenue: number[];
+  platformAvg: number[];
+  labels: string[];
 }
 
 interface IRevenueTrendPoint {
-    label: string;
-    totalRevenue: number;
+  label: string;
+  totalRevenue: number;
 }
 
 export interface IRevenueTrendRawData {
-    providerRevenue: IRevenueTrendPoint[];
-    platformAvg: IRevenueTrendPoint[];
+  providerRevenue: IRevenueTrendPoint[];
+  platformAvg: IRevenueTrendPoint[];
 }
 
 export interface IRevenueMonthlyGrowthRateData {
-    totalRevenue: number;
-    month: string | number;
-    growthRate: number;
+  totalRevenue: number;
+  month: string | number;
+  growthRate: number;
 }
 
 export interface IRevenueCompositionData {
-    totalRevenue: number;
-    category: string;
+  totalRevenue: number;
+  category: string;
 }
 
 export interface ITopServicesByRevenue {
-    service: string;
-    revenue: number;
-    totalBookings: number;
-    avgRevenue: number;
+  service: string;
+  revenue: number;
+  totalBookings: number;
+  avgRevenue: number;
 }
 
 export interface INewOrReturningClientData {
-    month: string;
-    newClients: number;
-    returningClients: number;
+  month: string;
+  newClients: number;
+  returningClients: number;
 }
 
 export interface IAreaSummary {
-    totalBookings: number;
-    topPerformingArea: string;
-    underperformingArea: string;
-    peakBookingHour: string;
+  totalBookings: number;
+  topPerformingArea: string;
+  underperformingArea: string;
+  peakBookingHour: string;
 }
 
 export interface IServiceDemandData {
-    day: 'Mon' | 'Tue' | 'Wed' | 'Thu' | 'Fri' | 'Sat' | 'Sun';
-    hour: string;
-    count: number;
+  day: 'Mon' | 'Tue' | 'Wed' | 'Thu' | 'Fri' | 'Sat' | 'Sun';
+  hour: string;
+  count: number;
 }
 
 export interface ILocationRevenue {
-    locationName: string;
-    totalRevenue: number;
-    previousRevenue: number;
-    changePct: number;
+  locationName: string;
+  totalRevenue: number;
+  previousRevenue: number;
+  changePct: number;
 }
 
 export interface ITopAreaRevenue {
-    locationName: string;
-    totalRevenue: number;
-    changePct: number;
+  locationName: string;
+  totalRevenue: number;
+  changePct: number;
 }
 
 export interface IUnderperformingArea {
-    locationName: string;
-    lastMonthRevenue: number;
-    currentMonthRevenue: number;
-    changePct: number;
+  locationName: string;
+  lastMonthRevenue: number;
+  currentMonthRevenue: number;
+  changePct: number;
 }
 
 export interface IPeakServiceTime {
-    hour: number;
-    weekdayBookings: number;
-    weekendBookings: number;
+  hour: number;
+  weekdayBookings: number;
+  weekendBookings: number;
 }
 
 export interface IAreaAnalyticsBundle {
-    summary: { areaSummary: IAreaSummary };
-    demand: {
-        serviceDemand: IServiceDemandData[];
-        byLocation: ILocationRevenue[];
-    };
-    revenue: {
-        topAreas: ITopAreaRevenue[];
-        underperforming: IUnderperformingArea[];
-    };
-    peak: { peakServiceTime: IPeakServiceTime[] };
+  summary: { areaSummary: IAreaSummary };
+  demand: {
+    serviceDemand: IServiceDemandData[];
+    byLocation: ILocationRevenue[];
+  };
+  revenue: {
+    topAreas: ITopAreaRevenue[];
+    underperforming: IUnderperformingArea[];
+  };
+  peak: { peakServiceTime: IPeakServiceTime[] };
 }
 
 export interface IRevenueBreakdown {
-    totalEarnings: number;
-    completedCount: number;
-    pendingCount: number;
+  totalEarnings: number;
+  completedCount: number;
+  pendingCount: number;
 }
 
 export interface IBookingsBreakdown {
-    totalBookings: number;
-    upcomingBookings: number;
-    cancelledBookings: number;
-    averageBookingValue: number;
+  totalBookings: number;
+  upcomingBookings: number;
+  cancelledBookings: number;
+  averageBookingValue: number;
 }
 
 export interface IUpcomingBooking {
-    bookingId: string;
-    amount: number;
-    status: BookingStatus;
-    slot: ISlot & { date: Date | string };
-    customer: {
-        id: string;
-        username: string;
-        fullname: string;
-        avatar: string;
-    };
-    service: {
-        name: string;
-        category: string;
-    };
+  bookingId: string;
+  amount: number;
+  status: BookingStatus;
+  slot: ISlot & { date: Date | string };
+  customer: {
+    id: string;
+    username: string;
+    fullname: string;
+    avatar: string;
+  };
+  service: {
+    name: string;
+    category: string;
+  };
 }
 
 export interface IReviewDetailsRaw {
-    bookingId: string;
-    desc: string;
-    rating: number;
-    writtenAt: string;
-    customer: {
-        avatar: string;
-        email: string;
-        username: string;
-    }
-}
-
-export interface IReviewDetails extends Omit<IReview, 'isActive' | 'isReported'> {
-    id: string;
+  bookingId: string;
+  desc: string;
+  rating: number;
+  writtenAt: string;
+  customer: {
     avatar: string;
     email: string;
     username: string;
+  };
+}
+
+export interface IReviewDetails extends Omit<IReview, 'isActive' | 'isReported'> {
+  id: string;
+  avatar: string;
+  email: string;
+  username: string;
 }
 
 export interface IReviewWithPagination {
-    reviewDetails: IReviewDetailsRaw[];
-    pagination: IPagination;
+  reviewDetails: IReviewDetailsRaw[];
+  pagination: IPagination;
 }
 
 export interface IReviewFilter {
-    search?: string;
-    rating?: 'all' | 1 | 2 | 3 | 4 | 5;
-    sort?: 'asc' | 'desc';
-    time?: 'all' | 'last_6_months' | 'last_year';
+  search?: string;
+  rating?: 'all' | 1 | 2 | 3 | 4 | 5;
+  sort?: 'asc' | 'desc';
+  time?: 'all' | 'last_6_months' | 'last_year';
 }
 
 export interface IAdminBookingDetails {
-    bookingId: string;
-    totalAmount: number;
-    expectedArrival: Date;
-    actualArrival: Date | null;
-    bookingStatus: BookingStatus;
-    paymentStatus: PaymentStatus;
-    createdAt: string;
-    customer: {
-        phone: string;
-        role: ClientUserType;
-        email: string;
-    };
-    provider: {
-        phone: string;
-        role: ClientUserType;
-        email: string;
-    };
-    location: {
-        address: string;
-        coordinates: [number, number];
-    };
-    transactionHistory: {
-        date: string;
-        user: ClientUserType;
-        type: TransactionType;
-        direction: PaymentDirection;
-        amount: number;
-        status: TransactionStatus;
-    }[]
-    breakdown: {
-        customerPaid: number;
-        providerAmount: number;
-        commissionEarned: number;
-        gst: number;
-    }
+  bookingId: string;
+  totalAmount: number;
+  expectedArrival: Date;
+  actualArrival: Date | null;
+  bookingStatus: BookingStatus;
+  paymentStatus: PaymentStatus;
+  createdAt: string;
+  customer: {
+    phone: string;
+    role: ClientUserType;
+    email: string;
+  };
+  provider: {
+    phone: string;
+    role: ClientUserType;
+    email: string;
+  };
+  location: {
+    address: string;
+    coordinates: [number, number];
+  };
+  transactionHistory: {
+    date: string;
+    user: ClientUserType;
+    type: TransactionType;
+    direction: PaymentDirection;
+    amount: number;
+    status: TransactionStatus;
+  }[];
+  breakdown: {
+    customerPaid: number;
+    providerAmount: number;
+    commissionEarned: number;
+    gst: number;
+  };
 }
 
 export interface IAdminBookingFilter {
-    page?: number;
-    search?: string;
-    bookingStatus?: BookingStatus | 'all';
-    paymentStatus?: PaymentStatus | 'all';
+  page?: number;
+  search?: string;
+  bookingStatus?: BookingStatus | 'all';
+  paymentStatus?: PaymentStatus | 'all';
 }
 
 export interface IPriceBreakupData {
-    subTotal: number;
-    tax: number;
-    total: number;
-    discount?: number;
-    originalTotal?: number;
-    coupon?: {
-        couponId: string | null;
-        couponCode: string | null;
-        couponName: string | null;
-        discountType: string | null;
-        discountValue: number | null;
-    };
+  subTotal: number;
+  tax: number;
+  total: number;
+  discount?: number;
+  originalTotal?: number;
+  coupon?: {
+    couponId: string | null;
+    couponCode: string | null;
+    couponName: string | null;
+    discountType: string | null;
+    discountValue: number | null;
+  };
 }

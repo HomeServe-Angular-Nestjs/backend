@@ -8,12 +8,8 @@ import { Module } from '@nestjs/common';
 import { SharedModule } from '@shared/shared.module';
 
 @Module({
-    imports: [JwtConfigModule, SharedModule, WebSocketModule],
-    controllers: [RazorpayController],
-    providers: [
-        ...paymentServiceProviders,
-        ...paymentUtilityProviders,
-        ...paymentRepositoryProviders
-    ]
+  imports: [JwtConfigModule, SharedModule, WebSocketModule],
+  controllers: [RazorpayController],
+  providers: [...paymentServiceProviders, ...paymentUtilityProviders, ...paymentRepositoryProviders],
 })
-export class PaymentModule { }
+export class PaymentModule {}

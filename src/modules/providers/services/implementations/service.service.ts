@@ -1,7 +1,16 @@
 import { Types } from 'mongoose';
 import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { PROVIDER_REPOSITORY_INTERFACE_NAME, SERVICE_OFFERED_REPOSITORY_NAME } from '@core/constants/repository.constant';
-import { CreateServiceDto, CreateSubServiceDto, FilterServiceDto, ProviderServiceFilterWithPaginationDto, RemoveSubServiceDto, ToggleServiceStatusDto, ToggleSubServiceStatusDto, UpdateServiceDto } from '@modules/providers/dtos/service.dto';
+import {
+  CreateServiceDto,
+  CreateSubServiceDto,
+  FilterServiceDto,
+  ProviderServiceFilterWithPaginationDto,
+  RemoveSubServiceDto,
+  ToggleServiceStatusDto,
+  ToggleSubServiceStatusDto,
+  UpdateServiceDto,
+} from '@modules/providers/dtos/service.dto';
 import { UPLOAD_UTILITY_NAME } from '@core/constants/utility.constant';
 import { IService, IServicesWithPagination, ISubService } from '@core/entities/interfaces/service.entity.interface';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
@@ -31,40 +40,40 @@ export class ServiceFeatureService implements IServiceFeatureService {
     @Inject(SERVICE_OFFERED_MAPPER)
     private readonly _serviceOfferedMapper: IServiceOfferedMapper,
     @Inject(PROVIDER_MAPPER)
-    private readonly _providerMapper: IProviderMapper
+    private readonly _providerMapper: IProviderMapper,
   ) {
     this.logger = this.loggerFactory.createLogger(ServiceFeatureService.name);
   }
 
-
-  async createService(providerId: string, createServiceDto: CreateServiceDto,): Promise<IResponse<string[]>> {
+  async createService(providerId: string, createServiceDto: CreateServiceDto): Promise<IResponse<string[]>> {
     const provider = await this._providerRepository.findById(providerId);
 
-    if (!provider) return {
-      success: false,
-      message: 'User not found.'
-    };
+    if (!provider)
+      return {
+        success: false,
+        message: 'User not found.',
+      };
 
-
-    if (!createServiceDto.image) return {
-      success: false,
-      message: 'image not found.'
-    };
+    if (!createServiceDto.image)
+      return {
+        success: false,
+        message: 'image not found.',
+      };
 
     try {
       const serviceImageUrl = await this._uploadsUtility.uploadImage(createServiceDto.image);
 
-      const subServicesWithImages = createServiceDto.subService
-        ? await this._handleSubServices(createServiceDto.subService)
-        : [];
+      const subServicesWithImages = createServiceDto.subService ? await this._handleSubServices(createServiceDto.subService) : [];
 
-      const newOfferedService = await this._serviceOfferedRepository.create(this._serviceOfferedMapper.toDocument({
-        providerId,
-        title: createServiceDto.title,
-        desc: createServiceDto.desc,
-        image: serviceImageUrl,
-        subService: subServicesWithImages as ISubService[],
-      }));
+      const newOfferedService = await this._serviceOfferedRepository.create(
+        this._serviceOfferedMapper.toDocument({
+          providerId,
+          title: createServiceDto.title,
+          desc: createServiceDto.desc,
+          image: serviceImageUrl,
+          subService: subServicesWithImages,
+        }),
+      );
 
       const updatedProvider = await this._providerRepository.findOneAndUpdate(
         { _id: provider.id },
@@ -81,15 +90,18 @@ export class ServiceFeatureService implements IServiceFeatureService {
       return {
         success: true,
         message: 'Service created successfully.',
-        data: (updatedProvider.servicesOffered).map(String)
+        data: updatedProvider.servicesOffered.map(String),
       };
-
     } catch (err) {
       throw new InternalServerErrorException('Something unexpected happened.');
     }
   }
 
-  async fetchServices(providerId: string, page: number = 1, filter: Omit<ProviderServiceFilterWithPaginationDto, 'page'>): Promise<IServicesWithPagination> {
+  async fetchServices(
+    providerId: string,
+    page: number = 1,
+    filter: Omit<ProviderServiceFilterWithPaginationDto, 'page'>,
+  ): Promise<IServicesWithPagination> {
     try {
       const ProviderDocument = await this._providerRepository.findById(providerId);
       if (!ProviderDocument) {
@@ -99,7 +111,7 @@ export class ServiceFeatureService implements IServiceFeatureService {
       const provider = this._providerMapper.toEntity(ProviderDocument);
 
       const query: Record<string, any> = {
-        _id: { $in: provider.servicesOffered.map(id => new Types.ObjectId(id)) },
+        _id: { $in: provider.servicesOffered.map((id) => new Types.ObjectId(id)) },
         isDeleted: false,
       };
 
@@ -119,13 +131,13 @@ export class ServiceFeatureService implements IServiceFeatureService {
       const sortMap: Record<string, any> = {
         'a-z': { title: 1 },
         'z-a': { title: -1 },
-        'latest': { createdAt: -1 },
-        'oldest': { createdAt: 1 },
+        latest: { createdAt: -1 },
+        oldest: { createdAt: 1 },
       };
 
       let sort = {};
       if (filter.sort) {
-        sort = sortMap[filter.sort] ? sortMap[filter.sort] : { createdAt: -1 }
+        sort = sortMap[filter.sort] ? sortMap[filter.sort] : { createdAt: -1 };
       }
 
       const limit = 6;
@@ -133,14 +145,13 @@ export class ServiceFeatureService implements IServiceFeatureService {
 
       const [offeredServices, total] = await Promise.all([
         this._serviceOfferedRepository.find(query, { sort, skip, limit }),
-        this._serviceOfferedRepository.count(query)
+        this._serviceOfferedRepository.count(query),
       ]);
 
       return {
-        services: (offeredServices || []).map(service => this._serviceOfferedMapper.toEntity(service)),
-        pagination: { limit, page, total }
+        services: (offeredServices || []).map((service) => this._serviceOfferedMapper.toEntity(service)),
+        pagination: { limit, page, total },
       };
-
     } catch (err) {
       throw new InternalServerErrorException('Something happened while fetching the offered service');
     }
@@ -159,10 +170,10 @@ export class ServiceFeatureService implements IServiceFeatureService {
 
     const result = {
       ...this._serviceOfferedMapper.toEntity(service),
-      SubService: service.subService.filter(sub => !sub.isDeleted)
+      SubService: service.subService.filter((sub) => !sub.isDeleted),
     };
 
-    return result
+    return result;
   }
 
   async updateService(updateData: UpdateServiceDto): Promise<IResponse<IService>> {
@@ -183,15 +194,11 @@ export class ServiceFeatureService implements IServiceFeatureService {
           const updatedSub = { ...sub };
           updatedSub.image = await this._processImage(sub.image);
           return updatedSub;
-        })
+        }),
       );
     }
 
-    const updatedService = await this._serviceOfferedRepository.findOneAndUpdate(
-      { _id: id },
-      { $set: updateFields },
-      { new: true }
-    ); //todo
+    const updatedService = await this._serviceOfferedRepository.findOneAndUpdate({ _id: id }, { $set: updateFields }, { new: true }); //todo
 
     if (!updatedService) {
       throw new NotFoundException('No matching service found to update.');
@@ -200,7 +207,7 @@ export class ServiceFeatureService implements IServiceFeatureService {
     return {
       success: true,
       message: 'Service updated successfully.',
-      data: this._serviceOfferedMapper.toEntity(updatedService)
+      data: this._serviceOfferedMapper.toEntity(updatedService),
     };
   }
 
@@ -210,95 +217,72 @@ export class ServiceFeatureService implements IServiceFeatureService {
       throw new NotFoundException('Provider with ID ${id} not found');
     }
 
-    const services = (await Promise.all(
-      provider.servicesOffered.map((serviceId) =>
-        this._serviceOfferedRepository.findById(serviceId.toString())
-      )
-    )).filter(service => service !== null);
+    const services = (
+      await Promise.all(provider.servicesOffered.map((serviceId) => this._serviceOfferedRepository.findById((serviceId as { toString(): string }).toString())))
+    ).filter((service) => service !== null);
 
-    let filteredServices = (services ?? []).map(service => this._serviceOfferedMapper.toEntity(service));
+    let filteredServices = (services ?? []).map((service) => this._serviceOfferedMapper.toEntity(service));
 
     // Search in title or description
     if (filter.search) {
       const searchLower = filter.search.toLowerCase();
-      filteredServices = filteredServices.filter(service =>
-        service.title.toLowerCase().includes(searchLower)
-      )
+      filteredServices = filteredServices.filter((service) => service.title.toLowerCase().includes(searchLower));
     }
 
     // Filter by category
     if (filter.category) {
-      filteredServices = filteredServices.filter(service =>
-        service.title === filter.category
-      )
+      filteredServices = filteredServices.filter((service) => service.title === filter.category);
     }
 
     // Price filter
     if (filter.priceRange) {
       const { min, max } = filter.priceRange;
 
-      filteredServices = filteredServices.filter(service =>
-        service.subService.some(sub => {
+      filteredServices = filteredServices.filter((service) =>
+        service.subService.some((sub) => {
           if (sub?.price == null) return false;
 
           const price = typeof sub.price === 'string' ? parseFloat(sub.price) : sub.price;
           if (isNaN(price)) return false;
 
-          return (
-            (min === undefined || price >= min) &&
-            (max === undefined || price <= max)
-          );
-        })
+          return (min === undefined || price >= min) && (max === undefined || price <= max);
+        }),
       );
     }
 
-    // Duration filter 
+    // Duration filter
     if (filter.duration) {
       const { minHours, maxHours } = filter.duration;
 
-      filteredServices = filteredServices.filter(service =>
-        service.subService.some(sub => {
+      filteredServices = filteredServices.filter((service) =>
+        service.subService.some((sub) => {
           if (sub?.estimatedTime == null) return false;
 
-          const duration = typeof sub.estimatedTime === 'string'
-            ? parseFloat(sub.estimatedTime)
-            : sub.estimatedTime;
+          const duration = typeof sub.estimatedTime === 'string' ? parseFloat(sub.estimatedTime) : sub.estimatedTime;
 
           if (isNaN(duration)) return false;
 
-          return (
-            (minHours == null || duration >= minHours) &&
-            (maxHours == null || duration <= maxHours)
-          );
-        })
+          return (minHours == null || duration >= minHours) && (maxHours == null || duration <= maxHours);
+        }),
       );
     }
 
     // Sort by min subService price or duration
     if (filter.sort) {
-      const getMinSubField = (service: IService, field: 'price' | 'duration') =>
-        Math.min(...service.subService.map(sub => sub[field]));
+      const getMinSubField = (service: IService, field: 'price' | 'duration') => Math.min(...service.subService.map((sub) => sub[field]));
 
       switch (filter.sort) {
         case 'price-asc':
-          filteredServices = filteredServices.sort((a, b) =>
-            getMinSubField(a, 'price') - getMinSubField(b, 'price')
-          );
+          filteredServices = filteredServices.sort((a, b) => getMinSubField(a, 'price') - getMinSubField(b, 'price'));
           break;
         case 'price-desc':
-          filteredServices = filteredServices.sort((a, b) =>
-            getMinSubField(b, 'price') - getMinSubField(a, 'price')
-          );
+          filteredServices = filteredServices.sort((a, b) => getMinSubField(b, 'price') - getMinSubField(a, 'price'));
           break;
         case 'duration-asc':
-          filteredServices = filteredServices.sort((a, b) =>
-            getMinSubField(a, 'duration') - getMinSubField(b, 'duration')
-          );
+          filteredServices = filteredServices.sort((a, b) => getMinSubField(a, 'duration') - getMinSubField(b, 'duration'));
           break;
         case 'duration-desc':
-          filteredServices = filteredServices.sort((a, b) =>
-            getMinSubField(b, 'duration') - getMinSubField(a, 'duration')
-          );
+          filteredServices = filteredServices.sort((a, b) => getMinSubField(b, 'duration') - getMinSubField(a, 'duration'));
           break;
         default:
           break;
@@ -312,7 +296,7 @@ export class ServiceFeatureService implements IServiceFeatureService {
     const updatedService = await this._serviceOfferedRepository.findOneAndUpdate(
       { _id: toggleServiceDto.id },
       { $set: { isActive: toggleServiceDto.isActive } },
-      { new: true }
+      { new: true },
     ); //todo
 
     if (!updatedService) {
@@ -326,12 +310,12 @@ export class ServiceFeatureService implements IServiceFeatureService {
     const updatedSubService = await this._serviceOfferedRepository.findOneAndUpdate(
       {
         _id: toggleSubServiceDto.id,
-        'subService._id': toggleSubServiceDto.subService.id
+        'subService._id': toggleSubServiceDto.subService.id,
       },
       {
-        $set: { 'subService.$.isActive': toggleSubServiceDto.subService.isActive }
+        $set: { 'subService.$.isActive': toggleSubServiceDto.subService.isActive },
       },
-      { new: true }
+      { new: true },
     ); //todo
 
     if (!updatedSubService) {
@@ -341,31 +325,30 @@ export class ServiceFeatureService implements IServiceFeatureService {
   }
 
   async removeService(providerId: string, serviceId: string): Promise<IResponse> {
-
     const updatedService = await this._serviceOfferedRepository.findOneAndUpdate(
       { _id: serviceId },
       {
         $set: {
-          isDeleted: true
-        }
+          isDeleted: true,
+        },
       },
-      { new: true }
+      { new: true },
     ); //todo
 
     await this._providerRepository.findOneAndUpdate(
       { _id: providerId },
       {
         $pull: {
-          servicesOffered: serviceId
-        }
+          servicesOffered: serviceId,
+        },
       },
-      { new: true }
+      { new: true },
     );
 
     return {
       success: !!updatedService,
-      message: !!updatedService ? 'Service Updated successfully.' : 'Failed to update',
-    }
+      message: updatedService ? 'Service Updated successfully.' : 'Failed to update',
+    };
   }
 
   async removeSubService(removeSubServiceDto: RemoveSubServiceDto): Promise<IResponse> {
@@ -375,32 +358,29 @@ export class ServiceFeatureService implements IServiceFeatureService {
         'subService._id': removeSubServiceDto.subId,
       },
       {
-        $set: { 'subService.$.isDeleted': true }
+        $set: { 'subService.$.isDeleted': true },
       },
-      { new: true }
+      { new: true },
     ); //todo
 
     return {
       success: !!updatedService,
-      message: !!updatedService ? 'Sub service updated successfully' : 'Failed to update'
-    }
+      message: updatedService ? 'Sub service updated successfully' : 'Failed to update',
+    };
   }
 
   async getServiceTitles(): Promise<IResponse<string[]>> {
-
     const serviceTitles = await this._serviceOfferedRepository.getServiceTitles();
 
-    const removedDuplicates = [... new Set((serviceTitles ?? []).map(s => s.title))];
+    const removedDuplicates = [...new Set((serviceTitles ?? []).map((s) => s.title))];
 
-    const formatted = removedDuplicates.map(title =>
-      title[0].toUpperCase() + title.slice(1).toLowerCase()
-    );
+    const formatted = removedDuplicates.map((title) => title[0].toUpperCase() + title.slice(1).toLowerCase());
 
     return {
       success: true,
       message: 'Service titles fetched success fully',
-      data: formatted
-    }
+      data: formatted,
+    };
   }
 
   private async _handleSubServices(subServices: CreateSubServiceDto[]): Promise<ISubService[]> {
@@ -409,9 +389,7 @@ export class ServiceFeatureService implements IServiceFeatureService {
         title: sub.title,
         desc: sub.desc,
         estimatedTime: sub.estimatedTime,
-        image: sub.image
-          ? await this._uploadsUtility.uploadImage(sub.image)
-          : '',
+        image: sub.image ? await this._uploadsUtility.uploadImage(sub.image) : '',
         price: sub.price,
       })),
     );

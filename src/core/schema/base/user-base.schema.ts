@@ -21,8 +21,6 @@ export class LocationDocument {
 
 export const LocationSchema = SchemaFactory.createForClass(LocationDocument);
 
-
-
 @Schema({ discriminatorKey: 'kind', timestamps: true })
 export class BaseUserDocument extends Document {
   @Prop({ type: String })

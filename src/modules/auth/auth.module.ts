@@ -12,20 +12,9 @@ import { PassportModule } from '@nestjs/passport';
 import { SharedModule } from '@shared/shared.module';
 
 @Module({
-  imports: [
-    PassportModule.register({ session: true }),
-    JwtConfigModule,
-    RedisModule,
-    SharedModule,
-    MailModule,
-  ],
+  imports: [PassportModule.register({ session: true }), JwtConfigModule, RedisModule, SharedModule, MailModule],
   controllers: [SignUpController, LoginController],
-  providers: [
-    ...repositoryProvider,
-    ...serviceProvider,
-    ...utilityProvider,
-    GoogleStrategy,
-  ],
+  providers: [...repositoryProvider, ...serviceProvider, ...utilityProvider, GoogleStrategy],
   exports: [],
 })
-export class AuthModule { }
+export class AuthModule {}

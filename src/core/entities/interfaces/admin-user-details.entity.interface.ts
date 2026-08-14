@@ -1,5 +1,5 @@
-import { BookingStatus } from '@core/enum/bookings.enum';
-import { VerificationStatusType } from './user.entity.interface';
+import type { BookingStatus } from '@core/enum/bookings.enum';
+import type { VerificationStatusType } from './user.entity.interface';
 
 export interface ICustomerDetailsProfile {
   id: string;

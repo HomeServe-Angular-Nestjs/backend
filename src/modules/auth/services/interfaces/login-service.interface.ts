@@ -1,6 +1,6 @@
-import { IResponse } from '@core/misc/response.util';
-import { IUser } from '../../../../core/entities/interfaces/user.entity.interface';
-import { AuthLoginDto, ChangePasswordDto, EmailAndTypeDto, GoogleLoginDto } from '../../dtos/login.dto';
+import type { IResponse } from '@core/misc/response.util';
+import type { IUser } from '../../../../core/entities/interfaces/user.entity.interface';
+import type { AuthLoginDto, ChangePasswordDto, EmailAndTypeDto, GoogleLoginDto } from '../../dtos/login.dto';
 
 export interface ILoginService {
   validateUserCredentials(loginDto: AuthLoginDto): Promise<IUser>;

@@ -47,7 +47,7 @@ export class ProviderRepository extends BaseRepository<ProviderDocument> impleme
 
     if (filter.providerIds?.length) {
       baseMatch._id = {
-        $in: filter.providerIds.map(id => new Types.ObjectId(id)),
+        $in: filter.providerIds.map((id) => new Types.ObjectId(id)),
       };
     }
 
@@ -63,8 +63,8 @@ export class ProviderRepository extends BaseRepository<ProviderDocument> impleme
           from: 'subscriptions',
           localField: '_id',
           foreignField: 'userId',
-          as: 'subs'
-        }
+          as: 'subs',
+        },
       },
       {
         $addFields: {
@@ -82,19 +82,19 @@ export class ProviderRepository extends BaseRepository<ProviderDocument> impleme
                           { $eq: ['$$this.paymentStatus', 'paid'] },
                           { $eq: ['$$this.role', 'provider'] },
                           { $lte: ['$$this.startTime', now] },
-                          { $gte: ['$$this.endDate', now] }
-                        ]
-                      }
-                    }
+                          { $gte: ['$$this.endDate', now] },
+                        ],
+                      },
+                    },
                   },
                   as: 's',
-                  in: '$$s.features.search_priority'
-                }
+                  in: '$$s.features.search_priority',
+                },
               },
-              0
-            ]
-          }
-        }
+              0,
+            ],
+          },
+        },
       },
       {
         $addFields: {
@@ -103,13 +103,13 @@ export class ProviderRepository extends BaseRepository<ProviderDocument> impleme
               branches: [
                 { case: { $eq: ['$activePriority', 'high'] }, then: 0 },
                 { case: { $eq: ['$activePriority', 'medium'] }, then: 1 },
-                { case: { $eq: ['$activePriority', 'low'] }, then: 2 }
+                { case: { $eq: ['$activePriority', 'low'] }, then: 2 },
               ],
-              default: 3
-            }
-          }
-        }
-      }
+              default: 3,
+            },
+          },
+        },
+      },
     ];
   }
 
@@ -146,7 +146,7 @@ export class ProviderRepository extends BaseRepository<ProviderDocument> impleme
         },
       },
     ];
-    }
+  }
 
   private _escapeRegex(text: string): string {
     return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -157,11 +157,7 @@ export class ProviderRepository extends BaseRepository<ProviderDocument> impleme
   }
 
   async updateGoogleId(email: string, googleId: string): Promise<ProviderDocument | null> {
-    return await this._providerModel.findOneAndUpdate(
-      { email },
-      { $set: { googleId, lastLogin: new Date() } },
-      { new: true }
-    );
+    return await this._providerModel.findOneAndUpdate({ email }, { $set: { googleId, lastLogin: new Date() } }, { new: true });
   }
 
   async findByEmail(email: string): Promise<ProviderDocument | null> {
@@ -169,11 +165,7 @@ export class ProviderRepository extends BaseRepository<ProviderDocument> impleme
   }
 
   async updatePassword(email: string, hashedPassword: string): Promise<ProviderDocument | null> {
-    return await this._providerModel.findOneAndUpdate(
-      { email },
-      { $set: { password: hashedPassword } },
-      { new: true }
-    ).lean();
+    return await this._providerModel.findOneAndUpdate({ email }, { $set: { password: hashedPassword } }, { new: true }).lean();
   }
 
   async count(filter?: FilterQuery<ProviderDocument>): Promise<number> {
@@ -191,7 +183,7 @@ export class ProviderRepository extends BaseRepository<ProviderDocument> impleme
 
   async fetchProvidersByFilterWithPagination(
     filter: IFilterFetchProviders,
-    options: { page: number; limit: number; },
+    options: { page: number; limit: number },
     searchRadiusMeters: number,
   ): Promise<ProviderDocument[]> {
     const limit = options.limit || 10;
@@ -230,10 +222,7 @@ export class ProviderRepository extends BaseRepository<ProviderDocument> impleme
     const baseMatch = this._buildBaseMatch(filter);
 
     if (filter.lat && filter.lng) {
-      const pipeline: PipelineStage[] = [
-        ...this._geoNearStages(filter, baseMatch, searchRadiusMeters),
-        { $count: 'total' },
-      ];
+      const pipeline: PipelineStage[] = [...this._geoNearStages(filter, baseMatch, searchRadiusMeters), { $count: 'total' }];
       const [result] = await this._providerModel.aggregate<{ total: number }>(pipeline);
       return result?.total ?? 0;
     }
@@ -241,7 +230,6 @@ export class ProviderRepository extends BaseRepository<ProviderDocument> impleme
     return this._providerModel.countDocuments(baseMatch);
   }
 
-  
   async addWorkImage(providerId: string, publicId: string): Promise<ProviderDocument | null> {
     const result = await this._providerModel.findOneAndUpdate(
       { _id: providerId },
@@ -249,21 +237,18 @@ export class ProviderRepository extends BaseRepository<ProviderDocument> impleme
         $push: {
           workImages: {
             $each: [publicId],
-            $position: 0
-          }
-        }
+            $position: 0,
+          },
+        },
       },
-      { new: true }
+      { new: true },
     );
 
     return result ? result : null;
   }
 
   async getWorkImages(providerId: string): Promise<string[]> {
-    const result = await this._providerModel.findOne(
-      { _id: providerId },
-      { workImages: 1 }
-    );
+    const result = await this._providerModel.findOne({ _id: providerId }, { workImages: 1 });
     return result ? result.workImages : [];
   }
 
@@ -277,32 +262,29 @@ export class ProviderRepository extends BaseRepository<ProviderDocument> impleme
     const endOfToday = new Date();
     endOfToday.setHours(23, 59, 59, 999);
 
-    const result = await this._providerModel.aggregate([
+    const result = await this._providerModel.aggregate<{ new: number; total: number; active: number }>([
       {
         $group: {
           _id: null,
           total: { $sum: 1 },
           new: {
             $sum: {
-              $cond: [{ $gte: ['$createdAt', sevenDaysAgo] }, 1, 0]
-            }
+              $cond: [{ $gte: ['$createdAt', sevenDaysAgo] }, 1, 0],
+            },
           },
           active: {
             $sum: {
               $cond: [
                 {
-                  $and: [
-                    { $gte: ['$lastLoggedIn', startOfToday] },
-                    { $lte: ['$lastLoggedIn', endOfToday] }
-                  ]
+                  $and: [{ $gte: ['$lastLoggedIn', startOfToday] }, { $lte: ['$lastLoggedIn', endOfToday] }],
                 },
                 1,
-                0
-              ]
-            }
-          }
-        }
-      }
+                0,
+              ],
+            },
+          },
+        },
+      },
     ]);
 
     return result.length > 0 ? result[0] : { new: 0, total: 0, active: 0 };
@@ -316,7 +298,7 @@ export class ProviderRepository extends BaseRepository<ProviderDocument> impleme
     if (data.fromDate && data.toDate) {
       match.createdAt = {
         $gte: new Date(data.fromDate),
-        $lte: new Date(data.toDate)
+        $lte: new Date(data.toDate),
       };
     }
 
@@ -330,50 +312,43 @@ export class ProviderRepository extends BaseRepository<ProviderDocument> impleme
     }
 
     // Generating $addFields stage.
-    pipeline.push(
-      {
-        $addFields: {
-          totalReviews: {
-            $size: { $ifNull: ["$reviews", []] }
-          },
-          totalServiceListed: {
-            $size: { $ifNull: ["$servicesOffered", []] }
-          }
-        }
-      }
-    );
+    pipeline.push({
+      $addFields: {
+        totalReviews: {
+          $size: { $ifNull: ['$reviews', []] },
+        },
+        totalServiceListed: {
+          $size: { $ifNull: ['$servicesOffered', []] },
+        },
+      },
+    });
 
     // Generating $sort stage.
     pipeline.push({ $sort: { createdAt: -1 } });
 
     // Generating $project stage.
-    pipeline.push(
-      {
-        $project: {
-          id: '$_id',
-          email: '$email',
-          username: '$username',
-          fullname: '$fullname',
-          phone: '$phone',
-          date: '$createdAt',
-          profession: 1,
-          experience: 1,
-          isCertified: 1,
-          avgRating: 1,
-          totalServiceListed: 1,
-          totalReviews: 1
-        }
-      }
-    );
+    pipeline.push({
+      $project: {
+        id: '$_id',
+        email: '$email',
+        username: '$username',
+        fullname: '$fullname',
+        phone: '$phone',
+        date: '$createdAt',
+        profession: 1,
+        experience: 1,
+        isCertified: 1,
+        avgRating: 1,
+        totalServiceListed: 1,
+        totalReviews: 1,
+      },
+    });
 
-    return this._providerModel.aggregate(pipeline).exec();
+    return this._providerModel.aggregate<IReportProviderData>(pipeline).exec();
   }
 
   async updateSubscriptionId(providerId: string, subscriptionId: string): Promise<boolean> {
-    const result = await this._providerModel.updateOne(
-      { _id: providerId },
-      { $set: { subscriptionId } }
-    );
+    const result = await this._providerModel.updateOne({ _id: providerId }, { $set: { subscriptionId } });
 
     return result.modifiedCount === 1;
   }
@@ -382,8 +357,8 @@ export class ProviderRepository extends BaseRepository<ProviderDocument> impleme
     const result = await this._providerModel.updateOne(
       { _id: providerId },
       {
-        $set: { password }
-      }
+        $set: { password },
+      },
     );
 
     return result.modifiedCount === 1;
@@ -395,32 +370,20 @@ export class ProviderRepository extends BaseRepository<ProviderDocument> impleme
   }
 
   async updateBufferTime(providerId: string, bufferTime: number): Promise<ProviderDocument | null> {
-    return await this._providerModel.findOneAndUpdate(
-      { _id: providerId },
-      { $set: { bufferTime } },
-      { new: true }
-    );
+    return await this._providerModel.findOneAndUpdate({ _id: providerId }, { $set: { bufferTime } }, { new: true });
   }
 
   async getBufferTime(providerId: string): Promise<number> {
-    const provider = await this._providerModel.findById(providerId)
-      .select('bufferTime')
-      .lean();
+    const provider = await this._providerModel.findById(providerId).select('bufferTime').lean();
     return provider?.bufferTime ?? 0;
   }
 
   async hasSubmittedDocuments(providerId: string): Promise<boolean> {
-    const provider = await this._providerModel.findById(providerId)
-      .select('docs')
-      .lean();
-    return !!provider && (provider.docs ?? []).some(doc => !doc.isDeleted);
+    const provider = await this._providerModel.findById(providerId).select('docs').lean();
+    return !!provider && (provider.docs ?? []).some((doc) => !doc.isDeleted);
   }
 
   async updateVerificationStatus(providerId: string, status: VerificationStatusType): Promise<ProviderDocument | null> {
-    return await this._providerModel.findOneAndUpdate(
-      { _id: providerId },
-      { $set: { verificationStatus: status } },
-      { new: true }
-    );
+    return await this._providerModel.findOneAndUpdate({ _id: providerId }, { $set: { verificationStatus: status } }, { new: true });
   }
 }

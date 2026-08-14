@@ -9,28 +9,28 @@ import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class MessageRepository extends BaseRepository<MessageDocument> implements IMessagesRepository {
-    constructor(
-        @InjectModel(MESSAGE_MODEL_NAME)
-        private readonly _messageModel: Model<MessageDocument>,
-    ) {
-        super(_messageModel)
+  constructor(
+    @InjectModel(MESSAGE_MODEL_NAME)
+    private readonly _messageModel: Model<MessageDocument>,
+  ) {
+    super(_messageModel);
+  }
+
+  async count(filter?: FilterQuery<MessageDocument>): Promise<number> {
+    return await this._messageModel.countDocuments(filter);
+  }
+
+  async updateMany(filter: FilterQuery<MessageDocument>, update: UpdateQuery<MessageDocument>): Promise<UpdateWriteOpResult> {
+    return this.model.updateMany(filter, update).exec();
+  }
+
+  async findMessagesBefore(chatId: string, beforeId: string | null, limit: number): Promise<MessageDocument[]> {
+    const filter: FilterQuery<MessageDocument> = { chatId: this._toObjectId(chatId) };
+
+    if (beforeId) {
+      filter._id = { $lt: this._toObjectId(beforeId) };
     }
 
-    async count(filter?: FilterQuery<MessageDocument>): Promise<number> {
-        return await this._messageModel.countDocuments(filter);
-    }
-
-    async updateMany(filter: FilterQuery<MessageDocument>, update: UpdateQuery<MessageDocument>): Promise<UpdateWriteOpResult> {
-        return this.model.updateMany(filter, update).exec();
-    }
-
-    async findMessagesBefore(chatId: string, beforeId: string | null, limit: number): Promise<MessageDocument[]> {
-        const filter: FilterQuery<MessageDocument> = { chatId: this._toObjectId(chatId) };
-
-        if (beforeId) {
-            filter._id = { $lt: this._toObjectId(beforeId) };
-        }
-
-        return this.model.find(filter).sort({ _id: -1 }).limit(limit).exec();
-    }
+    return this.model.find(filter).sort({ _id: -1 }).limit(limit).exec();
+  }
 }

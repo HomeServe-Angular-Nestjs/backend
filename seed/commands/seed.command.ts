@@ -9,7 +9,7 @@ export class SeedCommand {
   constructor(
     @Inject(ADMIN_SEED_SERVICE_NAME)
     private seedService: ISeedAdminService,
-  ) { }
+  ) {}
 
   @Command({
     command: 'seed:admin',

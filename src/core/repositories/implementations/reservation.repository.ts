@@ -1,74 +1,74 @@
-import { Injectable } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
-import { Model } from "mongoose";
-import { ReservationDocument } from "@core/schema/reservation.schema";
-import { RESERVATION_MODEL_NAME } from "@core/constants/model.constant";
-import { BaseRepository } from "@core/repositories/base/implementations/base.repository";
-import { IReservationRepository } from "@core/repositories/interfaces/reservation-repo.interface";
+import { Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { ReservationDocument } from '@core/schema/reservation.schema';
+import { RESERVATION_MODEL_NAME } from '@core/constants/model.constant';
+import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
+import { IReservationRepository } from '@core/repositories/interfaces/reservation-repo.interface';
 
 @Injectable()
 export class ReservationRepository extends BaseRepository<ReservationDocument> implements IReservationRepository {
-    constructor(
-        @InjectModel(RESERVATION_MODEL_NAME)
-        private readonly _reservationModel: Model<ReservationDocument>
-    ) {
-        super(_reservationModel);
+  constructor(
+    @InjectModel(RESERVATION_MODEL_NAME)
+    private readonly _reservationModel: Model<ReservationDocument>,
+  ) {
+    super(_reservationModel);
+  }
+
+  async isReserved(providerId: string, from: string, to: string, date: string | Date): Promise<boolean> {
+    const formattedDate = new Date(date);
+    formattedDate.setHours(0, 0, 0, 0);
+
+    const isExists = await this._reservationModel.findOne({
+      providerId: this._toObjectId(providerId),
+      from,
+      to,
+      date: formattedDate,
+    });
+
+    return !!isExists;
+  }
+
+  async createOrRefreshReservation(data: Partial<ReservationDocument>): Promise<ReservationDocument> {
+    const existing = await this._reservationModel.findOne({
+      from: data.from,
+      to: data.to,
+      date: data.date,
+      providerId: data.providerId,
+      customerId: data.customerId,
+    });
+
+    if (existing) {
+      const refreshed = await this._reservationModel.findOneAndUpdate(
+        { _id: existing._id },
+        { $set: { createdAt: new Date() } },
+        { new: true },
+      );
+      return refreshed ?? existing;
     }
 
-    async isReserved(providerId: string, from: string, to: string, date: string | Date): Promise<boolean> {
-        const formattedDate = new Date(date);
-        formattedDate.setHours(0, 0, 0, 0);
+    return await this._reservationModel.create(data);
+  }
 
-        const isExists = await this._reservationModel.findOne({
-            providerId: this._toObjectId(providerId),
-            from,
-            to,
-            date: formattedDate
-        });
+  async findAllForDate(providerId: string, date: string | Date): Promise<ReservationDocument[]> {
+    const formattedDate = new Date(date);
+    formattedDate.setHours(0, 0, 0, 0);
 
-        return !!isExists;
-    }
+    return await this._reservationModel.find({
+      providerId: this._toObjectId(providerId),
+      date: formattedDate,
+    });
+  }
 
-    async createOrRefreshReservation(data: Partial<ReservationDocument>): Promise<ReservationDocument> {
-        const existing = await this._reservationModel.findOne({
-            from: data.from,
-            to: data.to,
-            date: data.date,
-            providerId: data.providerId,
-            customerId: data.customerId,
-        });
+  async releaseReservation(providerId: string, from: string, to: string, date: string | Date): Promise<{ deletedCount?: number }> {
+    const formattedDate = new Date(date);
+    formattedDate.setHours(0, 0, 0, 0);
 
-        if (existing) {
-            const refreshed = await this._reservationModel.findOneAndUpdate(
-                { _id: existing._id },
-                { $set: { createdAt: new Date() } },
-                { new: true }
-            );
-            return refreshed ?? existing;
-        }
-
-        return await this._reservationModel.create(data);
-    }
-
-    async findAllForDate(providerId: string, date: string | Date): Promise<ReservationDocument[]> {
-        const formattedDate = new Date(date);
-        formattedDate.setHours(0, 0, 0, 0);
-
-        return await this._reservationModel.find({
-            providerId: this._toObjectId(providerId),
-            date: formattedDate
-        });
-    }
-
-    async releaseReservation(providerId: string, from: string, to: string, date: string | Date): Promise<{ deletedCount?: number }> {
-        const formattedDate = new Date(date);
-        formattedDate.setHours(0, 0, 0, 0);
-
-        return await this._reservationModel.deleteOne({
-            providerId: this._toObjectId(providerId),
-            from,
-            to,
-            date: formattedDate
-        });
-    }
+    return await this._reservationModel.deleteOne({
+      providerId: this._toObjectId(providerId),
+      from,
+      to,
+      date: formattedDate,
+    });
+  }
 }

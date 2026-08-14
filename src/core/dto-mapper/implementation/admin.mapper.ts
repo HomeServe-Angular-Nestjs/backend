@@ -8,21 +8,21 @@ import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class AdminMapper implements IAdminMapper {
-    toEntity(doc: AdminDocument): IAdmin {
-        return new Admin({
-            id: (doc._id as Types.ObjectId).toString(),
-            email: doc.email,
-            password: doc.password,
-            isActive: doc.isActive,
-            createdAt: doc.createdAt,
-            updatedAt: doc.updatedAt
-        });
-    }
+  toEntity(doc: AdminDocument): IAdmin {
+    return new Admin({
+      id: (doc._id as Types.ObjectId).toString(),
+      email: doc.email,
+      password: doc.password,
+      isActive: doc.isActive,
+      createdAt: doc.createdAt,
+      updatedAt: doc.updatedAt,
+    });
+  }
 
-    toDocument(entity: Partial<IAdmin>): Partial<AdminDocument> {
-        return {
-            email: entity.email,
-            password: entity.password,
-        }
-    }
+  toDocument(entity: Partial<IAdmin>): Partial<AdminDocument> {
+    return {
+      email: entity.email,
+      password: entity.password,
+    };
+  }
 }

@@ -19,11 +19,10 @@ export class AdminRepository extends BaseRepository<AdminDocument> implements IA
     @InjectModel(ADMIN_MODEL_NAME)
     private _adminModel: Model<AdminDocument>,
     @Inject(LOGGER_FACTORY)
-    private readonly _loggerFactory: ILoggerFactory
+    private readonly _loggerFactory: ILoggerFactory,
   ) {
     super(_adminModel);
   }
-
 
   async findByEmail(email: string): Promise<AdminDocument | null> {
     return await this._adminModel.findOne({ email }).exec();
@@ -35,8 +34,8 @@ export class AdminRepository extends BaseRepository<AdminDocument> implements IA
       { $set: { email, password } },
       {
         upsert: true,
-        new: true
-      }
+        new: true,
+      },
     );
   }
 

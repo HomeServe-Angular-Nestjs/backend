@@ -1,29 +1,27 @@
-import { ADMIN_SETTINGS_SERVICE_NAME } from "@core/constants/service.constant";
-import { IAdminSettings } from "@core/entities/interfaces/admin-settings.entity.interface";
-import { AdminRoleGuard } from "@core/guards/admin-role.guard";
-import { IResponse } from "@core/misc/response.util";
-import { SettingsDto } from "@modules/users/dtos/admin-user.dto";
-import { IAdminSettingService } from "@modules/users/services/interfaces/settings-service.interface";
-import { Body, Controller, Get, Inject, Patch, UseGuards } from "@nestjs/common";
+import { ADMIN_SETTINGS_SERVICE_NAME } from '@core/constants/service.constant';
+import { IAdminSettings } from '@core/entities/interfaces/admin-settings.entity.interface';
+import { AdminRoleGuard } from '@core/guards/admin-role.guard';
+import { IResponse } from '@core/misc/response.util';
+import { SettingsDto } from '@modules/users/dtos/admin-user.dto';
+import { IAdminSettingService } from '@modules/users/services/interfaces/settings-service.interface';
+import { Body, Controller, Get, Inject, Patch, UseGuards } from '@nestjs/common';
 
 @UseGuards(AdminRoleGuard)
 @Controller('admin/settings')
 export class AdminSettingsController {
-    constructor(
-        @Inject(ADMIN_SETTINGS_SERVICE_NAME)
-        private readonly _settingService: IAdminSettingService
-    ) { }
+  constructor(
+    @Inject(ADMIN_SETTINGS_SERVICE_NAME)
+    private readonly _settingService: IAdminSettingService,
+  ) {}
 
-    @Get('')
-    async fetchSettings(): Promise<IResponse<IAdminSettings>> {
-        return await this._settingService.getSettings();
-    }
+  @Get('')
+  async fetchSettings(): Promise<IResponse<IAdminSettings>> {
+    return await this._settingService.getSettings();
+  }
 
-    @Patch('')
-    async updateSettings(@Body() settingsDto: SettingsDto): Promise<IResponse<IAdminSettings>> {
-        const data = Object.fromEntries(
-            Object.entries(settingsDto).filter(([_, value]) => value !== undefined)
-        );
-        return await this._settingService.updateSetting(data as IAdminSettings);
-    }
+  @Patch('')
+  async updateSettings(@Body() settingsDto: SettingsDto): Promise<IResponse<IAdminSettings>> {
+    const data = Object.fromEntries(Object.entries(settingsDto).filter(([_, value]) => value !== undefined));
+    return await this._settingService.updateSetting(data as IAdminSettings);
+  }
 }

@@ -11,36 +11,35 @@ import { Body, Controller, Get, Inject, Patch, Query, UseGuards } from '@nestjs/
 @UseGuards(AdminRoleGuard)
 @Controller('admin/reviews')
 export class ReviewController {
-    private readonly logger = new CustomLogger(ReviewController.name);
+  private readonly logger = new CustomLogger(ReviewController.name);
 
-    constructor(
-        @Inject(ADMIN_REVIEWS_SERVICE_NAME)
-        private readonly _reviewService: IAdminReviewService,
-    ) { }
+  constructor(
+    @Inject(ADMIN_REVIEWS_SERVICE_NAME)
+    private readonly _reviewService: IAdminReviewService,
+  ) {}
 
-    @Get()
-    async getReviews(@Query() filter: FilterWithPaginationDto) {
-        return await this._reviewService.getReviews(filter);
-    }
+  @Get()
+  async getReviews(@Query() filter: FilterWithPaginationDto) {
+    return await this._reviewService.getReviews(filter);
+  }
 
-    @Get('stats')
-    async getReviewStats() {
-        return await this._reviewService.reviewStats();
-    }
+  @Get('stats')
+  async getReviewStats() {
+    return await this._reviewService.reviewStats();
+  }
 
-    @Get('lowest_rated')
-    async getLowestRatedProviders(@Query() query: LowestRatedQueryDto) {
-        return await this._reviewService.lowestRatedProviders(query.limit);
-    }
+  @Get('lowest_rated')
+  async getLowestRatedProviders(@Query() query: LowestRatedQueryDto) {
+    return await this._reviewService.lowestRatedProviders(query.limit);
+  }
 
-    @Get('rating_trend')
-    async getRatingTrend(@Query() query: RatingTrendQueryDto) {
-        return await this._reviewService.ratingTrend(query.days);
-    }
+  @Get('rating_trend')
+  async getRatingTrend(@Query() query: RatingTrendQueryDto) {
+    return await this._reviewService.ratingTrend(query.days);
+  }
 
-    @Patch('status')
-    async updateStatus(@Body() updateReviewStatus: UpdateReviewStatus) {
-        return await this._reviewService.updateReviewStatus(updateReviewStatus);
-    }
+  @Patch('status')
+  async updateStatus(@Body() updateReviewStatus: UpdateReviewStatus) {
+    return await this._reviewService.updateReviewStatus(updateReviewStatus);
+  }
 }
-

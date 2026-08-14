@@ -1,9 +1,9 @@
-import { FilterQuery } from 'mongoose';
+import type { FilterQuery } from 'mongoose';
 
-import { IReportUserData, IReportDownloadUserData, IStats } from '@core/entities/interfaces/admin.entity.interface';
-import { IUpdateProfileData } from '@core/entities/interfaces/user.entity.interface';
-import { IBaseRepository } from '@core/repositories/base/interfaces/base-repo.interface';
-import { CustomerDocument } from '@core/schema/customer.schema';
+import type { IReportUserData, IReportDownloadUserData, IStats } from '@core/entities/interfaces/admin.entity.interface';
+import type { IUpdateProfileData } from '@core/entities/interfaces/user.entity.interface';
+import type { IBaseRepository } from '@core/repositories/base/interfaces/base-repo.interface';
+import type { CustomerDocument } from '@core/schema/customer.schema';
 
 export interface ICustomerRepository extends IBaseRepository<CustomerDocument> {
   findByGoogleId(id: string): Promise<CustomerDocument | null>;

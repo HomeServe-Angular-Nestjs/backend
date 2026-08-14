@@ -20,5 +20,3 @@ export const SERVICE_CATEGORY_MODEL_NAME = 'ServiceCategory';
 export const PROVIDER_SERVICE_MODEL_NAME = 'ProviderService';
 export const CART_MODEL_NAME = 'Cart';
 export const COUPON_MODEL_NAME = 'coupon';
-
-

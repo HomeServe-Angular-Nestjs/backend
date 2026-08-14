@@ -1,4 +1,19 @@
-import { BadRequestException, Body, Controller, Get, Inject, InternalServerErrorException, NotFoundException, Post, Put, Query, Req, Res, UnauthorizedException, UseGuards } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Inject,
+  InternalServerErrorException,
+  NotFoundException,
+  Post,
+  Put,
+  Query,
+  Req,
+  Res,
+  UnauthorizedException,
+  UseGuards,
+} from '@nestjs/common';
 import { Request, Response } from 'express';
 
 import { LOGIN_SERVICE_INTERFACE_NAME, TOKEN_SERVICE_NAME } from '@core/constants/service.constant';
@@ -28,7 +43,7 @@ export class LoginController {
   }
 
   @Post('auth')
-  async validateCredentials(@Body() loginDto: AuthLoginDto, @Res({ passthrough: true }) response: Response,) {
+  async validateCredentials(@Body() loginDto: AuthLoginDto, @Res({ passthrough: true }) response: Response) {
     const user = await this._loginService.validateUserCredentials(loginDto);
     if (!user) {
       throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
@@ -73,12 +88,13 @@ export class LoginController {
   @Post('verify_otp_forgot')
   async verifyOtpFromForgotPassword(@Body() verifyDto: VerifyOtpForgotPassDto) {
     const { code, email } = verifyDto;
-    if (!code || !email) throw new BadRequestException({
-      code: ErrorCodes.BAD_REQUEST,
-      message: 'otp code or email is missing.'
-    })
+    if (!code || !email)
+      throw new BadRequestException({
+        code: ErrorCodes.BAD_REQUEST,
+        message: 'otp code or email is missing.',
+      });
 
-    return await this._loginService.verifyOtpFromForgotPassword(email, code)
+    return await this._loginService.verifyOtpFromForgotPassword(email, code);
   }
 
   @Put('change_password')
@@ -87,12 +103,10 @@ export class LoginController {
   }
 
   @Get('google/init')
-  initializeGoogleAuth(@Query('type') type: string, @Req() req: Request, @Res() res: Response,) {
+  initializeGoogleAuth(@Query('type') type: string, @Req() req: Request, @Res() res: Response) {
     try {
       if (!type) {
-        return res
-          .status(400)
-          .json({ success: false, message: 'User Type Is Required.' });
+        return res.status(400).json({ success: false, message: 'User Type Is Required.' });
       }
 
       const googleAuthUrl = `${process.env.BACKEND_URL}/api/login/google?state=${type}`;
@@ -104,22 +118,17 @@ export class LoginController {
       });
     } catch (err) {
       this.logger.error('Google Login Error:', err);
-      throw new InternalServerErrorException(
-        'An unexpected error occurred. Please try again.',
-      );
+      throw new InternalServerErrorException('An unexpected error occurred. Please try again.');
     }
   }
 
   @Get('google')
   @UseGuards(GoogleAuthGuard)
-  handleGoogleLogin() { }
+  handleGoogleLogin() {}
 
   @Get('google/redirect')
   @UseGuards(GoogleAuthGuard)
-  async handleGoogleRedirect(
-    @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
-  ) {
+  async handleGoogleRedirect(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     try {
       const user = req.user as IUser;
 

@@ -17,7 +17,7 @@ export class UploadsUtility implements IUploadsUtility {
   constructor(
     @Inject(LOGGER_FACTORY)
     private readonly _loggerFactory: ILoggerFactory,
-    private readonly _cloudinaryService: CloudinaryService
+    private readonly _cloudinaryService: CloudinaryService,
   ) {
     this.logger = this._loggerFactory.createLogger(UploadsUtility.name);
   }
@@ -41,7 +41,6 @@ export class UploadsUtility implements IUploadsUtility {
   }
 
   async uploadsImage(file: Express.Multer.File, publicId: string): Promise<UploadApiResponse> {
-
     if (!file) {
       throw new Error(UploadErrorCodes.EMPTY_RESULT);
     }
@@ -53,16 +52,10 @@ export class UploadsUtility implements IUploadsUtility {
     try {
       return await this._cloudinaryService.uploadsImage(file, publicId);
     } catch (err: any) {
-      this.logger.error(
-        'Upload error:',
-        err?.message,
-        err?.stack
-      );
+      this.logger.error('Upload error:', err?.message, err?.stack);
 
       // Re-throw normalized error
-      throw err instanceof Error
-        ? err
-        : new Error(UploadErrorCodes.UPLOAD_UNKNOWN_ERROR);
+      throw err instanceof Error ? err : new Error(UploadErrorCodes.UPLOAD_UNKNOWN_ERROR);
     }
   }
 
@@ -75,12 +68,10 @@ export class UploadsUtility implements IUploadsUtility {
       'lh5.googleusercontent.com',
       'lh6.googleusercontent.com',
       'googleusercontent.com',
-      'www.googleapis.com'
+      'www.googleapis.com',
     ];
 
-    const cloudinaryDomains = [
-      'res.cloudinary.com'
-    ];
+    const cloudinaryDomains = ['res.cloudinary.com'];
 
     let isGoogleImage = false;
     let isCloudinaryUrl = false;
@@ -93,13 +84,12 @@ export class UploadsUtility implements IUploadsUtility {
       isCloudinaryUrl = cloudinaryDomains.includes(host);
 
       if (!isGoogleImage) {
-        isGoogleImage = googleDomains.some(domain => host.endsWith(domain));
+        isGoogleImage = googleDomains.some((domain) => host.endsWith(domain));
       }
 
       if (!isCloudinaryUrl) {
-        isCloudinaryUrl = cloudinaryDomains.some(domain => host.endsWith(domain));
+        isCloudinaryUrl = cloudinaryDomains.some((domain) => host.endsWith(domain));
       }
-
     } catch {
       isGoogleImage = false;
       isCloudinaryUrl = false;

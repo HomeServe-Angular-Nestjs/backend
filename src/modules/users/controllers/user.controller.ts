@@ -6,7 +6,19 @@ import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { GetUsersWithFilterDto, RemoveUserDto, StatusUpdateDto, UserReportDownloadDto } from '@modules/users/dtos/admin-user.dto';
 import { IAdminUserManagementService } from '@modules/users/services/interfaces/admin-user-service.interface';
-import { BadRequestException, Body, Controller, Get, Inject, InternalServerErrorException, Patch, Post, Query, Res, UseGuards } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Inject,
+  InternalServerErrorException,
+  Patch,
+  Post,
+  Query,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import { Response } from 'express';
 
 @UseGuards(AdminRoleGuard)
@@ -18,9 +30,9 @@ export class AdminUserController {
     @Inject(LOGGER_FACTORY)
     private readonly loggerFactory: ILoggerFactory,
     @Inject(ADMIN_USER_MANAGEMENT_SERVICE_NAME)
-    private readonly _adminUserManagementService: IAdminUserManagementService
+    private readonly _adminUserManagementService: IAdminUserManagementService,
   ) {
-    this.logger = this.loggerFactory.createLogger(AdminUserController.name)
+    this.logger = this.loggerFactory.createLogger(AdminUserController.name);
   }
 
   @Get('')
@@ -31,19 +43,19 @@ export class AdminUserController {
 
   @Patch('status')
   async updateUserStatus(@Body() statusUpdateDto: StatusUpdateDto) {
-    return await this._adminUserManagementService.updateUserStatus(statusUpdateDto)
+    return await this._adminUserManagementService.updateUserStatus(statusUpdateDto);
   }
 
   @Patch('remove')
   async removeUser(@Body() removeUserDto: RemoveUserDto) {
-    return await this._adminUserManagementService.removeUser(removeUserDto)
+    return await this._adminUserManagementService.removeUser(removeUserDto);
   }
 
   @Post('download_report')
   async downloadUserReport(@Res() res: Response, @Body() userReportDownloadDto: UserReportDownloadDto): Promise<void> {
     try {
       const start = Date.now();
-      const pdfBuffer = await this._adminUserManagementService.downloadUserReport(userReportDownloadDto)
+      const pdfBuffer = await this._adminUserManagementService.downloadUserReport(userReportDownloadDto);
       this.logger.debug(`[Admin] - PDF Generation Time: ${Date.now() - start}ms`);
 
       res.set({
@@ -58,6 +70,4 @@ export class AdminUserController {
       throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
     }
   }
-
-
 }

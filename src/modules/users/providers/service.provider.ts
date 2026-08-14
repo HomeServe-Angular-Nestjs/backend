@@ -1,15 +1,21 @@
-import { Provider } from '@nestjs/common';
+import type { Provider } from '@nestjs/common';
 
 import {
-  ADMIN_APPROVAL_SERVICE_NAME, ADMIN_BOOKINGS_SERVICE_NAME, ADMIN_DASHBOARD_OVERVIEW_SERVICE_NAME,
-  ADMIN_REVIEWS_SERVICE_NAME, ADMIN_SALES_REPORT_SERVICE_NAME, ADMIN_SETTINGS_SERVICE_NAME, ADMIN_TRANSACTION_SERVICE_NAME, ADMIN_USER_DETAILS_SERVICE_NAME, ADMIN_USER_MANAGEMENT_SERVICE_NAME, TOKEN_SERVICE_NAME
+  ADMIN_APPROVAL_SERVICE_NAME,
+  ADMIN_BOOKINGS_SERVICE_NAME,
+  ADMIN_DASHBOARD_OVERVIEW_SERVICE_NAME,
+  ADMIN_REVIEWS_SERVICE_NAME,
+  ADMIN_SALES_REPORT_SERVICE_NAME,
+  ADMIN_SETTINGS_SERVICE_NAME,
+  ADMIN_TRANSACTION_SERVICE_NAME,
+  ADMIN_USER_DETAILS_SERVICE_NAME,
+  ADMIN_USER_MANAGEMENT_SERVICE_NAME,
+  TOKEN_SERVICE_NAME,
 } from '../../../core/constants/service.constant';
 import { TokenService } from '../../auth/services/implementations/token.service';
 import { AdminApprovalService } from '../services/implementations/admin-approval.service';
 import { AdminBookingService } from '../services/implementations/admin-bookings.service';
-import {
-  AdminDashboardOverviewService
-} from '../services/implementations/admin-dashboard-overview.service';
+import { AdminDashboardOverviewService } from '../services/implementations/admin-dashboard-overview.service';
 import { AdminReviewService } from '../services/implementations/admin-reviews.service';
 import { AdminUserManagementService } from '../services/implementations/admin-user.service';
 import { AdminTransactionService } from '@modules/users/services/implementations/admin-transaction.service';
@@ -20,42 +26,42 @@ import { AdminUserDetailsService } from '@modules/users/services/implementations
 export const userServiceProvider: Provider[] = [
   {
     provide: ADMIN_USER_MANAGEMENT_SERVICE_NAME,
-    useClass: AdminUserManagementService
+    useClass: AdminUserManagementService,
   },
   {
     provide: TOKEN_SERVICE_NAME,
-    useClass: TokenService
+    useClass: TokenService,
   },
   {
     provide: ADMIN_APPROVAL_SERVICE_NAME,
-    useClass: AdminApprovalService
+    useClass: AdminApprovalService,
   },
   {
     provide: ADMIN_BOOKINGS_SERVICE_NAME,
-    useClass: AdminBookingService
+    useClass: AdminBookingService,
   },
   {
     provide: ADMIN_REVIEWS_SERVICE_NAME,
-    useClass: AdminReviewService
+    useClass: AdminReviewService,
   },
   {
     provide: ADMIN_DASHBOARD_OVERVIEW_SERVICE_NAME,
-    useClass: AdminDashboardOverviewService
+    useClass: AdminDashboardOverviewService,
   },
   {
     provide: ADMIN_TRANSACTION_SERVICE_NAME,
-    useClass: AdminTransactionService
+    useClass: AdminTransactionService,
   },
   {
     provide: ADMIN_SALES_REPORT_SERVICE_NAME,
-    useClass: AdminSalesReportService
+    useClass: AdminSalesReportService,
   },
   {
     provide: ADMIN_SETTINGS_SERVICE_NAME,
-    useClass: AdminSettingService
+    useClass: AdminSettingService,
   },
   {
     provide: ADMIN_USER_DETAILS_SERVICE_NAME,
-    useClass: AdminUserDetailsService
-  }
+    useClass: AdminUserDetailsService,
+  },
 ];

@@ -1,6 +1,19 @@
-import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ADMIN_MAPPER, CART_MAPPER, CUSTOMER_MAPPER, PROVIDER_MAPPER, WALLET_MAPPER } from '@core/constants/mappers.constant';
-import { ADMIN_REPOSITORY_NAME, CART_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, WALLET_REPOSITORY_NAME } from '@core/constants/repository.constant';
+import {
+  ADMIN_REPOSITORY_NAME,
+  CART_REPOSITORY_NAME,
+  CUSTOMER_REPOSITORY_INTERFACE_NAME,
+  PROVIDER_REPOSITORY_INTERFACE_NAME,
+  WALLET_REPOSITORY_NAME,
+} from '@core/constants/repository.constant';
 import { OTP_SERVICE_INTERFACE_NAME } from '@core/constants/service.constant';
 import { ARGON_UTILITY_NAME } from '@core/constants/utility.constant';
 import { IAdminMapper } from '@core/dto-mapper/interface/admin.mapper.interface';
@@ -75,10 +88,7 @@ export class LoginService implements ILoginService {
     }
   }
 
-  private _mappedUser(
-    type: UserType,
-    user: CustomerDocument | ProviderDocument | AdminDocument)
-    : ICustomer | IProvider | IAdmin {
+  private _mappedUser(type: UserType, user: CustomerDocument | ProviderDocument | AdminDocument): ICustomer | IProvider | IAdmin {
     switch (type) {
       case 'customer':
         return this._customerMapper.toEntity(user as CustomerDocument);
@@ -105,8 +115,8 @@ export class LoginService implements ILoginService {
 
     const cartDoc = this._cartMapper.toDocument({
       customerId: userId,
-      items: []
-    })
+      items: [],
+    });
     await this._cartRepository.create(cartDoc);
   }
 
@@ -120,15 +130,12 @@ export class LoginService implements ILoginService {
 
     const user = this._mappedUser(loginDto.type, userDocument);
 
-    const isValidPassword = await this._argon.verify(
-      user.password,
-      loginDto.password,
-    );
+    const isValidPassword = await this._argon.verify(user.password, loginDto.password);
 
     if (!isValidPassword) {
       throw new UnauthorizedException({
         code: ErrorCodes.UNAUTHORIZED_ACCESS,
-        message: ErrorMessage.LOGIN_FAILED
+        message: ErrorMessage.LOGIN_FAILED,
       });
     }
 
@@ -136,15 +143,17 @@ export class LoginService implements ILoginService {
       if (!user.isActive) {
         throw new UnauthorizedException({
           code: ErrorCodes.UNAUTHORIZED_ACCESS,
-          message: 'You are blocked by the admin.'
+          message: 'You are blocked by the admin.',
         });
       }
 
-      loginDto.type === 'customer'
-        ? await this._customerRepository.updateLastLogin(loginDto.email)
-        : await this._providerRepository.updateLastLogin(loginDto.email);
+      if (loginDto.type === 'customer') {
+        await this._customerRepository.updateLastLogin(loginDto.email);
+      } else {
+        await this._providerRepository.updateLastLogin(loginDto.email);
+      }
 
-      await this._createWallet(user.id, loginDto.type as UserType)
+      await this._createWallet(user.id, loginDto.type as UserType);
       await this.createCart(user.id, loginDto.type as UserType);
     }
 
@@ -153,15 +162,10 @@ export class LoginService implements ILoginService {
 
   async findOrCreateUser(user: GoogleLoginDto): Promise<IUser> {
     if (user.type === 'admin') {
-      throw new BadRequestException(
-        'Google login is not supported for admin users',
-      );
+      throw new BadRequestException('Google login is not supported for admin users');
     }
 
-    const repository =
-      user.type === 'customer'
-        ? this._customerRepository
-        : this._providerRepository;
+    const repository = user.type === 'customer' ? this._customerRepository : this._providerRepository;
 
     const existingUser = await repository.findByEmail(user.email);
 
@@ -196,7 +200,8 @@ export class LoginService implements ILoginService {
           username: user.name,
           googleId: user.googleId,
           avatar: user.avatar,
-        }));
+        }),
+      );
     } else if (user.type === 'provider') {
       newUserDocument = await this._providerRepository.create(
         this._providerMapper.toDocument({
@@ -204,11 +209,12 @@ export class LoginService implements ILoginService {
           username: user.name,
           googleId: user.googleId,
           avatar: user.avatar,
-        }));
+        }),
+      );
     } else {
       throw new BadRequestException({
         code: ErrorCodes.BAD_REQUEST,
-        message: 'Invalid user type'
+        message: 'Invalid user type',
       });
     }
 
@@ -219,31 +225,31 @@ export class LoginService implements ILoginService {
   }
 
   async requestOtpForForgotPassword(emailAndType: EmailAndTypeDto): Promise<IResponse> {
-    const repository = emailAndType.type === 'customer'
-      ? this._customerRepository
-      : this._providerRepository;
+    const repository = emailAndType.type === 'customer' ? this._customerRepository : this._providerRepository;
 
     const userDocument = await repository.findByEmail(emailAndType.email);
-    if (!userDocument) throw new NotFoundException({
-      code: ErrorCodes.NOT_FOUND,
-      message: ErrorMessage.USER_NOT_FOUND
-    });
+    if (!userDocument)
+      throw new NotFoundException({
+        code: ErrorCodes.NOT_FOUND,
+        message: ErrorMessage.USER_NOT_FOUND,
+      });
 
     const user = this._mappedUser(emailAndType.type, userDocument);
     await this._otpService.generateAndSendOtp(user.email);
-    return { success: true, message: 'Otp requested' }
+    return { success: true, message: 'Otp requested' };
   }
 
   async verifyOtpFromForgotPassword(email: string, code: string): Promise<IResponse> {
     await this._otpService.verifyOtp(email, code);
-    return { success: true, message: 'Otp verified.' }
+    return { success: true, message: 'Otp verified.' };
   }
 
   async changePassword(passwordDto: ChangePasswordDto): Promise<IResponse> {
-    if (passwordDto.type === 'admin') throw new UnauthorizedException({
-      code: ErrorCodes.UNAUTHORIZED_ACCESS,
-      message: ErrorMessage.INVALID_TYPE
-    });
+    if (passwordDto.type === 'admin')
+      throw new UnauthorizedException({
+        code: ErrorCodes.UNAUTHORIZED_ACCESS,
+        message: ErrorMessage.INVALID_TYPE,
+      });
 
     const hashedPassword = await this._argon.hash(passwordDto.password);
     let updatedUser: CustomerDocument | ProviderDocument | null = null;
@@ -254,14 +260,12 @@ export class LoginService implements ILoginService {
       updatedUser = await this._providerRepository.updatePassword(passwordDto.email, hashedPassword);
     }
 
-    if (!updatedUser) throw new NotFoundException({
-      code: ErrorCodes.NOT_FOUND,
-      message: 'Not found Exception'
-    });
+    if (!updatedUser)
+      throw new NotFoundException({
+        code: ErrorCodes.NOT_FOUND,
+        message: 'Not found Exception',
+      });
 
-    return { success: true, message: 'Password updated successfully.' }
+    return { success: true, message: 'Password updated successfully.' };
   }
-
 }
-
-

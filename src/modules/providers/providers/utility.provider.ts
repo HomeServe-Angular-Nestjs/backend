@@ -1,4 +1,4 @@
-import { Provider } from '@nestjs/common';
+import type { Provider } from '@nestjs/common';
 
 import { ARGON_UTILITY_NAME, TIME_UTILITY_NAME, UPLOAD_UTILITY_NAME } from '../../../core/constants/utility.constant';
 import { UploadsUtility } from '../../../core/utilities/implementations/upload.utility';
@@ -17,5 +17,5 @@ export const utilityProviders: Provider[] = [
   {
     provide: TIME_UTILITY_NAME,
     useClass: TimeUtility,
-  }
+  },
 ];

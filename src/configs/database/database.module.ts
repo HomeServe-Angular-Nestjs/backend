@@ -1,9 +1,27 @@
 import { Connection, ConnectionStates } from 'mongoose';
 
 import {
-  ADMIN_MODEL_NAME, ADMIN_SETTINGS_MODEL_NAME, BOOKINGS_MODEL_NAME, CHAT_MODEL_NAME, COUPON_MODEL_NAME, CUSTOMER_MODEL_NAME, DATE_OVERRIDE_MODEL_NAME, MESSAGE_MODEL_NAME,
-  NOTIFICATION_MODEL_NAME, PLAN_MODEL_NAME, PROFESSION_MODEL_NAME, PROVIDER_MODEL_NAME, PROVIDER_SERVICE_MODEL_NAME, REPORT_MODEL_NAME, RESERVATION_MODEL_NAME,
-  SERVICE_CATEGORY_MODEL_NAME, SERVICE_OFFERED_MODEL_NAME, SUBSCRIPTION_MODEL_NAME, WALLET_LEDGER_MODEL_NAME, WALLET_MODEL_NAME, WEEKLY_AVAILABILITY_MODEL_NAME
+  ADMIN_MODEL_NAME,
+  ADMIN_SETTINGS_MODEL_NAME,
+  BOOKINGS_MODEL_NAME,
+  CHAT_MODEL_NAME,
+  COUPON_MODEL_NAME,
+  CUSTOMER_MODEL_NAME,
+  DATE_OVERRIDE_MODEL_NAME,
+  MESSAGE_MODEL_NAME,
+  NOTIFICATION_MODEL_NAME,
+  PLAN_MODEL_NAME,
+  PROFESSION_MODEL_NAME,
+  PROVIDER_MODEL_NAME,
+  PROVIDER_SERVICE_MODEL_NAME,
+  REPORT_MODEL_NAME,
+  RESERVATION_MODEL_NAME,
+  SERVICE_CATEGORY_MODEL_NAME,
+  SERVICE_OFFERED_MODEL_NAME,
+  SUBSCRIPTION_MODEL_NAME,
+  WALLET_LEDGER_MODEL_NAME,
+  WALLET_MODEL_NAME,
+  WEEKLY_AVAILABILITY_MODEL_NAME,
 } from '@core/constants/model.constant';
 import { AdminSchema } from '@core/schema/admin.schema';
 import { BookingSchema } from '@core/schema/bookings.schema';
@@ -51,18 +69,13 @@ dns.setServers(['8.8.8.8', '8.8.4.4']);
             if (connection.readyState === ConnectionStates.connected) {
               console.log('Successfully connected to MongoDB');
             } else {
-              connection.on('connected', () =>
-                console.log('MongoDB connected!'),
-              );
+              connection.on('connected', () => console.log('MongoDB connected!'));
             }
-            connection.on('disconnected', () =>
-              console.log('MongoDB disconnected'),
-            );
+            connection.on('disconnected', () => console.log('MongoDB disconnected'));
             return connection;
           },
         };
       },
-
     }),
 
     MongooseModule.forFeature([
@@ -92,4 +105,4 @@ dns.setServers(['8.8.8.8', '8.8.4.4']);
   ],
   exports: [MongooseModule],
 })
-export class DatabaseModule { }
+export class DatabaseModule {}

@@ -3,7 +3,12 @@ import { ForbiddenException, Inject, NotFoundException, UnauthorizedException, U
 import { Types } from 'mongoose';
 import { Server, Socket } from 'socket.io';
 
-import { AUTH_SOCKET_SERVICE_NAME, CHAT_SOCKET_SERVICE_NAME, MESSAGE_SERVICE_NAME, USER_SOCKET_STORE_SERVICE_NAME } from '@/core/constants/service.constant';
+import {
+  AUTH_SOCKET_SERVICE_NAME,
+  CHAT_SOCKET_SERVICE_NAME,
+  MESSAGE_SERVICE_NAME,
+  USER_SOCKET_STORE_SERVICE_NAME,
+} from '@/core/constants/service.constant';
 import { IParticipant } from '@/core/entities/interfaces/chat.entity.interface';
 import { ICreateMessage, IMessage } from '@/core/entities/interfaces/message.entity.interface';
 import { ErrorCodes, ErrorMessage } from '@/core/enum/error.enum';
@@ -23,116 +28,114 @@ import { BOOKING_REPOSITORY_NAME } from '@core/constants/repository.constant';
 @UseFilters(GlobalWsExceptionFilter)
 @WebSocketGateway({ cors: corsOption, namespace: 'chat' })
 export class ChatGateway extends BaseSocketGateway {
-    @WebSocketServer()
-    private server: Server;
+  @WebSocketServer()
+  private server: Server;
 
-    constructor(
-        @Inject(LOGGER_FACTORY)
-        loggerFactory: ILoggerFactory,
-        @Inject(AUTH_SOCKET_SERVICE_NAME)
-        authSocketService: IAuthSocketService,
-        @Inject(USER_SOCKET_STORE_SERVICE_NAME)
-        userSocketService: IUserSocketStoreService,
-        @Inject(CHAT_SOCKET_SERVICE_NAME)
-        private readonly _chatSocketService: IChatSocketService,
-        @Inject(MESSAGE_SERVICE_NAME)
-        private readonly _messageService: IMessageService,
-        @Inject(CUSTOM_DTO_VALIDATOR_NAME)
-        private readonly _customDtoValidatorUtility: ICustomDtoValidator,
-        @Inject(BOOKING_REPOSITORY_NAME)
-        private readonly _bookingRepository: IBookingRepository,
-    ) {
-        super(loggerFactory, authSocketService, userSocketService, 'chat', true)
+  constructor(
+    @Inject(LOGGER_FACTORY)
+    loggerFactory: ILoggerFactory,
+    @Inject(AUTH_SOCKET_SERVICE_NAME)
+    authSocketService: IAuthSocketService,
+    @Inject(USER_SOCKET_STORE_SERVICE_NAME)
+    userSocketService: IUserSocketStoreService,
+    @Inject(CHAT_SOCKET_SERVICE_NAME)
+    private readonly _chatSocketService: IChatSocketService,
+    @Inject(MESSAGE_SERVICE_NAME)
+    private readonly _messageService: IMessageService,
+    @Inject(CUSTOM_DTO_VALIDATOR_NAME)
+    private readonly _customDtoValidatorUtility: ICustomDtoValidator,
+    @Inject(BOOKING_REPOSITORY_NAME)
+    private readonly _bookingRepository: IBookingRepository,
+  ) {
+    super(loggerFactory, authSocketService, userSocketService, 'chat', true);
+  }
+
+  protected override async onClientConnect(client: Socket): Promise<void> {
+    await this._authenticate(client);
+  }
+
+  protected override async onClientDisConnect(client: Socket): Promise<void> {
+    await this._unauthenticate(client);
+  }
+
+  @SubscribeMessage('sendMessage')
+  async handleMessage(@ConnectedSocket() client: Socket, @MessageBody() body: SendMessageDto) {
+    try {
+      const bodyPayload = await this._customDtoValidatorUtility.validateDto(SendMessageDto, body);
+
+      const fromUser = client.data.user;
+      if (!fromUser) {
+        throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
+      }
+
+      // Enforce On-going booking check
+      const customerId = fromUser.type === 'customer' ? fromUser.id : bodyPayload.receiverId;
+      const providerId = fromUser.type === 'provider' ? fromUser.id : bodyPayload.receiverId;
+
+      const isOngoing = await this._bookingRepository.isAnyBookingOngoing(customerId, providerId);
+      if (!isOngoing) {
+        throw new ForbiddenException({
+          code: ErrorCodes.NO_ACTIVE_BOOKINGS,
+          message: 'Cannot send messages without an active booking.',
+        });
+      }
+
+      const sender: IParticipant = {
+        id: new Types.ObjectId(fromUser.id as string),
+        type: fromUser.type,
+      };
+
+      const receiver: IParticipant = {
+        id: new Types.ObjectId(bodyPayload.receiverId),
+        type: bodyPayload.type,
+      };
+
+      let chat = await this._chatSocketService.findChat(sender, receiver);
+
+      if (!chat) {
+        chat = await this._chatSocketService.createChat(sender, receiver);
+      }
+
+      const messageData: ICreateMessage = {
+        chatId: new Types.ObjectId(chat.id),
+        content: bodyPayload.message,
+        senderId: sender.id,
+        messageType: 'text',
+        receiverId: receiver.id,
+        clientMessageId: bodyPayload.clientMessageId,
+      };
+
+      const newMessage = await this._messageService.createMessage(messageData);
+
+      if (!newMessage) {
+        this.logger.error('Error creating new message.');
+        throw new NotFoundException(ErrorMessage.DOCUMENT_NOT_FOUND);
+      }
+
+      const senderSockets = await this._userSocketService.getSockets(sender.id.toString(), 'chat');
+      const receiverSockets = await this._userSocketService.getSockets(receiver.id.toString(), 'chat');
+
+      const allSockets = [...new Set([...senderSockets, ...receiverSockets])];
+
+      for (const socketId of allSockets) {
+        this.server.to(socketId).emit('newMessage', newMessage);
+      }
+    } catch (err) {
+      this.logger.error('Caught error in send new message socket:', err);
+      throw err;
     }
+  }
 
-    protected override async onClientConnect(client: Socket): Promise<void> {
-        await this._authenticate(client);
-    }
+  @SubscribeMessage('markMessagesRead')
+  async handleMarkMessagesRead(@ConnectedSocket() client: Socket, @MessageBody() body: { chatId: string }) {
+    const user = client.data.user;
+    if (!user?.id) return;
 
-    protected override async onClientDisConnect(client: Socket): Promise<void> {
-        await this._unauthenticate(client);
-    }
+    const { chatId } = body;
+    if (!chatId) return;
 
-    @SubscribeMessage('sendMessage')
-    async handleMessage(@ConnectedSocket() client: Socket, @MessageBody() body: SendMessageDto) {
-        try {
-            const bodyPayload = await this._customDtoValidatorUtility.validateDto(SendMessageDto, body);
+    await this._messageService.markMessagesAsRead(chatId, user.id);
 
-            const fromUser = client.data.user;
-            if (!fromUser) {
-                throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
-            };
-
-            // Enforce On-going booking check
-            const customerId = fromUser.type === 'customer' ? fromUser.id : bodyPayload.receiverId;
-            const providerId = fromUser.type === 'provider' ? fromUser.id : bodyPayload.receiverId;
-
-            const isOngoing = await this._bookingRepository.isAnyBookingOngoing(customerId, providerId);
-            if (!isOngoing) {
-                throw new ForbiddenException({
-                    code: ErrorCodes.NO_ACTIVE_BOOKINGS,
-                    message: 'Cannot send messages without an active booking.'
-                });
-            }
-
-            const sender: IParticipant = {
-                id: new Types.ObjectId(fromUser.id as string),
-                type: fromUser.type,
-            };
-
-            const receiver: IParticipant = {
-                id: new Types.ObjectId(bodyPayload.receiverId),
-                type: bodyPayload.type,
-            }
-
-            let chat = await this._chatSocketService.findChat(sender, receiver);
-
-            if (!chat) {
-                chat = await this._chatSocketService.createChat(sender, receiver);
-            }
-
-            const messageData: ICreateMessage = {
-                chatId: new Types.ObjectId(chat.id),
-                content: bodyPayload.message,
-                senderId: sender.id,
-                messageType: 'text',
-                receiverId: receiver.id,
-                clientMessageId: bodyPayload.clientMessageId,
-            }
-
-            const newMessage = await this._messageService.createMessage(messageData);
-
-            if (!newMessage) {
-                this.logger.error('Error creating new message.');
-                throw new NotFoundException(ErrorMessage.DOCUMENT_NOT_FOUND);
-            }
-
-            const senderSockets = await this._userSocketService.getSockets(sender.id.toString(), 'chat');
-            const receiverSockets = await this._userSocketService.getSockets(receiver.id.toString(), 'chat');
-
-            const allSockets = [...new Set([...senderSockets, ...receiverSockets])];
-
-            for (const socketId of allSockets) {
-                this.server.to(socketId).emit('newMessage', newMessage);
-            }
-
-        } catch (err) {
-            this.logger.error('Caught error in send new message socket:', err);
-            throw err;
-        }
-    }
-
-    @SubscribeMessage('markMessagesRead')
-    async handleMarkMessagesRead(@ConnectedSocket() client: Socket, @MessageBody() body: { chatId: string }) {
-        const user = client.data.user;
-        if (!user?.id) return;
-
-        const { chatId } = body;
-        if (!chatId) return;
-
-        await this._messageService.markMessagesAsRead(chatId, user.id);
-
-        this.logger.log(`Messages marked as read for user ${user.id} in chat ${chatId}`);
-    }
+    this.logger.log(`Messages marked as read for user ${user.id} in chat ${chatId}`);
+  }
 }
-

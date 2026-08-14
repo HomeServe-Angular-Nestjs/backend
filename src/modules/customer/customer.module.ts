@@ -9,15 +9,9 @@ import { Module } from '@nestjs/common';
 import { SharedModule } from '@shared/shared.module';
 
 @Module({
-    imports: [JwtConfigModule, HttpModule, CloudinaryModule.registerAsync(), SharedModule],
-    controllers: [CustomerController],
-    providers: [
-        ...customerRepositoryProviders,
-        ...customerServiceProviders,
-        ...customerUtilityProviders
-    ],
-    exports: [...customerUtilityProviders]
+  imports: [JwtConfigModule, HttpModule, CloudinaryModule.registerAsync(), SharedModule],
+  controllers: [CustomerController],
+  providers: [...customerRepositoryProviders, ...customerServiceProviders, ...customerUtilityProviders],
+  exports: [...customerUtilityProviders],
 })
-export class CustomerModule {
-
-}
+export class CustomerModule {}

@@ -1,7 +1,7 @@
-import { IAdminSettings } from "@core/entities/interfaces/admin-settings.entity.interface";
-import { IResponse } from "@core/misc/response.util";
+import type { IAdminSettings } from '@core/entities/interfaces/admin-settings.entity.interface';
+import type { IResponse } from '@core/misc/response.util';
 
 export interface IAdminSettingService {
-    getSettings(): Promise<IResponse<IAdminSettings>>;
-    updateSetting(setting: IAdminSettings): Promise<IResponse<IAdminSettings>>;
+  getSettings(): Promise<IResponse<IAdminSettings>>;
+  updateSetting(setting: IAdminSettings): Promise<IResponse<IAdminSettings>>;
 }

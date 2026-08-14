@@ -1,17 +1,17 @@
-import { PlanDurationEnum, PlanRoleEnum } from '@core/enum/subscription.enum';
+import type { PlanDurationEnum, PlanRoleEnum } from '@core/enum/subscription.enum';
 import { BaseEntity } from '../base/implementation/base.entity';
-import { IPlan, PlanFeatures } from '../interfaces/plans.entity.interface';
+import type { IPlan, PlanFeatures } from '../interfaces/plans.entity.interface';
 
 export class Plan extends BaseEntity implements IPlan {
-    name: string;
-    price: number;
-    duration: PlanDurationEnum;
-    role: PlanRoleEnum;
-    features: PlanFeatures;
-    isActive: boolean;
+  name: string;
+  price: number;
+  duration: PlanDurationEnum;
+  role: PlanRoleEnum;
+  features: PlanFeatures;
+  isActive: boolean;
 
-    constructor(partial: Partial<Plan>) {
-        super(partial);
-        Object.assign(this, partial);
-    }
+  constructor(partial: Partial<Plan>) {
+    super(partial);
+    Object.assign(this, partial);
+  }
 }

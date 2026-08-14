@@ -1,12 +1,13 @@
-import { ICreatePlan, IPlan } from '@core/entities/interfaces/plans.entity.interface';
-import { IBaseRepository } from '@core/repositories/base/interfaces/base-repo.interface';
-import { PlanDocument } from '@core/schema/plans.schema';
+import type { IPlan } from '@core/entities/interfaces/plans.entity.interface';
+import { ICreatePlan } from '@core/entities/interfaces/plans.entity.interface';
+import type { IBaseRepository } from '@core/repositories/base/interfaces/base-repo.interface';
+import type { PlanDocument } from '@core/schema/plans.schema';
 
 export interface IPlanRepository extends IBaseRepository<PlanDocument> {
-    countDocuments(): Promise<number>;
-    findPlan(planId: string): Promise<PlanDocument | null>;
-    updatePlanByPlanId(planId: string, updateData: Partial<IPlan>, options?: { new?: boolean }): Promise<PlanDocument | null>;
-    isPlanExists(filter: { role: string, name: string }, excludeId?: string): Promise<boolean>;
-    deletePlan(planId: string): Promise<boolean>;
-    findFreePlan(): Promise<PlanDocument | null>;
+  countDocuments(): Promise<number>;
+  findPlan(planId: string): Promise<PlanDocument | null>;
+  updatePlanByPlanId(planId: string, updateData: Partial<IPlan>, options?: { new?: boolean }): Promise<PlanDocument | null>;
+  isPlanExists(filter: { role: string; name: string }, excludeId?: string): Promise<boolean>;
+  deletePlan(planId: string): Promise<boolean>;
+  findFreePlan(): Promise<PlanDocument | null>;
 }

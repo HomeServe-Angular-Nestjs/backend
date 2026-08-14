@@ -1,62 +1,62 @@
-import { ReportedType } from "@core/entities/interfaces/report.entity.interface";
-import { ComplaintReason, ReportStatus } from "@core/enum/report.enum";
-import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { Document, Types } from "mongoose";
+import { ReportedType } from '@core/entities/interfaces/report.entity.interface';
+import { ComplaintReason, ReportStatus } from '@core/enum/report.enum';
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Document, Types } from 'mongoose';
 
 @Schema({ timestamps: true })
 export class ReportDocument extends Document {
-    @Prop({
-        type: Types.ObjectId,
-        required: true
-    })
-    reportedId: Types.ObjectId;
+  @Prop({
+    type: Types.ObjectId,
+    required: true,
+  })
+  reportedId: Types.ObjectId;
 
-    @Prop({
-        type: Types.ObjectId,
-        required: true
-    })
-    targetId: Types.ObjectId;
+  @Prop({
+    type: Types.ObjectId,
+    required: true,
+  })
+  targetId: Types.ObjectId;
 
-    @Prop({
-        type: String,
-        enum: ['customer', 'provider', 'review'],
-        required: true
-    })
-    type: ReportedType;
+  @Prop({
+    type: String,
+    enum: ['customer', 'provider', 'review'],
+    required: true,
+  })
+  type: ReportedType;
 
-    @Prop({
-        type: String,
-        required: true
-    })
-    reason: ComplaintReason;
+  @Prop({
+    type: String,
+    required: true,
+  })
+  reason: ComplaintReason;
 
-    @Prop({
-        type: String,
-        required: true
-    })
-    description: string;
+  @Prop({
+    type: String,
+    required: true,
+  })
+  description: string;
 
-    @Prop({
-        type: String,
-        required: true,
-        enum: Object.values(ReportStatus)
-    })
-    status: ReportStatus;
+  @Prop({
+    type: String,
+    required: true,
+    enum: Object.values(ReportStatus),
+  })
+  status: ReportStatus;
 
-    @Prop({ type: String })
-    investigationNotes: string;
+  @Prop({ type: String })
+  investigationNotes: string;
 
-    @Prop({ type: String })
-    resolutionNote: string;
+  @Prop({ type: String })
+  resolutionNote: string;
 
-    @Prop({ type: Date })
-    resolvedAt: Date;
+  @Prop({ type: Date })
+  resolvedAt: Date;
 
-    @Prop({ type: Date })
-    createdAt: Date;
+  @Prop({ type: Date })
+  createdAt: Date;
 
-    @Prop({ type: Date })
-    updatedAt: Date;
+  @Prop({ type: Date })
+  updatedAt: Date;
 }
 
 export const ReportSchema = SchemaFactory.createForClass(ReportDocument);

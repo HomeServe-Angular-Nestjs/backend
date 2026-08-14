@@ -1,9 +1,5 @@
 import { Transform, Type } from 'class-transformer';
-import {
-  IsBoolean, IsDefined, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, Min,
-  ValidateNested
-} from 'class-validator';
-
+import { IsBoolean, IsDefined, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, Min, ValidateNested } from 'class-validator';
 
 export class CreateSubServiceDto {
   @IsString()
@@ -88,7 +84,7 @@ export class DeleteSubServiceDto {
 
   @IsString()
   @IsNotEmpty()
-  subId: string
+  subId: string;
 }
 
 export class IPriceRangeDto {
@@ -154,14 +150,14 @@ export class ToggleSubServiceStatusDto {
 
   @Type(() => ToggleServiceStatusDto)
   @ValidateNested()
-  subService: ToggleServiceStatusDto
+  subService: ToggleServiceStatusDto;
 }
 
 export class ProviderServiceFilterWithPaginationDto {
   @IsOptional()
   @Transform(({ value }) => Number(value))
   @IsNumber()
-  page: number
+  page: number;
 
   @IsOptional()
   @Transform(({ value }) => value?.trim() || undefined)
@@ -189,11 +185,10 @@ export class ProviderServiceFilterWithPaginationDto {
   isVerified?: boolean | 'all';
 
   @IsOptional()
-  @Transform(({ value }) => value === '' ? undefined : value)
+  @Transform(({ value }) => (value === '' ? undefined : value))
   @IsIn(['latest', 'oldest', 'a-z', 'z-a'])
   sort?: 'latest' | 'oldest' | 'a-z' | 'z-a';
 }
-
 
 export class RemoveServiceDto {
   @IsDefined()

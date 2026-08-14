@@ -6,7 +6,7 @@ import { CustomLogger } from './custom-logger';
 
 @Injectable()
 export class LoggerFactory implements ILoggerFactory {
-    createLogger(context: string): ICustomLogger {
-        return new CustomLogger(context);
-    }
+  createLogger(context: string): ICustomLogger {
+    return new CustomLogger(context);
+  }
 }

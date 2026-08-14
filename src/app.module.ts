@@ -32,7 +32,7 @@ import { LandingModule } from '@modules/landing/landing.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: `.env.${process.env.NODE_ENV || 'development'}`
+      envFilePath: `.env.${process.env.NODE_ENV || 'development'}`,
     }),
 
     JwtConfigModule,
@@ -65,10 +65,7 @@ import { LandingModule } from '@modules/landing/landing.module';
     LandingModule,
   ],
   controllers: [AppController],
-  providers: [
-    AppService,
-    ...appProviders,
-  ],
+  providers: [AppService, ...appProviders],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

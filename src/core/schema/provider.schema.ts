@@ -13,9 +13,9 @@ export class ProviderDocument extends BaseUserDocument {
   @Prop({
     type: String,
     enum: ['pending', 'verified', 'rejected'],
-    default: 'pending'
+    default: 'pending',
   })
-  verificationStatus: VerificationStatusType
+  verificationStatus: VerificationStatusType;
 
   @Prop({
     type: [
@@ -25,7 +25,7 @@ export class ProviderDocument extends BaseUserDocument {
       },
     ],
   })
-  expertise: IExpertise[]
+  expertise: IExpertise[];
 
   @Prop({ type: [String] })
   additionalSkills: string[];
@@ -34,8 +34,8 @@ export class ProviderDocument extends BaseUserDocument {
     type: [
       {
         language: String,
-        proficiency: String
-      }
+        proficiency: String,
+      },
     ],
   })
   languages: ILanguage[];
@@ -55,9 +55,9 @@ export class ProviderDocument extends BaseUserDocument {
         label: { type: String },
         fileUrl: { type: String },
         uploadedAt: { type: Date },
-        isDeleted: { type: Boolean, default: false }
-      }
-    ]
+        isDeleted: { type: Boolean, default: false },
+      },
+    ],
   })
   docs: IDoc[];
 
@@ -90,7 +90,7 @@ export class ProviderDocument extends BaseUserDocument {
         to: { type: String },
       },
     },
-    _id: false
+    _id: false,
   })
   availability: {
     day: { from: string; to: string };
@@ -110,7 +110,7 @@ export class ProviderDocument extends BaseUserDocument {
   bufferTime: number;
 
   @Prop({ default: false })
-  enableSR: boolean
+  enableSR: boolean;
 }
 
 export const ProviderSchema = SchemaFactory.createForClass(ProviderDocument);

@@ -1,4 +1,4 @@
-import { Inject, Injectable, InternalServerErrorException, } from '@nestjs/common';
+import { Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { ISeedAdminService } from '../interface/seed-service.interface';
 import { ADMIN_REPOSITORY_NAME, ADMIN_SETTINGS_REPOSITORY_NAME, WALLET_REPOSITORY_NAME } from '@core/constants/repository.constant';
 import { IAdminRepository } from '@core/repositories/interfaces/admin-repo.interface';
@@ -46,9 +46,7 @@ export class SeedAdminService implements ISeedAdminService {
 
       const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-={}[\]|\\:;"'<>,.?/]).{8,}$/;
       if (!passwordRegex.test(password)) {
-        throw new Error(
-          'Password must contain at least 8 characters, one uppercase letter, one number, and one special character.'
-        );
+        throw new Error('Password must contain at least 8 characters, one uppercase letter, one number, and one special character.');
       }
 
       const hashedPassword = await this._argon.hash(password);
@@ -58,10 +56,7 @@ export class SeedAdminService implements ISeedAdminService {
       let savedAdmin: AdminDocument | null;
 
       if (existingAdmin) {
-        let admin = await this._adminRepository.findOneAndUpdate(
-          { email },
-          { password: hashedPassword }
-        );
+        const admin = await this._adminRepository.findOneAndUpdate({ email }, { password: hashedPassword });
 
         savedAdmin = admin;
 

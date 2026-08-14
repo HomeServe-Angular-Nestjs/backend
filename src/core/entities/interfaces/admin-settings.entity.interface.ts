@@ -1,10 +1,10 @@
-import { IEntity } from "@core/entities/base/interfaces/base-entity.entity.interface";
+import type { IEntity } from '@core/entities/base/interfaces/base-entity.entity.interface';
 
 export interface IAdminSettings extends IEntity {
-    gstPercentage: number;
-    providerCommission: number;
-    customerCommission: number;
-    cancellationFee: number;
-    providerCancellationFine: number;
-    defaultServiceLimit: number;
+  gstPercentage: number;
+  providerCommission: number;
+  customerCommission: number;
+  cancellationFee: number;
+  providerCancellationFine: number;
+  defaultServiceLimit: number;
 }

@@ -1,60 +1,60 @@
-import { ADMIN_SETTINGS_REPOSITORY_NAME } from "@core/constants/repository.constant";
-import { IAdminSettingsRepository } from "@core/repositories/interfaces/admin-settings-repo.interface";
-import { IPricingUtility, IPricingBreakup } from "@core/utilities/interface/pricing.utility.interface";
-import { Inject, Injectable } from "@nestjs/common";
+import { ADMIN_SETTINGS_REPOSITORY_NAME } from '@core/constants/repository.constant';
+import { IAdminSettingsRepository } from '@core/repositories/interfaces/admin-settings-repo.interface';
+import { IPricingUtility, IPricingBreakup } from '@core/utilities/interface/pricing.utility.interface';
+import { Inject, Injectable } from '@nestjs/common';
 
 @Injectable()
 export class PricingUtility implements IPricingUtility {
-    private _taxRate: number;
-    private _feeRate: number;
+  private _taxRate: number;
+  private _feeRate: number;
 
-    constructor(
-        @Inject(ADMIN_SETTINGS_REPOSITORY_NAME)
-        private readonly _adminSettingsRepository: IAdminSettingsRepository
-    ) { }
+  constructor(
+    @Inject(ADMIN_SETTINGS_REPOSITORY_NAME)
+    private readonly _adminSettingsRepository: IAdminSettingsRepository,
+  ) {}
 
-    calculateSubtotal(prices: number[]): number {
-        const subtotal = prices.reduce((sum, price) => {
-            if (Number.isNaN(price)) {
-                throw new Error(`Invalid price detected`);
-            }
-            return sum + price;
-        }, 0);
+  calculateSubtotal(prices: number[]): number {
+    const subtotal = prices.reduce((sum, price) => {
+      if (Number.isNaN(price)) {
+        throw new Error(`Invalid price detected`);
+      }
+      return sum + price;
+    }, 0);
 
-        return Number(subtotal.toFixed(2));
-    }
+    return Number(subtotal.toFixed(2));
+  }
 
-    async calculateTax(subtotal: number): Promise<number> {
-        const taxRate = await this._adminSettingsRepository.getTax();
-        return Number((subtotal * (taxRate / 100)).toFixed(2));
-    }
+  async calculateTax(subtotal: number): Promise<number> {
+    const taxRate = await this._adminSettingsRepository.getTax();
+    return Number((subtotal * (taxRate / 100)).toFixed(2));
+  }
 
-    async calculateFee(subtotal: number): Promise<number> {
-        const feeRate = await this._adminSettingsRepository.getCustomerCommission();
-        return Number((subtotal * (feeRate / 100)).toFixed(2));
-    }
+  async calculateFee(subtotal: number): Promise<number> {
+    const feeRate = await this._adminSettingsRepository.getCustomerCommission();
+    return Number((subtotal * (feeRate / 100)).toFixed(2));
+  }
 
-    calculateTotal(...values: number[]): number {
-        return values.reduce((acc, val) => acc += val, 0);
-    }
+  calculateTotal(...values: number[]): number {
+    return values.reduce((acc, val) => (acc += val), 0);
+  }
 
-    async computeBreakup(prices: number[]): Promise<IPricingBreakup> {
-        const subTotal = this.calculateSubtotal(prices);
-        const tax = await this.calculateTax(subTotal);
-        const fee = await this.calculateFee(subTotal);
-        const total = this.calculateTotal(subTotal, tax, fee);
+  async computeBreakup(prices: number[]): Promise<IPricingBreakup> {
+    const subTotal = this.calculateSubtotal(prices);
+    const tax = await this.calculateTax(subTotal);
+    const fee = await this.calculateFee(subTotal);
+    const total = this.calculateTotal(subTotal, tax, fee);
 
-        return {
-            subTotal,
-            tax,
-            fee,
-            total,
-            taxRate: await this._adminSettingsRepository.getTax(),
-            feeRate: await this._adminSettingsRepository.getCustomerCommission()
-        };
-    }
+    return {
+      subTotal,
+      tax,
+      fee,
+      total,
+      taxRate: await this._adminSettingsRepository.getTax(),
+      feeRate: await this._adminSettingsRepository.getCustomerCommission(),
+    };
+  }
 
-    paiseToRupees(amountInPaisa: number): number {
-        return Math.round((amountInPaisa / 100) * 100) / 100;
-    }
+  paiseToRupees(amountInPaisa: number): number {
+    return Math.round((amountInPaisa / 100) * 100) / 100;
+  }
 }

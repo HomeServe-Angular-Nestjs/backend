@@ -1,53 +1,56 @@
-import { ADMIN_TRANSACTION_SERVICE_NAME } from "@core/constants/service.constant";
-import { User } from "@core/decorators/extract-user.decorator";
-import { IAdminTransactionDataWithPagination, ITransactionStats } from "@core/entities/interfaces/wallet-ledger.entity.interface";
-import { AdminRoleGuard } from "@core/guards/admin-role.guard";
-import { ICustomLogger } from "@core/logger/interface/custom-logger.interface";
-import { ILoggerFactory, LOGGER_FACTORY } from "@core/logger/interface/logger-factory.interface";
-import { IPayload } from "@core/misc/payload.interface";
-import { IResponse } from "@core/misc/response.util";
-import { TransactionReportDownloadDto } from "@modules/users/dtos/admin-user.dto";
-import { IAdminTransactionService } from "@modules/users/services/interfaces/admin-transaction-service.interface";
-import { ProviderWalletFilterDto } from "@modules/wallet/dto/wallet.dto";
-import { Body, Controller, Get, Inject, Post, Query, Res, UseGuards } from "@nestjs/common";
-import { Response } from "express";
+import { ADMIN_TRANSACTION_SERVICE_NAME } from '@core/constants/service.constant';
+import { User } from '@core/decorators/extract-user.decorator';
+import { IAdminTransactionDataWithPagination, ITransactionStats } from '@core/entities/interfaces/wallet-ledger.entity.interface';
+import { AdminRoleGuard } from '@core/guards/admin-role.guard';
+import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
+import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
+import { IPayload } from '@core/misc/payload.interface';
+import { IResponse } from '@core/misc/response.util';
+import { TransactionReportDownloadDto } from '@modules/users/dtos/admin-user.dto';
+import { IAdminTransactionService } from '@modules/users/services/interfaces/admin-transaction-service.interface';
+import { ProviderWalletFilterDto } from '@modules/wallet/dto/wallet.dto';
+import { Body, Controller, Get, Inject, Post, Query, Res, UseGuards } from '@nestjs/common';
+import { Response } from 'express';
 
 @UseGuards(AdminRoleGuard)
 @Controller('admin/transactions')
 export class AdminTransactionController {
-    private readonly logger: ICustomLogger;
+  private readonly logger: ICustomLogger;
 
-    constructor(
-        @Inject(LOGGER_FACTORY)
-        private readonly _loggerFactory: ILoggerFactory,
-        @Inject(ADMIN_TRANSACTION_SERVICE_NAME)
-        private readonly _adminTransactionService: IAdminTransactionService
-    ) {
-        this.logger = this._loggerFactory.createLogger(AdminTransactionController.name);
-    }
+  constructor(
+    @Inject(LOGGER_FACTORY)
+    private readonly _loggerFactory: ILoggerFactory,
+    @Inject(ADMIN_TRANSACTION_SERVICE_NAME)
+    private readonly _adminTransactionService: IAdminTransactionService,
+  ) {
+    this.logger = this._loggerFactory.createLogger(AdminTransactionController.name);
+  }
 
-    @Post('download_report')
-    async downloadTransactionReport(@Res() res: Response, @Body() transactionReportDownloadDto: TransactionReportDownloadDto): Promise<void> {
-        const start = Date.now();
-        const pdfBuffer = await this._adminTransactionService.downloadTransactionReport(transactionReportDownloadDto);
-        this.logger.debug(`[Admin] - PDF Generation Time: ${Date.now() - start}ms`);
+  @Post('download_report')
+  async downloadTransactionReport(@Res() res: Response, @Body() transactionReportDownloadDto: TransactionReportDownloadDto): Promise<void> {
+    const start = Date.now();
+    const pdfBuffer = await this._adminTransactionService.downloadTransactionReport(transactionReportDownloadDto);
+    this.logger.debug(`[Admin] - PDF Generation Time: ${Date.now() - start}ms`);
 
-        res.set({
-            'Content-Type': 'application/pdf',
-            'Content-Disposition': 'attachment; filename="booking-report.pdf"',
-            'Content-Length': pdfBuffer.length,
-        });
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': 'attachment; filename="booking-report.pdf"',
+      'Content-Length': pdfBuffer.length,
+    });
 
-        res.send(pdfBuffer);
-    }
+    res.send(pdfBuffer);
+  }
 
-    @Get('stats')
-    async getTransactionStats(): Promise<IResponse<ITransactionStats>> {
-        return await this._adminTransactionService.getTransactionStats();
-    }
+  @Get('stats')
+  async getTransactionStats(): Promise<IResponse<ITransactionStats>> {
+    return await this._adminTransactionService.getTransactionStats();
+  }
 
-    @Get('lists')
-    async getTransactionLists(@User() user: IPayload, @Query() filters: ProviderWalletFilterDto): Promise<IResponse<IAdminTransactionDataWithPagination>> {
-        return await this._adminTransactionService.getTransactionLists(user.sub, filters);
-    }
+  @Get('lists')
+  async getTransactionLists(
+    @User() user: IPayload,
+    @Query() filters: ProviderWalletFilterDto,
+  ): Promise<IResponse<IAdminTransactionDataWithPagination>> {
+    return await this._adminTransactionService.getTransactionLists(user.sub, filters);
+  }
 }

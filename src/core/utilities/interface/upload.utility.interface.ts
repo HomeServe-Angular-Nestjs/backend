@@ -1,6 +1,6 @@
-import { UserType } from '@core/entities/interfaces/user.entity.interface';
-import { UploadsType } from '@core/enum/uploads.enum';
-import { UploadApiResponse } from 'cloudinary';
+import type { UserType } from '@core/entities/interfaces/user.entity.interface';
+import type { UploadsType } from '@core/enum/uploads.enum';
+import type { UploadApiResponse } from 'cloudinary';
 
 export interface IUploadsUtility {
   uploadImage(file: Express.Multer.File, publicId?: string): Promise<string>;

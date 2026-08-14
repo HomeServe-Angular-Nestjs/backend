@@ -29,7 +29,7 @@ import { AdminSettingsRepository } from '@core/repositories/implementations/admi
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: `.env.${process.env.NODE_ENV || 'development'}`
+      envFilePath: `.env.${process.env.NODE_ENV || 'development'}`,
     }),
     DatabaseModule,
     ConsoleModule,
@@ -47,21 +47,19 @@ import { AdminSettingsRepository } from '@core/repositories/implementations/admi
 
     {
       provide: ADMIN_REPOSITORY_NAME,
-      useFactory: (adminModel: Model<AdminDocument>) =>
-        new AdminRepository(adminModel, new LoggerFactory()),
+      useFactory: (adminModel: Model<AdminDocument>) => new AdminRepository(adminModel, new LoggerFactory()),
       inject: [getModelToken(ADMIN_MODEL_NAME)],
     },
     {
       provide: WALLET_REPOSITORY_NAME,
-      useFactory: (walletModel: Model<WalletDocument>) =>
-        new WalletRepository(new LoggerFactory(), walletModel),
-      inject: [getModelToken(WALLET_MODEL_NAME)]
+      useFactory: (walletModel: Model<WalletDocument>) => new WalletRepository(new LoggerFactory(), walletModel),
+      inject: [getModelToken(WALLET_MODEL_NAME)],
     },
     {
       provide: ADMIN_SETTINGS_REPOSITORY_NAME,
       useFactory: (adminSettingsModel: Model<AdminSettingsDocument>) =>
         new AdminSettingsRepository(adminSettingsModel, new LoggerFactory()),
-      inject: [getModelToken(ADMIN_SETTINGS_MODEL_NAME)]
+      inject: [getModelToken(ADMIN_SETTINGS_MODEL_NAME)],
     },
 
     {
@@ -74,22 +72,21 @@ import { AdminSettingsRepository } from '@core/repositories/implementations/admi
     },
     {
       provide: ADMIN_MAPPER,
-      useClass: AdminMapper
+      useClass: AdminMapper,
     },
     {
       provide: CUSTOM_LOGGER,
-      useClass: CustomLogger
+      useClass: CustomLogger,
     },
     {
       provide: WALLET_MAPPER,
-      useClass: WalletMapper
+      useClass: WalletMapper,
     },
     {
       provide: LOGGER_FACTORY,
-      useClass: LoggerFactory
+      useClass: LoggerFactory,
     },
-
   ],
-  exports: [ADMIN_MAPPER]
+  exports: [ADMIN_MAPPER],
 })
-export class SeedsModule { } 
+export class SeedsModule {}

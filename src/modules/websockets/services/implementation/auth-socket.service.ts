@@ -12,48 +12,48 @@ import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 
 @Injectable()
 export class AuthSocketService implements IAuthSocketService {
-    private readonly logger: ICustomLogger;
+  private readonly logger: ICustomLogger;
 
-    constructor(
-        @Inject(TOKEN_SERVICE_NAME)
-        private readonly _tokenService: ITokenService,
-        @Inject(LOGGER_FACTORY)
-        private readonly _loggerFactory: ILoggerFactory
-    ) {
-        this.logger = this._loggerFactory.createLogger(AuthSocketService.name);
+  constructor(
+    @Inject(TOKEN_SERVICE_NAME)
+    private readonly _tokenService: ITokenService,
+    @Inject(LOGGER_FACTORY)
+    private readonly _loggerFactory: ILoggerFactory,
+  ) {
+    this.logger = this._loggerFactory.createLogger(AuthSocketService.name);
+  }
+
+  private _extractTokenFromCookie(client: Socket): string {
+    const cookies = client.handshake.headers.cookie;
+    if (!cookies) throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
+
+    const parsedCookies = cookie.parse(cookies);
+
+    const accessToken = parsedCookies['access_token'];
+
+    if (!accessToken) throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
+
+    return accessToken;
+  }
+
+  async validateToken(client: Socket): Promise<IPayload> {
+    const accessToken = this._extractTokenFromCookie(client);
+
+    try {
+      const user = await this._tokenService.validateAccessToken(accessToken);
+      if (!user || !user.sub || !user.type) {
+        throw new UnauthorizedException({
+          code: ErrorCodes.UNAUTHORIZED_ACCESS,
+          message: ErrorMessage.UNAUTHORIZED_ACCESS,
+        });
+      }
+
+      return user;
+    } catch (accessError) {
+      throw new UnauthorizedException({
+        code: ErrorCodes.UNAUTHORIZED_ACCESS,
+        message: ErrorMessage.UNAUTHORIZED_ACCESS,
+      });
     }
-
-    private _extractTokenFromCookie(client: Socket): string {
-        const cookies = client.handshake.headers.cookie;
-        if (!cookies) throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
-
-        const parsedCookies = cookie.parse(cookies);
-
-        const accessToken = parsedCookies['access_token'];
-
-        if (!accessToken) throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
-
-        return accessToken;
-    }
-
-    async validateToken(client: Socket): Promise<IPayload> {
-        const accessToken = this._extractTokenFromCookie(client);
-
-        try {
-            const user = await this._tokenService.validateAccessToken(accessToken);
-            if (!user || !user.sub || !user.type) {
-                throw new UnauthorizedException({
-                    code: ErrorCodes.UNAUTHORIZED_ACCESS,
-                    message: ErrorMessage.UNAUTHORIZED_ACCESS
-                });
-            }
-
-            return user;
-        } catch (accessError) {
-            throw new UnauthorizedException({
-                code: ErrorCodes.UNAUTHORIZED_ACCESS,
-                message: ErrorMessage.UNAUTHORIZED_ACCESS
-            });
-        }
-    }
+  }
 }

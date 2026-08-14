@@ -1,12 +1,12 @@
-import { ICoupon, ICouponFilter } from "@core/entities/interfaces/coupon.entity.interface";
-import { IBaseRepository } from "@core/repositories/base/interfaces/base-repo.interface";
-import { CouponDocument } from "@core/schema/coupon.schema";
+import type { ICoupon, ICouponFilter } from '@core/entities/interfaces/coupon.entity.interface';
+import type { IBaseRepository } from '@core/repositories/base/interfaces/base-repo.interface';
+import type { CouponDocument } from '@core/schema/coupon.schema';
 
 export interface ICouponRepository extends IBaseRepository<CouponDocument> {
-    fetchCouponsWithFilterAndPagination(couponFilter: ICouponFilter, option: { page: number, limit: number }): Promise<CouponDocument[]>;
-    editCoupon(couponId: string, updateData: Partial<Omit<ICoupon, 'id'>>): Promise<CouponDocument | null>;
-    countCoupons(couponFilter?: ICouponFilter): Promise<number>;
-    deleteCouponById(couponId: string): Promise<boolean>;
-    toggleStatusById(couponId: string): Promise<boolean>;
-    findAvailableCoupons():Promise<CouponDocument[]>;
+  fetchCouponsWithFilterAndPagination(couponFilter: ICouponFilter, option: { page: number; limit: number }): Promise<CouponDocument[]>;
+  editCoupon(couponId: string, updateData: Partial<Omit<ICoupon, 'id'>>): Promise<CouponDocument | null>;
+  countCoupons(couponFilter?: ICouponFilter): Promise<number>;
+  deleteCouponById(couponId: string): Promise<boolean>;
+  toggleStatusById(couponId: string): Promise<boolean>;
+  findAvailableCoupons(): Promise<CouponDocument[]>;
 }

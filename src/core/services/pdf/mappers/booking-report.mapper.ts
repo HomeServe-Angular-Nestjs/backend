@@ -1,13 +1,15 @@
-import { IBookingMatrixData, IBookingReportData, IReportDownloadBookingData } from "@core/entities/interfaces/admin.entity.interface";
+import type { IBookingMatrixData, IBookingReportData } from '@core/entities/interfaces/admin.entity.interface';
+import { IReportDownloadBookingData } from '@core/entities/interfaces/admin.entity.interface';
 export interface IBookingTableTemplate {
-    rows: any,
-    columns: string[];
-    type: 'normal' | 'single';
+  rows: any;
+  columns: string[];
+  type: 'normal' | 'single';
 }
 
 function bookingReportRowMapper(data: IBookingReportData[]): string {
-    return (data ?? []).map(d => {
-        return `
+  return (data ?? [])
+    .map((d) => {
+      return `
         <tr>
             <td>${d.bookingId}</td>
             <td>${d.customerEmail}</td>
@@ -20,19 +22,22 @@ function bookingReportRowMapper(data: IBookingReportData[]): string {
             <td>${d.transactionId}</td>
       </tr>
         `;
-    }).join('');
+    })
+    .join('');
 }
 
 function bookingReportColumnMapper(data: string[]): string {
-    return (data ?? []).map(d => {
-        return `
+  return (data ?? [])
+    .map((d) => {
+      return `
         <th>${d}</th>
         `;
-    }).join('');
+    })
+    .join('');
 }
 
 function bookingReportMatrixRowMapper(data: IBookingMatrixData): string {
-    return `
+  return `
         <td>${data.totalBookings}</td>
         <td>${data.totalSpend}</td>
         <td>${data.totalRefunded}</td>
@@ -44,21 +49,23 @@ function bookingReportMatrixRowMapper(data: IBookingMatrixData): string {
 }
 
 function bookingReportMatrixColumnMapper(data: string[]): string {
-    return (data ?? []).map(d => {
-        return `
+  return (data ?? [])
+    .map((d) => {
+      return `
             <th>${d}</th>
-        `
-    }).join('');
+        `;
+    })
+    .join('');
 }
 
 export function createBookingReportTableTemplate(tableData: IBookingTableTemplate[]) {
-    const tables: string[] = [];
+  const tables: string[] = [];
 
-    for (let table of tableData) {
-        let section = '';
+  for (const table of tableData) {
+    let section = '';
 
-        if (table.type === 'normal') {
-            section = `
+    if (table.type === 'normal') {
+      section = `
                 <table>
                     <thead>
                         <tr>
@@ -70,8 +77,8 @@ export function createBookingReportTableTemplate(tableData: IBookingTableTemplat
                     </tbody>
                 </table>
             `;
-        } else if (table.type === 'single') {
-            section = `
+    } else if (table.type === 'single') {
+      section = `
                 <table>
                     <thead>
                         <tr>
@@ -83,10 +90,10 @@ export function createBookingReportTableTemplate(tableData: IBookingTableTemplat
                     </tbody>
                 </table>
             `;
-        }
-
-        tables.push(section)
     }
 
-    return tables.join('<br> <br>');
+    tables.push(section);
+  }
+
+  return tables.join('<br> <br>');
 }

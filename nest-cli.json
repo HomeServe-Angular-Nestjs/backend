@@ -9,6 +9,6 @@
         "include": "src/core/services/pdf/templates/**/*",
         "outDir": "dist/src/core/services/pdf/templates"
       }
-    ] 
+    ]
   }
 }

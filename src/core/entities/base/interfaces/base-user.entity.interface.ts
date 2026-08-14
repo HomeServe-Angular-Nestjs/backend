@@ -1,5 +1,5 @@
-import { ILocation, UserType } from '../../interfaces/user.entity.interface';
-import { IEntity } from './base-entity.entity.interface';
+import type { ILocation, UserType } from '../../interfaces/user.entity.interface';
+import type { IEntity } from './base-entity.entity.interface';
 
 export interface IBaseUserEntity extends IEntity {
   email: string;

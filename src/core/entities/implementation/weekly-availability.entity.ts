@@ -1,20 +1,20 @@
-import { BaseEntity } from "@core/entities/base/implementation/base.entity";
-import { IDayAvailability, IWeeklyAvailability } from "@core/entities/interfaces/weekly-availability.entity.interface";
+import { BaseEntity } from '@core/entities/base/implementation/base.entity';
+import type { IDayAvailability, IWeeklyAvailability } from '@core/entities/interfaces/weekly-availability.entity.interface';
 
 export class WeeklyAvailability extends BaseEntity implements IWeeklyAvailability {
-    providerId: string;
-    week: {
-        sun: IDayAvailability;
-        mon: IDayAvailability;
-        tue: IDayAvailability;
-        wed: IDayAvailability;
-        thu: IDayAvailability;
-        fri: IDayAvailability;
-        sat: IDayAvailability;
-    };
+  providerId: string;
+  week: {
+    sun: IDayAvailability;
+    mon: IDayAvailability;
+    tue: IDayAvailability;
+    wed: IDayAvailability;
+    thu: IDayAvailability;
+    fri: IDayAvailability;
+    sat: IDayAvailability;
+  };
 
-    constructor(partials: Partial<WeeklyAvailability>) {
-        super(partials);
-        Object.assign(this, partials);
-    }
+  constructor(partials: Partial<WeeklyAvailability>) {
+    super(partials);
+    Object.assign(this, partials);
+  }
 }

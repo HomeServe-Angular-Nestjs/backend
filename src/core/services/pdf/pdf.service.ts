@@ -10,140 +10,142 @@ import { ISalesReportBundle } from '@core/entities/interfaces/admin.entity.inter
 
 @Injectable()
 export class PdfService implements IPdfService {
-    private _browserInstance: puppeteer.Browser | null = null;
-    private _template: string;
-    private readonly _mode;
+  private _browserInstance: puppeteer.Browser | null = null;
+  private _template: string;
+  private readonly _mode;
 
-    constructor(private _configService: ConfigService) {
-        this._mode = this._configService.get('NODE_ENV');
-        // const templatePath = mode === 'production'
-        //     ? path.join(__dirname, 'templates', 'report-template.html')
-        //     : path.join(process.cwd(), 'src', 'core', 'services', 'pdf', 'templates', 'report-template.html');
+  constructor(private _configService: ConfigService) {
+    this._mode = this._configService.get('NODE_ENV');
+    // const templatePath = mode === 'production'
+    //     ? path.join(__dirname, 'templates', 'report-template.html')
+    //     : path.join(process.cwd(), 'src', 'core', 'services', 'pdf', 'templates', 'report-template.html');
 
-        // if (!fs.existsSync(templatePath)) {
-        //     throw new Error(`Template not found at path: ${templatePath}`);
-        // }
+    // if (!fs.existsSync(templatePath)) {
+    //     throw new Error(`Template not found at path: ${templatePath}`);
+    // }
 
-        // this._template = fs.readFileSync(templatePath, 'utf8');
-    }
+    // this._template = fs.readFileSync(templatePath, 'utf8');
+  }
 
-    private async _getBrowser(): Promise<puppeteer.Browser> {
-        if (!this._browserInstance) {
-            this._browserInstance = await puppeteer.launch({
-                headless: true,
-                args: ['--no-sandbox', '--disable-setuid-sandbox']
-            });
+  private async _getBrowser(): Promise<puppeteer.Browser> {
+    if (!this._browserInstance) {
+      this._browserInstance = await puppeteer.launch({
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      });
 
-            // Handle shutdown properly
-            const closeBrowser = async () => {
-                if (this._browserInstance) {
-                    await this._browserInstance.close();
-                    this._browserInstance = null;
-                }
-            };
-            process.on('exit', closeBrowser);
-            process.on('SIGINT', closeBrowser);
-            process.on('SIGTERM', closeBrowser);
+      // Handle shutdown properly
+      const closeBrowser = async () => {
+        if (this._browserInstance) {
+          await this._browserInstance.close();
+          this._browserInstance = null;
         }
-        return this._browserInstance;
+      };
+      process.on('exit', () => void closeBrowser());
+      process.on('SIGINT', () => void closeBrowser());
+      process.on('SIGTERM', () => void closeBrowser());
+    }
+    return this._browserInstance;
+  }
+
+  async generatePdf(tableAsString: string, heading = 'Report'): Promise<Buffer> {
+    const date = new Date().toLocaleDateString();
+    const finalTemplate = this._template
+      .replace('{{date}}', new Date().toLocaleString())
+      .replace('{{heading}}', heading)
+      .replace('{{date}}', date)
+      .replace('{{tables}}', tableAsString);
+
+    const browser = await this._getBrowser();
+    const page = await browser.newPage();
+    await page.setContent(finalTemplate, { waitUntil: 'networkidle0' });
+
+    const buffer = await page.pdf({
+      format: 'A4',
+      printBackground: true,
+      margin: { top: '10mm', bottom: '10mm', left: '10mm', right: '10mm' },
+    });
+
+    await page.close();
+    return Buffer.from(buffer);
+  }
+
+  async generateBookingInvoice(invoiceData: IBookingInvoice): Promise<Buffer> {
+    const templatePath =
+      this._mode === 'production'
+        ? path.join(__dirname, 'templates', 'booking-invoice.template.html')
+        : path.join(process.cwd(), 'src', 'core', 'services', 'pdf', 'templates', 'booking-invoice.template.html');
+
+    if (!fs.existsSync(templatePath)) {
+      throw new Error(`Template not found at path: ${templatePath}`);
     }
 
-    async generatePdf(tableAsString: string, heading = 'Report'): Promise<Buffer> {
-        const date = new Date().toLocaleDateString();
-        const finalTemplate = this._template
-            .replace('{{date}}', new Date().toLocaleString())
-            .replace('{{heading}}', heading)
-            .replace('{{date}}', date)
-            .replace('{{tables}}', tableAsString);
+    const templateSource = fs.readFileSync(templatePath, 'utf8');
+    const template = handlebars.compile(templateSource);
 
-        const browser = await this._getBrowser();
-        const page = await browser.newPage();
-        await page.setContent(finalTemplate, { waitUntil: 'networkidle0' });
+    const html = template({
+      date: new Date().toLocaleString(),
+      invoice: invoiceData,
+      heading: invoiceData.userType === 'customer' ? 'Customer Details' : 'Provider Details',
+    });
 
-        const buffer = await page.pdf({
-            format: 'A4',
-            printBackground: true,
-            margin: { top: '10mm', bottom: '10mm', left: '10mm', right: '10mm' },
-        });
+    const browser = await this._getBrowser();
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: 'networkidle0' });
 
-        await page.close();
-        return Buffer.from(buffer);
+    const buffer = await page.pdf({
+      format: 'A4',
+      printBackground: true,
+      margin: { top: '10mm', bottom: '10mm', left: '10mm', right: '10mm' },
+    });
+
+    await page.close();
+    return Buffer.from(buffer);
+  }
+
+  async generateSalesReportPdf(data: { report: ISalesReportBundle; generatedAt: string; dateRangeLabel: string }): Promise<Buffer> {
+    const templatePath =
+      this._mode === 'production'
+        ? path.join(__dirname, 'templates', 'sales-report-template.html')
+        : path.join(process.cwd(), 'src', 'core', 'services', 'pdf', 'templates', 'sales-report-template.html');
+
+    if (!fs.existsSync(templatePath)) {
+      throw new Error(`Template not found at path: ${templatePath}`);
     }
 
-    async generateBookingInvoice(invoiceData: IBookingInvoice): Promise<Buffer> {
-        const templatePath = this._mode === 'production'
-            ? path.join(__dirname, 'templates', 'booking-invoice.template.html')
-            : path.join(process.cwd(), 'src', 'core', 'services', 'pdf', 'templates', 'booking-invoice.template.html');
+    const templateSource = fs.readFileSync(templatePath, 'utf8');
+    const template = handlebars.compile(templateSource);
 
-        if (!fs.existsSync(templatePath)) {
-            throw new Error(`Template not found at path: ${templatePath}`);
-        }
+    handlebars.registerHelper('money', (value: number) => {
+      const num = Number(value) || 0;
+      return new Intl.NumberFormat('en-IN', {
+        style: 'currency',
+        currency: 'INR',
+        maximumFractionDigits: 0,
+      }).format(num);
+    });
 
-        const templateSource = fs.readFileSync(templatePath, 'utf8');
-        const template = handlebars.compile(templateSource);
+    const html = template({
+      generatedAt: data.generatedAt,
+      dateRangeLabel: data.dateRangeLabel,
+      report: data.report,
+      summary: data.report.summary,
+      services: data.report.services,
+      providers: data.report.providers,
+      cancellation: data.report.cancellation,
+    });
 
-        const html = template({
-            date: new Date().toLocaleString(),
-            invoice: invoiceData,
-            heading: invoiceData.userType === "customer" ? "Customer Details" : "Provider Details"
-        });
+    const browser = await this._getBrowser();
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: 'networkidle0' });
 
-        const browser = await this._getBrowser();
-        const page = await browser.newPage();
-        await page.setContent(html, { waitUntil: 'networkidle0' });
+    const buffer = await page.pdf({
+      format: 'A4',
+      printBackground: true,
+      margin: { top: '10mm', bottom: '10mm', left: '10mm', right: '10mm' },
+    });
 
-        const buffer = await page.pdf({
-            format: 'A4',
-            printBackground: true,
-            margin: { top: '10mm', bottom: '10mm', left: '10mm', right: '10mm' },
-        });
-
-        await page.close();
-        return Buffer.from(buffer);
-    }
-
-    async generateSalesReportPdf(data: { report: ISalesReportBundle; generatedAt: string; dateRangeLabel: string; }): Promise<Buffer> {
-        const templatePath = this._mode === 'production'
-            ? path.join(__dirname, 'templates', 'sales-report-template.html')
-            : path.join(process.cwd(), 'src', 'core', 'services', 'pdf', 'templates', 'sales-report-template.html');
-
-        if (!fs.existsSync(templatePath)) {
-            throw new Error(`Template not found at path: ${templatePath}`);
-        }
-
-        const templateSource = fs.readFileSync(templatePath, 'utf8');
-        const template = handlebars.compile(templateSource);
-
-        handlebars.registerHelper('money', (value: number) => {
-            const num = Number(value) || 0;
-            return new Intl.NumberFormat('en-IN', {
-                style: 'currency',
-                currency: 'INR',
-                maximumFractionDigits: 0,
-            }).format(num);
-        });
-
-        const html = template({
-            generatedAt: data.generatedAt,
-            dateRangeLabel: data.dateRangeLabel,
-            report: data.report,
-            summary: data.report.summary,
-            services: data.report.services,
-            providers: data.report.providers,
-            cancellation: data.report.cancellation,
-        });
-
-        const browser = await this._getBrowser();
-        const page = await browser.newPage();
-        await page.setContent(html, { waitUntil: 'networkidle0' });
-
-        const buffer = await page.pdf({
-            format: 'A4',
-            printBackground: true,
-            margin: { top: '10mm', bottom: '10mm', left: '10mm', right: '10mm' },
-        });
-
-        await page.close();
-        return Buffer.from(buffer);
-    }
+    await page.close();
+    return Buffer.from(buffer);
+  }
 }

@@ -1,6 +1,25 @@
-import { BadRequestException, ConflictException, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
-import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PLAN_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SUBSCRIPTION_REPOSITORY_NAME } from '@/core/constants/repository.constant';
-import { IAdminFilteredSubscriptionListWithPagination, IAdminSubscriptionList, ISubscription, ISubscriptionFilters, ISubscriptionUpgradeAmount, SubscriptionStatusType } from '@/core/entities/interfaces/subscription.entity.interface';
+import {
+  BadRequestException,
+  ConflictException,
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
+import {
+  CUSTOMER_REPOSITORY_INTERFACE_NAME,
+  PLAN_REPOSITORY_INTERFACE_NAME,
+  PROVIDER_REPOSITORY_INTERFACE_NAME,
+  SUBSCRIPTION_REPOSITORY_NAME,
+} from '@/core/constants/repository.constant';
+import {
+  IAdminFilteredSubscriptionListWithPagination,
+  IAdminSubscriptionList,
+  ISubscription,
+  ISubscriptionFilters,
+  ISubscriptionUpgradeAmount,
+  SubscriptionStatusType,
+} from '@/core/entities/interfaces/subscription.entity.interface';
 import { ErrorCodes, ErrorMessage } from '@/core/enum/error.enum';
 import { IResponse } from '@/core/misc/response.util';
 import { IPlanRepository } from '@/core/repositories/interfaces/plans-repo.interface';
@@ -20,504 +39,513 @@ import { IPaymentLockingUtility } from '@core/utilities/interface/payment-lockin
 
 @Injectable()
 export class SubscriptionService implements ISubscriptionService {
+  constructor(
+    @Inject(SUBSCRIPTION_REPOSITORY_NAME)
+    private readonly _subscriptionRepository: ISubscriptionRepository,
+    @Inject(PLAN_REPOSITORY_INTERFACE_NAME)
+    private readonly _planRepository: IPlanRepository,
+    @Inject(SUBSCRIPTION_MAPPER)
+    private readonly _subscriptionMapper: ISubscriptionMapper,
+    @Inject(PLAN_MAPPER)
+    private readonly _planMapper: IPlanMapper,
+    @Inject(CUSTOMER_REPOSITORY_INTERFACE_NAME)
+    private readonly _customerRepository: ICustomerRepository,
+    @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
+    private readonly _providerRepository: IProviderRepository,
+    @Inject(PAYMENT_LOCKING_UTILITY_NAME)
+    private readonly _paymentLockingUtility: IPaymentLockingUtility,
+  ) {}
 
-    constructor(
-        @Inject(SUBSCRIPTION_REPOSITORY_NAME)
-        private readonly _subscriptionRepository: ISubscriptionRepository,
-        @Inject(PLAN_REPOSITORY_INTERFACE_NAME)
-        private readonly _planRepository: IPlanRepository,
-        @Inject(SUBSCRIPTION_MAPPER)
-        private readonly _subscriptionMapper: ISubscriptionMapper,
-        @Inject(PLAN_MAPPER)
-        private readonly _planMapper: IPlanMapper,
-        @Inject(CUSTOMER_REPOSITORY_INTERFACE_NAME)
-        private readonly _customerRepository: ICustomerRepository,
-        @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
-        private readonly _providerRepository: IProviderRepository,
-        @Inject(PAYMENT_LOCKING_UTILITY_NAME)
-        private readonly _paymentLockingUtility: IPaymentLockingUtility,
-    ) { }
+  private async _isUpdatedUserSubscriptionStatus(userId: string, userType: string, subscriptionId: string): Promise<boolean> {
+    let isUpdated: boolean = false;
 
-    private async _isUpdatedUserSubscriptionStatus(userId: string, userType: string, subscriptionId: string): Promise<boolean> {
-        let isUpdated: boolean = false;
-
-        if (userType === 'customer') {
-            isUpdated = await this._customerRepository.updateSubscriptionId(userId, subscriptionId);
-        } else if (userType === 'provider') {
-            isUpdated = await this._providerRepository.updateSubscriptionId(userId, subscriptionId);
-        }
-
-        return isUpdated;
+    if (userType === 'customer') {
+      isUpdated = await this._customerRepository.updateSubscriptionId(userId, subscriptionId);
+    } else if (userType === 'provider') {
+      isUpdated = await this._providerRepository.updateSubscriptionId(userId, subscriptionId);
     }
 
-    private async _getUserEmailAndRole(userId: string, userType: ClientUserType): Promise<{ email: string; role: ClientUserType }> {
-        let userDoc;
+    return isUpdated;
+  }
 
-        if (userType === 'customer') {
-            userDoc = await this._customerRepository.findById(userId);
-        } else if (userType === 'provider') {
-            userDoc = await this._providerRepository.findById(userId);
-        }
+  private async _getUserEmailAndRole(userId: string, userType: ClientUserType): Promise<{ email: string; role: ClientUserType }> {
+    let userDoc;
 
-        if (!userDoc) {
-            throw new NotFoundException({
-                code: ErrorCodes.NOT_FOUND,
-                message: ErrorMessage.USER_NOT_FOUND,
-            });
-        }
-
-        return { email: userDoc.email, role: userType };
+    if (userType === 'customer') {
+      userDoc = await this._customerRepository.findById(userId);
+    } else if (userType === 'provider') {
+      userDoc = await this._providerRepository.findById(userId);
     }
 
-    private _calculateUpgradeAmount(monthlyPrice: number, yearlyPrice: number, startDateStr: string): ISubscriptionUpgradeAmount {
-        const startDate = new Date(startDateStr);
-        const today = new Date();
+    if (!userDoc) {
+      throw new NotFoundException({
+        code: ErrorCodes.NOT_FOUND,
+        message: ErrorMessage.USER_NOT_FOUND,
+      });
+    }
 
-        // Normalizing time to prevent partial-day errors
-        startDate.setHours(0, 0, 0, 0);
-        today.setHours(0, 0, 0, 0);
+    return { email: userDoc.email, role: userType };
+  }
 
-        const msInDay = 1000 * 60 * 60 * 24;
+  private _calculateUpgradeAmount(monthlyPrice: number, yearlyPrice: number, startDateStr: string): ISubscriptionUpgradeAmount {
+    const startDate = new Date(startDateStr);
+    const today = new Date();
 
-        // Actual length of the current billing month (start date → same day next month).
-        const nextMonthStart = new Date(startDate);
-        nextMonthStart.setMonth(nextMonthStart.getMonth() + 1);
-        const totalDaysInMonth = Math.round((nextMonthStart.getTime() - startDate.getTime()) / msInDay);
+    // Normalizing time to prevent partial-day errors
+    startDate.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
 
-        const daysUsed = Math.min(
-            Math.max(Math.floor((today.getTime() - startDate.getTime()) / msInDay), 0),
-            totalDaysInMonth
-        );
+    const msInDay = 1000 * 60 * 60 * 24;
 
-        let creditAmount: number;
+    // Actual length of the current billing month (start date → same day next month).
+    const nextMonthStart = new Date(startDate);
+    nextMonthStart.setMonth(nextMonthStart.getMonth() + 1);
+    const totalDaysInMonth = Math.round((nextMonthStart.getTime() - startDate.getTime()) / msInDay);
 
-        // within 7 days, credit full monthly
-        if (daysUsed < 7) {
-            creditAmount = monthlyPrice;
-        } else {
-            // after 7 days, credit only unused portion
-            const unusedDays = Math.max(totalDaysInMonth - daysUsed, 0);
-            const perDayPrice = monthlyPrice / totalDaysInMonth;
-            creditAmount = unusedDays * perDayPrice;
-        }
+    const daysUsed = Math.min(Math.max(Math.floor((today.getTime() - startDate.getTime()) / msInDay), 0), totalDaysInMonth);
 
-        // never credit more than what was paid for the current month
-        creditAmount = Math.min(creditAmount, monthlyPrice);
-        creditAmount = Math.round(creditAmount * 100) / 100;
+    let creditAmount: number;
 
-        const upgradeAmount = Math.max(Math.floor(yearlyPrice - creditAmount), 0);
+    // within 7 days, credit full monthly
+    if (daysUsed < 7) {
+      creditAmount = monthlyPrice;
+    } else {
+      // after 7 days, credit only unused portion
+      const unusedDays = Math.max(totalDaysInMonth - daysUsed, 0);
+      const perDayPrice = monthlyPrice / totalDaysInMonth;
+      creditAmount = unusedDays * perDayPrice;
+    }
 
-        return {
-            upgradeAmount,
+    // never credit more than what was paid for the current month
+    creditAmount = Math.min(creditAmount, monthlyPrice);
+    creditAmount = Math.round(creditAmount * 100) / 100;
+
+    const upgradeAmount = Math.max(Math.floor(yearlyPrice - creditAmount), 0);
+
+    return {
+      upgradeAmount,
+      creditAmount,
+      monthlyPrice,
+      yearlyPrice,
+      daysUsed,
+    };
+  }
+
+  private _getSubscriptionEndDateAndStartDate(duration: PlanDurationEnum): {
+    startTime: Date;
+    endDate: Date;
+  } {
+    const startTime = new Date();
+    const endDate = new Date(startTime);
+
+    switch (duration) {
+      case PlanDurationEnum.Monthly:
+        endDate.setMonth(endDate.getMonth() + 1);
+        break;
+
+      case PlanDurationEnum.Yearly:
+        endDate.setFullYear(endDate.getFullYear() + 1);
+        break;
+
+      case PlanDurationEnum.FreeTier:
+        endDate.setFullYear(endDate.getFullYear() + 100);
+        break;
+
+      default:
+        throw new BadRequestException({
+          code: ErrorCodes.BAD_REQUEST,
+          message: 'Invalid subscription duration.',
+        });
+    }
+
+    return { startTime, endDate };
+  }
+
+  private _getSubscriptionStatus(subscription: ISubscription): SubscriptionStatusType {
+    const today = new Date();
+
+    if (subscription.isActive) {
+      return 'active';
+    } else if (subscription.endDate < today) {
+      return 'expired';
+    } else {
+      return 'inactive';
+    }
+  }
+
+  async createSubscription(
+    userId: string,
+    userType: UserType,
+    createSubscriptionDto: CreateSubscriptionDto,
+  ): Promise<IResponse<ISubscription>> {
+    const key = this._paymentLockingUtility.generatePaymentKey(userId, userType);
+
+    const acquired = await this._paymentLockingUtility.acquireLock(key, 300);
+    if (!acquired) {
+      const ttl = await this._paymentLockingUtility.getTTL(key);
+
+      throw new ConflictException({
+        code: ErrorCodes.PAYMENT_IN_PROGRESS,
+        message: `We are still processing your previous payment. Please try again in ${ttl} seconds.`,
+        ttl,
+      });
+    }
+
+    try {
+      const isSubscriptionExists = await this._subscriptionRepository.findActiveSubscriptionByUserId(userId, userType);
+
+      if (isSubscriptionExists) {
+        throw new ConflictException({
+          code: ErrorCodes.CONFLICT,
+          message: `Subscription ${ErrorMessage.DOCUMENT_ALREADY_EXISTS}`,
+        });
+      }
+
+      const planDoc = await this._planRepository.findPlan(createSubscriptionDto.planId);
+      if (!planDoc)
+        throw new NotFoundException({
+          code: ErrorCodes.NOT_FOUND,
+          message: 'Failed to find the plan.',
+        });
+
+      const plan = this._planMapper.toEntity(planDoc);
+
+      const { endDate, startTime } = this._getSubscriptionEndDateAndStartDate(plan.duration);
+
+      const isFreeTier = plan.duration === PlanDurationEnum.FreeTier;
+
+      const newSubscription = await this._subscriptionRepository.create(
+        this._subscriptionMapper.toDocument({
+          userId,
+          planId: plan.id,
+          name: plan.name,
+          role: plan.role,
+          price: plan.price,
+          duration: createSubscriptionDto.duration,
+          features: plan.features,
+          isActive: isFreeTier,
+          isDeleted: false,
+          transactionHistory: [],
+          paymentStatus: isFreeTier ? PaymentStatus.PAID : PaymentStatus.UNPAID,
+          cancelledAt: null,
+          startTime,
+          endDate,
+        }),
+      );
+
+      if (!newSubscription) {
+        throw new InternalServerErrorException({
+          code: ErrorCodes.INTERNAL_SERVER_ERROR,
+          message: 'Failed to create the subscription.',
+        });
+      }
+
+      if (isFreeTier) {
+        await this._isUpdatedUserSubscriptionStatus(userId, userType, String(newSubscription._id));
+      }
+
+      return {
+        success: true,
+        message: 'Subscription created successfully.',
+        data: this._subscriptionMapper.toEntity(newSubscription),
+      };
+    } catch (error) {
+      await this._paymentLockingUtility.releaseLock(key);
+      throw error;
+    }
+  }
+
+  async fetchSubscription(userId: string, role: PlanRoleEnum): Promise<IResponse<ISubscription | null>> {
+    const subscription = await this._subscriptionRepository.findSubscription(userId, role);
+
+    if (!subscription) {
+      return {
+        success: false,
+        message: 'User has not active subscription plans',
+        data: null,
+      };
+    }
+
+    return {
+      success: true,
+      message: 'Subscription fetched successfully',
+      data: this._subscriptionMapper.toEntity(subscription),
+    };
+  }
+
+  async fetchSubscriptionHistory(userId: string, role: PlanRoleEnum): Promise<IResponse<ISubscription[]>> {
+    const subscriptions = await this._subscriptionRepository.findAllSubscriptionsByUserId(userId, role);
+
+    const history = subscriptions
+      .filter((subscription) => subscription.paymentStatus !== PaymentStatus.UNPAID)
+      .map((subscription) => this._subscriptionMapper.toEntity(subscription));
+
+    return {
+      success: true,
+      message: 'Subscription history fetched successfully.',
+      data: history,
+    };
+  }
+
+  async fetchLatestSubscription(userId: string, role: PlanRoleEnum): Promise<IResponse<ISubscription | null>> {
+    const subscription = await this._subscriptionRepository.findLatestSubscriptionByUserId(userId, role);
+
+    if (!subscription) {
+      return {
+        success: false,
+        message: 'User has no subscription history',
+        data: null,
+      };
+    }
+
+    return {
+      success: true,
+      message: 'Latest subscription fetched successfully.',
+      data: this._subscriptionMapper.toEntity(subscription),
+    };
+  }
+
+  async getUpgradeAmount(role: UserType, currentSubscriptionId: string): Promise<IResponse<ISubscriptionUpgradeAmount>> {
+    const currentSubscriptionDocument = await this._subscriptionRepository.fetchCurrentActiveSubscription(currentSubscriptionId);
+
+    if (!currentSubscriptionDocument) {
+      throw new NotFoundException({
+        code: ErrorCodes.NO_ACTIVE_SUBSCRIPTION,
+        message: `${ErrorMessage.SUBSCRIPTION_NOT_FOUND}`,
+      });
+    }
+
+    const currentSubscription = this._subscriptionMapper.toEntity(currentSubscriptionDocument);
+
+    if (currentSubscription.duration === 'yearly' || !currentSubscription.endDate) {
+      throw new InternalServerErrorException('Requested subscription is not possible');
+    }
+
+    const yearlyPlanDocument = await this._planRepository.findOne({ role, duration: 'yearly' });
+    if (!yearlyPlanDocument)
+      throw new NotFoundException({
+        code: ErrorCodes.NOT_FOUND,
+        messages: ErrorMessage.PLAN_NOT_FOUND,
+      });
+
+    const yearlyPlan = this._planMapper.toEntity(yearlyPlanDocument);
+
+    const upgradeAmount = this._calculateUpgradeAmount(
+      currentSubscription.price,
+      yearlyPlan.price,
+      currentSubscription.startTime.toString(),
+    );
+
+    return {
+      success: true,
+      message: 'Subscription upgrade amount fetched.',
+      data: upgradeAmount,
+    };
+  }
+
+  async upgradeSubscription(
+    userId: string,
+    userType: UserType,
+    createSubscriptionDto: CreateSubscriptionDto,
+  ): Promise<IResponse<ISubscription>> {
+    const key = this._paymentLockingUtility.generatePaymentKey(userId, userType);
+
+    const acquired = await this._paymentLockingUtility.acquireLock(key, 300);
+    if (!acquired) {
+      const ttl = await this._paymentLockingUtility.getTTL(key);
+
+      throw new ConflictException({
+        code: ErrorCodes.PAYMENT_IN_PROGRESS,
+        message: `We are still processing your previous payment. Please try again in ${ttl} seconds.`,
+        ttl,
+      });
+    }
+
+    try {
+      const currentSubscriptionDocument = await this._subscriptionRepository.findActiveSubscriptionByUserId(userId, userType);
+      if (!currentSubscriptionDocument) {
+        throw new BadRequestException({
+          code: ErrorCodes.BAD_REQUEST,
+          message: 'You are not subscribed to any plans. Please subscribe a plan to upgrade.',
+        });
+      }
+
+      const currentSubscription = this._subscriptionMapper.toEntity(currentSubscriptionDocument);
+
+      if (currentSubscription.duration === 'yearly') {
+        throw new BadRequestException({
+          code: ErrorCodes.BAD_REQUEST,
+          message: 'Yearly subscription cannot be upgraded. Transitions are locked until the current term expires.',
+        });
+      }
+
+      const plan = await this._planRepository.findById(createSubscriptionDto.planId);
+      if (!plan) {
+        throw new NotFoundException(ErrorMessage.DOCUMENT_NOT_FOUND);
+      }
+
+      if (plan.duration !== 'yearly') {
+        throw new BadRequestException({
+          code: ErrorCodes.BAD_REQUEST,
+          message: 'Upgrade is only available from a monthly to a yearly plan.',
+        });
+      }
+
+      const yearlyPlanDocument = await this._planRepository.findOne({
+        role: userType,
+        duration: 'yearly',
+      });
+      if (!yearlyPlanDocument)
+        throw new NotFoundException({
+          code: ErrorCodes.NOT_FOUND,
+          messages: ErrorMessage.PLAN_NOT_FOUND,
+        });
+
+      const yearlyPlan = this._planMapper.toEntity(yearlyPlanDocument);
+
+      const { upgradeAmount, creditAmount } = this._calculateUpgradeAmount(
+        currentSubscription.price,
+        yearlyPlan.price,
+        currentSubscription.startTime.toString(),
+      );
+
+      const { startTime, endDate } = this._getSubscriptionEndDateAndStartDate(plan.duration);
+      const newSubscription = await this._subscriptionRepository.create(
+        this._subscriptionMapper.toDocument({
+          userId,
+          planId: plan.id,
+          name: plan.name,
+          role: plan.role,
+          price: plan.price,
+          duration: createSubscriptionDto.duration,
+          features: plan.features,
+          isActive: false,
+          isDeleted: false,
+          transactionHistory: [],
+          paymentStatus: PaymentStatus.UNPAID,
+          cancelledAt: null,
+          endDate,
+          startTime,
+          metadata: {
+            previousSubscriptionId: currentSubscription.id,
+            convertedFromDuration: currentSubscription.duration,
             creditAmount,
-            monthlyPrice,
-            yearlyPrice,
-            daysUsed
-        };
+            upgradeAmount,
+            convertedAt: new Date(),
+          },
+        }),
+      );
+
+      if (!newSubscription) {
+        throw new InternalServerErrorException(ErrorMessage.SUBSCRIPTION_CREATION_FAILED);
+      }
+
+      return {
+        success: true,
+        message: 'Subscription created successfully.',
+        data: this._subscriptionMapper.toEntity(newSubscription),
+      };
+    } catch (error) {
+      await this._paymentLockingUtility.releaseLock(key);
+      throw error;
+    }
+  }
+
+  async updatePaymentStatus(userId: string, userType: UserType, data: UpdatePaymentStatusDto): Promise<IResponse> {
+    const subscriptionDoc = await this._subscriptionRepository.findSubscriptionById(data.subscriptionId);
+
+    if (!subscriptionDoc)
+      throw new NotFoundException({
+        code: ErrorCodes.NOT_FOUND,
+        message: `Subscription document not found.`,
+      });
+
+    const subscription = this._subscriptionMapper.toEntity(subscriptionDoc);
+
+    const updated = await this._subscriptionRepository.updatePaymentStatus(subscription.id, data.paymentStatus);
+
+    if (!updated)
+      throw new NotFoundException({
+        code: ErrorCodes.DATABASE_OPERATION_FAILED,
+        message: `Failed to update subscription.`,
+      });
+
+    const isUpdated = await this._isUpdatedUserSubscriptionStatus(userId, userType, subscription.id);
+    if (!isUpdated)
+      throw new BadRequestException({
+        code: ErrorCodes.BAD_REQUEST,
+        message: 'Invalid user type.',
+      });
+
+    return {
+      success: true,
+      message: 'subscription updated successfully.',
+    };
+  }
+
+  async removeSubscription(subscriptionId: string): Promise<IResponse> {
+    const result = await this._subscriptionRepository.removeSubscriptionById(subscriptionId);
+    return {
+      success: result,
+      message: result ? 'Successfully cleaned subscription' : 'Failed to clean subscription',
+    };
+  }
+
+  async hasActiveSubscription(userId: string, role: PlanRoleEnum): Promise<IResponse<ISubscription>> {
+    const hasActiveSubscription = await this._subscriptionRepository.findActiveSubscriptionByUserId(userId, role);
+
+    if (!hasActiveSubscription) {
+      return {
+        success: false,
+        message: 'No active subscription found.',
+      };
     }
 
-    private _getSubscriptionEndDateAndStartDate(duration: PlanDurationEnum): { startTime: Date; endDate: Date } {
-        const startTime = new Date();
-        const endDate = new Date(startTime);
+    return {
+      success: true,
+      message: 'Subscription fetched successfully.',
+      data: this._subscriptionMapper.toEntity(hasActiveSubscription),
+    };
+  }
 
-        switch (duration) {
-            case PlanDurationEnum.Monthly:
-                endDate.setMonth(endDate.getMonth() + 1);
-                break;
+  async fetchSubscriptionList(filters: SubscriptionFiltersDto): Promise<IResponse<IAdminFilteredSubscriptionListWithPagination>> {
+    const { page = 1, limit = 10, ...filter } = filters;
 
-            case PlanDurationEnum.Yearly:
-                endDate.setFullYear(endDate.getFullYear() + 1);
-                break;
+    const total = await this._subscriptionRepository.count();
+    let subscriptionList = await this._subscriptionRepository.findFilteredSubscriptionWithPagination(filter, { page, limit });
 
-            case PlanDurationEnum.FreeTier:
-                endDate.setFullYear(endDate.getFullYear() + 100);
-                break;
-
-            default:
-                throw new BadRequestException({
-                    code: ErrorCodes.BAD_REQUEST,
-                    message: 'Invalid subscription duration.',
-                });
+    if (filter.status && filter.status !== 'all') {
+      subscriptionList = subscriptionList.filter((subscription) => {
+        if (filter.status === 'active') {
+          return subscription.status === 'active';
+        } else if (filter.status === 'inactive') {
+          return subscription.status === 'inactive';
+        } else if (filter.status === 'expired') {
+          return subscription.status === 'expired';
         }
-
-        return { startTime, endDate };
+      });
     }
 
-    private _getSubscriptionStatus(subscription: ISubscription): SubscriptionStatusType {
-        const today = new Date();
+    return {
+      success: true,
+      message: 'Subscription list fetched successfully.',
+      data: {
+        subscriptions: subscriptionList,
+        pagination: {
+          total,
+          page,
+          limit,
+        },
+      },
+    };
+  }
 
-        if (subscription.isActive) {
-            return 'active';
-        } else if (subscription.endDate < today) {
-            return 'expired';
-        } else {
-            return 'inactive';
-        }
-    }
+  async updateSubscriptionStatus(subscriptionId: string, status: boolean): Promise<IResponse> {
+    const updated = await this._subscriptionRepository.updateSubscriptionStatus(subscriptionId, status);
 
-    async createSubscription(userId: string, userType: UserType, createSubscriptionDto: CreateSubscriptionDto): Promise<IResponse<ISubscription>> {
-        const key = this._paymentLockingUtility.generatePaymentKey(userId, userType);
-
-        const acquired = await this._paymentLockingUtility.acquireLock(key, 300);
-        if (!acquired) {
-            const ttl = await this._paymentLockingUtility.getTTL(key);
-
-            throw new ConflictException({
-                code: ErrorCodes.PAYMENT_IN_PROGRESS,
-                message: `We are still processing your previous payment. Please try again in ${ttl} seconds.`,
-                ttl
-            });
-        }
-
-        try {
-            const isSubscriptionExists = await this._subscriptionRepository.findActiveSubscriptionByUserId(userId, userType);
-
-            if (isSubscriptionExists) {
-                throw new ConflictException({
-                    code: ErrorCodes.CONFLICT,
-                    message: `Subscription ${ErrorMessage.DOCUMENT_ALREADY_EXISTS}`
-                });
-            }
-
-            const planDoc = await this._planRepository.findPlan(createSubscriptionDto.planId);
-            if (!planDoc) throw new NotFoundException({
-                code: ErrorCodes.NOT_FOUND,
-                message: 'Failed to find the plan.'
-            });
-
-            const plan = this._planMapper.toEntity(planDoc);
-
-            const { endDate, startTime } = this._getSubscriptionEndDateAndStartDate(plan.duration)
-
-            const isFreeTier = plan.duration === PlanDurationEnum.FreeTier;
-
-            const newSubscription = await this._subscriptionRepository.create(
-                this._subscriptionMapper.toDocument({
-                    userId,
-                    planId: plan.id,
-                    name: plan.name,
-                    role: plan.role,
-                    price: plan.price,
-                    duration: createSubscriptionDto.duration,
-                    features: plan.features,
-                    isActive: isFreeTier,
-                    isDeleted: false,
-                    transactionHistory: [],
-                    paymentStatus: isFreeTier ? PaymentStatus.PAID : PaymentStatus.UNPAID,
-                    cancelledAt: null,
-                    startTime,
-                    endDate,
-                })
-            );
-
-            if (!newSubscription) {
-                throw new InternalServerErrorException({
-                    code: ErrorCodes.INTERNAL_SERVER_ERROR,
-                    message: 'Failed to create the subscription.'
-                });
-            }
-
-            if (isFreeTier) {
-                await this._isUpdatedUserSubscriptionStatus(userId, userType, String(newSubscription._id));
-            }
-
-            return {
-                success: true,
-                message: 'Subscription created successfully.',
-                data: this._subscriptionMapper.toEntity(newSubscription)
-            }
-        } catch (error) {
-            await this._paymentLockingUtility.releaseLock(key);
-            throw error;
-        }
-    }
-
-    async fetchSubscription(userId: string, role: PlanRoleEnum): Promise<IResponse<ISubscription | null>> {
-        const subscription = await this._subscriptionRepository.findSubscription(userId, role);
-
-        if (!subscription) {
-            return {
-                success: false,
-                message: 'User has not active subscription plans',
-                data: null
-            }
-        }
-
-        return {
-            success: true,
-            message: 'Subscription fetched successfully',
-            data: this._subscriptionMapper.toEntity(subscription)
-        }
-    }
-
-    async fetchSubscriptionHistory(userId: string, role: PlanRoleEnum): Promise<IResponse<ISubscription[]>> {
-        const subscriptions = await this._subscriptionRepository.findAllSubscriptionsByUserId(userId, role);
-
-        const history = subscriptions
-            .filter(subscription => subscription.paymentStatus !== PaymentStatus.UNPAID)
-            .map(subscription => this._subscriptionMapper.toEntity(subscription));
-
-        return {
-            success: true,
-            message: 'Subscription history fetched successfully.',
-            data: history
-        }
-    }
-
-    async fetchLatestSubscription(userId: string, role: PlanRoleEnum): Promise<IResponse<ISubscription | null>> {
-        const subscription = await this._subscriptionRepository.findLatestSubscriptionByUserId(userId, role);
-
-        if (!subscription) {
-            return {
-                success: false,
-                message: 'User has no subscription history',
-                data: null
-            }
-        }
-
-        return {
-            success: true,
-            message: 'Latest subscription fetched successfully.',
-            data: this._subscriptionMapper.toEntity(subscription)
-        }
-    }
-
-    async getUpgradeAmount(role: UserType, currentSubscriptionId: string): Promise<IResponse<ISubscriptionUpgradeAmount>> {
-        const currentSubscriptionDocument = await this._subscriptionRepository.fetchCurrentActiveSubscription(currentSubscriptionId);
-
-        if (!currentSubscriptionDocument) {
-            throw new NotFoundException({
-                code: ErrorCodes.NO_ACTIVE_SUBSCRIPTION,
-                message: `${ErrorMessage.SUBSCRIPTION_NOT_FOUND}`
-            });
-        }
-
-        const currentSubscription = this._subscriptionMapper.toEntity(currentSubscriptionDocument);
-
-        if (currentSubscription.duration === 'yearly' || !currentSubscription.endDate) {
-            throw new InternalServerErrorException('Requested subscription is not possible');
-        }
-
-        const yearlyPlanDocument = await this._planRepository.findOne({ role, duration: 'yearly' });
-        if (!yearlyPlanDocument) throw new NotFoundException({
-            code: ErrorCodes.NOT_FOUND,
-            messages: ErrorMessage.PLAN_NOT_FOUND
-        });
-
-        const yearlyPlan = this._planMapper.toEntity(yearlyPlanDocument);
-
-        const upgradeAmount = this._calculateUpgradeAmount(
-            currentSubscription.price,
-            yearlyPlan.price,
-            currentSubscription.startTime.toString()
-        );
-
-        return {
-            success: true,
-            message: 'Subscription upgrade amount fetched.',
-            data: upgradeAmount
-        }
-    }
-
-    async upgradeSubscription(userId: string, userType: UserType, createSubscriptionDto: CreateSubscriptionDto): Promise<IResponse<ISubscription>> {
-        const key = this._paymentLockingUtility.generatePaymentKey(userId, userType);
-
-        const acquired = await this._paymentLockingUtility.acquireLock(key, 300);
-        if (!acquired) {
-            const ttl = await this._paymentLockingUtility.getTTL(key);
-
-            throw new ConflictException({
-                code: ErrorCodes.PAYMENT_IN_PROGRESS,
-                message: `We are still processing your previous payment. Please try again in ${ttl} seconds.`,
-                ttl
-            });
-        }
-
-        try {
-            const currentSubscriptionDocument = await this._subscriptionRepository.findActiveSubscriptionByUserId(userId, userType);
-            if (!currentSubscriptionDocument) {
-                throw new BadRequestException({
-                    code: ErrorCodes.BAD_REQUEST,
-                    message: 'You are not subscribed to any plans. Please subscribe a plan to upgrade.'
-                });
-            }
-
-            const currentSubscription = this._subscriptionMapper.toEntity(currentSubscriptionDocument);
-
-            if (currentSubscription.duration === 'yearly') {
-                throw new BadRequestException({
-                    code: ErrorCodes.BAD_REQUEST,
-                    message: 'Yearly subscription cannot be upgraded. Transitions are locked until the current term expires.'
-                });
-            }
-
-            const plan = await this._planRepository.findById(createSubscriptionDto.planId);
-            if (!plan) {
-                throw new NotFoundException(ErrorMessage.DOCUMENT_NOT_FOUND);
-            }
-
-            if (plan.duration !== 'yearly') {
-                throw new BadRequestException({
-                    code: ErrorCodes.BAD_REQUEST,
-                    message: 'Upgrade is only available from a monthly to a yearly plan.'
-                });
-            }
-
-            const yearlyPlanDocument = await this._planRepository.findOne({ role: userType, duration: 'yearly' });
-            if (!yearlyPlanDocument) throw new NotFoundException({
-                code: ErrorCodes.NOT_FOUND,
-                messages: ErrorMessage.PLAN_NOT_FOUND
-            });
-
-            const yearlyPlan = this._planMapper.toEntity(yearlyPlanDocument);
-
-            const { upgradeAmount, creditAmount } = this._calculateUpgradeAmount(
-                currentSubscription.price,
-                yearlyPlan.price,
-                currentSubscription.startTime.toString()
-            );
-
-            const { startTime, endDate } = this._getSubscriptionEndDateAndStartDate(plan.duration);
-            const newSubscription = await this._subscriptionRepository.create(
-                this._subscriptionMapper.toDocument({
-                    userId,
-                    planId: plan.id,
-                    name: plan.name,
-                    role: plan.role,
-                    price: plan.price,
-                    duration: createSubscriptionDto.duration,
-                    features: plan.features,
-                    isActive: false,
-                    isDeleted: false,
-                    transactionHistory: [],
-                    paymentStatus: PaymentStatus.UNPAID,
-                    cancelledAt: null,
-                    endDate,
-                    startTime,
-                    metadata: {
-                        previousSubscriptionId: currentSubscription.id,
-                        convertedFromDuration: currentSubscription.duration,
-                        creditAmount,
-                        upgradeAmount,
-                        convertedAt: new Date()
-                    }
-                })
-            );
-
-            if (!newSubscription) {
-                throw new InternalServerErrorException(ErrorMessage.SUBSCRIPTION_CREATION_FAILED);
-            }
-
-            return {
-                success: true,
-                message: 'Subscription created successfully.',
-                data: this._subscriptionMapper.toEntity(newSubscription)
-            }
-        } catch (error) {
-            await this._paymentLockingUtility.releaseLock(key);
-            throw error;
-        }
-    }
-
-    async updatePaymentStatus(userId: string, userType: UserType, data: UpdatePaymentStatusDto): Promise<IResponse> {
-        const subscriptionDoc = await this._subscriptionRepository.findSubscriptionById(data.subscriptionId);
-
-        if (!subscriptionDoc) throw new NotFoundException({
-            code: ErrorCodes.NOT_FOUND,
-            message: `Subscription document not found.`
-        });
-
-        const subscription = this._subscriptionMapper.toEntity(subscriptionDoc);
-
-        const updated = await this._subscriptionRepository.updatePaymentStatus(
-            subscription.id,
-            data.paymentStatus,
-        );
-
-        if (!updated) throw new NotFoundException({
-            code: ErrorCodes.DATABASE_OPERATION_FAILED,
-            message: `Failed to update subscription.`
-        });
-
-        const isUpdated = this._isUpdatedUserSubscriptionStatus(userId, userType, subscription.id);
-        if (!isUpdated) throw new BadRequestException({
-            code: ErrorCodes.BAD_REQUEST,
-            message: 'Invalid user type.'
-        });
-
-        return {
-            success: true,
-            message: 'subscription updated successfully.'
-        }
-    }
-
-    async removeSubscription(subscriptionId: string): Promise<IResponse> {
-        const result = await this._subscriptionRepository.removeSubscriptionById(subscriptionId);
-        return {
-            success: result,
-            message: result
-                ? 'Successfully cleaned subscription'
-                : 'Failed to clean subscription'
-        }
-    }
-
-    async hasActiveSubscription(userId: string, role: PlanRoleEnum): Promise<IResponse<ISubscription>> {
-        const hasActiveSubscription = await this._subscriptionRepository.findActiveSubscriptionByUserId(userId, role);
-
-        if (!hasActiveSubscription) {
-            return {
-                success: false,
-                message: 'No active subscription found.',
-            }
-        }
-
-        return {
-            success: true,
-            message: 'Subscription fetched successfully.',
-            data: this._subscriptionMapper.toEntity(hasActiveSubscription)
-        }
-    }
-
-    async fetchSubscriptionList(filters: SubscriptionFiltersDto): Promise<IResponse<IAdminFilteredSubscriptionListWithPagination>> {
-        const { page = 1, limit = 10, ...filter } = filters;
-
-        let [subscriptionList, total] = await Promise.all([
-            this._subscriptionRepository.findFilteredSubscriptionWithPagination(filter, { page, limit }),
-            this._subscriptionRepository.count()
-        ]);
-
-        if (filter.status && filter.status !== 'all') {
-            subscriptionList = subscriptionList.filter((subscription) => {
-                if (filter.status === 'active') {
-                    return subscription.status === 'active';
-                } else if (filter.status === 'inactive') {
-                    return subscription.status === 'inactive';
-                } else if (filter.status === 'expired') {
-                    return subscription.status === 'expired';
-                }
-            });
-        }
-
-        return {
-            success: true,
-            message: 'Subscription list fetched successfully.',
-            data: {
-                subscriptions: subscriptionList,
-                pagination: {
-                    total,
-                    page,
-                    limit,
-                }
-            }
-        }
-    }
-
-    async updateSubscriptionStatus(subscriptionId: string, status: boolean): Promise<IResponse> {
-        const updated = await this._subscriptionRepository.updateSubscriptionStatus(subscriptionId, status);
-
-        return {
-            success: true,
-            message: 'Subscription updated successfully.'
-        }
-    }
+    return {
+      success: true,
+      message: 'Subscription updated successfully.',
+    };
+  }
 }

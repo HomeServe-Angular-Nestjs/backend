@@ -1,17 +1,16 @@
-
 export interface IResponse<T = any> {
-    code?: string | null,
-    success: boolean,
-    message: string,
-    data?: T,
-    meta?: Record<string, any> | null,
+  code?: string | null;
+  success: boolean;
+  message: string;
+  data?: T;
+  meta?: Record<string, any> | null;
 }
 
 export const prepareResponse = (success: boolean, message: string, data: any = null, code: string | null = null): IResponse => {
-    return {
-        code,
-        message,
-        success,
-        data
-    }
-}
+  return {
+    code,
+    message,
+    success,
+    data,
+  };
+};

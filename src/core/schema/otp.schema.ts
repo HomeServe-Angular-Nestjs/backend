@@ -6,13 +6,13 @@ export class OtpDocument extends Document {
   @Prop({
     type: String,
     required: true,
-    index: true
+    index: true,
   })
   email: string;
 
   @Prop({
     type: String,
-    required: true
+    required: true,
   })
   code: string;
 

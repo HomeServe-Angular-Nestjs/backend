@@ -10,126 +10,119 @@ import { BOOKINGS_MODEL_NAME } from '@core/constants/model.constant';
 
 @Injectable()
 export class TransactionRepository extends BaseRepository<BookingDocument> implements ITransactionRepository {
-    constructor(
-        @InjectModel(BOOKINGS_MODEL_NAME)
-        private readonly _bookingModel: Model<BookingDocument>
-    ) {
-        super(_bookingModel);
+  constructor(
+    @InjectModel(BOOKINGS_MODEL_NAME)
+    private readonly _bookingModel: Model<BookingDocument>,
+  ) {
+    super(_bookingModel);
+  }
+
+  async createNewTransaction(bookingId: string, transaction: Partial<TransactionDocument>): Promise<TransactionDocument | null> {
+    const result = await this._bookingModel.findOneAndUpdate(
+      { _id: bookingId },
+      { $push: { transactionHistory: transaction } },
+      {
+        new: true,
+        runValidators: true,
+        projection: { transactionHistory: 1 },
+      },
+    );
+
+    if (!result || result.transactionHistory.length < 1) return null;
+
+    const history = result.transactionHistory;
+
+    return history.slice(-1)[0];
+  }
+
+  async findTransactionById(bookingId: string, transactionId: string): Promise<TransactionDocument | null> {
+    const result = await this._bookingModel
+      .findOne(
+        {
+          _id: bookingId,
+          'transactionHistory._id': transactionId,
+        },
+        { 'transactionHistory.$': 1 },
+      )
+      .lean();
+
+    if (!result || !result.transactionHistory?.length) {
+      return null;
     }
 
-    async createNewTransaction(bookingId: string, transaction: Partial<TransactionDocument>): Promise<TransactionDocument | null> {
-        const result = await this._bookingModel.findOneAndUpdate(
-            { _id: bookingId },
-            { $push: { transactionHistory: transaction } },
-            {
-                new: true,
-                runValidators: true,
-                projection: { transactionHistory: 1 }
-            }
-        );
+    return result.transactionHistory[0];
+  }
 
-        if (!result || result.transactionHistory.length < 1) return null;
+  async count(): Promise<number> {
+    const pipeline: PipelineStage[] = [{ $unwind: '$transactionHistory' }, { $count: 'count' }];
+    const res = await this._bookingModel.aggregate(pipeline).allowDiskUse(true);
+    return res[0]?.count || 0;
+  }
 
-        const history = result.transactionHistory;
+  async countByUserId(userId: string): Promise<number> {
+    const pipeline: PipelineStage[] = [
+      { $match: { userId: this._toObjectId(userId) } },
+      { $unwind: '$transactionHistory' },
+      { $count: 'count' },
+    ];
+    const res = await this._bookingModel.aggregate(pipeline).allowDiskUse(true);
+    return res[0]?.count || 0;
+  }
 
-        return history.slice(-1)[0];
+  async getReportDetails(filter: IReportDownloadTransactionData): Promise<IReportTransactionData[]> {
+    const pipeline: PipelineStage[] = [];
+
+    const match: FilterQuery<TransactionDocument> = {};
+
+    if (filter.fromDate && filter.toDate) {
+      match.createdAt = {
+        $gte: new Date(filter.fromDate),
+        $lte: new Date(filter.toDate),
+      };
     }
 
-    async findTransactionById(bookingId: string, transactionId: string): Promise<TransactionDocument | null> {
-        const result = await this._bookingModel.findOne(
-            {
-                _id: bookingId,
-                'transactionHistory._id': transactionId
-            },
-            { 'transactionHistory.$': 1 }
-        ).lean();
-
-        if (!result || !result.transactionHistory?.length) {
-            return null;
-        }
-
-        return result.transactionHistory[0];
+    if (filter.method) {
+      match.method = filter.method;
     }
 
-    async count(): Promise<number> {
-        const pipeline: PipelineStage[] = [
-            { $unwind: '$transactionHistory' },
-            { $count: 'count' }
-        ]
-        const res = await this._bookingModel.aggregate(pipeline).allowDiskUse(true);
-        return res[0]?.count || 0;
+    if (filter.transactionType) {
+      match.transactionType = filter.transactionType;
     }
 
-    async countByUserId(userId: string): Promise<number> {
-        const pipeline: PipelineStage[] = [
-            { $match: { userId: this._toObjectId(userId) } },
-            { $unwind: '$transactionHistory' },
-            { $count: 'count' }
-        ]
-        const res = await this._bookingModel.aggregate(pipeline).allowDiskUse(true);
-        return res[0]?.count || 0;
+    if (Object.keys(match).length > 0) {
+      pipeline.push({ $match: match });
     }
 
-    async getReportDetails(filter: IReportDownloadTransactionData): Promise<IReportTransactionData[]> {
-        const pipeline: PipelineStage[] = [];
+    pipeline.push({
+      $project: {
+        _id: 0,
+        id: '$_id',
+        date: '$createdAt',
+        userId: 1,
+        email: 1,
+        amount: 1,
+        method: 1,
+        contact: 1,
+        transactionType: 1,
+      },
+    });
 
-        const match: FilterQuery<TransactionDocument> = {};
+    return await this._bookingModel.aggregate(pipeline).exec();
+  }
 
-        if (filter.fromDate && filter.toDate) {
-            match.createdAt = {
-                $gte: new Date(filter.fromDate),
-                $lte: new Date(filter.toDate)
-            };
-        }
+  async updateStatus(txId: string, status: TransactionStatus): Promise<boolean> {
+    return !!(await this._bookingModel.findOneAndUpdate({ _id: txId }, { $set: { status } }, { new: true }));
+  }
 
-        if (filter.method) {
-            match.method = filter.method;
-        }
-
-        if (filter.transactionType) {
-            match.transactionType = filter.transactionType;
-        }
-
-        if (Object.keys(match).length > 0) {
-            pipeline.push({ $match: match });
-        }
-
-        pipeline.push(
-            {
-                $project: {
-                    _id: 0,
-                    id: '$_id',
-                    date: '$createdAt',
-                    userId: 1,
-                    email: 1,
-                    amount: 1,
-                    method: 1,
-                    contact: 1,
-                    transactionType: 1
-                }
-            }
-        );
-
-        return await this._bookingModel.aggregate(pipeline).exec();
-    }
-
-    async updateStatus(txId: string, status: TransactionStatus): Promise<boolean> {
-        return !!(await this._bookingModel.findOneAndUpdate(
-            { _id: txId },
-            { $set: { status } },
-            { new: true }
-        ));
-    }
-
-    async removeTransaction(bookingId: string, transactionId: string): Promise<boolean> {
-        const result = await this._bookingModel.updateOne(
-            { _id: bookingId },
-            {
-                $pull: {
-                    transactionHistory: { _id: transactionId }
-                }
-            }
-        );
-        return result.modifiedCount > 0;
-    }
+  async removeTransaction(bookingId: string, transactionId: string): Promise<boolean> {
+    const result = await this._bookingModel.updateOne(
+      { _id: bookingId },
+      {
+        $pull: {
+          transactionHistory: { _id: transactionId },
+        },
+      },
+    );
+    return result.modifiedCount > 0;
+  }
 }

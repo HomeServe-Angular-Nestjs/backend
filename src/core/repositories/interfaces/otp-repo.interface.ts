@@ -1,4 +1,4 @@
-import { IOtp } from "@core/entities/interfaces/otp.entity.interface";
+import type { IOtp } from '@core/entities/interfaces/otp.entity.interface';
 
 export interface IOtpRepository {
   removePreviousOtp(email: string): Promise<void>;

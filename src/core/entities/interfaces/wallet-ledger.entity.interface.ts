@@ -1,138 +1,138 @@
-import { IEntity } from "@core/entities/base/interfaces/base-entity.entity.interface";
-import { IPagination } from "@core/entities/interfaces/booking.entity.interface";
-import { UserType } from "@core/entities/interfaces/user.entity.interface";
-import { CurrencyType, PaymentDirection, PaymentSource, TransactionType } from "@core/enum/transaction.enum";
+import type { IEntity } from '@core/entities/base/interfaces/base-entity.entity.interface';
+import type { IPagination } from '@core/entities/interfaces/booking.entity.interface';
+import type { UserType } from '@core/entities/interfaces/user.entity.interface';
+import type { CurrencyType, PaymentDirection, PaymentSource, TransactionType } from '@core/enum/transaction.enum';
 
 export interface IBreakupMetadata {
-    totalAmount?: number;
-    providerAmount?: number;
-    providerCommission?: number;
-    customerCommission?: number;
-    gst?: number;
-    customerFine?: number;
-    providerFine?: number;
-    refundAmount?: number;
+  totalAmount?: number;
+  providerAmount?: number;
+  providerCommission?: number;
+  customerCommission?: number;
+  gst?: number;
+  customerFine?: number;
+  providerFine?: number;
+  refundAmount?: number;
 }
 
 export type LedgerMetadataType = {
-    breakup: IBreakupMetadata;
+  breakup: IBreakupMetadata;
 } & Record<string, unknown>;
 
 export interface IWalletLedger extends IEntity {
-    walletId: string;
-    userId: string;
-    userRole: UserType | null;
-    direction: PaymentDirection;
-    type: TransactionType;
-    amount: number;
-    currency: CurrencyType;
-    balanceBefore: number;
-    balanceAfter: number;
-    journalId: string | null;
-    bookingId: string | null;
-    subscriptionId: string | null;
-    bookingTransactionId: string | null;
-    subscriptionTransactionId: string | null;
-    gatewayOrderId: string | null;
-    gatewayPaymentId: string | null;
-    source: PaymentSource;
-    metadata?: LedgerMetadataType | null;
+  walletId: string;
+  userId: string;
+  userRole: UserType | null;
+  direction: PaymentDirection;
+  type: TransactionType;
+  amount: number;
+  currency: CurrencyType;
+  balanceBefore: number;
+  balanceAfter: number;
+  journalId: string | null;
+  bookingId: string | null;
+  subscriptionId: string | null;
+  bookingTransactionId: string | null;
+  subscriptionTransactionId: string | null;
+  gatewayOrderId: string | null;
+  gatewayPaymentId: string | null;
+  source: PaymentSource;
+  metadata?: LedgerMetadataType | null;
 }
 
 export interface IWalletTransactionFilter {
-    page?: number;
-    search?: string;
-    sort?: 'newest' | 'oldest' | 'high' | 'low';
-    type?: TransactionType | 'all';
-    date?: 'all' | 'last_six_months' | 'last_year';
-    method?: PaymentDirection | 'all';
+  page?: number;
+  search?: string;
+  sort?: 'newest' | 'oldest' | 'high' | 'low';
+  type?: TransactionType | 'all';
+  date?: 'all' | 'last_six_months' | 'last_year';
+  method?: PaymentDirection | 'all';
 }
 
 export interface ICustomerTransactionData {
-    transactionId: string;
-    paymentId: string | null;
-    amount: number;
-    method: PaymentDirection;
-    source: PaymentSource,
-    transactionType: TransactionType;
-    bookingId: string | null;
-    subscriptionId: string | null;
-    balanceBefore: number;
-    balanceAfter: number;
-    gatewayOrderId: string | null;
-    createdAt: Date;
+  transactionId: string;
+  paymentId: string | null;
+  amount: number;
+  method: PaymentDirection;
+  source: PaymentSource;
+  transactionType: TransactionType;
+  bookingId: string | null;
+  subscriptionId: string | null;
+  balanceBefore: number;
+  balanceAfter: number;
+  gatewayOrderId: string | null;
+  createdAt: Date;
 }
 
 export interface ICustomerTransactionDataWithPagination {
-    transactions: ICustomerTransactionData[];
-    pagination: IPagination;
+  transactions: ICustomerTransactionData[];
+  pagination: IPagination;
 }
 
 export interface IProviderTransactionData {
-    createdAt: string;
-    paymentId: string | null;
-    amount: number;
-    method: PaymentDirection;
-    transactionType: TransactionType;
-    bookingId: string | null;
-    subscriptionId: string | null;
-    source: PaymentSource;
+  createdAt: string;
+  paymentId: string | null;
+  amount: number;
+  method: PaymentDirection;
+  transactionType: TransactionType;
+  bookingId: string | null;
+  subscriptionId: string | null;
+  source: PaymentSource;
 }
 
 export interface IProviderTransactionDataWithPagination {
-    transactions: IProviderTransactionData[];
-    pagination: IPagination;
+  transactions: IProviderTransactionData[];
+  pagination: IPagination;
 }
 
 export interface IProviderTransactionOverview {
-    balance: number;
-    totalCredit: number;
-    totalDebit: number;
-    netGain: number;
+  balance: number;
+  totalCredit: number;
+  totalDebit: number;
+  netGain: number;
 }
 
 export interface IAdminLedgerRecord {
-    _id: string;
-    userId: string;
-    userRole: UserType | null;
-    type: TransactionType;
-    direction: PaymentDirection;
-    amount: number;
-    source: PaymentSource;
-    createdAt: Date;
-    bookingId: string | null;
-    subscriptionId: string | null;
-    gatewayPaymentId: string | null;
-    counterpartyEmail: string | null;
+  _id: string;
+  userId: string;
+  userRole: UserType | null;
+  type: TransactionType;
+  direction: PaymentDirection;
+  amount: number;
+  source: PaymentSource;
+  createdAt: Date;
+  bookingId: string | null;
+  subscriptionId: string | null;
+  gatewayPaymentId: string | null;
+  counterpartyEmail: string | null;
 }
 
 export interface ITransactionAdminList {
-    dateTime: string;
-    counterparty: {
-        email: string;
-        role: UserType;
-    };
-    type: TransactionType;
-    direction: PaymentDirection;
-    amount: number;
-    referenceType: string;
-    referenceId: string;
-    bookingId: string | null;
-    paymentId: string | null;
-    source: PaymentSource;
+  dateTime: string;
+  counterparty: {
+    email: string;
+    role: UserType;
+  };
+  type: TransactionType;
+  direction: PaymentDirection;
+  amount: number;
+  referenceType: string;
+  referenceId: string;
+  bookingId: string | null;
+  paymentId: string | null;
+  source: PaymentSource;
 }
 
 export interface IAdminTransactionDataWithPagination {
-    transactions: ITransactionAdminList[];
-    pagination: IPagination;
+  transactions: ITransactionAdminList[];
+  pagination: IPagination;
 }
 
 export interface ITransactionStats {
-    balance: number;
-    grossPayments: number;
-    providerPayouts: number;
-    platformCommission: number;
-    gstCollected: number;
-    refundIssued: number;
-    netProfit: number;
+  balance: number;
+  grossPayments: number;
+  providerPayouts: number;
+  platformCommission: number;
+  gstCollected: number;
+  refundIssued: number;
+  netProfit: number;
 }

@@ -31,7 +31,7 @@ export class LogoutDto {
   userType: UserType;
 }
 
-export class ChangePasswordDto extends AuthLoginDto { }
+export class ChangePasswordDto extends AuthLoginDto {}
 
 export class GoogleLoginDto {
   googleId: string;

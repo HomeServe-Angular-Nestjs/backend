@@ -5,11 +5,10 @@ import { Body, Controller, Inject, Post } from '@nestjs/common';
 
 @Controller('signup')
 export class SignUpController {
-
   constructor(
     @Inject(SIGNUP_SERVICE_INTERFACE_NAME)
     private readonly _signupService: ISignupService,
-  ) { }
+  ) {}
 
   @Post('initiate_signup')
   async initiateSignup(@Body() initiateSignupDto: InitiateSignupDto) {

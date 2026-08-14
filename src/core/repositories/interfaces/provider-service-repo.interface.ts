@@ -1,18 +1,23 @@
-import { IProviderService } from "@core/entities/interfaces/provider-service.entity.interface";
-import { IBaseRepository } from "@core/repositories/base/interfaces/base-repo.interface";
-import { ProviderServiceDocument, ProviderServicePopulatedDocument } from "@core/schema/provider-service.schema";
+import type { IProviderService } from '@core/entities/interfaces/provider-service.entity.interface';
+import type { IBaseRepository } from '@core/repositories/base/interfaces/base-repo.interface';
+import type { ProviderServiceDocument, ProviderServicePopulatedDocument } from '@core/schema/provider-service.schema';
 
 export interface IProviderServiceRepository extends IBaseRepository<ProviderServiceDocument> {
-    createAndPopulate(doc: Partial<ProviderServiceDocument>): Promise<ProviderServicePopulatedDocument>;
-    updateAndPopulateByServiceId(serviceId: string, update: Partial<IProviderService>): Promise<ProviderServicePopulatedDocument | null>;
-    findAllAndPopulateByProviderId(providerId: string, filters: { search?: string, status?: string, sort?: string }, options: { page: number, limit: number }, activeOnly?: boolean): Promise<{ services: ProviderServicePopulatedDocument[]; total: number }>;
-    updateStatusByServiceId(serviceId: string): Promise<boolean>;
-    deleteService(serviceId: string): Promise<boolean>;
-    count(filter?: any): Promise<number>;
-    isServiceExist(serviceId: string): Promise<boolean>;
-    isServiceExistByCategoryId(providerId: string, categoryId: string): Promise<boolean>;
-    findByIds(ids: string[]): Promise<ProviderServiceDocument[]>;
-    findOneAndPopulateById(serviceId: string): Promise<ProviderServicePopulatedDocument | null>;
-    findByCategoryId(categoryId: string): Promise<ProviderServiceDocument[]>;
-    deactivateByCategoryIds(categoryIds: string[]): Promise<void>;
+  createAndPopulate(doc: Partial<ProviderServiceDocument>): Promise<ProviderServicePopulatedDocument>;
+  updateAndPopulateByServiceId(serviceId: string, update: Partial<IProviderService>): Promise<ProviderServicePopulatedDocument | null>;
+  findAllAndPopulateByProviderId(
+    providerId: string,
+    filters: { search?: string; status?: string; sort?: string },
+    options: { page: number; limit: number },
+    activeOnly?: boolean,
+  ): Promise<{ services: ProviderServicePopulatedDocument[]; total: number }>;
+  updateStatusByServiceId(serviceId: string): Promise<boolean>;
+  deleteService(serviceId: string): Promise<boolean>;
+  count(filter?: any): Promise<number>;
+  isServiceExist(serviceId: string): Promise<boolean>;
+  isServiceExistByCategoryId(providerId: string, categoryId: string): Promise<boolean>;
+  findByIds(ids: string[]): Promise<ProviderServiceDocument[]>;
+  findOneAndPopulateById(serviceId: string): Promise<ProviderServicePopulatedDocument | null>;
+  findByCategoryId(categoryId: string): Promise<ProviderServiceDocument[]>;
+  deactivateByCategoryIds(categoryIds: string[]): Promise<void>;
 }

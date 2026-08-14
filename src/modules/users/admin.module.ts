@@ -19,13 +19,7 @@ import { AdminSalesReportController } from '@modules/users/controllers/sales-rep
 import { AdminUserDetailsController } from '@modules/users/controllers/user-details.controller';
 
 @Module({
-  imports: [
-    CloudinaryModule.registerAsync(),
-    JwtConfigModule,
-    HttpModule,
-    SharedModule,
-    PdfModule
-  ],
+  imports: [CloudinaryModule.registerAsync(), JwtConfigModule, HttpModule, SharedModule, PdfModule],
   controllers: [
     AdminUserController,
     AdminApprovalsController,
@@ -37,10 +31,6 @@ import { AdminUserDetailsController } from '@modules/users/controllers/user-deta
     AdminSalesReportController,
     AdminUserDetailsController,
   ],
-  providers: [
-    ...userServiceProvider,
-    ...adminRepositoryProviders,
-    ...adminUtilityProviders
-  ],
+  providers: [...userServiceProvider, ...adminRepositoryProviders, ...adminUtilityProviders],
 })
-export class AdminModule { }
+export class AdminModule {}
