@@ -16,79 +16,79 @@ import { UserType } from '@core/entities/interfaces/user.entity.interface';
 
 @Controller('chat')
 export class ChatController {
-    private logger: ICustomLogger;
+  private logger: ICustomLogger;
 
-    constructor(
-        @Inject(LOGGER_FACTORY)
-        private readonly loggerFactory: ILoggerFactory,
-        @Inject(CHAT_SOCKET_SERVICE_NAME)
-        private readonly _chatService: IChatSocketService,
-        @Inject(TOKEN_SERVICE_NAME)
-        private readonly _tokenService: ITokenService,
-    ) {
-        this.logger = this.loggerFactory.createLogger(ChatController.name);
+  constructor(
+    @Inject(LOGGER_FACTORY)
+    private readonly loggerFactory: ILoggerFactory,
+    @Inject(CHAT_SOCKET_SERVICE_NAME)
+    private readonly _chatService: IChatSocketService,
+    @Inject(TOKEN_SERVICE_NAME)
+    private readonly _tokenService: ITokenService,
+  ) {
+    this.logger = this.loggerFactory.createLogger(ChatController.name);
+  }
+
+  @Post('new_access_token')
+  async newAccessToken(@Req() req: Request, @Res() res: Response) {
+    this.logger.log('[Socket] Generating new access token...');
+    const refreshToken = req.cookies['refresh_token'];
+    if (!refreshToken) {
+      throw new UnauthorizedException({
+        code: ErrorCodes.UNAUTHORIZED_ACCESS,
+        message: ErrorMessage.UNAUTHORIZED_ACCESS,
+      });
     }
 
-    @Post('new_access_token')
-    async newAccessToken(@Req() req: Request, @Res() res: Response) {
-        this.logger.log('[Socket] Generating new access token...');
-        const refreshToken = req.cookies['refresh_token'];;
-        if (!refreshToken) {
-            throw new UnauthorizedException({
-                code: ErrorCodes.UNAUTHORIZED_ACCESS,
-                message: ErrorMessage.UNAUTHORIZED_ACCESS
-            });
-        }
+    const user = await this._tokenService.validateRefreshToken(refreshToken);
 
-        const user = await this._tokenService.validateRefreshToken(refreshToken);
-
-        if (!user || !user.type) {
-            throw new UnauthorizedException({
-                code: ErrorCodes.UNAUTHORIZED_ACCESS,
-                message: ErrorMessage.UNAUTHORIZED_ACCESS
-            });
-        }
-
-        const newAccessToken = this._tokenService.generateAccessToken(user.sub, user.email, user.type);
-
-        res.cookie('access_token', newAccessToken, {
-            httpOnly: true,
-            secure: false,
-            sameSite: 'strict',
-            path: '/',
-        });
-
-        return res.json({ success: true });
+    if (!user || !user.type) {
+      throw new UnauthorizedException({
+        code: ErrorCodes.UNAUTHORIZED_ACCESS,
+        message: ErrorMessage.UNAUTHORIZED_ACCESS,
+      });
     }
 
-    @Get('all')
-    async getAllChats(@Req() req: Request): Promise<IResponse<IChatData[]>> {
-        const user = req.user as IPayload;
-        const sender: IParticipant = {
-            id: new Types.ObjectId(user.sub),
-            type: user.type,
-        };
+    const newAccessToken = this._tokenService.generateAccessToken(user.sub, user.email, user.type);
 
-        return await this._chatService.getAllChat(sender);
+    res.cookie('access_token', newAccessToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'strict',
+      path: '/',
+    });
+
+    return res.json({ success: true });
+  }
+
+  @Get('all')
+  async getAllChats(@Req() req: Request): Promise<IResponse<IChatData[]>> {
+    const user = req.user as IPayload;
+    const sender: IParticipant = {
+      id: new Types.ObjectId(user.sub),
+      type: user.type,
+    };
+
+    return await this._chatService.getAllChat(sender);
+  }
+
+  @Get('one')
+  async getChat(@Req() req: Request, @Query() getChatDto: GetChatDto) {
+    const user = req.user as IPayload;
+    if (!user.sub || !user.type) {
+      throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
     }
 
-    @Get('one')
-    async getChat(@Req() req: Request, @Query() getChatDto: GetChatDto) {
-        const user = req.user as IPayload;
-        if (!user.sub || !user.type) {
-            throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
-        }
+    const sender: IParticipant = {
+      id: new Types.ObjectId(user.sub),
+      type: user.type,
+    };
 
-        const sender: IParticipant = {
-            id: new Types.ObjectId(user.sub),
-            type: user.type,
-        }
+    const receiver: IParticipant = {
+      id: new Types.ObjectId(getChatDto.id), //todo
+      type: getChatDto.type as UserType,
+    };
 
-        const receiver: IParticipant = {
-            id: new Types.ObjectId(getChatDto.id), //todo
-            type: getChatDto.type as UserType,
-        }
-
-        return await this._chatService.getChat(sender, receiver);
-    }
+    return await this._chatService.getChat(sender, receiver);
+  }
 }

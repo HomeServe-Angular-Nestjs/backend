@@ -20,11 +20,7 @@ export class CustomerRepository extends BaseRepository<CustomerDocument> impleme
   }
 
   async updateGoogleId(email: string, googleId: string): Promise<CustomerDocument | null> {
-    return await this._customerModel.findOneAndUpdate(
-      { email },
-      { $set: { googleId, lastLogin: new Date() } },
-      { new: true }
-    ).lean();
+    return await this._customerModel.findOneAndUpdate({ email }, { $set: { googleId, lastLogin: new Date() } }, { new: true }).lean();
   }
 
   async findByGoogleId(id: string): Promise<CustomerDocument | null> {
@@ -36,17 +32,15 @@ export class CustomerRepository extends BaseRepository<CustomerDocument> impleme
   }
 
   async findByIds(ids: string[]): Promise<CustomerDocument[]> {
-    return await this._customerModel.find({
-      _id: { $in: ids }
-    }).lean();
+    return await this._customerModel
+      .find({
+        _id: { $in: ids },
+      })
+      .lean();
   }
 
   async updatePassword(email: string, hashedPassword: string): Promise<CustomerDocument | null> {
-    return await this._customerModel.findOneAndUpdate(
-      { email },
-      { $set: { password: hashedPassword } },
-      { new: true }
-    ).lean();
+    return await this._customerModel.findOneAndUpdate({ email }, { $set: { password: hashedPassword } }, { new: true }).lean();
   }
 
   async count(filter?: FilterQuery<CustomerDocument>): Promise<number> {
@@ -58,10 +52,7 @@ export class CustomerRepository extends BaseRepository<CustomerDocument> impleme
   }
 
   async changeReviewStatus(id: string, status: boolean): Promise<void> {
-    await this._customerModel.updateOne(
-      { _id: id },
-      { $set: { isReviewed: status } }
-    );
+    await this._customerModel.updateOne({ _id: id }, { $set: { isReviewed: status } });
   }
 
   async getCustomerStatistics(): Promise<IStats> {
@@ -88,10 +79,7 @@ export class CustomerRepository extends BaseRepository<CustomerDocument> impleme
             $sum: {
               $cond: [
                 {
-                  $and: [
-                    { $gte: ['$lastLoggedIn', startOfToday] },
-                    { $lte: ['$lastLoggedIn', endOfToday] },
-                  ],
+                  $and: [{ $gte: ['$lastLoggedIn', startOfToday] }, { $lte: ['$lastLoggedIn', endOfToday] }],
                 },
                 1,
                 0,
@@ -113,7 +101,7 @@ export class CustomerRepository extends BaseRepository<CustomerDocument> impleme
     if (data.fromDate && data.toDate) {
       match.createdAt = {
         $gte: new Date(data.fromDate),
-        $lte: new Date(data.toDate)
+        $lte: new Date(data.toDate),
       };
     }
 
@@ -126,45 +114,34 @@ export class CustomerRepository extends BaseRepository<CustomerDocument> impleme
       pipeline.push({ $match: match });
     }
 
-
     // Generating $sort stage.
     pipeline.push({ $sort: { createdAt: -1 } });
 
-
     // Generating $project stage.
-    pipeline.push(
-      {
-        $project: {
-          id: '$_id',
-          email: '$email',
-          username: '$username',
-          fullname: '$fullname',
-          phone: '$phone',
-          status: '$isActive',
-          date: '$createdAt'
-        }
-      }
-    );
+    pipeline.push({
+      $project: {
+        id: '$_id',
+        email: '$email',
+        username: '$username',
+        fullname: '$fullname',
+        phone: '$phone',
+        status: '$isActive',
+        date: '$createdAt',
+      },
+    });
 
     return this._customerModel.aggregate(pipeline).exec();
   }
 
   async updateSubscriptionId(customerId: string, subscriptionId: string): Promise<boolean> {
-    const result = await this._customerModel.updateOne(
-      { _id: customerId },
-      { $set: { subscriptionId } }
-    );
+    const result = await this._customerModel.updateOne({ _id: customerId }, { $set: { subscriptionId } });
 
     return result.modifiedCount === 1;
   }
 
   async partialUpdate(id: string, data: Record<string, unknown>): Promise<CustomerDocument | null> {
     try {
-      return await this._customerModel.findOneAndUpdate(
-        { _id: id },
-        { $set: data },
-        { new: true }
-      ).lean();
+      return await this._customerModel.findOneAndUpdate({ _id: id }, { $set: data }, { new: true }).lean();
     } catch (error) {
       throw this.mapDuplicateKeyError(error);
     }
@@ -174,32 +151,18 @@ export class CustomerRepository extends BaseRepository<CustomerDocument> impleme
     const customer = await this.findById(customerId);
     const alreadySaved = customer?.savedProviders?.includes(providerId);
 
-    const query = alreadySaved
-      ? { $pull: { savedProviders: providerId } }
-      : { $addToSet: { savedProviders: providerId } };
+    const query = alreadySaved ? { $pull: { savedProviders: providerId } } : { $addToSet: { savedProviders: providerId } };
 
-    return await this._customerModel.findOneAndUpdate(
-      { _id: customerId },
-      query,
-      { new: true }
-    ).lean();
+    return await this._customerModel.findOneAndUpdate({ _id: customerId }, query, { new: true }).lean();
   }
 
   async updatePasswordById(customerId: string, hashedPassword: string): Promise<CustomerDocument | null> {
-    return await this._customerModel.findOneAndUpdate(
-      { _id: customerId },
-      { $set: { password: hashedPassword } },
-      { new: true }
-    ).lean();
+    return await this._customerModel.findOneAndUpdate({ _id: customerId }, { $set: { password: hashedPassword } }, { new: true }).lean();
   }
 
   async updateAvatar(customerId: string, publicId: string): Promise<CustomerDocument | null> {
     try {
-      return await this._customerModel.findOneAndUpdate(
-        { _id: customerId },
-        { $set: { avatar: publicId } },
-        { new: true }
-      ).lean();
+      return await this._customerModel.findOneAndUpdate({ _id: customerId }, { $set: { avatar: publicId } }, { new: true }).lean();
     } catch (error) {
       throw this.mapDuplicateKeyError(error);
     }
@@ -215,19 +178,15 @@ export class CustomerRepository extends BaseRepository<CustomerDocument> impleme
     if (address) update.address = address;
     if (coordinates) {
       update.location = {
-        type: "Point",
-        coordinates
+        type: 'Point',
+        coordinates,
       };
     }
 
     if (Object.keys(update).length === 0) return null;
 
     try {
-      return await this._customerModel.findOneAndUpdate(
-        { _id: customerId },
-        { $set: update },
-        { new: true }
-      ).lean();
+      return await this._customerModel.findOneAndUpdate({ _id: customerId }, { $set: update }, { new: true }).lean();
     } catch (error) {
       throw this.mapDuplicateKeyError(error);
     }
@@ -237,7 +196,7 @@ export class CustomerRepository extends BaseRepository<CustomerDocument> impleme
     if ((error as { code?: number })?.code === 11000) {
       return new ConflictException({
         code: ErrorCodes.CONFLICT,
-        message: ErrorMessage.USERNAME_CONFLICT_ERROR
+        message: ErrorMessage.USERNAME_CONFLICT_ERROR,
       });
     }
     return error instanceof Error ? error : new Error(String(error));

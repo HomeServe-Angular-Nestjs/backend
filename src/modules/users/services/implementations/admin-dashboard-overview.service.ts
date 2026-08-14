@@ -1,151 +1,151 @@
 import {
-    BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME,
-    SUBSCRIPTION_REPOSITORY_NAME,
-    WALLET_LEDGER_REPOSITORY_NAME
+  BOOKING_REPOSITORY_NAME,
+  CUSTOMER_REPOSITORY_INTERFACE_NAME,
+  PROVIDER_REPOSITORY_INTERFACE_NAME,
+  SUBSCRIPTION_REPOSITORY_NAME,
+  WALLET_LEDGER_REPOSITORY_NAME,
 } from '@/core/constants/repository.constant';
 import {
-    IAdminDashboardOverview, IAdminDashboardRevenue, IAdminDashboardSubscription,
-    IAdminDashboardUserStats
+  IAdminDashboardOverview,
+  IAdminDashboardRevenue,
+  IAdminDashboardSubscription,
+  IAdminDashboardUserStats,
 } from '@/core/entities/interfaces/admin.entity.interface';
 import { ITopProviders } from '@/core/entities/interfaces/user.entity.interface';
 import { IResponse } from '@/core/misc/response.util';
 import { IBookingRepository } from '@/core/repositories/interfaces/bookings-repo.interface';
 import { ICustomerRepository } from '@/core/repositories/interfaces/customer-repo.interface';
 import { IProviderRepository } from '@/core/repositories/interfaces/provider-repo.interface';
-import {
-    ISubscriptionRepository
-} from '@/core/repositories/interfaces/subscription-repo.interface';
+import { ISubscriptionRepository } from '@/core/repositories/interfaces/subscription-repo.interface';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { IWalletLedgerRepository } from '@core/repositories/interfaces/wallet-ledger.repo.interface';
-import {
-    IAdminDashboardOverviewService
-} from '@modules/users/services/interfaces/admin-dashboard-overview-service.interface';
+import { IAdminDashboardOverviewService } from '@modules/users/services/interfaces/admin-dashboard-overview-service.interface';
 import { Inject, Injectable } from '@nestjs/common';
 
 @Injectable()
 export class AdminDashboardOverviewService implements IAdminDashboardOverviewService {
-    private readonly logger: ICustomLogger;
+  private readonly logger: ICustomLogger;
 
-    constructor(
-        @Inject(LOGGER_FACTORY)
-        private readonly loggerFactory: ILoggerFactory,
-        @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
-        private readonly _providerRepository: IProviderRepository,
-        @Inject(CUSTOMER_REPOSITORY_INTERFACE_NAME)
-        private readonly _customerRepository: ICustomerRepository,
-        @Inject(BOOKING_REPOSITORY_NAME)
-        private readonly _bookingRepository: IBookingRepository,
-        @Inject(SUBSCRIPTION_REPOSITORY_NAME)
-        private readonly _subscriptionRepository: ISubscriptionRepository,
-        @Inject(WALLET_LEDGER_REPOSITORY_NAME)
-        private readonly _walletLedgerRepository: IWalletLedgerRepository,
-    ) {
-        this.logger = this.loggerFactory.createLogger(AdminDashboardOverviewService.name)
-    }
+  constructor(
+    @Inject(LOGGER_FACTORY)
+    private readonly loggerFactory: ILoggerFactory,
+    @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
+    private readonly _providerRepository: IProviderRepository,
+    @Inject(CUSTOMER_REPOSITORY_INTERFACE_NAME)
+    private readonly _customerRepository: ICustomerRepository,
+    @Inject(BOOKING_REPOSITORY_NAME)
+    private readonly _bookingRepository: IBookingRepository,
+    @Inject(SUBSCRIPTION_REPOSITORY_NAME)
+    private readonly _subscriptionRepository: ISubscriptionRepository,
+    @Inject(WALLET_LEDGER_REPOSITORY_NAME)
+    private readonly _walletLedgerRepository: IWalletLedgerRepository,
+  ) {
+    this.logger = this.loggerFactory.createLogger(AdminDashboardOverviewService.name);
+  }
 
-    async getDashboardOverview(): Promise<IResponse<IAdminDashboardOverview>> {
-        const now = new Date();
+  async getDashboardOverview(): Promise<IResponse<IAdminDashboardOverview>> {
+    const now = new Date();
 
-        // --- Time Ranges ---
-        const startOfToday = new Date(now.setHours(0, 0, 0, 0));
-        const endOfToday = new Date(now.setHours(23, 59, 59, 999));
+    // --- Time Ranges ---
+    const startOfToday = new Date(now.setHours(0, 0, 0, 0));
+    const endOfToday = new Date(now.setHours(23, 59, 59, 999));
 
-        const startOfWeek = new Date();
-        startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay()); // Sunday
-        startOfWeek.setHours(0, 0, 0, 0);
+    const startOfWeek = new Date();
+    startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay()); // Sunday
+    startOfWeek.setHours(0, 0, 0, 0);
 
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(now.getDate() - 7);
-        sevenDaysAgo.setHours(0, 0, 0, 0);
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(now.getDate() - 7);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
 
-        const [totalProviders, totalCustomers, activeProviders, pendingVerifications] = await Promise.all([
-            this._providerRepository.count(),
-            this._customerRepository.count(),
-            this._providerRepository.count({ isActive: true }),
-            this._providerRepository.count({ verificationStatus: 'pending' }),
-        ]);
+    const [totalProviders, totalCustomers, activeProviders, pendingVerifications] = await Promise.all([
+      this._providerRepository.count(),
+      this._customerRepository.count(),
+      this._providerRepository.count({ isActive: true }),
+      this._providerRepository.count({ verificationStatus: 'pending' }),
+    ]);
 
-        const totalUsers = totalProviders + totalCustomers;
+    const totalUsers = totalProviders + totalCustomers;
 
-        const todaysBookings = await this._bookingRepository.count({
-            createdAt: { $gte: startOfToday, $lte: endOfToday },
-            bookingStatus: 'confirmed',
-        });
+    const todaysBookings = await this._bookingRepository.count({
+      createdAt: { $gte: startOfToday, $lte: endOfToday },
+      bookingStatus: 'confirmed',
+    });
 
-        const [newCustomersThisWeek, newProvidersThisWeek] = await Promise.all([
-            this._customerRepository.count({ createdAt: { $gte: startOfWeek } }),
-            this._providerRepository.count({ createdAt: { $gte: startOfWeek } }),
-        ]);
+    const [newCustomersThisWeek, newProvidersThisWeek] = await Promise.all([
+      this._customerRepository.count({ createdAt: { $gte: startOfWeek } }),
+      this._providerRepository.count({ createdAt: { $gte: startOfWeek } }),
+    ]);
 
-        const newUsersThisWeek = newCustomersThisWeek + newProvidersThisWeek;
+    const newUsersThisWeek = newCustomersThisWeek + newProvidersThisWeek;
 
-        const weeklyTransactions = await this._walletLedgerRepository.getTotalRevenueForAdmin(sevenDaysAgo);
+    const weeklyTransactions = await this._walletLedgerRepository.getTotalRevenueForAdmin(sevenDaysAgo);
 
-        return {
-            success: true,
-            message: "Dashboard overview data fetched successfully",
-            data: {
-                totalUsers,
-                totalProviders,
-                totalCustomers,
-                activeProviders,
-                pendingVerifications,
-                todaysBookings,
-                newUsersThisWeek,
-                weeklyTransactions
-            }
-        };
-    }
+    return {
+      success: true,
+      message: 'Dashboard overview data fetched successfully',
+      data: {
+        totalUsers,
+        totalProviders,
+        totalCustomers,
+        activeProviders,
+        pendingVerifications,
+        todaysBookings,
+        newUsersThisWeek,
+        weeklyTransactions,
+      },
+    };
+  }
 
-    async getDashBoardRevenue(): Promise<IResponse<IAdminDashboardRevenue[]>> {
-        const result = await this._walletLedgerRepository.getAdminRevenueChartData();
-        return {
-            success: true,
-            message: "Dashboard revenue data fetched successfully",
-            data: result
-        };
-    }
+  async getDashBoardRevenue(): Promise<IResponse<IAdminDashboardRevenue[]>> {
+    const result = await this._walletLedgerRepository.getAdminRevenueChartData();
+    return {
+      success: true,
+      message: 'Dashboard revenue data fetched successfully',
+      data: result,
+    };
+  }
 
-    async getSubscriptionData(): Promise<IResponse<IAdminDashboardSubscription>> {
-        const [subscriptionData, totalProviders] = await Promise.all([
-            this._subscriptionRepository.getSubscriptionChartData(),
-            this._providerRepository.count({ isDeleted: false })
-        ]);
+  async getSubscriptionData(): Promise<IResponse<IAdminDashboardSubscription>> {
+    const [subscriptionData, totalProviders] = await Promise.all([
+      this._subscriptionRepository.getSubscriptionChartData(),
+      this._providerRepository.count({ isDeleted: false }),
+    ]);
 
-        return {
-            success: true,
-            message: "Subscription data fetched successfully",
-            data: {
-                ...subscriptionData,
-                totalProviders
-            }
-        };
-    }
+    return {
+      success: true,
+      message: 'Subscription data fetched successfully',
+      data: {
+        ...subscriptionData,
+        totalProviders,
+      },
+    };
+  }
 
-    async getUserStatistics(): Promise<IResponse<IAdminDashboardUserStats>> {
-        const [customerStats, providerStats] = await Promise.all([
-            this._customerRepository.getCustomerStatistics(),
-            this._providerRepository.getProviderStatistics(),
-        ]);
+  async getUserStatistics(): Promise<IResponse<IAdminDashboardUserStats>> {
+    const [customerStats, providerStats] = await Promise.all([
+      this._customerRepository.getCustomerStatistics(),
+      this._providerRepository.getProviderStatistics(),
+    ]);
 
-        return {
-            success: true,
-            message: "User statistics fetched successfully",
-            data: {
-                customer: customerStats,
-                provider: providerStats
-            }
-        };
-    }
+    return {
+      success: true,
+      message: 'User statistics fetched successfully',
+      data: {
+        customer: customerStats,
+        provider: providerStats,
+      },
+    };
+  }
 
-    async getTopProviders(): Promise<IResponse<ITopProviders[]>> {
-        const topProviders = await this._bookingRepository.getTopProviders();
+  async getTopProviders(): Promise<IResponse<ITopProviders[]>> {
+    const topProviders = await this._bookingRepository.getTopProviders();
 
-        return {
-            success: true,
-            message: "Top providers fetched successfully",
-            data: topProviders
-        };
-    }
+    return {
+      success: true,
+      message: 'Top providers fetched successfully',
+      data: topProviders,
+    };
+  }
 }

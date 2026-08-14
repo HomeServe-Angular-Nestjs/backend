@@ -16,20 +16,17 @@ import { VideoCallGateway } from '@modules/websockets/namespaces/video-call.gate
 import { VideoCallController } from '@modules/websockets/controllers/video-call.controller';
 
 @Module({
-    imports: [JwtConfigModule, SharedModule, CloudinaryModule.registerAsync()],
-    controllers: [ChatController, MessagesController, NotificationController, VideoCallController],
-    providers: [
-        ChatGateway,
-        NotificationGateway,
-        ReservationGateway,
-        VideoCallGateway,
-        ...socketServiceProviders,
-        ...socketRepositoryProviders,
-        ...socketUtilityProviders,
-    ],
-    exports: [
-        NotificationGateway,
-        ...socketServiceProviders,
-    ],
+  imports: [JwtConfigModule, SharedModule, CloudinaryModule.registerAsync()],
+  controllers: [ChatController, MessagesController, NotificationController, VideoCallController],
+  providers: [
+    ChatGateway,
+    NotificationGateway,
+    ReservationGateway,
+    VideoCallGateway,
+    ...socketServiceProviders,
+    ...socketRepositoryProviders,
+    ...socketUtilityProviders,
+  ],
+  exports: [NotificationGateway, ...socketServiceProviders],
 })
-export class WebSocketModule { }
+export class WebSocketModule {}

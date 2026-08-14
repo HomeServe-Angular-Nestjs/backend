@@ -1,6 +1,6 @@
-import { BookingStatus } from '@core/enum/bookings.enum';
-import { IEntity } from '../base/interfaces/base-entity.entity.interface';
-import { IPagination } from './booking.entity.interface';
+import type { BookingStatus } from '@core/enum/bookings.enum';
+import type { IEntity } from '../base/interfaces/base-entity.entity.interface';
+import type { IPagination } from './booking.entity.interface';
 
 export interface IAdmin extends IEntity {
   email: string;
@@ -17,12 +17,12 @@ export interface IUserData {
   contact: string;
   createdAt: Date;
   isActive: boolean;
-  isDeleted: boolean
+  isDeleted: boolean;
 }
 
 export interface IUserDataWithPagination {
-  data: IUserData[],
-  pagination: IPagination
+  data: IUserData[];
+  pagination: IPagination;
 }
 
 export interface IAdminDashboardOverview {
@@ -118,8 +118,7 @@ export interface IReportCustomerMatrix {
   totalRefunded: number | string;
 }
 
-export interface IReportCustomerData extends IReportUserData, IReportCustomerMatrix { }
-
+export interface IReportCustomerData extends IReportUserData, IReportCustomerMatrix {}
 
 export interface IReportProviderData extends IReportUserData, IReportProviderMatrix {
   profession: string;
@@ -135,7 +134,6 @@ export interface IReportProviderMatrix {
   totalEarnings: number | string;
   totalRefunds: number | string;
 }
-
 
 export interface IReportTransactionData {
   id: string;

@@ -1,14 +1,15 @@
-import { IReportCustomerData, IReportProviderData } from "@core/entities/interfaces/admin.entity.interface";
+import type { IReportCustomerData, IReportProviderData } from '@core/entities/interfaces/admin.entity.interface';
 
 export interface IUserTableTemplate {
-    rows: any,
-    columns: string[],
-    role: 'customer' | 'provider'
+  rows: any;
+  columns: string[];
+  role: 'customer' | 'provider';
 }
 
 function providerReportRowMapper(data: IReportProviderData[]): string {
-    return (data ?? []).map(d => {
-        return `
+  return (data ?? [])
+    .map((d) => {
+      return `
             <tr>
                 <td>${d.id}</td>
                 <td>${d.email}</td>
@@ -26,21 +27,24 @@ function providerReportRowMapper(data: IReportProviderData[]): string {
                 <td>${d.totalRefunds}</td>
             </tr>
         `;
-    }).join('');
+    })
+    .join('');
 }
 
 function userReportColumnMapper(data: string[]): string {
-    return (data ?? []).map(d => {
-        return `
+  return (data ?? [])
+    .map((d) => {
+      return `
              <th>${d}</th>
         `;
-    }).join('');
+    })
+    .join('');
 }
 
-
 function customerReportRowMapper(data: IReportCustomerData[]): string {
-    return (data ?? []).map(d => {
-        return `
+  return (data ?? [])
+    .map((d) => {
+      return `
             <tr>
                 <td>${d.id}</td>
                 <td>${d.email}</td>
@@ -53,18 +57,19 @@ function customerReportRowMapper(data: IReportCustomerData[]): string {
                 <td>${d.totalRefunded}</td>
             </tr>
         `;
-    }).join('');
+    })
+    .join('');
 }
 
 export function createUserReportTableTemplate(tableData: IUserTableTemplate[]): string {
-    const tables: string[] = [];
+  const tables: string[] = [];
 
-    for (let table of tableData) {
-        let section = '';
+  for (const table of tableData) {
+    let section = '';
 
-        if (table.rows.length > 0) {
-            if (table.role === 'customer') {
-                section = `
+    if (table.rows.length > 0) {
+      if (table.role === 'customer') {
+        section = `
                 <table>
                     <thead>
                         <tr>
@@ -76,8 +81,8 @@ export function createUserReportTableTemplate(tableData: IUserTableTemplate[]): 
                     </tbody>
                 </table>
             `;
-            } else if (table.role === 'provider') {
-                section = `
+      } else if (table.role === 'provider') {
+        section = `
                 <table>
                     <thead>
                         <tr>
@@ -89,10 +94,10 @@ export function createUserReportTableTemplate(tableData: IUserTableTemplate[]): 
                     </tbody>
                 </table>
             `;
-            }
-            tables.push(section);
-        }
+      }
+      tables.push(section);
     }
+  }
 
-    return tables.join('<br> <br>');
+  return tables.join('<br> <br>');
 }

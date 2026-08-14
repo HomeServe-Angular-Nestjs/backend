@@ -1,12 +1,14 @@
 import {
-    LOGIN_SERVICE_INTERFACE_NAME, OTP_SERVICE_INTERFACE_NAME, SIGNUP_SERVICE_INTERFACE_NAME,
-    TOKEN_SERVICE_NAME
+  LOGIN_SERVICE_INTERFACE_NAME,
+  OTP_SERVICE_INTERFACE_NAME,
+  SIGNUP_SERVICE_INTERFACE_NAME,
+  TOKEN_SERVICE_NAME,
 } from '@core/constants/service.constant';
 import { LoginService } from '@modules/auth/services/implementations/login.service';
 import { OtpService } from '@modules/auth/services/implementations/otp.service';
 import { SignupService } from '@modules/auth/services/implementations/signup.service';
 import { TokenService } from '@modules/auth/services/implementations/token.service';
-import { Provider } from '@nestjs/common';
+import type { Provider } from '@nestjs/common';
 
 export const serviceProvider: Provider[] = [
   {

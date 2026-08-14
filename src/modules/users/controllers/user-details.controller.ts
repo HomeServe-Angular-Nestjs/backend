@@ -9,18 +9,18 @@ import { Controller, Get, Inject, Param, UseGuards } from '@nestjs/common';
 @UseGuards(AdminRoleGuard)
 @Controller('admin')
 export class AdminUserDetailsController {
-    constructor(
-        @Inject(ADMIN_USER_DETAILS_SERVICE_NAME)
-        private readonly _adminUserDetailsService: IAdminUserDetailsService,
-    ) { }
+  constructor(
+    @Inject(ADMIN_USER_DETAILS_SERVICE_NAME)
+    private readonly _adminUserDetailsService: IAdminUserDetailsService,
+  ) {}
 
-    @Get('customers/:id')
-    async getCustomerDetails(@Param('id', new isValidIdPipe()) customerId: string): Promise<IResponse<ICustomerDetailsBundle>> {
-        return await this._adminUserDetailsService.getCustomerDetails(customerId);
-    }
+  @Get('customers/:id')
+  async getCustomerDetails(@Param('id', new isValidIdPipe()) customerId: string): Promise<IResponse<ICustomerDetailsBundle>> {
+    return await this._adminUserDetailsService.getCustomerDetails(customerId);
+  }
 
-    @Get('providers/:id')
-    async getProviderDetails(@Param('id', new isValidIdPipe()) providerId: string): Promise<IResponse<IProviderDetailsBundle>> {
-        return await this._adminUserDetailsService.getProviderDetails(providerId);
-    }
+  @Get('providers/:id')
+  async getProviderDetails(@Param('id', new isValidIdPipe()) providerId: string): Promise<IResponse<IProviderDetailsBundle>> {
+    return await this._adminUserDetailsService.getProviderDetails(providerId);
+  }
 }

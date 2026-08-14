@@ -1,5 +1,5 @@
-import { BookingStatus } from '@core/enum/bookings.enum';
-import { VerificationStatusType } from './user.entity.interface';
+import type { BookingStatus } from '@core/enum/bookings.enum';
+import type { VerificationStatusType } from './user.entity.interface';
 
 export interface ICustomerDetailsProfile {
   id: string;
@@ -115,7 +115,6 @@ export interface IDocumentDetail {
   label: string;
   fileUrl: string;
   uploadedAt: Date | string;
-  verificationStatus: VerificationStatusType;
 }
 
 export interface IProviderDetailsProfile extends ICustomerDetailsProfile {

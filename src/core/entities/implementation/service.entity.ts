@@ -1,5 +1,5 @@
 import { BaseEntity } from '../base/implementation/base.entity';
-import { IService, ISubService } from '../interfaces/service.entity.interface';
+import type { IService, ISubService } from '../interfaces/service.entity.interface';
 
 export class SubService {
   id?: string;

@@ -1,6 +1,6 @@
-import { IRazorpayOrder } from '@core/entities/interfaces/transaction.entity.interface';
+import type { IRazorpayOrder } from '@core/entities/interfaces/transaction.entity.interface';
 
 export interface IPaymentGateway {
-    createOrder(amount: number, currency?: string): Promise<IRazorpayOrder>;
-    verifySignature(orderId: string, paymentId: string, signature: string): boolean;
+  createOrder(amount: number, currency?: string): Promise<IRazorpayOrder>;
+  verifySignature(orderId: string, paymentId: string, signature: string): boolean;
 }

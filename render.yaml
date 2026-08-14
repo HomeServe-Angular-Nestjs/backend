@@ -34,7 +34,7 @@ services:
       - key: SMTP_HOST
         value: smtp.gmail.com
       - key: SMTP_PORT
-        value: "465"
+        value: '465'
       - key: SMTP_USER
         value: sajid189210@gmail.com
       - key: SMTP_FROM
@@ -42,11 +42,11 @@ services:
       - key: CLOUDINARY_NAME
         value: drhrf2oc5
       - key: REDIS_TLS
-        value: "false"
+        value: 'false'
       - key: REDIS_TTL
-        value: "604800"
+        value: '604800'
       - key: MULTI_INSTANCE
-        value: "true"
+        value: 'true'
       - key: RAZORPAY_KEY_ID
         value: rzp_test_OZVJGxiPWQgDaM
 

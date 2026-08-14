@@ -17,4 +17,4 @@ import { ProviderDashboardController } from '@modules/providers/controllers/dash
   providers: [...serviceProviders, ...repositoryProviders, ...utilityProviders],
   controllers: [ServiceController, ProviderController, AnalyticsController, ProviderDashboardController],
 })
-export class ProviderModule { }
+export class ProviderModule {}

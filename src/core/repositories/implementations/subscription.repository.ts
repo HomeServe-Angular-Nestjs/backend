@@ -13,339 +13,320 @@ import { IAdminSubscriptionList, ISubscriptionFilters } from '@core/entities/int
 
 @Injectable()
 export class SubscriptionRepository extends BaseRepository<SubscriptionDocument> implements ISubscriptionRepository {
-    constructor(
-        @InjectModel(SUBSCRIPTION_MODEL_NAME)
-        private readonly _subscriptionModel: Model<SubscriptionDocument>
-    ) {
-        super(_subscriptionModel);
-    }
+  constructor(
+    @InjectModel(SUBSCRIPTION_MODEL_NAME)
+    private readonly _subscriptionModel: Model<SubscriptionDocument>,
+  ) {
+    super(_subscriptionModel);
+  }
 
-    private _escapeRegex(input: string): string {
-        return input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    }
+  private _escapeRegex(input: string): string {
+    return input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
 
-    async _getFilterQuery(filters: ISubscriptionFilters): Promise<FilterQuery<SubscriptionDocument>> {
-        const match: FilterQuery<SubscriptionDocument> = { isDeleted: false };
+  _getFilterQuery(filters: ISubscriptionFilters): FilterQuery<SubscriptionDocument> {
+    const match: FilterQuery<SubscriptionDocument> = { isDeleted: false };
 
-        if (filters.search) {
-            const escaped = this._escapeRegex(filters.search);
-            const searchRegex = new RegExp(escaped, 'i');
+    if (filters.search) {
+      const escaped = this._escapeRegex(filters.search);
+      const searchRegex = new RegExp(escaped, 'i');
 
-            match.$or = [
-                {
-                    $expr: {
-                        $regexMatch: {
-                            input: { $toString: "$_id" },
-                            regex: searchRegex
-                        }
-                    }
-                },
-                { 'userDetails.email': searchRegex }
-            ];
-        }
-
-        if (filters.payment && filters.payment !== 'all') {
-            match.paymentStatus = filters.payment;
-        }
-
-        if (filters.duration && filters.duration !== 'all') {
-            match.duration = filters.duration;
-        }
-
-        return match;
-    }
-
-    async getSubscriptionChartData(): Promise<Omit<IAdminDashboardSubscription, 'totalProviders'>> {
-        const now = new Date();
-        const result = await this._subscriptionModel.aggregate([
-            {
-                $match: {
-                    isDeleted: false,
-                    isActive: true,
-                    endDate: { $gte: now }
-                }
+      match.$or = [
+        {
+          $expr: {
+            $regexMatch: {
+              input: { $toString: '$_id' },
+              regex: searchRegex,
             },
-            {
-                $group: {
-                    _id: null,
-                    totalPremium: {
-                        $sum: { $cond: [{ $gt: ["$price", 0] }, 1, 0] }
-                    },
-                    monthlyPremium: {
-                        $sum: {
-                            $cond: [
-                                { $and: [{ $gt: ["$price", 0] }, { $eq: ["$duration", 'monthly'] }] },
-                                1,
-                                0
-                            ]
-                        }
-                    },
-                    yearlyPremium: {
-                        $sum: {
-                            $cond: [
-                                { $and: [{ $gt: ["$price", 0] }, { $eq: ["$duration", 'yearly'] }] },
-                                1,
-                                0
-                            ]
-                        }
-                    }
-                },
-            },
-            {
-                $project: {
-                    _id: 0,
-                    monthlyPremium: 1,
-                    yearlyPremium: 1
-                }
-            }
-        ]);
+          },
+        },
+        { 'userDetails.email': searchRegex },
+      ];
+    }
 
-        return result.length > 0 ? { ...result[0] } : {
-            monthlyPremium: 0,
-            yearlyPremium: 0
+    if (filters.payment && filters.payment !== 'all') {
+      match.paymentStatus = filters.payment;
+    }
+
+    if (filters.duration && filters.duration !== 'all') {
+      match.duration = filters.duration;
+    }
+
+    return match;
+  }
+
+  async getSubscriptionChartData(): Promise<Omit<IAdminDashboardSubscription, 'totalProviders'>> {
+    const now = new Date();
+    const result = await this._subscriptionModel.aggregate([
+      {
+        $match: {
+          isDeleted: false,
+          isActive: true,
+          endDate: { $gte: now },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalPremium: {
+            $sum: { $cond: [{ $gt: ['$price', 0] }, 1, 0] },
+          },
+          monthlyPremium: {
+            $sum: {
+              $cond: [{ $and: [{ $gt: ['$price', 0] }, { $eq: ['$duration', 'monthly'] }] }, 1, 0],
+            },
+          },
+          yearlyPremium: {
+            $sum: {
+              $cond: [{ $and: [{ $gt: ['$price', 0] }, { $eq: ['$duration', 'yearly'] }] }, 1, 0],
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          monthlyPremium: 1,
+          yearlyPremium: 1,
+        },
+      },
+    ]);
+
+    return result.length > 0
+      ? { ...result[0] }
+      : {
+          monthlyPremium: 0,
+          yearlyPremium: 0,
         };
-    }
+  }
 
-    async findSubscription(userId: string, userType: string): Promise<SubscriptionDocument | null> {
-        const now = new Date();
+  async findSubscription(userId: string, userType: string): Promise<SubscriptionDocument | null> {
+    const now = new Date();
 
-        return await this._subscriptionModel.findOne(
-            {
-                userId: this._toObjectId(userId),
-                role: userType,
-                isActive: true,
-                isDeleted: false,
-                startTime: { $lte: now },
-                endDate: { $gte: now }
-            }
-        );
-    }
+    return await this._subscriptionModel.findOne({
+      userId: this._toObjectId(userId),
+      role: userType,
+      isActive: true,
+      isDeleted: false,
+      startTime: { $lte: now },
+      endDate: { $gte: now },
+    });
+  }
 
-    async findAllSubscriptionsByUserId(userId: string, userType: string): Promise<SubscriptionDocument[]> {
-        return await this._subscriptionModel.find(
-            {
-                userId: this._toObjectId(userId),
-                role: userType,
-                isDeleted: false
-            }
-        ).sort({ createdAt: -1 });
-    }
+  async findAllSubscriptionsByUserId(userId: string, userType: string): Promise<SubscriptionDocument[]> {
+    return await this._subscriptionModel
+      .find({
+        userId: this._toObjectId(userId),
+        role: userType,
+        isDeleted: false,
+      })
+      .sort({ createdAt: -1 });
+  }
 
-    async findSubscriptionById(subscriptionId: string): Promise<SubscriptionDocument | null> {
-        return await this._subscriptionModel.findOne({ _id: subscriptionId });
-    }
+  async findSubscriptionById(subscriptionId: string): Promise<SubscriptionDocument | null> {
+    return await this._subscriptionModel.findOne({ _id: subscriptionId });
+  }
 
-    async findActiveByUserIds(userIds: string[]): Promise<SubscriptionDocument[]> {
-        if (!userIds.length) return [];
-        const now = new Date();
+  async findActiveByUserIds(userIds: string[]): Promise<SubscriptionDocument[]> {
+    if (!userIds.length) return [];
+    const now = new Date();
 
-        return await this._subscriptionModel.find(
-            {
-                userId: { $in: userIds.map(id => this._toObjectId(id)) },
-                role: 'provider',
-                isActive: true,
-                isDeleted: false,
-                paymentStatus: PaymentStatus.PAID,
-                startTime: { $lte: now },
-                endDate: { $gte: now }
-            }
-        );
-    }
+    return await this._subscriptionModel.find({
+      userId: { $in: userIds.map((id) => this._toObjectId(id)) },
+      role: 'provider',
+      isActive: true,
+      isDeleted: false,
+      paymentStatus: PaymentStatus.PAID,
+      startTime: { $lte: now },
+      endDate: { $gte: now },
+    });
+  }
 
-    async findLatestSubscriptionByUserId(userId: string, userType: string): Promise<SubscriptionDocument | null> {
-        return await this._subscriptionModel.findOne(
-            {
-                userId: this._toObjectId(userId),
-                role: userType,
-                isDeleted: false,
-                paymentStatus: { $ne: PaymentStatus.UNPAID }
-            }
-        ).sort({ createdAt: -1 });
-    }
+  async findLatestSubscriptionByUserId(userId: string, userType: string): Promise<SubscriptionDocument | null> {
+    return await this._subscriptionModel
+      .findOne({
+        userId: this._toObjectId(userId),
+        role: userType,
+        isDeleted: false,
+        paymentStatus: { $ne: PaymentStatus.UNPAID },
+      })
+      .sort({ createdAt: -1 });
+  }
 
-    async count(): Promise<number> {
-        return await this._subscriptionModel.countDocuments();
-    }
+  async count(): Promise<number> {
+    return await this._subscriptionModel.countDocuments();
+  }
 
-    async fetchCurrentActiveSubscription(subscriptionId: string): Promise<SubscriptionDocument | null> {
-        return await this._subscriptionModel.findOne(
-            {
-                _id: subscriptionId,
-                isActive: true,
-                isDeleted: false,
-                endDate: { $gte: new Date() }
-            }
-        );
-    }
+  async fetchCurrentActiveSubscription(subscriptionId: string): Promise<SubscriptionDocument | null> {
+    return await this._subscriptionModel.findOne({
+      _id: subscriptionId,
+      isActive: true,
+      isDeleted: false,
+      endDate: { $gte: new Date() },
+    });
+  }
 
-    async updatePaymentStatus(subscriptionId: string, status: PaymentStatus): Promise<boolean> {
-        const result = await this._subscriptionModel.updateOne(
-            { _id: subscriptionId },
-            {
-                $set: {
-                    paymentStatus: status,
-                    isActive: true
-                }
-            }
-        );
+  async updatePaymentStatus(subscriptionId: string, status: PaymentStatus): Promise<boolean> {
+    const result = await this._subscriptionModel.updateOne(
+      { _id: subscriptionId },
+      {
+        $set: {
+          paymentStatus: status,
+          isActive: true,
+        },
+      },
+    );
 
-        return result.modifiedCount === 1;
-    }
+    return result.modifiedCount === 1;
+  }
 
-    async cancelSubscriptionByUserId(userId: string, userType: string): Promise<boolean> {
-        const result = await this._subscriptionModel.updateMany(
-            {
-                userId: this._toObjectId(userId),
-                role: userType,
-                isActive: true,
-            },
-            {
-                $set: {
-                    cancelledAt: new Date(),
-                    isActive: false
-                }
-            }
-        );
+  async cancelSubscriptionByUserId(userId: string, userType: string): Promise<boolean> {
+    const result = await this._subscriptionModel.updateMany(
+      {
+        userId: this._toObjectId(userId),
+        role: userType,
+        isActive: true,
+      },
+      {
+        $set: {
+          cancelledAt: new Date(),
+          isActive: false,
+        },
+      },
+    );
 
-        return result.modifiedCount >= 1;
-    }
+    return result.modifiedCount >= 1;
+  }
 
-    async findActiveSubscriptionByUserId(userId: string, userType: string): Promise<SubscriptionDocument | null> {
-        const now = new Date();
+  async findActiveSubscriptionByUserId(userId: string, userType: string): Promise<SubscriptionDocument | null> {
+    const now = new Date();
 
-        return await this._subscriptionModel.findOne(
-            {
-                userId: this._toObjectId(userId),
-                role: userType,
-                isActive: true,
-                isDeleted: false,
-                paymentStatus: PaymentStatus.PAID,
-                startTime: { $lte: now },
-                endDate: { $gte: now }
-            }
-        );
-    }
+    return await this._subscriptionModel.findOne({
+      userId: this._toObjectId(userId),
+      role: userType,
+      isActive: true,
+      isDeleted: false,
+      paymentStatus: PaymentStatus.PAID,
+      startTime: { $lte: now },
+      endDate: { $gte: now },
+    });
+  }
 
-    async removeSubscriptionById(subscriptionId: string): Promise<boolean> {
-        const result = await this._subscriptionModel.deleteOne({ _id: subscriptionId });
-        return result && result.deletedCount == 1;
-    }
+  async removeSubscriptionById(subscriptionId: string): Promise<boolean> {
+    const result = await this._subscriptionModel.deleteOne({ _id: subscriptionId });
+    return result && result.deletedCount == 1;
+  }
 
-    async createNewTransactionBySubscriptionId(subscriptionId: string, transaction: Partial<TransactionDocument>): Promise<TransactionDocument | null> {
-        const result = await this._subscriptionModel.findOneAndUpdate(
-            { _id: subscriptionId },
-            { $push: { transactionHistory: transaction } },
-            {
-                new: true,
-                runValidators: true,
-                projection: { transactionHistory: 1 }
-            }
-        );
+  async createNewTransactionBySubscriptionId(
+    subscriptionId: string,
+    transaction: Partial<TransactionDocument>,
+  ): Promise<TransactionDocument | null> {
+    const result = await this._subscriptionModel.findOneAndUpdate(
+      { _id: subscriptionId },
+      { $push: { transactionHistory: transaction } },
+      {
+        new: true,
+        runValidators: true,
+        projection: { transactionHistory: 1 },
+      },
+    );
 
-        if (!result || result.transactionHistory.length < 1) return null;
+    if (!result || result.transactionHistory.length < 1) return null;
 
-        const history = result.transactionHistory;
+    const history = result.transactionHistory;
 
-        return history.slice(-1)[0];
-    }
+    return history.slice(-1)[0];
+  }
 
-    async findFilteredSubscriptionWithPagination(filters: ISubscriptionFilters, options?: { page?: number; limit?: number; }): Promise<IAdminSubscriptionList[]> {
-        const page = options?.page || 1;
-        const limit = options?.limit || 10;
-        const skip = (page - 1) * limit;
+  async findFilteredSubscriptionWithPagination(
+    filters: ISubscriptionFilters,
+    options?: { page?: number; limit?: number },
+  ): Promise<IAdminSubscriptionList[]> {
+    const page = options?.page || 1;
+    const limit = options?.limit || 10;
+    const skip = (page - 1) * limit;
 
-        const matchQuery = await this._getFilterQuery(filters);
-        const pipeline: PipelineStage[] = [];
+    const matchQuery = this._getFilterQuery(filters);
+    const pipeline: PipelineStage[] = [];
 
-        pipeline.push(
-            {
-                $lookup: {
-                    from: "providers",
-                    localField: "userId",
-                    foreignField: "_id",
-                    as: "provider"
-                }
-            },
-            {
-                $lookup: {
-                    from: "customers",
-                    localField: "userId",
-                    foreignField: "_id",
-                    as: "customer"
-                }
-            },
-            {
-                $addFields: {
-                    userDetails: {
-                        $cond: [
-                            { $gt: [{ $size: "$provider" }, 0] },
-                            { $arrayElemAt: ["$provider", 0] },
-                            { $arrayElemAt: ["$customer", 0] }
-                        ]
-                    }
-                }
-            },
-            { $unset: ["provider", "customer"] },
-            { $match: matchQuery },
-            { $sort: { createdAt: -1 } },
-            { $skip: skip },
-            { $limit: limit },
-        );
+    pipeline.push(
+      {
+        $lookup: {
+          from: 'providers',
+          localField: 'userId',
+          foreignField: '_id',
+          as: 'provider',
+        },
+      },
+      {
+        $lookup: {
+          from: 'customers',
+          localField: 'userId',
+          foreignField: '_id',
+          as: 'customer',
+        },
+      },
+      {
+        $addFields: {
+          userDetails: {
+            $cond: [{ $gt: [{ $size: '$provider' }, 0] }, { $arrayElemAt: ['$provider', 0] }, { $arrayElemAt: ['$customer', 0] }],
+          },
+        },
+      },
+      { $unset: ['provider', 'customer'] },
+      { $match: matchQuery },
+      { $sort: { createdAt: -1 } },
+      { $skip: skip },
+      { $limit: limit },
+    );
 
-        pipeline.push(
-            {
-                $project: {
-                    _id: 0,
-                    subscriptionId: '$_id',
-                    user: {
-                        email: '$userDetails.email',
-                        role: '$role'
-                    },
-                    plan: {
-                        name: '$name',
-                        duration: '$duration'
-                    },
-                    amount: '$price',
-                    status: {
-                        $switch: {
-                            branches: [
-                                {
-                                    case: {
-                                        $and: [
-                                            { $ne: ['$endDate', null] },
-                                            { $lt: ['$endDate', '$$NOW'] }
-                                        ]
-                                    },
-                                    then: 'expired'
-                                },
-                                {
-                                    case: { $eq: ["$isActive", true] },
-                                    then: "active"
-                                },
-                            ],
-                            default: 'inactive'
-                        }
-                    },
-                    isActive: 1,
-                    paymentStatus: 1,
-                    renewalType: 1,
-                    validity: {
-                        start: '$startTime',
-                        end: '$endDate'
-                    }
-                }
-            });
+    pipeline.push({
+      $project: {
+        _id: 0,
+        subscriptionId: '$_id',
+        user: {
+          email: '$userDetails.email',
+          role: '$role',
+        },
+        plan: {
+          name: '$name',
+          duration: '$duration',
+        },
+        amount: '$price',
+        status: {
+          $switch: {
+            branches: [
+              {
+                case: {
+                  $and: [{ $ne: ['$endDate', null] }, { $lt: ['$endDate', '$$NOW'] }],
+                },
+                then: 'expired',
+              },
+              {
+                case: { $eq: ['$isActive', true] },
+                then: 'active',
+              },
+            ],
+            default: 'inactive',
+          },
+        },
+        isActive: 1,
+        paymentStatus: 1,
+        renewalType: 1,
+        validity: {
+          start: '$startTime',
+          end: '$endDate',
+        },
+      },
+    });
 
-        const result = await this._subscriptionModel.aggregate(pipeline);
-        return result;
-    }
+    const result = await this._subscriptionModel.aggregate(pipeline);
+    return result;
+  }
 
-    async updateSubscriptionStatus(subscriptionId: string, status: boolean): Promise<boolean> {
-        const result = await this._subscriptionModel.updateOne(
-            { _id: subscriptionId },
-            { $set: { isActive: status } }
-        );
+  async updateSubscriptionStatus(subscriptionId: string, status: boolean): Promise<boolean> {
+    const result = await this._subscriptionModel.updateOne({ _id: subscriptionId }, { $set: { isActive: status } });
 
-        return result.modifiedCount === 1;
-    }
+    return result.modifiedCount === 1;
+  }
 }

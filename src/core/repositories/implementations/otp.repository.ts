@@ -9,7 +9,7 @@ export class OtpRepository implements IOtpRepository {
   constructor(
     @Inject(REDIS_CLIENT)
     private readonly _redis: Redis,
-  ) { }
+  ) {}
 
   private _getKey(email: string): string {
     return `otp:${email}`;

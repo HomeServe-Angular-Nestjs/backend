@@ -3,17 +3,11 @@ import { BrevoClient } from '@getbrevo/brevo';
 import { Inject, Injectable } from '@nestjs/common';
 
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
-import {
-  ILoggerFactory,
-  LOGGER_FACTORY,
-} from '@core/logger/interface/logger-factory.interface';
+import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 
 import { IMailService } from '@core/services/mail/mail.service.interface';
 
-import {
-  buildEmailHtml,
-  buildEmailSubject,
-} from '../../services/mail/email-template';
+import { buildEmailHtml, buildEmailSubject } from '../../services/mail/email-template';
 
 @Injectable()
 export class BrevoUtility implements IMailService {
@@ -43,14 +37,9 @@ export class BrevoUtility implements IMailService {
         htmlContent: buildEmailHtml(type, item),
       });
 
-      this.logger.log(
-        `Email sent successfully to ${to} (type: ${type}) via Brevo`,
-      );
+      this.logger.log(`Email sent successfully to ${to} (type: ${type}) via Brevo`);
     } catch (error) {
-      this.logger.error(
-        `Failed to send email to ${to} (type: ${type}) via Brevo`,
-        error instanceof Error ? error.stack : String(error),
-      );
+      this.logger.error(`Failed to send email to ${to} (type: ${type}) via Brevo`, error instanceof Error ? error.stack : String(error));
       throw error;
     }
   }

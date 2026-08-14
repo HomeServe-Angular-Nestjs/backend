@@ -1,20 +1,20 @@
 {
-    "cSpell.words": [
-        "cust",
-        "dsphere",
-        "dtos",
-        "googleusercontent",
-        "homeserve",
-        "Kolkata",
-        "luxon",
-        "networkidle",
-        "RAZORPAYMENT",
-        "sadd",
-        "sajid",
-        "smembers",
-        "SMTPS",
-        "srem",
-        "uuidv"
-    ],
-    "postman.settings.dotenv-detection-notification-visibility": false
+  "cSpell.words": [
+    "cust",
+    "dsphere",
+    "dtos",
+    "googleusercontent",
+    "homeserve",
+    "Kolkata",
+    "luxon",
+    "networkidle",
+    "RAZORPAYMENT",
+    "sadd",
+    "sajid",
+    "smembers",
+    "SMTPS",
+    "srem",
+    "uuidv"
+  ],
+  "postman.settings.dotenv-detection-notification-visibility": false
 }

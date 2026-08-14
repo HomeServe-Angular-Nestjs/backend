@@ -1,5 +1,5 @@
 import { BaseUserEntity } from '../base/implementation/base-user.entity';
-import { ICustomer } from '../interfaces/user.entity.interface';
+import type { ICustomer } from '../interfaces/user.entity.interface';
 
 export class Customer extends BaseUserEntity implements ICustomer {
   savedProviders?: string[] | null;

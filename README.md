@@ -14,19 +14,19 @@ REST API and real-time gateway layer for the HomeServe home services marketplace
 
 ## Tech Stack
 
-| Concern | Technology |
-| --- | --- |
-| Runtime | Node.js, NestJS 11, Express, TypeScript |
-| Database | MongoDB 8 (Mongoose 8) |
+| Concern            | Technology                                                       |
+| ------------------ | ---------------------------------------------------------------- |
+| Runtime            | Node.js, NestJS 11, Express, TypeScript                          |
+| Database           | MongoDB 8 (Mongoose 8)                                           |
 | Caching / Sessions | Redis (cache-manager, connect-redis, `@socket.io/redis-adapter`) |
-| Auth | Passport (JWT, Local, Google OAuth 2.0), jsonwebtoken, argon2 |
-| Real-Time | Socket.IO |
-| Payments | Razorpay |
-| Files | Cloudinary, multer, streamifier |
-| Email | Nodemailer, @nestjs-modules/mailer, Handlebars |
-| PDF | Puppeteer |
-| Dates | Luxon |
-| Testing | Jest, Supertest, mongodb-memory-server |
+| Auth               | Passport (JWT, Local, Google OAuth 2.0), jsonwebtoken, argon2    |
+| Real-Time          | Socket.IO                                                        |
+| Payments           | Razorpay                                                         |
+| Files              | Cloudinary, multer, streamifier                                  |
+| Email              | Nodemailer, @nestjs-modules/mailer, Handlebars                   |
+| PDF                | Puppeteer                                                        |
+| Dates              | Luxon                                                            |
+| Testing            | Jest, Supertest, mongodb-memory-server                           |
 
 ## Project Structure
 
@@ -61,6 +61,7 @@ Each module follows a layered architecture: **controllers → services (interfac
 ## Getting Started
 
 ### Prerequisites
+
 - Node.js ≥ 20 and pnpm
 - MongoDB instance
 - Redis instance
@@ -76,33 +77,33 @@ pnpm run start:dev         # hot-reload dev server
 
 ### Environment Variables
 
-| Group | Variables |
-| --- | --- |
-| Server | `PORT`, `NODE_ENV`, `FRONTEND_URL`, `BACKEND_URL`, `ALLOWED_URLS`, `VERIFICATION_LINK` |
-| Database | `MONGO_URI` |
-| JWT | `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `JWT_VERIFICATION_SECRET`, `JWT_ACCESS_EXPIRES_IN`, `JWT_REFRESH_EXPIRES_IN` |
-| Session | `SESSION_SECRET`, `MULTI_INSTANCE` |
-| Google OAuth | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL` |
-| SMTP | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` |
-| Cloudinary | `CLOUDINARY_NAME`, `CLOUDINARY_KEY`, `CLOUDINARY_SECRET` |
-| Redis | `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`, `REDIS_TLS`, `REDIS_TTL` |
-| Razorpay | `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` |
-| Admin seed | `ADMIN_EMAIL`, `ADMIN_PASSWORD` |
+| Group        | Variables                                                                                                               |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| Server       | `PORT`, `NODE_ENV`, `FRONTEND_URL`, `BACKEND_URL`, `ALLOWED_URLS`, `VERIFICATION_LINK`                                  |
+| Database     | `MONGO_URI`                                                                                                             |
+| JWT          | `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `JWT_VERIFICATION_SECRET`, `JWT_ACCESS_EXPIRES_IN`, `JWT_REFRESH_EXPIRES_IN` |
+| Session      | `SESSION_SECRET`, `MULTI_INSTANCE`                                                                                      |
+| Google OAuth | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL`                                                       |
+| SMTP         | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`                                                     |
+| Cloudinary   | `CLOUDINARY_NAME`, `CLOUDINARY_KEY`, `CLOUDINARY_SECRET`                                                                |
+| Redis        | `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`, `REDIS_TLS`, `REDIS_TTL`                                                  |
+| Razorpay     | `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`                                                                                |
+| Admin seed   | `ADMIN_EMAIL`, `ADMIN_PASSWORD`                                                                                         |
 
 ## Scripts
 
-| Script | Purpose |
-| --- | --- |
-| `pnpm run start` | Run the server |
-| `pnpm run start:dev` | Run with hot reload (ts-node-dev) |
+| Script                | Purpose                           |
+| --------------------- | --------------------------------- |
+| `pnpm run start`      | Run the server                    |
+| `pnpm run start:dev`  | Run with hot reload (ts-node-dev) |
 | `pnpm run start:prod` | Run the compiled production build |
-| `pnpm run build` | Compile with Nest CLI |
-| `pnpm run lint` | ESLint with autofix |
-| `pnpm run test` | Unit tests (Jest) |
-| `pnpm run test:e2e` | e2e tests (Jest + Supertest) |
-| `pnpm run test:cov` | Test coverage report |
-| `pnpm run seed:admin` | Seed the admin account |
-| `pnpm run console` | Interactive console |
+| `pnpm run build`      | Compile with Nest CLI             |
+| `pnpm run lint`       | ESLint with autofix               |
+| `pnpm run test`       | Unit tests (Jest)                 |
+| `pnpm run test:e2e`   | e2e tests (Jest + Supertest)      |
+| `pnpm run test:cov`   | Test coverage report              |
+| `pnpm run seed:admin` | Seed the admin account            |
+| `pnpm run console`    | Interactive console               |
 
 ## Deployment
 

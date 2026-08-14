@@ -10,38 +10,37 @@ import { InjectModel } from '@nestjs/mongoose';
 
 @Injectable()
 export class ChatRepository extends BaseRepository<ChatDocument> implements IChatRepository {
-    constructor(
-        @InjectModel(CHAT_MODEL_NAME)
-        private readonly _chatModel: Model<ChatDocument>
-    ) {
-        super(_chatModel)
-    }
+  constructor(
+    @InjectModel(CHAT_MODEL_NAME)
+    private readonly _chatModel: Model<ChatDocument>,
+  ) {
+    super(_chatModel);
+  }
 
-    async updateLastSentMessage(message: string, chatId: string): Promise<boolean> {
-        const updateResult = await this._chatModel.updateOne(
-            { _id: chatId },
-            {
-                $set: {
-                    lastMessage: message,
-                    lastSeenAt: new Date()
-                }
-            }
-        );
+  async updateLastSentMessage(message: string, chatId: string): Promise<boolean> {
+    const updateResult = await this._chatModel.updateOne(
+      { _id: chatId },
+      {
+        $set: {
+          lastMessage: message,
+          lastSeenAt: new Date(),
+        },
+      },
+    );
 
-        return updateResult.modifiedCount === 1;
-    }
+    return updateResult.modifiedCount === 1;
+  }
 
-    async findChatBetweenParticipants(first: IChatParticipant, second: IChatParticipant): Promise<ChatDocument | null> {
-        const participantsQuery = (participant: IChatParticipant) => ({
-            $elemMatch: { id: participant.id, type: participant.type }
-        });
+  async findChatBetweenParticipants(first: IChatParticipant, second: IChatParticipant): Promise<ChatDocument | null> {
+    const participantsQuery = (participant: IChatParticipant) => ({
+      $elemMatch: { id: participant.id, type: participant.type },
+    });
 
-        return this._chatModel.findOne({
-            $and: [
-                { participants: participantsQuery(first) },
-                { participants: participantsQuery(second) },
-            ],
-            $expr: { $eq: [{ $size: '$participants' }, 2] }
-        }).exec();
-    }
+    return this._chatModel
+      .findOne({
+        $and: [{ participants: participantsQuery(first) }, { participants: participantsQuery(second) }],
+        $expr: { $eq: [{ $size: '$participants' }, 2] },
+      })
+      .exec();
+  }
 }

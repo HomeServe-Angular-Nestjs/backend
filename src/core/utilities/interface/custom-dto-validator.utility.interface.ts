@@ -1,5 +1,5 @@
-import { ClassConstructor } from 'class-transformer';
+import type { ClassConstructor } from 'class-transformer';
 
 export interface ICustomDtoValidator {
-    validateDto<T extends object>(dtoClass: ClassConstructor<T>, payload: any): Promise<T>;
+  validateDto<T extends object>(dtoClass: ClassConstructor<T>, payload: any): Promise<T>;
 }

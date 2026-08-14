@@ -1,8 +1,34 @@
 import { AnyFilesInterceptor } from '@nestjs/platform-express';
 import { Request } from 'express';
 
-import { BadRequestException, Body, Controller, Get, Inject, InternalServerErrorException, NotFoundException, Patch, Post, Put, Query, Req, UnauthorizedException, UploadedFiles, UseInterceptors } from '@nestjs/common';
-import { CreateServiceDto, CreateSubServiceDto, FilterServiceDto, ProviderServiceFilterWithPaginationDto, RemoveServiceDto, RemoveSubServiceDto, ToggleServiceStatusDto, ToggleSubServiceStatusDto, UpdateServiceDto } from '@modules/providers/dtos/service.dto';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Inject,
+  InternalServerErrorException,
+  NotFoundException,
+  Patch,
+  Post,
+  Put,
+  Query,
+  Req,
+  UnauthorizedException,
+  UploadedFiles,
+  UseInterceptors,
+} from '@nestjs/common';
+import {
+  CreateServiceDto,
+  CreateSubServiceDto,
+  FilterServiceDto,
+  ProviderServiceFilterWithPaginationDto,
+  RemoveServiceDto,
+  RemoveSubServiceDto,
+  ToggleServiceStatusDto,
+  ToggleSubServiceStatusDto,
+  UpdateServiceDto,
+} from '@modules/providers/dtos/service.dto';
 import { IServiceFeatureService } from '../services/interfaces/service-service.interface';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
@@ -27,9 +53,12 @@ export class ServiceController {
 
   @Post('service')
   @UseInterceptors(AnyFilesInterceptor())
-  async createService(@Req() req: Request, @Body() body: CreateServiceDto, @UploadedFiles() files: Express.Multer.File[]): Promise<IResponse<string[]>> {
+  async createService(
+    @Req() req: Request,
+    @Body() body: CreateServiceDto,
+    @UploadedFiles() files: Express.Multer.File[],
+  ): Promise<IResponse<string[]>> {
     try {
-
       const user = req.user as IPayload;
       if (!user.sub) {
         throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
@@ -54,9 +83,7 @@ export class ServiceController {
           .filter(Boolean) as { index: number; file: Express.Multer.File }[];
 
         // Parse the subServices from string if not already an array
-        subService = Array.isArray(body?.subService)
-          ? (body?.subService ?? [])
-          : JSON.parse(body?.subService ?? []);
+        subService = Array.isArray(body?.subService) ? (body?.subService ?? []) : JSON.parse(body?.subService ?? []);
 
         // Append image files to their respective sub-service entries by index
         subServicesImage.forEach(({ index, file }) => {
@@ -130,7 +157,7 @@ export class ServiceController {
       throw new BadRequestException('Required data is missing');
     }
 
-    return await this._serviceFeature.toggleServiceStatus(toggleServiceStatusDto)
+    return await this._serviceFeature.toggleServiceStatus(toggleServiceStatusDto);
   }
 
   @Patch('service/sub_status')
@@ -158,7 +185,7 @@ export class ServiceController {
     const result = { ...updateServiceDto };
 
     // Attach main service image
-    const image = files.find(file => file.fieldname === 'image');
+    const image = files.find((file) => file.fieldname === 'image');
     if (image) {
       result.image = image;
     } else if (updateServiceDto.image) {
@@ -168,12 +195,12 @@ export class ServiceController {
     result.subService = (updateServiceDto.subService || []).map((sub: any, index: number) => {
       const subResult: any = { ...sub };
 
-      const image = files.find(file => file.fieldname === `subService[${index}][image]`);
+      const image = files.find((file) => file.fieldname === `subService[${index}][image]`);
 
       if (image) {
         subResult.image = image;
       } else if (sub.image) {
-        subResult.image = sub.image
+        subResult.image = sub.image;
       }
 
       return subResult;

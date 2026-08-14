@@ -7,12 +7,8 @@ import { cartUtilityProvider } from '@modules/cart/providers/cart-utility.provid
 import { CloudinaryModule } from '@configs/cloudinary/cloudinary.module';
 
 @Module({
-    imports: [CloudinaryModule.registerAsync(), SharedModule],
-    controllers: [CartController],
-    providers: [
-        ...cartServiceProvider,
-        ...cartRepositoryProvider,
-        ...cartUtilityProvider,
-    ],
+  imports: [CloudinaryModule.registerAsync(), SharedModule],
+  controllers: [CartController],
+  providers: [...cartServiceProvider, ...cartRepositoryProvider, ...cartUtilityProvider],
 })
-export class CartModule { }
+export class CartModule {}

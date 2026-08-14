@@ -1,11 +1,18 @@
-import { ICustomerTransactionDataWithPagination, IProviderTransactionDataWithPagination, IProviderTransactionOverview } from "@core/entities/interfaces/wallet-ledger.entity.interface";
-import { IWallet } from "@core/entities/interfaces/wallet.entity.interface";
-import { IResponse } from "@core/misc/response.util";
-import { ProviderWalletFilterDto } from "@modules/wallet/dto/wallet.dto";
+import type {
+  ICustomerTransactionDataWithPagination,
+  IProviderTransactionDataWithPagination,
+  IProviderTransactionOverview,
+} from '@core/entities/interfaces/wallet-ledger.entity.interface';
+import type { IWallet } from '@core/entities/interfaces/wallet.entity.interface';
+import type { IResponse } from '@core/misc/response.util';
+import type { ProviderWalletFilterDto } from '@modules/wallet/dto/wallet.dto';
 
 export interface IWalletService {
-    getWallet(userId: string): Promise<IResponse<IWallet | null>>;
-    getTransactions(customerId: string, filter: ProviderWalletFilterDto): Promise<IResponse<ICustomerTransactionDataWithPagination>>;
-    getFilteredProviderTransactionsWithPagination(providerId: string, filter: ProviderWalletFilterDto): Promise<IResponse<IProviderTransactionDataWithPagination>>;
-    getProviderTransactionOverview(providerId: string): Promise<IResponse<IProviderTransactionOverview>>;
+  getWallet(userId: string): Promise<IResponse<IWallet | null>>;
+  getTransactions(customerId: string, filter: ProviderWalletFilterDto): Promise<IResponse<ICustomerTransactionDataWithPagination>>;
+  getFilteredProviderTransactionsWithPagination(
+    providerId: string,
+    filter: ProviderWalletFilterDto,
+  ): Promise<IResponse<IProviderTransactionDataWithPagination>>;
+  getProviderTransactionOverview(providerId: string): Promise<IResponse<IProviderTransactionOverview>>;
 }

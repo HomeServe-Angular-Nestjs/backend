@@ -16,266 +16,266 @@ import { PlanDurationEnum } from '@core/enum/subscription.enum';
 
 @Injectable()
 export class PlanService implements IPlanService {
-    private readonly logger: ICustomLogger;
+  private readonly logger: ICustomLogger;
 
-    constructor(
-        @Inject(LOGGER_FACTORY)
-        private readonly loggerFactory: ILoggerFactory,
-        @Inject(PLAN_REPOSITORY_INTERFACE_NAME)
-        private readonly _planRepository: IPlanRepository,
-        @Inject(ADMIN_SETTINGS_REPOSITORY_NAME)
-        private readonly _settingsRepository: IAdminSettingsRepository,
-        @Inject(PLAN_MAPPER)
-        private readonly _planMapper: IPlanMapper
-    ) {
-        this.logger = this.loggerFactory.createLogger(PlanService.name);
+  constructor(
+    @Inject(LOGGER_FACTORY)
+    private readonly loggerFactory: ILoggerFactory,
+    @Inject(PLAN_REPOSITORY_INTERFACE_NAME)
+    private readonly _planRepository: IPlanRepository,
+    @Inject(ADMIN_SETTINGS_REPOSITORY_NAME)
+    private readonly _settingsRepository: IAdminSettingsRepository,
+    @Inject(PLAN_MAPPER)
+    private readonly _planMapper: IPlanMapper,
+  ) {
+    this.logger = this.loggerFactory.createLogger(PlanService.name);
+  }
+
+  private _validateFeature(features: PlanFeatures): void {
+    if (!features || typeof features !== 'object') {
+      throw new BadRequestException({
+        code: ErrorCodes.BAD_REQUEST,
+        message: 'Features must be an object',
+      });
     }
 
-    private _validateFeature(features: PlanFeatures): void {
-        if (!features || typeof features !== 'object') {
+    for (const [key, value] of Object.entries(features)) {
+      const feature = Object.values(FEATURE_REGISTRY).find((f) => f.key === key);
+
+      if (!feature) {
+        throw new BadRequestException({
+          code: ErrorCodes.BAD_REQUEST,
+          message: `Feature "${key}" is not allowed`,
+        });
+      }
+
+      switch (feature.type) {
+        case 'boolean':
+          if (typeof value !== 'boolean') {
             throw new BadRequestException({
-                code: ErrorCodes.BAD_REQUEST,
-                message: 'Features must be an object'
+              code: ErrorCodes.BAD_REQUEST,
+              message: `"${key}" must be boolean`,
             });
-        }
+          }
+          break;
 
-        for (const [key, value] of Object.entries(features)) {
-            const feature = Object.values(FEATURE_REGISTRY)
-                .find(f => f.key === key);
+        case 'number':
+          if (typeof value !== 'number' || !Number.isInteger(value) || (value < 1 && value !== -1)) {
+            throw new BadRequestException({
+              code: ErrorCodes.BAD_REQUEST,
+              message: `"${key}" must be a positive integer or -1 for unlimited`,
+            });
+          }
+          break;
 
-            if (!feature) {
-                throw new BadRequestException({
-                    code: ErrorCodes.BAD_REQUEST,
-                    message: `Feature "${key}" is not allowed`
-                });
-            }
+        case 'enum':
+          if (!feature.values?.includes(value as string)) {
+            throw new BadRequestException({
+              code: ErrorCodes.BAD_REQUEST,
+              message: `"${key}" must be one of: ${feature.values?.join(', ')}`,
+            });
+          }
+          break;
+      }
+    }
+  }
 
-            switch (feature.type) {
-                case 'boolean':
-                    if (typeof value !== 'boolean') {
-                        throw new BadRequestException({
-                            code: ErrorCodes.BAD_REQUEST,
-                            message: `"${key}" must be boolean`
-                        });
-                    }
-                    break;
-
-                case 'number':
-                    if (typeof value !== 'number' || !Number.isInteger(value) || (value < 1 && value !== -1)) {
-                        throw new BadRequestException({
-                            code: ErrorCodes.BAD_REQUEST,
-                            message: `"${key}" must be a positive integer or -1 for unlimited`
-                        });
-                    }
-                    break;
-
-                case 'enum':
-                    if (!feature.values?.includes(value as string)) {
-                        throw new BadRequestException({
-                            code: ErrorCodes.BAD_REQUEST,
-                            message: `"${key}" must be one of: ${feature.values?.join(', ')}`
-                        });
-                    }
-                    break;
-            }
-        }
+  private async _applyFreeTierDefaults(planData: {
+    name?: string;
+    price?: number;
+    duration?: PlanDurationEnum;
+    features?: PlanFeatures;
+  }): Promise<void> {
+    if (planData.duration !== PlanDurationEnum.FreeTier) {
+      return;
     }
 
-    private async _applyFreeTierDefaults(planData: { name?: string; price?: number; duration?: PlanDurationEnum; features?: PlanFeatures }): Promise<void> {
-        if (planData.duration !== PlanDurationEnum.FreeTier) {
-            return;
-        }
+    const defaultServiceLimit = await this._settingsRepository.getDefaultServiceLimit();
 
-        const defaultServiceLimit = await this._settingsRepository.getDefaultServiceLimit();
+    planData.name = 'Free Tier';
+    planData.price = 0;
+    planData.features = {
+      [FEATURE_REGISTRY.BASIC_SUPPORT.key]: true,
+      [FEATURE_REGISTRY.SERVICE_LISTING_LIMIT.key]: defaultServiceLimit,
+      [FEATURE_REGISTRY.ANALYTICS_DASHBOARD.key]: false,
+      [FEATURE_REGISTRY.SEARCH_PRIORITY.key]: 'low',
+    };
+  }
 
-        planData.name = 'Free Tier';
-        planData.price = 0;
-        planData.features = {
-            [FEATURE_REGISTRY.BASIC_SUPPORT.key]: true,
-            [FEATURE_REGISTRY.SERVICE_LISTING_LIMIT.key]: defaultServiceLimit,
-            [FEATURE_REGISTRY.ANALYTICS_DASHBOARD.key]: false,
-            [FEATURE_REGISTRY.SEARCH_PRIORITY.key]: 'low',
-        };
+  async getFreeTierDefaults(): Promise<IResponse<{ price: number; features: PlanFeatures }>> {
+    const defaultServiceLimit = await this._settingsRepository.getDefaultServiceLimit();
+
+    return {
+      success: true,
+      message: 'Free tier defaults fetched successfully.',
+      data: {
+        price: 0,
+        features: {
+          [FEATURE_REGISTRY.BASIC_SUPPORT.key]: true,
+          [FEATURE_REGISTRY.SERVICE_LISTING_LIMIT.key]: defaultServiceLimit,
+          [FEATURE_REGISTRY.ANALYTICS_DASHBOARD.key]: false,
+          [FEATURE_REGISTRY.SEARCH_PRIORITY.key]: 'low',
+        },
+      },
+    };
+  }
+
+  async createPlan(createPlanDto: SavePlanDto): Promise<IResponse<IPlan>> {
+    this._validateFeature(createPlanDto.features);
+
+    const isAlreadyExists = await this._planRepository.isPlanExists({
+      name: createPlanDto.name,
+      role: createPlanDto.role,
+    });
+
+    if (isAlreadyExists) {
+      throw new ConflictException({
+        code: ErrorCodes.CONFLICT,
+        message: ErrorMessage.PLAN_ALREADY_EXISTS,
+      });
     }
 
-    async getFreeTierDefaults(): Promise<IResponse<{ price: number; features: PlanFeatures }>> {
-        const defaultServiceLimit = await this._settingsRepository.getDefaultServiceLimit();
+    await this._applyFreeTierDefaults(createPlanDto);
 
-        return {
-            success: true,
-            message: 'Free tier defaults fetched successfully.',
-            data: {
-                price: 0,
-                features: {
-                    [FEATURE_REGISTRY.BASIC_SUPPORT.key]: true,
-                    [FEATURE_REGISTRY.SERVICE_LISTING_LIMIT.key]: defaultServiceLimit,
-                    [FEATURE_REGISTRY.ANALYTICS_DASHBOARD.key]: false,
-                    [FEATURE_REGISTRY.SEARCH_PRIORITY.key]: 'low',
-                }
-            }
-        };
-    }
+    const plan = this._planMapper.toDocument({
+      name: createPlanDto.name,
+      price: createPlanDto.price,
+      duration: createPlanDto.duration,
+      role: createPlanDto.role,
+      features: createPlanDto.features,
+      isActive: createPlanDto.isActive,
+    });
 
-    async createPlan(createPlanDto: SavePlanDto): Promise<IResponse<IPlan>> {
-        this._validateFeature(createPlanDto.features);
-
-        const isAlreadyExists = await this._planRepository.isPlanExists({
-            name: createPlanDto.name,
-            role: createPlanDto.role
+    let createdPlan: IPlan;
+    try {
+      const planDoc = await this._planRepository.create(plan);
+      createdPlan = this._planMapper.toEntity(planDoc);
+    } catch (error) {
+      if (error.status === 11000) {
+        throw new ConflictException({
+          code: ErrorCodes.CONFLICT,
+          message: ErrorMessage.PLAN_ALREADY_EXISTS,
         });
+      }
 
-        if (isAlreadyExists) {
-            throw new ConflictException({
-                code: ErrorCodes.CONFLICT,
-                message: ErrorMessage.PLAN_ALREADY_EXISTS
-            });
-        }
+      throw error;
+    }
 
-        await this._applyFreeTierDefaults(createPlanDto);
+    return {
+      success: !!createdPlan,
+      message: createdPlan ? 'Plan created successfully.' : 'Failed to create plan.',
+      data: createdPlan,
+    };
+  }
 
-        const plan = this._planMapper.toDocument({
-            name: createPlanDto.name,
-            price: createPlanDto.price,
-            duration: createPlanDto.duration,
-            role: createPlanDto.role,
-            features: createPlanDto.features,
-            isActive: createPlanDto.isActive,
+  async fetchPlans(): Promise<IResponse<IPlan[]>> {
+    const plans = await this._planRepository.find({}, { sort: { price: 1 } });
+
+    return {
+      success: true,
+      message: 'plans fetched successfully.',
+      data: (plans || []).map((plan) => this._planMapper.toEntity(plan)),
+    };
+  }
+
+  async fetchOnePlan(getPlanDto: GetOnePlanDto): Promise<IResponse<IPlan>> {
+    const plan = await this._planRepository.findPlan(getPlanDto.planId);
+
+    if (!plan) {
+      throw new NotFoundException({
+        code: ErrorCodes.NOT_FOUND,
+        message: ErrorMessage.PLAN_UNAVAILABLE,
+      });
+    }
+
+    return {
+      success: true,
+      message: 'plan fetched successfully.',
+      data: this._planMapper.toEntity(plan),
+    };
+  }
+
+  async updateStatus(updatePlanDto: UpdatePlanStatusDto): Promise<IResponse<IPlan>> {
+    const updatedPlan = await this._planRepository.updatePlanByPlanId(updatePlanDto.id, { isActive: !updatePlanDto.status }, { new: true });
+
+    if (!updatedPlan) {
+      throw new NotFoundException({
+        code: ErrorCodes.NOT_FOUND,
+        message: ErrorMessage.DOCUMENT_NOT_FOUND,
+      });
+    }
+
+    return {
+      success: !!updatedPlan,
+      message: updatedPlan ? 'Updated successfully.' : 'Failed to update.',
+      data: this._planMapper.toEntity(updatedPlan),
+    };
+  }
+
+  async updatePlan(updatePlanDto: UpdatePlanDto): Promise<IResponse<IPlan>> {
+    const { id: planId, ...updatePlanData } = updatePlanDto;
+
+    this._validateFeature(updatePlanData.features);
+
+    const isAlreadyExists = await this._planRepository.isPlanExists(
+      {
+        name: updatePlanData.name,
+        role: updatePlanData.role,
+      },
+      updatePlanDto.id,
+    );
+
+    if (isAlreadyExists) {
+      throw new ConflictException({
+        code: ErrorCodes.CONFLICT,
+        message: ErrorMessage.PLAN_ALREADY_EXISTS,
+      });
+    }
+
+    await this._applyFreeTierDefaults(updatePlanData);
+
+    const updatedPlan = await this._planRepository.updatePlanByPlanId(planId, updatePlanData, {
+      new: true,
+    });
+
+    if (!updatedPlan) {
+      throw new NotFoundException({
+        code: ErrorCodes.NOT_FOUND,
+        message: ErrorMessage.PLAN_NOT_FOUND,
+      });
+    }
+
+    return {
+      success: !!updatedPlan,
+      message: updatedPlan ? 'Plan updated successfully.' : 'Failed to update plan.',
+      data: this._planMapper.toEntity(updatedPlan),
+    };
+  }
+
+  async deletePlan(planId: string): Promise<IResponse> {
+    try {
+      const deletedPlan = await this._planRepository.deletePlan(planId);
+
+      if (!deletedPlan) {
+        throw new NotFoundException({
+          code: ErrorCodes.NOT_FOUND,
+          message: ErrorMessage.PLAN_NOT_FOUND,
         });
+      }
 
-        let createdPlan: IPlan;
-        try {
-            const planDoc = await this._planRepository.create(plan);
-            createdPlan = this._planMapper.toEntity(planDoc);
-        } catch (error) {
-            if (error.status === 11000) {
-                throw new ConflictException({
-                    code: ErrorCodes.CONFLICT,
-                    message: ErrorMessage.PLAN_ALREADY_EXISTS
-                });
-            }
+      return {
+        success: !!deletedPlan,
+        message: deletedPlan ? 'Plan deleted successfully.' : 'Failed to delete plan.',
+      };
+    } catch (err) {
+      if (err.code === 11000) {
+        throw new ConflictException({
+          code: ErrorCodes.CONFLICT,
+          message: ErrorMessage.PLAN_ALREADY_EXISTS,
+        });
+      }
 
-            throw error;
-        }
-
-        return {
-            success: !!createdPlan,
-            message: !!createdPlan ? 'Plan created successfully.' : 'Failed to create plan.',
-            data: createdPlan
-        }
+      throw err;
     }
-
-    async fetchPlans(): Promise<IResponse<IPlan[]>> {
-        const plans = await this._planRepository.find({}, { sort: { price: 1 } });
-
-        return {
-            success: true,
-            message: 'plans fetched successfully.',
-            data: (plans || []).map(plan => this._planMapper.toEntity(plan))
-        }
-    }
-
-    async fetchOnePlan(getPlanDto: GetOnePlanDto): Promise<IResponse<IPlan>> {
-        const plan = await this._planRepository.findPlan(getPlanDto.planId);
-
-        if (!plan) {
-            throw new NotFoundException({
-                code: ErrorCodes.NOT_FOUND,
-                message: ErrorMessage.PLAN_UNAVAILABLE
-            });
-        }
-
-        return {
-            success: true,
-            message: 'plan fetched successfully.',
-            data: this._planMapper.toEntity(plan)
-        }
-    }
-
-    async updateStatus(updatePlanDto: UpdatePlanStatusDto): Promise<IResponse<IPlan>> {
-        const updatedPlan = await this._planRepository.updatePlanByPlanId(
-            updatePlanDto.id,
-            { isActive: !updatePlanDto.status },
-            { new: true }
-        );
-
-        if (!updatedPlan) {
-            throw new NotFoundException({
-                code: ErrorCodes.NOT_FOUND,
-                message: ErrorMessage.DOCUMENT_NOT_FOUND
-            });
-        }
-
-        return {
-            success: !!updatedPlan,
-            message: !!updatedPlan ? 'Updated successfully.' : 'Failed to update.',
-            data: this._planMapper.toEntity(updatedPlan)
-        }
-    }
-
-    async updatePlan(updatePlanDto: UpdatePlanDto): Promise<IResponse<IPlan>> {
-        const { id: planId, ...updatePlanData } = updatePlanDto;
-
-        this._validateFeature(updatePlanData.features);
-
-        const isAlreadyExists = await this._planRepository.isPlanExists({
-            name: updatePlanData.name,
-            role: updatePlanData.role
-        }, updatePlanDto.id);
-
-        if (isAlreadyExists) {
-            throw new ConflictException({
-                code: ErrorCodes.CONFLICT,
-                message: ErrorMessage.PLAN_ALREADY_EXISTS
-            });
-        }
-
-        await this._applyFreeTierDefaults(updatePlanData);
-
-        const updatedPlan = await this._planRepository.updatePlanByPlanId(
-            planId,
-            updatePlanData,
-            { new: true }
-        );
-
-        if (!updatedPlan) {
-            throw new NotFoundException({
-                code: ErrorCodes.NOT_FOUND,
-                message: ErrorMessage.PLAN_NOT_FOUND
-            });
-        }
-
-        return {
-            success: !!updatedPlan,
-            message: !!updatedPlan ? 'Plan updated successfully.' : 'Failed to update plan.',
-            data: this._planMapper.toEntity(updatedPlan)
-        }
-    }
-
-    async deletePlan(planId: string): Promise<IResponse> {
-        try {
-
-            const deletedPlan = await this._planRepository.deletePlan(planId);
-
-            if (!deletedPlan) {
-                throw new NotFoundException({
-                    code: ErrorCodes.NOT_FOUND,
-                    message: ErrorMessage.PLAN_NOT_FOUND
-                });
-            }
-
-            return {
-                success: !!deletedPlan,
-                message: !!deletedPlan ? 'Plan deleted successfully.' : 'Failed to delete plan.'
-            }
-        } catch (err) {
-            if (err.code === 11000) {
-                throw new ConflictException({
-                    code: ErrorCodes.CONFLICT,
-                    message: ErrorMessage.PLAN_ALREADY_EXISTS
-                });
-            }
-
-            throw err;
-        }
-    }
+  }
 }

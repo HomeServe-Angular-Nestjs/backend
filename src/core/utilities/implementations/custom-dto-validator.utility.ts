@@ -9,26 +9,24 @@ import { ICustomDtoValidator } from '../interface/custom-dto-validator.utility.i
 
 @Injectable()
 export class CustomDtoValidatorUtility implements ICustomDtoValidator {
-    private readonly logger: ICustomLogger
+  private readonly logger: ICustomLogger;
 
-    constructor(
-        @Inject(LOGGER_FACTORY)
-        private readonly _loggerFactory: ILoggerFactory,
-    ) {
-        this.logger = this._loggerFactory.createLogger(CustomDtoValidatorUtility.name);
+  constructor(
+    @Inject(LOGGER_FACTORY)
+    private readonly _loggerFactory: ILoggerFactory,
+  ) {
+    this.logger = this._loggerFactory.createLogger(CustomDtoValidatorUtility.name);
+  }
+
+  async validateDto<T extends object>(dtoClass: ClassConstructor<T>, payload: any): Promise<T> {
+    const instance = plainToInstance(dtoClass, payload);
+    const errors = await validate(instance);
+
+    if (errors.length > 0) {
+      const errorMessages = errors.map((err) => Object.values(err.constraints || {})).flat();
+      this.logger.error('Error validating dto: ' + errorMessages.join(', '));
+      throw new BadRequestException(errorMessages);
     }
-
-    async validateDto<T extends object>(dtoClass: ClassConstructor<T>, payload: any): Promise<T> {
-        const instance = plainToInstance(dtoClass, payload);
-        const errors = await validate(instance);
-
-        if (errors.length > 0) {
-            const errorMessages = errors
-                .map(err => Object.values(err.constraints || {}))
-                .flat();
-            this.logger.error('Error validating dto: ' + errorMessages.join(', '));
-            throw new BadRequestException(errorMessages);
-        }
-        return instance;
-    }
+    return instance;
+  }
 }

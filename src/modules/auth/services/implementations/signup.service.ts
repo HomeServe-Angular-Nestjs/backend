@@ -1,6 +1,4 @@
-import {
-  CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME
-} from '@core/constants/repository.constant';
+import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME } from '@core/constants/repository.constant';
 import { OTP_SERVICE_INTERFACE_NAME } from '@core/constants/service.constant';
 import { ARGON_UTILITY_NAME } from '@core/constants/utility.constant';
 import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
@@ -38,7 +36,7 @@ export class SignupService implements ISignupService {
     if (await this.checkEmailExistence(initiateSignupDto)) {
       throw new ConflictException({
         code: ErrorCodes.CONFLICT,
-        message: ErrorMessage.EMAIL_CONFLICT_ERROR
+        message: ErrorMessage.EMAIL_CONFLICT_ERROR,
       });
     }
 
@@ -74,7 +72,7 @@ export class SignupService implements ISignupService {
       if ((error as { code?: number })?.code === 11000) {
         throw new ConflictException({
           code: ErrorCodes.CONFLICT,
-          message: ErrorMessage.USERNAME_CONFLICT_ERROR
+          message: ErrorMessage.USERNAME_CONFLICT_ERROR,
         });
       }
 
@@ -84,10 +82,7 @@ export class SignupService implements ISignupService {
   }
 
   private async checkEmailExistence(initiateSignupDto: InitiateSignupDto): Promise<boolean> {
-    const repository =
-      initiateSignupDto.type === 'customer'
-        ? this._customerRepository
-        : this._providerRepository;
+    const repository = initiateSignupDto.type === 'customer' ? this._customerRepository : this._providerRepository;
     const existingEntry = await repository.findByEmail(initiateSignupDto.email);
     return existingEntry ? true : false;
   }

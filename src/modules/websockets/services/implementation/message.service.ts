@@ -1,7 +1,5 @@
 import { CHAT_REPOSITORY_INTERFACE_NAME, MESSAGE_REPOSITORY_INTERFACE_NAME } from '@core/constants/repository.constant';
-import {
-    ICreateMessage, IMessage, IMessagePage, IMessageService,
-} from '@core/entities/interfaces/message.entity.interface';
+import { ICreateMessage, IMessage, IMessagePage, IMessageService } from '@core/entities/interfaces/message.entity.interface';
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { IResponse } from '@core/misc/response.util';
@@ -14,97 +12,98 @@ import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
 
 @Injectable()
 export class MessageService implements IMessageService {
-    private readonly logger: ICustomLogger;
+  private readonly logger: ICustomLogger;
 
-    constructor(
-        @Inject(LOGGER_FACTORY)
-        private readonly loggerFactory: ILoggerFactory,
-        @Inject(MESSAGE_REPOSITORY_INTERFACE_NAME)
-        private readonly _messageRepository: IMessagesRepository,
-        @Inject(CHAT_REPOSITORY_INTERFACE_NAME)
-        private readonly _chatRepository: IChatRepository,
-        @Inject(MESSAGE_MAPPER)
-        private readonly _messageMapper: IMessageMapper,
-    ) {
-        this.logger = this.loggerFactory.createLogger(MessageService.name);
+  constructor(
+    @Inject(LOGGER_FACTORY)
+    private readonly loggerFactory: ILoggerFactory,
+    @Inject(MESSAGE_REPOSITORY_INTERFACE_NAME)
+    private readonly _messageRepository: IMessagesRepository,
+    @Inject(CHAT_REPOSITORY_INTERFACE_NAME)
+    private readonly _chatRepository: IChatRepository,
+    @Inject(MESSAGE_MAPPER)
+    private readonly _messageMapper: IMessageMapper,
+  ) {
+    this.logger = this.loggerFactory.createLogger(MessageService.name);
+  }
+
+  async createMessage(messageData: ICreateMessage): Promise<IMessage> {
+    const [messageDocument, isChatUpdated] = await Promise.all([
+      this._messageRepository.create({
+        ...messageData,
+        isRead: false,
+        isDeleted: false,
+      }),
+      this._chatRepository.updateLastSentMessage(messageData.content, messageData.chatId.toString()),
+    ]);
+
+    if (!messageDocument) {
+      this.logger.error(`Failed to create message for chat ID: ${messageData.chatId.toString()}`);
+      throw new NotFoundException(ErrorMessage.DOCUMENT_NOT_FOUND);
     }
 
-    async createMessage(messageData: ICreateMessage): Promise<IMessage> {
-        const [messageDocument, isChatUpdated] = await Promise.all([
-            this._messageRepository.create({
-                ...messageData,
-                isRead: false,
-                isDeleted: false
-            }),
-            this._chatRepository.updateLastSentMessage(messageData.content, messageData.chatId.toString())
-        ]);
-
-        if (!messageDocument) {
-            this.logger.error(`Failed to create message for chat ID: ${messageData.chatId}`);
-            throw new NotFoundException(ErrorMessage.DOCUMENT_NOT_FOUND);
-        }
-
-        if (!isChatUpdated) {
-            this.logger.error(`Chat with ID  ${messageData.chatId} not found.`);
-            throw new NotFoundException(ErrorMessage.DOCUMENT_NOT_FOUND);
-        }
-
-        return this._messageMapper.toEntity(messageDocument);
+    if (!isChatUpdated) {
+      this.logger.error(`Chat with ID  ${messageData.chatId.toString()} not found.`);
+      throw new NotFoundException(ErrorMessage.DOCUMENT_NOT_FOUND);
     }
 
-    async getAllMessage(chatId: string, currentUserId: string, beforeMessageId?: string, limit: number = 20): Promise<IResponse<IMessagePage>> {
-        this._validateObjectId(chatId, 'Invalid chat id.');
-        if (beforeMessageId) this._validateObjectId(beforeMessageId, 'Invalid before message id.');
+    return this._messageMapper.toEntity(messageDocument);
+  }
 
-        const messageDocuments = await this._messageRepository.findMessagesBefore(chatId, beforeMessageId ?? null, limit + 1);
+  async getAllMessage(
+    chatId: string,
+    currentUserId: string,
+    beforeMessageId?: string,
+    limit: number = 20,
+  ): Promise<IResponse<IMessagePage>> {
+    this._validateObjectId(chatId, 'Invalid chat id.');
+    if (beforeMessageId) this._validateObjectId(beforeMessageId, 'Invalid before message id.');
 
-        const hasMore = messageDocuments.length > limit;
-        const pageDocuments = messageDocuments.slice(0, limit);
+    const messageDocuments = await this._messageRepository.findMessagesBefore(chatId, beforeMessageId ?? null, limit + 1);
 
-        const messages = pageDocuments
-            .map(message => this._messageMapper.toEntity(message))
-            .reverse();
+    const hasMore = messageDocuments.length > limit;
+    const pageDocuments = messageDocuments.slice(0, limit);
 
-        const nextCursor = messages.length > 0 ? messages[0].id : null;
+    const messages = pageDocuments.map((message) => this._messageMapper.toEntity(message)).reverse();
 
-        const pageIds = pageDocuments.map(message => message.id);
-        if (pageIds.length > 0) {
-            await this._messageRepository.updateMany(
-                {
-                    _id: { $in: pageIds },
-                    receiverId: currentUserId,
-                    isRead: false,
-                },
-                { $set: { isRead: true } }
-            );
-        }
+    const nextCursor = messages.length > 0 ? messages[0].id : null;
 
-        return {
-            success: true,
-            message: messages.length > 0
-                ? 'Messages fetched successfully.'
-                : 'No messages found for this chat.',
-            data: { messages, hasMore, nextCursor }
-        };
+    const pageIds = pageDocuments.map((message) => message.id);
+    if (pageIds.length > 0) {
+      await this._messageRepository.updateMany(
+        {
+          _id: { $in: pageIds },
+          receiverId: currentUserId,
+          isRead: false,
+        },
+        { $set: { isRead: true } },
+      );
     }
 
-    async markMessagesAsRead(chatId: string, userId: string): Promise<void> {
-        await this._messageRepository.updateMany(
-            {
-                chatId,
-                receiverId: userId,
-                isRead: false,
-            },
-            { $set: { isRead: true } }
-        );
-    }
+    return {
+      success: true,
+      message: messages.length > 0 ? 'Messages fetched successfully.' : 'No messages found for this chat.',
+      data: { messages, hasMore, nextCursor },
+    };
+  }
 
-    private _validateObjectId(value: string, message: string): void {
-        if (!/^[a-f\d]{24}$/i.test(value)) {
-            throw new BadRequestException({
-                code: ErrorCodes.BAD_REQUEST,
-                message,
-            });
-        }
+  async markMessagesAsRead(chatId: string, userId: string): Promise<void> {
+    await this._messageRepository.updateMany(
+      {
+        chatId,
+        receiverId: userId,
+        isRead: false,
+      },
+      { $set: { isRead: true } },
+    );
+  }
+
+  private _validateObjectId(value: string, message: string): void {
+    if (!/^[a-f\d]{24}$/i.test(value)) {
+      throw new BadRequestException({
+        code: ErrorCodes.BAD_REQUEST,
+        message,
+      });
     }
+  }
 }

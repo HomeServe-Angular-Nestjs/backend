@@ -1,12 +1,12 @@
-import { ITransaction } from "@core/entities/interfaces/transaction.entity.interface";
-import { UserType } from "@core/entities/interfaces/user.entity.interface";
-import { IBaseRepository } from "@core/repositories/base/interfaces/base-repo.interface";
-import { WalletDocument } from "@core/schema/wallet.schema";
+import { ITransaction } from '@core/entities/interfaces/transaction.entity.interface';
+import type { UserType } from '@core/entities/interfaces/user.entity.interface';
+import type { IBaseRepository } from '@core/repositories/base/interfaces/base-repo.interface';
+import type { WalletDocument } from '@core/schema/wallet.schema';
 
 export interface IWalletRepository extends IBaseRepository<WalletDocument> {
-    findWallet(userId: string): Promise<WalletDocument | null>;
-    getAdminWallet(): Promise<WalletDocument | null>;
-    updateAdminAmount(amount: number): Promise<boolean>;
-    updateUserAmount(userId: string, type: UserType, amount: number): Promise<boolean>;
-    updateCustomerBalance(customerId: string, amount: number): Promise<boolean>;
+  findWallet(userId: string): Promise<WalletDocument | null>;
+  getAdminWallet(): Promise<WalletDocument | null>;
+  updateAdminAmount(amount: number): Promise<boolean>;
+  updateUserAmount(userId: string, type: UserType, amount: number): Promise<boolean>;
+  updateCustomerBalance(customerId: string, amount: number): Promise<boolean>;
 }

@@ -6,11 +6,8 @@ import { planRepositoryProvider } from './providers/plan-repo.provider';
 import { planServiceProviders } from './providers/plan-service.providers';
 
 @Module({
-    imports: [SharedModule],
-    controllers: [PlanController],
-    providers: [
-        ...planServiceProviders,
-        ...planRepositoryProvider
-    ]
+  imports: [SharedModule],
+  controllers: [PlanController],
+  providers: [...planServiceProviders, ...planRepositoryProvider],
 })
-export class PlanModule { }
+export class PlanModule {}

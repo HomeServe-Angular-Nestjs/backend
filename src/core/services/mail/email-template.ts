@@ -1,9 +1,5 @@
 export function buildEmailSubject(type: string): string {
-  return type === 'otp'
-    ? 'Registration OTP'
-    : type === 'link'
-      ? 'Verification Link'
-      : `${type}`;
+  return type === 'otp' ? 'Registration OTP' : type === 'link' ? 'Verification Link' : `${type}`;
 }
 
 export function buildEmailHtml(type: string, item: string): string {

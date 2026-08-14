@@ -2,13 +2,66 @@ import { FilterQuery, Model, PipelineStage, Types } from 'mongoose';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { BOOKINGS_MODEL_NAME } from '@core/constants/model.constant';
-import { IBookingStats, IRatingDistribution, IRevenueMonthlyGrowthRateData, IRevenueTrendRawData, RevenueChartView, IRevenueCompositionData, ITopServicesByRevenue, INewOrReturningClientData, IAreaSummary, IServiceDemandData, ILocationRevenue, ITopAreaRevenue, IUnderperformingArea, IPeakServiceTime, IRevenueBreakdown, IBookingsBreakdown, IReviewDetailsRaw, IReviewFilter, IAdminBookingFilter, IAdminBookingList, ISlot, IBookedSlot, IProviderBookingLists, IUpcomingBooking } from '@core/entities/interfaces/booking.entity.interface';
-import { IBookingPerformanceData, IComparisonChartData, IComparisonOverviewData, IOnTimeArrivalChartData, IProviderRevenueOverview, IResponseTimeChartData, IReviewFilters, ITopProviders, ITotalReviewAndAvgRating, PaginatedReviewResponse } from '@core/entities/interfaces/user.entity.interface';
+import {
+  IBookingStats,
+  IRatingDistribution,
+  IRevenueMonthlyGrowthRateData,
+  IRevenueTrendRawData,
+  RevenueChartView,
+  IRevenueCompositionData,
+  ITopServicesByRevenue,
+  INewOrReturningClientData,
+  IAreaSummary,
+  IServiceDemandData,
+  ILocationRevenue,
+  ITopAreaRevenue,
+  IUnderperformingArea,
+  IPeakServiceTime,
+  IRevenueBreakdown,
+  IBookingsBreakdown,
+  IReviewDetailsRaw,
+  IReviewFilter,
+  IAdminBookingFilter,
+  IAdminBookingList,
+  ISlot,
+  IBookedSlot,
+  IProviderBookingLists,
+  IUpcomingBooking,
+} from '@core/entities/interfaces/booking.entity.interface';
+import {
+  IBookingPerformanceData,
+  IComparisonChartData,
+  IComparisonOverviewData,
+  IOnTimeArrivalChartData,
+  IProviderRevenueOverview,
+  IResponseTimeChartData,
+  IReviewFilters,
+  ITopProviders,
+  ITotalReviewAndAvgRating,
+  PaginatedReviewResponse,
+} from '@core/entities/interfaces/user.entity.interface';
 import { BookingDocument, SlotDocument } from '@core/schema/bookings.schema';
 import { BaseRepository } from '@core/repositories/base/implementations/base.repository';
 import { IBookingRepository } from '@core/repositories/interfaces/bookings-repo.interface';
-import { IAdminReviewStats, IReviewDistribution, ILowestRatedProvider, IRatingTrendPoint, IBookingReportData, IReportCustomerMatrix, IReportDownloadBookingData, IReportProviderMatrix, ISalesReportBundle, ISalesReportFilter, IBookingsSoldBuckets } from '@core/entities/interfaces/admin.entity.interface';
-import { IBookingOverview, ICustomerStatistics, IProviderStatistics, IReviewOverview } from '@core/entities/interfaces/admin-user-details.entity.interface';
+import {
+  IAdminReviewStats,
+  IReviewDistribution,
+  ILowestRatedProvider,
+  IRatingTrendPoint,
+  IBookingReportData,
+  IReportCustomerMatrix,
+  IReportDownloadBookingData,
+  IReportProviderMatrix,
+  ISalesReportBundle,
+  ISalesReportFilter,
+  IBookingsSoldBuckets,
+} from '@core/entities/interfaces/admin.entity.interface';
+import {
+  IBookingOverview,
+  ICustomerStatistics,
+  IProviderStatistics,
+  IReviewOverview,
+} from '@core/entities/interfaces/admin-user-details.entity.interface';
 import { SlotStatusEnum } from '@core/enum/slot.enum';
 import { BookingStatus, CancelStatus, PaymentStatus, SortBy } from '@core/enum/bookings.enum';
 import { UpdateQuery } from 'mongoose';
@@ -16,3584 +69,3646 @@ import { PaymentDirection, TransactionType } from '@core/enum/transaction.enum';
 
 @Injectable()
 export class BookingRepository extends BaseRepository<BookingDocument> implements IBookingRepository {
-    constructor(
-        @InjectModel(BOOKINGS_MODEL_NAME)
-        private readonly _bookingModel: Model<BookingDocument>
-    ) {
-        super(_bookingModel);
-    }
+  constructor(
+    @InjectModel(BOOKINGS_MODEL_NAME)
+    private readonly _bookingModel: Model<BookingDocument>,
+  ) {
+    super(_bookingModel);
+  }
 
-    private _escapeRegex(input: string): string {
-        return input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    }
+  private _escapeRegex(input: string): string {
+    return input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
 
-    async findBookingsByCustomerIdWithPagination(customerId: string | Types.ObjectId, skip: number, limit: number): Promise<BookingDocument[]> {
-        return await this._bookingModel
-            .find({ customerId: this._toObjectId(customerId) })
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit)
-            .lean();
-    }
+  async findBookingsByCustomerIdWithPagination(
+    customerId: string | Types.ObjectId,
+    skip: number,
+    limit: number,
+  ): Promise<BookingDocument[]> {
+    return await this._bookingModel
+      .find({ customerId: this._toObjectId(customerId) })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+  }
 
-    async findBookingsByProviderId(providerId: string | Types.ObjectId): Promise<BookingDocument[]> {
-        return await this._bookingModel
-            .find({ providerId: this._toObjectId(providerId), paymentStatus: { $ne: PaymentStatus.UNPAID } })
-            .sort({ createdAt: -1 })
-            .lean();
-    }
+  async findBookingsByProviderId(providerId: string | Types.ObjectId): Promise<BookingDocument[]> {
+    return await this._bookingModel
+      .find({
+        providerId: this._toObjectId(providerId),
+        paymentStatus: { $ne: PaymentStatus.UNPAID },
+      })
+      .sort({ createdAt: -1 })
+      .lean();
+  }
 
-    async findAllBookingsByProviderId(providerId: string | Types.ObjectId): Promise<BookingDocument[]> {
-        return await this._bookingModel
-            .find({ providerId: this._toObjectId(providerId) })
-            .sort({ createdAt: -1 })
-            .lean();
-    }
+  async findAllBookingsByProviderId(providerId: string | Types.ObjectId): Promise<BookingDocument[]> {
+    return await this._bookingModel
+      .find({ providerId: this._toObjectId(providerId) })
+      .sort({ createdAt: -1 })
+      .lean();
+  }
 
-    async fetchProviderBookingsWithPagination(
-        providerId: string | Types.ObjectId,
-        filter: {
-            search?: string;
-            date?: Date | string;
-            sort?: SortBy;
-            bookingStatus?: BookingStatus | '';
-            paymentStatus?: PaymentStatus | '';
+  async fetchProviderBookingsWithPagination(
+    providerId: string | Types.ObjectId,
+    filter: {
+      search?: string;
+      date?: Date | string;
+      sort?: SortBy;
+      bookingStatus?: BookingStatus | '';
+      paymentStatus?: PaymentStatus | '';
+    },
+    options: { page: number; limit: number },
+  ): Promise<{ data: IProviderBookingLists[]; total: number }> {
+    const page = options.page ?? 1;
+    const limit = options.limit ?? 5;
+    const skip = (page - 1) * limit;
+
+    const pipeline: PipelineStage[] = [
+      {
+        $match: {
+          providerId: this._toObjectId(providerId),
+          paymentStatus: { $ne: PaymentStatus.UNPAID },
         },
-        options: { page: number; limit: number }
-    ): Promise<{ data: IProviderBookingLists[]; total: number }> {
-        const page = options.page ?? 1;
-        const limit = options.limit ?? 5;
-        const skip = (page - 1) * limit;
+      },
+      {
+        $lookup: {
+          from: 'customers',
+          localField: 'customerId',
+          foreignField: '_id',
+          as: 'customer',
+        },
+      },
+      { $unwind: '$customer' },
+      {
+        $lookup: {
+          from: 'providerservices',
+          localField: 'services',
+          foreignField: '_id',
+          as: 'serviceDocs',
+        },
+      },
+      {
+        $lookup: {
+          from: 'servicecategories',
+          localField: 'serviceDocs.categoryId',
+          foreignField: '_id',
+          as: 'categoryDocs',
+        },
+      },
+    ];
 
-        const pipeline: PipelineStage[] = [
-            {
-                $match: {
-                    providerId: this._toObjectId(providerId),
-                    paymentStatus: { $ne: PaymentStatus.UNPAID },
-                }
-            },
-            { $lookup: { from: 'customers', localField: 'customerId', foreignField: '_id', as: 'customer' } },
-            { $unwind: '$customer' },
-            { $lookup: { from: 'providerservices', localField: 'services', foreignField: '_id', as: 'serviceDocs' } },
-            { $lookup: { from: 'servicecategories', localField: 'serviceDocs.categoryId', foreignField: '_id', as: 'categoryDocs' } },
-        ];
+    const match: FilterQuery<BookingDocument> = {};
 
-        const match: FilterQuery<BookingDocument> = {};
+    if (filter.search) {
+      const escaped = this._escapeRegex(filter.search);
+      const searchRegex = new RegExp(escaped, 'i');
+      match.$or = [
+        { $expr: { $regexMatch: { input: { $toString: '$_id' }, regex: searchRegex } } },
+        { 'customer.fullname': searchRegex },
+        { 'customer.username': searchRegex },
+        { 'customer.email': searchRegex },
+        { 'categoryDocs.name': searchRegex },
+      ];
+    }
 
-        if (filter.search) {
-            const escaped = this._escapeRegex(filter.search);
-            const searchRegex = new RegExp(escaped, 'i');
-            match.$or = [
-                { $expr: { $regexMatch: { input: { $toString: '$_id' }, regex: searchRegex } } },
-                { 'customer.fullname': searchRegex },
-                { 'customer.username': searchRegex },
-                { 'customer.email': searchRegex },
-                { 'categoryDocs.name': searchRegex },
-            ];
-        }
+    if (filter.bookingStatus) {
+      match.bookingStatus = filter.bookingStatus;
+    }
 
-        if (filter.bookingStatus) {
-            match.bookingStatus = filter.bookingStatus;
-        }
+    if (filter.paymentStatus) {
+      match.paymentStatus = filter.paymentStatus;
+    }
 
-        if (filter.paymentStatus) {
-            match.paymentStatus = filter.paymentStatus;
-        }
+    if (filter.date) {
+      const day = new Date(filter.date);
+      day.setHours(0, 0, 0, 0);
+      const nextDay = new Date(day);
+      nextDay.setDate(nextDay.getDate() + 1);
+      match.expectedArrivalTime = { $gte: day, $lt: nextDay };
+    }
 
-        if (filter.date) {
-            const day = new Date(filter.date);
-            day.setHours(0, 0, 0, 0);
-            const nextDay = new Date(day);
-            nextDay.setDate(nextDay.getDate() + 1);
-            match.expectedArrivalTime = { $gte: day, $lt: nextDay };
-        }
+    if (Object.keys(match).length > 0) {
+      pipeline.push({ $match: match });
+    }
 
-        if (Object.keys(match).length > 0) {
-            pipeline.push({ $match: match });
-        }
+    switch (filter.sort) {
+      case SortBy.OLDEST:
+        pipeline.push({ $sort: { createdAt: 1 } });
+        break;
+      case SortBy.NAME_ASCENDING:
+        pipeline.push({ $sort: { 'customer.fullname': 1, 'customer.username': 1 } });
+        break;
+      case SortBy.NAME_DESCENDING:
+        pipeline.push({ $sort: { 'customer.fullname': -1, 'customer.username': -1 } });
+        break;
+      default:
+        pipeline.push({ $sort: { createdAt: -1 } });
+        break;
+    }
 
-        switch (filter.sort) {
-            case SortBy.OLDEST:
-                pipeline.push({ $sort: { createdAt: 1 } });
-                break;
-            case SortBy.NAME_ASCENDING:
-                pipeline.push({ $sort: { 'customer.fullname': 1, 'customer.username': 1 } });
-                break;
-            case SortBy.NAME_DESCENDING:
-                pipeline.push({ $sort: { 'customer.fullname': -1, 'customer.username': -1 } });
-                break;
-            default:
-                pipeline.push({ $sort: { createdAt: -1 } });
-                break;
-        }
+    const countPipeline = [...pipeline, { $count: 'total' }];
+    const [totalResult] = await this._bookingModel.aggregate<{ total: number }>(countPipeline);
+    const total = totalResult?.total ?? 0;
 
-        const countPipeline = [...pipeline, { $count: 'total' }];
-        const [totalResult] = await this._bookingModel.aggregate<{ total: number }>(countPipeline);
-        const total = totalResult?.total ?? 0;
-
-        pipeline.push(
-            { $skip: skip },
-            { $limit: limit },
-            {
-                $project: {
-                    _id: 0,
-                    bookingId: { $toString: '$_id' },
-                    services: {
-                        $map: {
-                            input: '$serviceDocs',
-                            as: 'svc',
-                            in: {
-                                id: { $toString: '$$svc._id' },
-                                title: {
-                                    $let: {
-                                        vars: {
-                                            cat: {
-                                                $arrayElemAt: [
-                                                    {
-                                                        $filter: {
-                                                            input: '$categoryDocs',
-                                                            as: 'cat',
-                                                            cond: { $eq: ['$$cat._id', '$$svc.categoryId'] }
-                                                        }
-                                                    },
-                                                    0
-                                                ]
-                                            }
-                                        },
-                                        in: { $ifNull: ['$$cat.name', ''] }
-                                    }
-                                },
-                                image: { $ifNull: ['$$svc.image', ''] }
-                            }
-                        }
+    pipeline.push(
+      { $skip: skip },
+      { $limit: limit },
+      {
+        $project: {
+          _id: 0,
+          bookingId: { $toString: '$_id' },
+          services: {
+            $map: {
+              input: '$serviceDocs',
+              as: 'svc',
+              in: {
+                id: { $toString: '$$svc._id' },
+                title: {
+                  $let: {
+                    vars: {
+                      cat: {
+                        $arrayElemAt: [
+                          {
+                            $filter: {
+                              input: '$categoryDocs',
+                              as: 'cat',
+                              cond: { $eq: ['$$cat._id', '$$svc.categoryId'] },
+                            },
+                          },
+                          0,
+                        ],
+                      },
                     },
-                    customer: {
-                        id: { $toString: '$customer._id' },
-                        name: {
-                            $cond: [
-                                {
-                                    $and: [
-                                        { $ne: ['$customer.fullname', null] },
-                                        { $ne: ['$customer.fullname', ''] }
-                                    ]
-                                },
-                                '$customer.fullname',
-                                '$customer.username'
-                            ]
-                        },
-                        email: { $ifNull: ['$customer.email', ''] },
-                        avatar: { $ifNull: ['$customer.avatar', ''] }
-                    },
-                    expectedArrivalTime: '$expectedArrivalTime',
-                    totalAmount: { $round: [{ $divide: ['$totalAmount', 100] }, 2] },
-                    createdAt: '$createdAt',
-                    paymentStatus: '$paymentStatus',
-                    cancelStatus: '$cancelStatus',
-                    bookingStatus: '$bookingStatus',
-                }
-            }
-        );
-
-        const data = await this._bookingModel.aggregate<IProviderBookingLists>(pipeline);
-
-        return { data, total };
-    }
-
-    async findBookingsByProviderIdWithCursor(
-        providerId: string | Types.ObjectId,
-        cursor: { writtenAt: Date; bookingId: string } | null,
-        limit: number
-    ): Promise<BookingDocument[]> {
-        const query: FilterQuery<BookingDocument> = {
-            providerId: this._toObjectId(providerId),
-            paymentStatus: { $ne: PaymentStatus.UNPAID },
-            review: { $exists: true, $ne: null },
-            'review.isActive': true,
-        };
-
-        if (cursor) {
-            query.$or = [
-                { 'review.writtenAt': { $lt: cursor.writtenAt } },
-                { 'review.writtenAt': cursor.writtenAt, _id: { $lt: this._toObjectId(cursor.bookingId) } },
-            ];
-        }
-
-        return await this._bookingModel
-            .find(query)
-            .sort({ 'review.writtenAt': -1, _id: -1 })
-            .limit(limit)
-            .lean();
-    }
-
-    async findPaidBookings(bookingId: string): Promise<BookingDocument | null> {
-        return this._bookingModel.findOne({ _id: bookingId, paymentStatus: { $ne: PaymentStatus.UNPAID } });
-    }
-
-    async fetchFilteredBookingsWithPagination(filter: IAdminBookingFilter, option?: { page: number; limit: number; }): Promise<IAdminBookingList[]> {
-        const page = option?.page ?? 1;
-        const limit = option?.limit ?? 10;
-        const skip = (page - 1) * limit;
-
-        const match: FilterQuery<BookingDocument> = {};
-
-        const pipeline: PipelineStage[] = [];
-
-        pipeline.push(
-            {
-                $lookup: {
-                    from: 'customers',
-                    localField: 'customerId',
-                    foreignField: '_id',
-                    as: 'customer'
-                }
+                    in: { $ifNull: ['$$cat.name', ''] },
+                  },
+                },
+                image: { $ifNull: ['$$svc.image', ''] },
+              },
             },
-            { $unwind: '$customer' },
-            {
-                $lookup: {
-                    from: 'providers',
-                    localField: 'providerId',
-                    foreignField: '_id',
-                    as: 'provider'
-                }
-            },
-            { $unwind: '$provider' },
-        );
-
-        if (filter.search) {
-            const escaped = this._escapeRegex(filter.search);
-            const searchRegex = new RegExp(escaped, 'i');
-
-            match.$or = [
+          },
+          customer: {
+            id: { $toString: '$customer._id' },
+            name: {
+              $cond: [
                 {
-                    $expr: {
-                        $regexMatch: {
-                            input: { $toString: '$_id' },
-                            regex: searchRegex
-                        }
-                    }
+                  $and: [{ $ne: ['$customer.fullname', null] }, { $ne: ['$customer.fullname', ''] }],
                 },
-                { 'customer.email': searchRegex },
-                { 'provider.email': searchRegex },
-                { 'customer.username': searchRegex },
-                { 'provider.username': searchRegex },
-            ];
-        }
-
-        if (filter.bookingStatus && filter.bookingStatus !== 'all') {
-            match.bookingStatus = filter.bookingStatus;
-        }
-
-        if (filter.paymentStatus && filter.paymentStatus !== 'all') {
-            match.paymentStatus = filter.paymentStatus;
-        }
-
-        pipeline.push({ $match: match });
-        pipeline.push({ $sort: { createdAt: -1 } });
-        pipeline.push({ $skip: skip });
-        pipeline.push({ $limit: limit });
-        pipeline.push({
-            $project: {
-                _id: 0,
-                bookingId: '$_id',
-                customer: {
-                    id: '$customer._id',
-                    avatar: '$customer.avatar',
-                    username: '$customer.username',
-                    email: '$customer.email',
-                },
-                provider: {
-                    id: '$provider._id',
-                    avatar: '$provider.avatar',
-                    username: '$provider.username',
-                    email: '$provider.email',
-                },
-                date: '$createdAt',
-                status: '$bookingStatus',
-                paymentStatus: '$paymentStatus',
-            }
-        });
-
-        return await this._bookingModel.aggregate(pipeline);
-    }
-
-    async count(filter?: FilterQuery<BookingDocument>): Promise<number> {
-        return await this._bookingModel.countDocuments(filter);
-    }
-
-    async countDocumentsByCustomer(customerId: string | Types.ObjectId): Promise<number> {
-        return await this._bookingModel.countDocuments({ customerId: this._toObjectId(customerId) });
-    }
-
-    async bookingStatus(): Promise<IBookingStats> {
-        const result = await this._bookingModel.aggregate([
-            {
-                $group: {
-                    _id: null,
-                    total: { $sum: 1 },
-                    completed: {
-                        $sum: {
-                            $cond: [{ $eq: ["$bookingStatus", BookingStatus.COMPLETED] }, 1, 0]
-                        }
-                    },
-                    pending: {
-                        $sum: {
-                            $cond: [{ $eq: ["$bookingStatus", BookingStatus.PENDING] }, 1, 0]
-                        }
-                    },
-                    cancelled: {
-                        $sum: {
-                            $cond: [{ $eq: ["$bookingStatus", BookingStatus.CANCELLED] }, 1, 0]
-                        }
-                    },
-                    unpaid: {
-                        $sum: {
-                            $cond: [{ $eq: ["$paymentStatus", PaymentStatus.UNPAID] }, 1, 0]
-                        }
-                    },
-                    refunded: {
-                        $sum: {
-                            $cond: [{ $eq: ["$paymentStatus", PaymentStatus.REFUNDED] }, 1, 0]
-                        }
-                    }
-                }
+                '$customer.fullname',
+                '$customer.username',
+              ],
             },
-            {
-                $project: {
-                    _id: 0,
-                    total: 1,
-                    completed: 1,
-                    pending: 1,
-                    cancelled: 1,
-                    unpaid: 1,
-                    refunded: 1
-                }
-            }
-        ]);
+            email: { $ifNull: ['$customer.email', ''] },
+            avatar: { $ifNull: ['$customer.avatar', ''] },
+          },
+          expectedArrivalTime: '$expectedArrivalTime',
+          totalAmount: { $round: [{ $divide: ['$totalAmount', 100] }, 2] },
+          createdAt: '$createdAt',
+          paymentStatus: '$paymentStatus',
+          cancelStatus: '$cancelStatus',
+          bookingStatus: '$bookingStatus',
+        },
+      },
+    );
 
-        return result && result[0] ? result[0] : {
-            total: 0,
-            completed: 0,
-            pending: 0,
-            cancelled: 0,
-            unpaid: 0,
-            refunded: 0
+    const data = await this._bookingModel.aggregate<IProviderBookingLists>(pipeline);
+
+    return { data, total };
+  }
+
+  async findBookingsByProviderIdWithCursor(
+    providerId: string | Types.ObjectId,
+    cursor: { writtenAt: Date; bookingId: string } | null,
+    limit: number,
+  ): Promise<BookingDocument[]> {
+    const query: FilterQuery<BookingDocument> = {
+      providerId: this._toObjectId(providerId),
+      paymentStatus: { $ne: PaymentStatus.UNPAID },
+      review: { $exists: true, $ne: null },
+      'review.isActive': true,
+    };
+
+    if (cursor) {
+      query.$or = [
+        { 'review.writtenAt': { $lt: cursor.writtenAt } },
+        { 'review.writtenAt': cursor.writtenAt, _id: { $lt: this._toObjectId(cursor.bookingId) } },
+      ];
+    }
+
+    return await this._bookingModel.find(query).sort({ 'review.writtenAt': -1, _id: -1 }).limit(limit).lean();
+  }
+
+  async findPaidBookings(bookingId: string): Promise<BookingDocument | null> {
+    return this._bookingModel.findOne({
+      _id: bookingId,
+      paymentStatus: { $ne: PaymentStatus.UNPAID },
+    });
+  }
+
+  async fetchFilteredBookingsWithPagination(
+    filter: IAdminBookingFilter,
+    option?: { page: number; limit: number },
+  ): Promise<IAdminBookingList[]> {
+    const page = option?.page ?? 1;
+    const limit = option?.limit ?? 10;
+    const skip = (page - 1) * limit;
+
+    const match: FilterQuery<BookingDocument> = {};
+
+    const pipeline: PipelineStage[] = [];
+
+    pipeline.push(
+      {
+        $lookup: {
+          from: 'customers',
+          localField: 'customerId',
+          foreignField: '_id',
+          as: 'customer',
+        },
+      },
+      { $unwind: '$customer' },
+      {
+        $lookup: {
+          from: 'providers',
+          localField: 'providerId',
+          foreignField: '_id',
+          as: 'provider',
+        },
+      },
+      { $unwind: '$provider' },
+    );
+
+    if (filter.search) {
+      const escaped = this._escapeRegex(filter.search);
+      const searchRegex = new RegExp(escaped, 'i');
+
+      match.$or = [
+        {
+          $expr: {
+            $regexMatch: {
+              input: { $toString: '$_id' },
+              regex: searchRegex,
+            },
+          },
+        },
+        { 'customer.email': searchRegex },
+        { 'provider.email': searchRegex },
+        { 'customer.username': searchRegex },
+        { 'provider.username': searchRegex },
+      ];
+    }
+
+    if (filter.bookingStatus && filter.bookingStatus !== 'all') {
+      match.bookingStatus = filter.bookingStatus;
+    }
+
+    if (filter.paymentStatus && filter.paymentStatus !== 'all') {
+      match.paymentStatus = filter.paymentStatus;
+    }
+
+    pipeline.push({ $match: match });
+    pipeline.push({ $sort: { createdAt: -1 } });
+    pipeline.push({ $skip: skip });
+    pipeline.push({ $limit: limit });
+    pipeline.push({
+      $project: {
+        _id: 0,
+        bookingId: '$_id',
+        customer: {
+          id: '$customer._id',
+          avatar: '$customer.avatar',
+          username: '$customer.username',
+          email: '$customer.email',
+        },
+        provider: {
+          id: '$provider._id',
+          avatar: '$provider.avatar',
+          username: '$provider.username',
+          email: '$provider.email',
+        },
+        date: '$createdAt',
+        status: '$bookingStatus',
+        paymentStatus: '$paymentStatus',
+      },
+    });
+
+    return await this._bookingModel.aggregate(pipeline);
+  }
+
+  async count(filter?: FilterQuery<BookingDocument>): Promise<number> {
+    return await this._bookingModel.countDocuments(filter);
+  }
+
+  async countDocumentsByCustomer(customerId: string | Types.ObjectId): Promise<number> {
+    return await this._bookingModel.countDocuments({ customerId: this._toObjectId(customerId) });
+  }
+
+  async bookingStatus(): Promise<IBookingStats> {
+    const result = await this._bookingModel.aggregate([
+      {
+        $group: {
+          _id: null,
+          total: { $sum: 1 },
+          completed: {
+            $sum: {
+              $cond: [{ $eq: ['$bookingStatus', BookingStatus.COMPLETED] }, 1, 0],
+            },
+          },
+          pending: {
+            $sum: {
+              $cond: [{ $eq: ['$bookingStatus', BookingStatus.PENDING] }, 1, 0],
+            },
+          },
+          cancelled: {
+            $sum: {
+              $cond: [{ $eq: ['$bookingStatus', BookingStatus.CANCELLED] }, 1, 0],
+            },
+          },
+          unpaid: {
+            $sum: {
+              $cond: [{ $eq: ['$paymentStatus', PaymentStatus.UNPAID] }, 1, 0],
+            },
+          },
+          refunded: {
+            $sum: {
+              $cond: [{ $eq: ['$paymentStatus', PaymentStatus.REFUNDED] }, 1, 0],
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          total: 1,
+          completed: 1,
+          pending: 1,
+          cancelled: 1,
+          unpaid: 1,
+          refunded: 1,
+        },
+      },
+    ]);
+
+    return result && result[0]
+      ? result[0]
+      : {
+          total: 0,
+          completed: 0,
+          pending: 0,
+          cancelled: 0,
+          unpaid: 0,
+          refunded: 0,
         };
+  }
+
+  async getTopProviders(): Promise<ITopProviders[]> {
+    const result = await this._bookingModel.aggregate([
+      {
+        $match: {
+          bookingStatus: { $ne: 'cancelled' },
+          paymentStatus: { $nin: ['failed', 'refunded'] },
+        },
+      },
+      {
+        $addFields: {
+          providerObjectId: { $toObjectId: '$providerId' },
+        },
+      },
+      {
+        $group: {
+          _id: '$providerObjectId',
+          totalEarnings: { $sum: '$totalAmount' },
+        },
+      },
+      {
+        $lookup: {
+          from: 'providers',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'provider',
+        },
+      },
+      {
+        $unwind: '$provider',
+      },
+      {
+        $project: {
+          _id: 0,
+          totalEarnings: 1,
+          providerId: '$provider._id',
+          username: '$provider.username',
+          email: '$provider.email',
+        },
+      },
+      { $sort: { totalEarnings: -1 } },
+      { $limit: 10 },
+    ]);
+
+    return result.length > 0 ? result : [];
+  }
+
+  async generateBookingReport(data: Partial<IReportDownloadBookingData>): Promise<IBookingReportData[]> {
+    const pipeline: PipelineStage[] = [];
+
+    const match: FilterQuery<BookingDocument> = {};
+
+    if (data.fromDate && data.toDate) {
+      match.createdAt = {
+        $gte: new Date(data.fromDate),
+        $lte: new Date(data.toDate),
+      };
     }
 
-    async getTopProviders(): Promise<ITopProviders[]> {
-const result = await this._bookingModel.aggregate([
-            {
-                $match: {
-                    bookingStatus: { $ne: 'cancelled' },
-                    paymentStatus: { $nin: ['failed', 'refunded'] },
-                }
-            },
-            {
-                $addFields: {
-                    providerObjectId: { $toObjectId: "$providerId" }
-                }
-            },
-            {
-                $group: {
-                    _id: "$providerObjectId",
-                    totalEarnings: { $sum: "$totalAmount" },
-                }
-            },
-            {
-                $lookup: {
-                    from: 'providers',
-                    localField: "_id",
-                    foreignField: "_id",
-                    as: "provider"
-                }
-            },
-            {
-                $unwind: "$provider"
-            },
-            {
-                $project: {
-                    _id: 0,
-                    totalEarnings: 1,
-                    providerId: "$provider._id",
-                    username: "$provider.username",
-                    email: "$provider.email",
-                }
-            },
-            { $sort: { totalEarnings: -1 } },
-            { $limit: 10 }
-        ]);
-
-        return result.length > 0 ? result : [];
+    if (data.status) {
+      match.bookingStatus = data.status;
     }
 
-    async generateBookingReport(data: Partial<IReportDownloadBookingData>): Promise<IBookingReportData[]> {
-        const pipeline: PipelineStage[] = [];
-
-        const match: FilterQuery<BookingDocument> = {};
-
-        if (data.fromDate && data.toDate) {
-            match.createdAt = {
-                $gte: new Date(data.fromDate),
-                $lte: new Date(data.toDate)
-            };
-        }
-
-        if (data.status) {
-            match.bookingStatus = data.status
-        }
-
-        if (data.userId) {
-            match.customerId = data.userId;
-        }
-
-        // Generating $match stage.
-        if (Object.keys(match).length > 0) {
-            pipeline.push({ $match: match });
-        }
-
-        // Generating $addFields stage.
-        pipeline.push(
-            {
-                $addFields: {
-                    customerObjectId: { $toObjectId: '$customerId' },
-                    providerObjectId: { $toObjectId: '$providerId' }
-                }
-            }
-        );
-
-        // Generating $lookup and $ $unwind stage.
-        pipeline.push(
-            {
-                $lookup: {
-                    from: 'customers',
-                    localField: 'customerObjectId',
-                    foreignField: '_id',
-                    as: 'customers'
-                }
-            },
-            {
-                $unwind: { path: '$user', preserveNullAndEmptyArrays: true }
-            },
-            {
-                $lookup: {
-                    from: 'providers',
-                    localField: 'providerObjectId',
-                    foreignField: '_id',
-                    as: 'providers'
-                }
-            },
-            {
-                $unwind: { path: '$user', preserveNullAndEmptyArrays: true }
-            },
-        );
-
-        // Generating $sort stage.
-        pipeline.push({ $sort: { createdAt: -1 } });
-
-        // Generating $project stage.
-        pipeline.push({
-            $project: {
-                bookingId: '$_id',
-                customerEmail: '$customers.email',
-                providerEmail: '$providers.email',
-                totalAmount: { $divide: ['$totalAmount', 100] },
-                date: '$createdAt',
-                phone: '$customers.phone',
-                bookingStatus: '$bookingStatus',
-                paymentStatus: '$paymentStatus',
-                transactionId: '$transactionId',
-            }
-        });
-
-        return await this._bookingModel.aggregate(pipeline);
+    if (data.userId) {
+      match.customerId = data.userId;
     }
 
-    async getCustomerReportMatrix(id: string): Promise<IReportCustomerMatrix> {
-        const pipeline: PipelineStage[] = [];
+    // Generating $match stage.
+    if (Object.keys(match).length > 0) {
+      pipeline.push({ $match: match });
+    }
 
-        pipeline.push(
+    // Generating $addFields stage.
+    pipeline.push({
+      $addFields: {
+        customerObjectId: { $toObjectId: '$customerId' },
+        providerObjectId: { $toObjectId: '$providerId' },
+      },
+    });
+
+    // Generating $lookup and $ $unwind stage.
+    pipeline.push(
+      {
+        $lookup: {
+          from: 'customers',
+          localField: 'customerObjectId',
+          foreignField: '_id',
+          as: 'customers',
+        },
+      },
+      {
+        $unwind: { path: '$user', preserveNullAndEmptyArrays: true },
+      },
+      {
+        $lookup: {
+          from: 'providers',
+          localField: 'providerObjectId',
+          foreignField: '_id',
+          as: 'providers',
+        },
+      },
+      {
+        $unwind: { path: '$user', preserveNullAndEmptyArrays: true },
+      },
+    );
+
+    // Generating $sort stage.
+    pipeline.push({ $sort: { createdAt: -1 } });
+
+    // Generating $project stage.
+    pipeline.push({
+      $project: {
+        bookingId: '$_id',
+        customerEmail: '$customers.email',
+        providerEmail: '$providers.email',
+        totalAmount: { $divide: ['$totalAmount', 100] },
+        date: '$createdAt',
+        phone: '$customers.phone',
+        bookingStatus: '$bookingStatus',
+        paymentStatus: '$paymentStatus',
+        transactionId: '$transactionId',
+      },
+    });
+
+    return await this._bookingModel.aggregate(pipeline);
+  }
+
+  async getCustomerReportMatrix(id: string): Promise<IReportCustomerMatrix> {
+    const pipeline: PipelineStage[] = [];
+
+    pipeline.push(
+      {
+        $match: { customerId: id },
+      },
+      {
+        $group: {
+          _id: '$customerId',
+          totalBookings: {
+            $sum: 1,
+          },
+          totalSpend: { $sum: '$totalAmount' },
+          totalRefunded: {
+            $sum: {
+              $cond: [{ $eq: ['$paymentStatus', 'refunded'] }, '$totalAmount', 0],
+            },
+          },
+        },
+      },
+    );
+
+    pipeline.push({
+      $project: {
+        _id: 0,
+        totalBookings: 1,
+        totalSpend: 1,
+        totalRefunded: 1,
+      },
+    });
+
+    const [reportMatrix] = await this._bookingModel.aggregate(pipeline);
+    return (
+      reportMatrix ?? {
+        totalBookings: 0,
+        totalSpend: 0,
+        totalRefunded: 0,
+      }
+    );
+  }
+
+  async getProviderReportMatrix(id: string): Promise<IReportProviderMatrix> {
+    const pipeline: PipelineStage[] = [];
+
+    pipeline.push(
+      {
+        $match: { providerId: id },
+      },
+      {
+        $group: {
+          _id: '$providerId',
+          totalBookings: { $sum: 1 },
+          totalEarnings: {
+            $sum: {
+              $cond: [{ $eq: ['$bookingStatus', 'confirmed'] }, '$totalAmount', 0],
+            },
+          },
+          totalRefunds: {
+            $sum: {
+              $cond: [{ $eq: ['$paymentStatus', 'refunded'] }, '$totalAmount', 0],
+            },
+          },
+        },
+      },
+    );
+
+    pipeline.push({
+      $project: {
+        _id: 0,
+        totalBookings: 1,
+        totalEarnings: 1,
+        totalRefunds: 1,
+      },
+    });
+
+    const [matrix] = await this._bookingModel.aggregate(pipeline);
+    return (
+      matrix ?? {
+        totalBookings: 0,
+        totalEarnings: 0,
+        totalRefunds: 0,
+      }
+    );
+  }
+
+  async getCustomerStatistics(id: string): Promise<ICustomerStatistics> {
+    const objId = this._toObjectId(id);
+
+    const [result] = await this._bookingModel.aggregate([
+      { $match: { customerId: objId } },
+      {
+        $group: {
+          _id: null,
+          totalBookings: { $sum: 1 },
+          completedBookings: {
+            $sum: { $cond: [{ $eq: ['$bookingStatus', BookingStatus.COMPLETED] }, 1, 0] },
+          },
+          cancelledBookings: {
+            $sum: { $cond: [{ $eq: ['$bookingStatus', BookingStatus.CANCELLED] }, 1, 0] },
+          },
+          totalAmountSpent: {
+            $sum: {
+              $cond: [{ $in: ['$paymentStatus', [PaymentStatus.PAID, PaymentStatus.REFUNDED]] }, '$totalAmount', 0],
+            },
+          },
+          reviewsWritten: { $sum: { $cond: [{ $ne: ['$review', null] }, 1, 0] } },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          totalBookings: 1,
+          completedBookings: 1,
+          cancelledBookings: 1,
+          totalAmountSpent: { $ifNull: ['$totalAmountSpent', 0] },
+          reviewsWritten: { $ifNull: ['$reviewsWritten', 0] },
+        },
+      },
+    ]);
+
+    return (
+      result ?? {
+        totalBookings: 0,
+        completedBookings: 0,
+        cancelledBookings: 0,
+        totalAmountSpent: 0,
+        reviewsWritten: 0,
+      }
+    );
+  }
+
+  async getProviderStatistics(id: string): Promise<IProviderStatistics> {
+    const objId = this._toObjectId(id);
+
+    const [result] = await this._bookingModel.aggregate([
+      { $match: { providerId: objId } },
+      {
+        $group: {
+          _id: null,
+          totalBookings: { $sum: 1 },
+          completedJobs: {
+            $sum: { $cond: [{ $eq: ['$bookingStatus', BookingStatus.COMPLETED] }, 1, 0] },
+          },
+          cancelledJobs: {
+            $sum: { $cond: [{ $eq: ['$bookingStatus', BookingStatus.CANCELLED] }, 1, 0] },
+          },
+          totalRevenue: {
+            $sum: {
+              $cond: [{ $in: ['$paymentStatus', [PaymentStatus.PAID, PaymentStatus.REFUNDED]] }, '$totalAmount', 0],
+            },
+          },
+          totalReviews: { $sum: { $cond: [{ $ne: ['$review', null] }, 1, 0] } },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          totalBookings: 1,
+          completedJobs: 1,
+          cancelledJobs: 1,
+          totalRevenue: { $ifNull: ['$totalRevenue', 0] },
+          totalReviews: { $ifNull: ['$totalReviews', 0] },
+        },
+      },
+    ]);
+
+    return (
+      result ?? {
+        totalBookings: 0,
+        completedJobs: 0,
+        cancelledJobs: 0,
+        totalRevenue: 0,
+        totalReviews: 0,
+      }
+    );
+  }
+
+  async getRecentBookingsByCustomer(customerId: string, limit: number = 5): Promise<IBookingOverview[]> {
+    return this._bookingModel.aggregate(this._buildRecentBookingsPipeline({ customerId: this._toObjectId(customerId) }, 'provider', limit));
+  }
+
+  async getRecentBookingsByProvider(providerId: string, limit: number = 5): Promise<IBookingOverview[]> {
+    return this._bookingModel.aggregate(this._buildRecentBookingsPipeline({ providerId: this._toObjectId(providerId) }, 'customer', limit));
+  }
+
+  private _buildRecentBookingsPipeline(match: Record<string, unknown>, via: 'provider' | 'customer', limit: number): PipelineStage[] {
+    const partyCollection = via === 'provider' ? 'providers' : 'customers';
+    const otherField = via === 'provider' ? 'customer' : 'provider';
+    const otherSideCollection = via === 'provider' ? 'customers' : 'providers';
+
+    return [
+      { $match: match },
+      { $sort: { createdAt: -1 } },
+      { $limit: limit },
+      {
+        $lookup: {
+          from: partyCollection,
+          localField: via + 'Id',
+          foreignField: '_id',
+          as: via,
+        },
+      },
+      { $unwind: { path: '$' + via, preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: otherSideCollection,
+          localField: otherField + 'Id',
+          foreignField: '_id',
+          as: otherField,
+        },
+      },
+      { $unwind: { path: '$' + otherField, preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: 'providerservices',
+          localField: 'services',
+          foreignField: '_id',
+          as: 'serviceDocs',
+        },
+      },
+      {
+        $addFields: {
+          firstService: { $arrayElemAt: ['$serviceDocs', 0] },
+        },
+      },
+      {
+        $lookup: {
+          from: 'professions',
+          let: { pid: '$firstService.professionId' },
+          pipeline: [{ $match: { $expr: { $eq: ['$_id', '$$pid'] } } }, { $limit: 1 }, { $project: { _id: 0, name: 1 } }],
+          as: 'serviceProfession',
+        },
+      },
+      { $unwind: { path: '$serviceProfession', preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: 'servicecategories',
+          let: { cid: '$firstService.categoryId' },
+          pipeline: [{ $match: { $expr: { $eq: ['$_id', '$$cid'] } } }, { $limit: 1 }, { $project: { _id: 0, name: 1 } }],
+          as: 'serviceCategory',
+        },
+      },
+      { $unwind: { path: '$serviceCategory', preserveNullAndEmptyArrays: true } },
+      {
+        $project: {
+          _id: 0,
+          bookingId: { $toString: '$_id' },
+          amount: { $divide: [{ $ifNull: ['$totalAmount', 0] }, 100] },
+          status: '$bookingStatus',
+          date: '$createdAt',
+          [via]: {
+            id: { $toString: '$' + via + '._id' },
+            username: { $ifNull: ['$' + via + '.username', ''] },
+            fullname: { $ifNull: ['$' + via + '.fullname', '$' + via + '.username'] },
+            avatar: { $ifNull: ['$' + via + '.avatar', ''] },
+            profession: { $ifNull: ['$' + via + '.profession', ''] },
+          },
+          [otherField]: {
+            id: { $toString: '$' + otherField + '._id' },
+            username: { $ifNull: ['$' + otherField + '.username', ''] },
+            fullname: { $ifNull: ['$' + otherField + '.fullname', '$' + otherField + '.username'] },
+            avatar: { $ifNull: ['$' + otherField + '.avatar', ''] },
+          },
+          service: {
+            name: { $ifNull: ['$serviceProfession.name', ''] },
+            category: { $ifNull: ['$serviceCategory.name', ''] },
+          },
+        },
+      },
+    ];
+  }
+
+  async getRecentReviewsByCustomer(customerId: string, limit: number = 5): Promise<IReviewOverview[]> {
+    return await this._buildRecentReviewsPipeline(
+      { customerId: this._toObjectId(customerId), review: { $ne: null } },
+      'providers',
+      'provider',
+      limit,
+    );
+  }
+
+  async getRecentReviewsByProvider(providerId: string, limit: number = 5): Promise<IReviewOverview[]> {
+    return await this._buildRecentReviewsPipeline(
+      { providerId: this._toObjectId(providerId), review: { $ne: null } },
+      'customers',
+      'customer',
+      limit,
+    );
+  }
+
+  private async _buildRecentReviewsPipeline(
+    match: Record<string, unknown>,
+    userCollection: 'providers' | 'customers',
+    userField: 'provider' | 'customer',
+    limit: number,
+  ): Promise<IReviewOverview[]> {
+    return await this._bookingModel.aggregate([
+      { $match: match },
+      { $sort: { 'review.writtenAt': -1 } },
+      { $limit: limit },
+      {
+        $lookup: {
+          from: userCollection,
+          localField: userField + 'Id',
+          foreignField: '_id',
+          as: userField,
+        },
+      },
+      { $unwind: { path: '$' + userField, preserveNullAndEmptyArrays: true } },
+      {
+        $project: {
+          _id: 0,
+          reviewId: { $toString: '$_id' },
+          rating: '$review.rating',
+          desc: '$review.desc',
+          date: '$review.writtenAt',
+          'user.id': { $toString: '$' + userField + '._id' },
+          'user.username': { $ifNull: ['$' + userField + '.username', ''] },
+          'user.fullname': {
+            $ifNull: ['$' + userField + '.fullname', '$' + userField + '.username'],
+          },
+          'user.avatar': { $ifNull: ['$' + userField + '.avatar', ''] },
+        },
+      },
+    ]);
+  }
+
+  async getServiceBookingCounts(providerId: string): Promise<{ serviceId: string; count: number }[]> {
+    return await this._bookingModel.aggregate([
+      { $match: { providerId: this._toObjectId(providerId) } },
+      { $unwind: '$services' },
+      {
+        $group: {
+          _id: '$services',
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          serviceId: { $toString: '$_id' },
+          count: 1,
+        },
+      },
+    ]);
+  }
+
+  async findSlotsByDate(date: string | Date): Promise<SlotDocument[]> {
+    const dateOnly = new Date(date);
+    const result = await this._bookingModel.find({ 'slot.date': dateOnly }).lean();
+    return result.map((r) => r.slot);
+  }
+
+  async findBookedSlots(ruleId: string): Promise<SlotDocument[]> {
+    const result = await this._bookingModel.find({ 'slot.ruleId': this._toObjectId(ruleId) }).lean();
+    return result.map((r) => r.slot);
+  }
+
+  async isAlreadyBooked(ruleId: string, from: string, to: string, dateISO: string): Promise<boolean> {
+    const result = await this._bookingModel.find({
+      'slot.ruleId': this._toObjectId(ruleId),
+      'slot.from': from,
+      'slot.to': to,
+      'slot.date': new Date(dateISO),
+    });
+    return result.length !== 0;
+  }
+
+  async isAlreadyRequestedForCancellation(bookingId: string): Promise<boolean> {
+    return await this._bookingModel
+      .exists({
+        _id: bookingId,
+        cancelStatus: CancelStatus.IN_PROGRESS,
+      })
+      .then(Boolean);
+  }
+
+  async markBookingCancelledByCustomer(
+    customerId: string,
+    bookingId: string,
+    reason: string,
+    cancelStatus: CancelStatus,
+    bookingStatus: BookingStatus,
+  ): Promise<BookingDocument | null> {
+    const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+    const now = new Date();
+
+    return await this._bookingModel.findOneAndUpdate(
+      {
+        _id: bookingId,
+        customerId: this._toObjectId(customerId),
+        bookingStatus: { $nin: [BookingStatus.CANCELLED, BookingStatus.COMPLETED] },
+        createdAt: {
+          $gte: new Date(now.getTime() - TWENTY_FOUR_HOURS),
+        },
+      },
+      {
+        $set: {
+          bookingStatus,
+          cancellationReason: reason,
+          cancelStatus,
+          cancelledAt: now,
+        },
+      },
+      { new: true },
+    );
+  }
+
+  async updatePaymentStatus(bookingId: string, status: PaymentStatus): Promise<BookingDocument | null> {
+    return this._bookingModel.findOneAndUpdate({ _id: bookingId }, { $set: { paymentStatus: status } }, { new: true }).lean();
+  }
+
+  async updateBookingStatus(bookingId: string, newStatus: BookingStatus): Promise<BookingDocument | null> {
+    return await this._bookingModel.findOneAndUpdate({ _id: bookingId }, { $set: { bookingStatus: newStatus } }, { new: true });
+  }
+
+  async markBookingCancelledByProvider(
+    providerId: string,
+    bookingId: string,
+    bookingStatus: BookingStatus,
+    cancelStatus: CancelStatus,
+    reason?: string,
+  ): Promise<BookingDocument | null> {
+    const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+    const now = new Date();
+    const updateData: UpdateQuery<BookingDocument> = {
+      bookingStatus,
+      cancelStatus,
+      cancelledAt: now,
+      'slot.status': SlotStatusEnum.RELEASED,
+    };
+
+    if (reason) {
+      updateData.cancellationReason = reason;
+    }
+
+    return await this._bookingModel.findOneAndUpdate(
+      {
+        _id: bookingId,
+        providerId: this._toObjectId(providerId),
+        bookingStatus: { $nin: [BookingStatus.CANCELLED, BookingStatus.COMPLETED] },
+        cancelStatus: { $ne: CancelStatus.CANCELLED },
+        createdAt: {
+          $gte: new Date(now.getTime() - TWENTY_FOUR_HOURS),
+        },
+      },
+      { $set: updateData },
+      { new: true },
+    );
+  }
+
+  async addReview(bookingId: string, desc: string, rating: number): Promise<boolean> {
+    const result = await this._bookingModel.updateOne(
+      { _id: bookingId },
+      {
+        $set: {
+          review: {
+            desc,
+            rating,
+            writtenAt: new Date(),
+            isReported: false,
+            isActive: true,
+          },
+        },
+      },
+    );
+
+    return result.modifiedCount > 0;
+  }
+
+  async getAvgRating(providerId: string): Promise<number> {
+    const result = await this._bookingModel.aggregate([
+      {
+        $match: {
+          providerId: this._toObjectId(providerId),
+          'review.isActive': true,
+        },
+      },
+      {
+        $unwind: '$review',
+      },
+      {
+        $match: {
+          'review.rating': { $exists: true, $ne: null },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          avg: { $avg: '$review.rating' },
+        },
+      },
+    ]);
+
+    return result?.[0]?.avg ?? 0;
+  }
+
+  async getAvgRatingAndTotalReviews(providerId?: string): Promise<ITotalReviewAndAvgRating[]> {
+    const matchQuery: Record<string, any> = {
+      review: { $exists: true, $ne: null },
+      'review.isActive': true,
+    };
+
+    if (providerId) {
+      matchQuery.providerId = this._toObjectId(providerId);
+    }
+
+    const result = await this._bookingModel.aggregate([
+      {
+        $match: matchQuery,
+      },
+      {
+        $group: {
+          _id: '$providerId',
+          avgRating: { $avg: '$review.rating' },
+          totalReviews: { $sum: 1 },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          providerId: { $toString: '$_id' },
+          avgRating: { $ifNull: ['$avgRating', 0] },
+          totalReviews: 1,
+        },
+      },
+    ]);
+
+    return result.length > 0 ? result : [];
+  }
+
+  async getPerformanceSummary(providerId: string): Promise<any> {
+    const result = await this._bookingModel.aggregate([
+      {
+        $match: { providerId: this._toObjectId(providerId) },
+      },
+      {
+        $facet: {
+          responseTime: [
+            { $match: { respondedAt: { $exists: true, $ne: null } } },
             {
-                $match: { customerId: id }
+              $group: {
+                _id: null,
+                avgResponseTime: {
+                  $avg: {
+                    $divide: [{ $subtract: ['$respondedAt', '$createdAt'] }, 1000 * 60],
+                  },
+                },
+              },
+            },
+          ],
+          onTimeArrival: [
+            {
+              $match: {
+                bookingStatus: BookingStatus.COMPLETED,
+                actualArrivalTime: { $exists: true, $ne: null },
+                expectedArrivalTime: { $exists: true, $ne: null },
+              },
             },
             {
-                $group: {
-                    _id: '$customerId',
-                    totalBookings: {
-                        $sum: 1
+              $addFields: {
+                arrivalDelayMins: {
+                  $divide: [{ $subtract: ['$actualArrivalTime', '$expectedArrivalTime'] }, 1000 * 60],
+                },
+              },
+            },
+            {
+              $group: {
+                _id: null,
+                onTimePercent: {
+                  $avg: {
+                    $cond: [{ $lte: ['$arrivalDelayMins', 10] }, 100, 0],
+                  },
+                },
+              },
+            },
+          ],
+          avgRating: [
+            { $match: { 'review.rating': { $exists: true, $ne: null } } },
+            { $group: { _id: null, avgRating: { $avg: '$review.rating' } } },
+          ],
+          completionRate: [
+            {
+              $group: {
+                _id: null,
+                completionRate: {
+                  $avg: {
+                    $cond: [{ $eq: ['$bookingStatus', BookingStatus.COMPLETED] }, 100, 0],
+                  },
+                },
+              },
+            },
+          ],
+        },
+      },
+      {
+        $project: {
+          avgResponseTime: {
+            $floor: {
+              $ifNull: [{ $arrayElemAt: ['$responseTime.avgResponseTime', 0] }, 0],
+            },
+          },
+          onTimePercent: {
+            $floor: {
+              $ifNull: [{ $arrayElemAt: ['$onTimeArrival.onTimePercent', 0] }, 0],
+            },
+          },
+          avgRating: {
+            $round: [{ $ifNull: [{ $arrayElemAt: ['$avgRating.avgRating', 0] }, 0] }, 2],
+          },
+          completionRate: {
+            $floor: {
+              $ifNull: [{ $arrayElemAt: ['$completionRate.completionRate', 0] }, 0],
+            },
+          },
+        },
+      },
+    ]);
+
+    return result[0];
+  }
+
+  async getBookingPerformanceData(providerId: string): Promise<IBookingPerformanceData[]> {
+    return await this._bookingModel.aggregate([
+      { $match: { providerId: this._toObjectId(providerId) } },
+      {
+        $addFields: {
+          year: { $year: '$createdAt' },
+          month: { $month: '$createdAt' },
+        },
+      },
+      { $match: { year: new Date().getFullYear() } },
+      {
+        $group: {
+          _id: '$month',
+          completed: {
+            $sum: { $cond: [{ $eq: ['$bookingStatus', BookingStatus.COMPLETED] }, 1, 0] },
+          },
+          cancelled: {
+            $sum: { $cond: [{ $eq: ['$bookingStatus', BookingStatus.CANCELLED] }, 1, 0] },
+          },
+          total: { $sum: 1 },
+        },
+      },
+      { $sort: { _id: 1 } },
+      {
+        $project: {
+          _id: 0,
+          month: {
+            $arrayElemAt: [['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], '$_id'],
+          },
+          completed: 1,
+          cancelled: 1,
+          total: 1,
+        },
+      },
+    ]);
+  }
+
+  async getRatingDistributionsByProviderId(providerId: string): Promise<IRatingDistribution[]> {
+    return await this._bookingModel.aggregate([
+      {
+        $match: {
+          providerId: this._toObjectId(providerId),
+          review: { $exists: true, $ne: null },
+        },
+      },
+      {
+        $group: {
+          _id: '$review.rating',
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          rating: '$_id',
+          count: 1,
+        },
+      },
+    ]);
+  }
+
+  async getRecentReviews(providerId: string, limit: number = 10): Promise<BookingDocument[]> {
+    return await this._bookingModel
+      .find({ providerId: this._toObjectId(providerId), review: { $exists: true, $ne: null } }, 'review customerId')
+      .populate({
+        path: 'customerId',
+        select: 'username',
+      })
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .lean();
+  }
+
+  async getResponseDistributionTime(providerId: string): Promise<IResponseTimeChartData[]> {
+    return await this._bookingModel.aggregate([
+      {
+        $match: {
+          providerId: this._toObjectId(providerId),
+          respondedAt: { $exists: true, $ne: null },
+        },
+      },
+      {
+        $addFields: {
+          responseTimeInSeconds: {
+            $round: {
+              $divide: [{ $subtract: ['$respondedAt', '$createdAt'] }, 1000],
+            },
+          },
+        },
+      },
+      {
+        $bucket: {
+          groupBy: '$responseTimeInSeconds',
+          boundaries: [0, 60, 600, 3600, 86400, Number.MAX_SAFE_INTEGER],
+          default: '> 1 day',
+          output: { count: { $sum: 1 } },
+        },
+      },
+    ]);
+  }
+
+  async getReviews(providerId: string, filters: IReviewFilter, options?: { page?: number; limit?: number }): Promise<IReviewDetailsRaw[]> {
+    const page = options?.page ?? 1;
+    const limit = options?.limit ?? 10;
+    const skip = (page - 1) * limit;
+
+    console.log(filters);
+
+    const matchStage: PipelineStage = {
+      $match: {
+        providerId: this._toObjectId(providerId),
+        review: { $exists: true, $ne: null },
+      },
+    };
+
+    if (filters.search) {
+      const regex = { $regex: filters.search, $options: 'i' };
+      matchStage.$match.$or = [
+        { 'customer.email': regex },
+        { 'review.desc': regex },
+        { 'customer.username': regex },
+        { 'provider.email': regex },
+        { 'provider.username': regex },
+      ];
+    }
+
+    if (filters.rating && filters.rating !== 'all') {
+      matchStage.$match['review.rating'] = Number(filters.rating);
+    }
+
+    if (filters.time && filters.time !== 'all') {
+      const now = new Date();
+      let pastDate: Date | null = null;
+
+      if (filters.time === 'last_6_months') pastDate = new Date(now.setMonth(now.getMonth() - 6));
+      if (filters.time === 'last_year') pastDate = new Date(now.setFullYear(now.getFullYear() - 1));
+
+      if (pastDate) {
+        matchStage.$match['review.writtenAt'] = { $gte: pastDate };
+      }
+    }
+
+    const pipeline: PipelineStage[] = [
+      {
+        $lookup: {
+          from: 'customers',
+          localField: 'customerId',
+          foreignField: '_id',
+          as: 'customer',
+        },
+      },
+      { $unwind: '$customer' },
+      matchStage,
+      {
+        $project: {
+          _id: 0,
+          bookingId: '$_id',
+          desc: '$review.desc',
+          rating: '$review.rating',
+          writtenAt: '$review.writtenAt',
+          customer: {
+            avatar: '$customer.avatar',
+            email: '$customer.email',
+            username: '$customer.username',
+          },
+        },
+      },
+      { $sort: { writtenAt: filters.sort === 'asc' ? 1 : -1 } },
+      { $skip: skip },
+      { $limit: limit },
+    ];
+
+    return await this._bookingModel.aggregate(pipeline);
+  }
+
+  async countReviews(providerId: string): Promise<number> {
+    return await this._bookingModel.countDocuments({
+      providerId: this._toObjectId(providerId),
+      review: { $exists: true, $ne: null },
+      'review.isActive': true,
+    });
+  }
+
+  async getOnTimeArrivalData(providerId: string): Promise<IOnTimeArrivalChartData[]> {
+    return await this._bookingModel.aggregate([
+      {
+        $match: {
+          providerId: this._toObjectId(providerId),
+          actualArrivalTime: { $exists: true, $ne: null },
+          expectedArrivalTime: { $exists: true, $ne: null },
+          bookingStatus: BookingStatus.COMPLETED,
+        },
+      },
+      {
+        $addFields: {
+          monthNumber: { $month: '$actualArrivalTime' },
+          arrivalDelayInSeconds: {
+            $divide: [{ $subtract: ['$actualArrivalTime', '$expectedArrivalTime'] }, 1000],
+          },
+        },
+      },
+      {
+        $group: {
+          _id: '$monthNumber',
+          totalDeliveries: { $sum: 1 },
+          onTimeDeliveries: {
+            $sum: { $cond: [{ $lte: ['$arrivalDelayInSeconds', 600] }, 1, 0] },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          monthNumber: '$_id',
+          percentage: {
+            $multiply: [{ $divide: ['$onTimeDeliveries', '$totalDeliveries'] }, 100],
+          },
+        },
+      },
+      { $sort: { monthNumber: 1 } },
+    ]);
+  }
+
+  async getComparisonOverviewData(providerId: string): Promise<IComparisonOverviewData> {
+    const providerObjId = this._toObjectId(providerId);
+
+    const result = await this._bookingModel.aggregate([
+      {
+        $match: {
+          bookingStatus: BookingStatus.COMPLETED,
+          $expr: {
+            $eq: [{ $year: '$createdAt' }, new Date().getFullYear()],
+          },
+        },
+      },
+      {
+        $facet: {
+          // ----------------- Growth Rate -----------------
+          growthRate: [
+            {
+              $project: {
+                totalAmount: 1,
+                rating: { $ifNull: ['$review.rating', 0] },
+                month: { $month: '$createdAt' },
+              },
+            },
+            {
+              $group: {
+                _id: { providerId: '$providerId', month: '$month' },
+                totalCompleted: { $sum: 1 },
+                avgRating: { $avg: '$rating' },
+                revenue: { $sum: { $divide: ['$totalAmount', 100] } },
+              },
+            },
+            { $sort: { '_id.providerId': 1, '_id.month': 1 } },
+            {
+              $setWindowFields: {
+                partitionBy: '$_id.providerId',
+                sortBy: { '_id.month': 1 },
+                output: {
+                  prevTotal: {
+                    $shift: {
+                      by: -1,
+                      output: { $add: ['$totalCompleted', '$avgRating', '$revenue'] },
                     },
-                    totalSpend: { $sum: "$totalAmount" },
-                    totalRefunded: {
-                        $sum: {
-                            $cond: [{ $eq: ["$paymentStatus", "refunded"] }, "$totalAmount", 0]
-                        }
-                    }
-                }
-            },
-        );
-
-        pipeline.push(
-            {
-                $project: {
-                    _id: 0,
-                    totalBookings: 1,
-                    totalSpend: 1,
-                    totalRefunded: 1
-                }
-            }
-        )
-
-        const [reportMatrix] = await this._bookingModel.aggregate(pipeline);
-        return reportMatrix ?? {
-            totalBookings: 0,
-            totalSpend: 0,
-            totalRefunded: 0
-        };
-    }
-
-    async getProviderReportMatrix(id: string): Promise<IReportProviderMatrix> {
-        const pipeline: PipelineStage[] = [];
-
-        pipeline.push(
-            {
-                $match: { providerId: id }
-            },
-            {
-                $group: {
-                    _id: '$providerId',
-                    totalBookings: { $sum: 1 },
-                    totalEarnings: {
-                        $sum: {
-                            $cond: [{ $eq: ["$bookingStatus", 'confirmed'] }, "$totalAmount", 0]
-                        }
-                    },
-                    totalRefunds: {
-                        $sum: {
-                            $cond: [{ $eq: ["$paymentStatus", 'refunded'] }, '$totalAmount', 0]
-                        }
-                    },
-                }
-            }
-        );
-
-        pipeline.push(
-            {
-                $project: {
-                    _id: 0,
-                    totalBookings: 1,
-                    totalEarnings: 1,
-                    totalRefunds: 1
-                }
-            }
-        )
-
-        const [matrix] = await this._bookingModel.aggregate(pipeline);
-        return matrix ?? {
-            totalBookings: 0,
-            totalEarnings: 0,
-            totalRefunds: 0
-        };
-    }
-
-    async getCustomerStatistics(id: string): Promise<ICustomerStatistics> {
-        const objId = this._toObjectId(id);
-
-        const [result] = await this._bookingModel.aggregate([
-            { $match: { customerId: objId } },
-            {
-                $group: {
-                    _id: null,
-                    totalBookings: { $sum: 1 },
-                    completedBookings: { $sum: { $cond: [{ $eq: ['$bookingStatus', BookingStatus.COMPLETED] }, 1, 0] } },
-                    cancelledBookings: { $sum: { $cond: [{ $eq: ['$bookingStatus', BookingStatus.CANCELLED] }, 1, 0] } },
-                    totalAmountSpent: {
-                        $sum: {
-                            $cond: [{ $in: ['$paymentStatus', [PaymentStatus.PAID, PaymentStatus.REFUNDED]] }, '$totalAmount', 0]
-                        }
-                    },
-                    reviewsWritten: { $sum: { $cond: [{ $ne: ['$review', null] }, 1, 0] } },
+                  },
                 },
+              },
             },
             {
-                $project: {
-                    _id: 0,
-                    totalBookings: 1,
-                    completedBookings: 1,
-                    cancelledBookings: 1,
-                    totalAmountSpent: { $ifNull: ['$totalAmountSpent', 0] },
-                    reviewsWritten: { $ifNull: ['$reviewsWritten', 0] },
-                },
-            },
-        ]);
-
-        return result ?? { totalBookings: 0, completedBookings: 0, cancelledBookings: 0, totalAmountSpent: 0, reviewsWritten: 0 };
-    }
-
-    async getProviderStatistics(id: string): Promise<IProviderStatistics> {
-        const objId = this._toObjectId(id);
-
-        const [result] = await this._bookingModel.aggregate([
-            { $match: { providerId: objId } },
-            {
-                $group: {
-                    _id: null,
-                    totalBookings: { $sum: 1 },
-                    completedJobs: { $sum: { $cond: [{ $eq: ['$bookingStatus', BookingStatus.COMPLETED] }, 1, 0] } },
-                    cancelledJobs: { $sum: { $cond: [{ $eq: ['$bookingStatus', BookingStatus.CANCELLED] }, 1, 0] } },
-                    totalRevenue: {
-                        $sum: {
-                            $cond: [{ $in: ['$paymentStatus', [PaymentStatus.PAID, PaymentStatus.REFUNDED]] }, '$totalAmount', 0]
-                        }
-                    },
-                    totalReviews: { $sum: { $cond: [{ $ne: ['$review', null] }, 1, 0] } },
-                },
-            },
-            {
-                $project: {
-                    _id: 0,
-                    totalBookings: 1,
-                    completedJobs: 1,
-                    cancelledJobs: 1,
-                    totalRevenue: { $ifNull: ['$totalRevenue', 0] },
-                    totalReviews: { $ifNull: ['$totalReviews', 0] },
-                },
-            },
-        ]);
-
-        return result ?? { totalBookings: 0, completedJobs: 0, cancelledJobs: 0, totalRevenue: 0, totalReviews: 0 };
-    }
-
-    async getRecentBookingsByCustomer(customerId: string, limit: number = 5): Promise<IBookingOverview[]> {
-        return this._bookingModel.aggregate(this._buildRecentBookingsPipeline(
-            { customerId: this._toObjectId(customerId) },
-            'provider',
-            limit,
-        ));
-    }
-
-    async getRecentBookingsByProvider(providerId: string, limit: number = 5): Promise<IBookingOverview[]> {
-        return this._bookingModel.aggregate(this._buildRecentBookingsPipeline(
-            { providerId: this._toObjectId(providerId) },
-            'customer',
-            limit,
-        ));
-    }
-
-    private _buildRecentBookingsPipeline(
-        match: Record<string, unknown>,
-        via: 'provider' | 'customer',
-        limit: number,
-    ): PipelineStage[] {
-        const partyCollection = via === 'provider' ? 'providers' : 'customers';
-        const otherField = via === 'provider' ? 'customer' : 'provider';
-        const otherSideCollection = via === 'provider' ? 'customers' : 'providers';
-
-        return [
-            { $match: match },
-            { $sort: { createdAt: -1 } },
-            { $limit: limit },
-            {
-                $lookup: {
-                    from: partyCollection,
-                    localField: via + 'Id',
-                    foreignField: '_id',
-                    as: via,
-                },
-            },
-            { $unwind: { path: '$' + via, preserveNullAndEmptyArrays: true } },
-            { $lookup: { from: otherSideCollection, localField: otherField + 'Id', foreignField: '_id', as: otherField } },
-            { $unwind: { path: '$' + otherField, preserveNullAndEmptyArrays: true } },
-            {
-                $lookup: {
-                    from: 'providerservices',
-                    localField: 'services',
-                    foreignField: '_id',
-                    as: 'serviceDocs',
-                },
-            },
-            {
-                $addFields: {
-                    firstService: { $arrayElemAt: ['$serviceDocs', 0] },
-                },
-            },
-            {
-                $lookup: {
-                    from: 'professions',
-                    let: { pid: '$firstService.professionId' },
-                    pipeline: [
-                        { $match: { $expr: { $eq: ['$_id', '$$pid'] } } },
-                        { $limit: 1 },
-                        { $project: { _id: 0, name: 1 } },
-                    ],
-                    as: 'serviceProfession',
-                },
-            },
-            { $unwind: { path: '$serviceProfession', preserveNullAndEmptyArrays: true } },
-            {
-                $lookup: {
-                    from: 'servicecategories',
-                    let: { cid: '$firstService.categoryId' },
-                    pipeline: [
-                        { $match: { $expr: { $eq: ['$_id', '$$cid'] } } },
-                        { $limit: 1 },
-                        { $project: { _id: 0, name: 1 } },
-                    ],
-                    as: 'serviceCategory',
-                },
-            },
-            { $unwind: { path: '$serviceCategory', preserveNullAndEmptyArrays: true } },
-            {
-                $project: {
-                    _id: 0,
-                    bookingId: { $toString: '$_id' },
-                    amount: { $divide: [{ $ifNull: ['$totalAmount', 0] }, 100] },
-                    status: '$bookingStatus',
-                    date: '$createdAt',
-                    [via]: {
-                        id: { $toString: '$' + via + '._id' },
-                        username: { $ifNull: ['$' + via + '.username', ''] },
-                        fullname: { $ifNull: ['$' + via + '.fullname', '$' + via + '.username'] },
-                        avatar: { $ifNull: ['$' + via + '.avatar', ''] },
-                        profession: { $ifNull: ['$' + via + '.profession', ''] },
-                    },
-                    [otherField]: {
-                        id: { $toString: '$' + otherField + '._id' },
-                        username: { $ifNull: ['$' + otherField + '.username', ''] },
-                        fullname: { $ifNull: ['$' + otherField + '.fullname', '$' + otherField + '.username'] },
-                        avatar: { $ifNull: ['$' + otherField + '.avatar', ''] },
-                    },
-                    service: {
-                        name: { $ifNull: ['$serviceProfession.name', ''] },
-                        category: { $ifNull: ['$serviceCategory.name', ''] },
-                    },
-                },
-            },
-        ];
-    }
-
-    async getRecentReviewsByCustomer(customerId: string, limit: number = 5): Promise<IReviewOverview[]> {
-        return await this._buildRecentReviewsPipeline(
-            { customerId: this._toObjectId(customerId), review: { $ne: null } },
-            'providers',
-            'provider',
-            limit,
-        );
-    }
-
-    async getRecentReviewsByProvider(providerId: string, limit: number = 5): Promise<IReviewOverview[]> {
-        return await this._buildRecentReviewsPipeline(
-            { providerId: this._toObjectId(providerId), review: { $ne: null } },
-            'customers',
-            'customer',
-            limit,
-        );
-    }
-
-    private async _buildRecentReviewsPipeline(
-        match: Record<string, unknown>,
-        userCollection: 'providers' | 'customers',
-        userField: 'provider' | 'customer',
-        limit: number,
-    ): Promise<IReviewOverview[]> {
-        return await this._bookingModel.aggregate([
-            { $match: match },
-            { $sort: { 'review.writtenAt': -1 } },
-            { $limit: limit },
-            {
-                $lookup: {
-                    from: userCollection,
-                    localField: userField + 'Id',
-                    foreignField: '_id',
-                    as: userField,
-                },
-            },
-            { $unwind: { path: '$' + userField, preserveNullAndEmptyArrays: true } },
-            {
-                $project: {
-                    _id: 0,
-                    reviewId: { $toString: '$_id' },
-                    rating: '$review.rating',
-                    desc: '$review.desc',
-                    date: '$review.writtenAt',
-                    'user.id': { $toString: '$' + userField + '._id' },
-                    'user.username': { $ifNull: ['$' + userField + '.username', ''] },
-                    'user.fullname': { $ifNull: ['$' + userField + '.fullname', '$' + userField + '.username'] },
-                    'user.avatar': { $ifNull: ['$' + userField + '.avatar', ''] },
-                },
-            },
-        ]);
-    }
-
-    async getServiceBookingCounts(providerId: string): Promise<{ serviceId: string; count: number }[]> {
-        return await this._bookingModel.aggregate([
-            { $match: { providerId: this._toObjectId(providerId) } },
-            { $unwind: '$services' },
-            {
-                $group: {
-                    _id: '$services',
-                    count: { $sum: 1 },
-                },
-            },
-            {
-                $project: {
-                    _id: 0,
-                    serviceId: { $toString: '$_id' },
-                    count: 1,
-                },
-            },
-        ]);
-    }
-
-    async findSlotsByDate(date: string | Date): Promise<SlotDocument[]> {
-        const dateOnly = new Date(date);
-        const result = await this._bookingModel.find({ 'slot.date': dateOnly }).lean();
-        return result.map(r => r.slot);
-    }
-
-    async findBookedSlots(ruleId: string): Promise<SlotDocument[]> {
-        const result = await this._bookingModel
-            .find({ 'slot.ruleId': this._toObjectId(ruleId) })
-            .lean();
-        return result.map(r => r.slot)
-    }
-
-    async isAlreadyBooked(ruleId: string, from: string, to: string, dateISO: string): Promise<boolean> {
-        const result = await this._bookingModel.find(
-            {
-                'slot.ruleId': this._toObjectId(ruleId),
-                'slot.from': from,
-                'slot.to': to,
-                'slot.date': new Date(dateISO)
-            });
-        return result.length !== 0;
-    }
-
-    async isAlreadyRequestedForCancellation(bookingId: string): Promise<boolean> {
-        return await this._bookingModel.exists({
-            _id: bookingId,
-            cancelStatus: CancelStatus.IN_PROGRESS
-        }).then(Boolean);
-    }
-
-    async markBookingCancelledByCustomer(customerId: string, bookingId: string, reason: string, cancelStatus: CancelStatus, bookingStatus: BookingStatus): Promise<BookingDocument | null> {
-        const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
-        const now = new Date();
-
-        return await this._bookingModel.findOneAndUpdate(
-            {
-                _id: bookingId,
-                customerId: this._toObjectId(customerId),
-                bookingStatus: { $nin: [BookingStatus.CANCELLED, BookingStatus.COMPLETED] },
-                createdAt: {
-                    $gte: new Date(now.getTime() - TWENTY_FOUR_HOURS)
-                },
-
-            },
-            {
-                $set: {
-                    bookingStatus,
-                    cancellationReason: reason,
-                    cancelStatus,
-                    cancelledAt: now,
-                }
-            },
-            { new: true }
-        );
-    }
-
-    async updatePaymentStatus(bookingId: string, status: PaymentStatus): Promise<BookingDocument | null> {
-        return this._bookingModel.findOneAndUpdate(
-            { _id: bookingId },
-            { $set: { paymentStatus: status } },
-            { new: true }
-        ).lean();
-    }
-
-    async updateBookingStatus(bookingId: string, newStatus: BookingStatus): Promise<BookingDocument | null> {
-        return await this._bookingModel.findOneAndUpdate(
-            { _id: bookingId },
-            { $set: { bookingStatus: newStatus } },
-            { new: true }
-        );
-    }
-
-    async markBookingCancelledByProvider(providerId: string, bookingId: string, bookingStatus: BookingStatus, cancelStatus: CancelStatus, reason?: string): Promise<BookingDocument | null> {
-        const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
-        const now = new Date();
-        const updateData: UpdateQuery<BookingDocument> = {
-            bookingStatus,
-            cancelStatus,
-            cancelledAt: now,
-            'slot.status': SlotStatusEnum.RELEASED
-        };
-
-        if (reason) {
-            updateData.cancellationReason = reason;
-        }
-
-        return await this._bookingModel.findOneAndUpdate(
-            {
-                _id: bookingId,
-                providerId: this._toObjectId(providerId),
-                bookingStatus: { $nin: [BookingStatus.CANCELLED, BookingStatus.COMPLETED] },
-                cancelStatus: { $ne: CancelStatus.CANCELLED },
-                createdAt: {
-                    $gte: new Date(now.getTime() - TWENTY_FOUR_HOURS)
-                }
-            },
-            { $set: updateData },
-            { new: true }
-        );
-    }
-
-    async addReview(bookingId: string, desc: string, rating: number): Promise<boolean> {
-        const result = await this._bookingModel.updateOne(
-            { _id: bookingId },
-            {
-                $set: {
-                    review: {
-                        desc,
-                        rating,
-                        writtenAt: new Date(),
-                        isReported: false,
-                        isActive: true
-                    }
-                }
-            }
-        );
-
-        return result.modifiedCount > 0;
-    }
-
-    async getAvgRating(providerId: string): Promise<number> {
-        const result = await this._bookingModel.aggregate([
-            {
-                $match: {
-                    providerId: this._toObjectId(providerId),
-                    'review.isActive': true
-                }
-            },
-            {
-                $unwind: "$review"
-            },
-            {
-                $match: {
-                    "review.rating": { $exists: true, $ne: null }
-                }
-            },
-            {
-                $group: {
-                    _id: null,
-                    avg: { $avg: "$review.rating" }
-                }
-            }
-        ]);
-
-        return result?.[0]?.avg ?? 0;
-    }
-
-    async getAvgRatingAndTotalReviews(providerId?: string): Promise<ITotalReviewAndAvgRating[]> {
-        let matchQuery: Record<string, any> = {
-            review: { $exists: true, $ne: null },
-            'review.isActive': true
-        };
-
-        if (providerId) {
-            matchQuery.providerId = this._toObjectId(providerId);
-        }
-
-        const result = await this._bookingModel.aggregate([
-            {
-                $match: matchQuery
-            },
-            {
-                $group: {
-                    _id: "$providerId",
-                    avgRating: { $avg: "$review.rating" },
-                    totalReviews: { $sum: 1 }
-                }
-            },
-            {
-                $project: {
-                    _id: 0,
-                    providerId: { $toString: "$_id" },
-                    avgRating: { $ifNull: ["$avgRating", 0] },
-                    totalReviews: 1
-                }
-            }
-        ]);
-
-        return result.length > 0 ? result : [];
-    }
-
-    async getPerformanceSummary(providerId: string): Promise<any> {
-        const result = await this._bookingModel.aggregate([
-            {
-                $match: { providerId: this._toObjectId(providerId) }
-            },
-            {
-                $facet: {
-                    responseTime: [
-                        { $match: { respondedAt: { $exists: true, $ne: null } } },
+              $project: {
+                growthRate: {
+                  $cond: [
+                    { $gt: ['$prevTotal', 0] },
+                    {
+                      $multiply: [
                         {
-                            $group: {
-                                _id: null,
-                                avgResponseTime: {
-                                    $avg: {
-                                        $divide: [
-                                            { $subtract: ["$respondedAt", "$createdAt"] },
-                                            1000 * 60
-                                        ]
-                                    }
-                                }
-                            }
-                        }
-                    ],
-                    onTimeArrival: [
-                        { $match: { bookingStatus: BookingStatus.COMPLETED, actualArrivalTime: { $exists: true, $ne: null }, expectedArrivalTime: { $exists: true, $ne: null } } },
-                        {
-                            $addFields: {
-                                arrivalDelayMins: {
-                                    $divide: [
-                                        { $subtract: ["$actualArrivalTime", "$expectedArrivalTime"] },
-                                        1000 * 60
-                                    ]
-                                }
-                            }
+                          $divide: [
+                            {
+                              $subtract: [{ $add: ['$totalCompleted', '$avgRating', '$revenue'] }, '$prevTotal'],
+                            },
+                            '$prevTotal',
+                          ],
                         },
-                        {
-                            $group: {
-                                _id: null,
-                                onTimePercent: {
-                                    $avg: {
-                                        $cond: [{ $lte: ["$arrivalDelayMins", 10] }, 100, 0]
-                                    }
-                                }
-                            }
-                        }
-                    ],
-                    avgRating: [
-                        { $match: { 'review.rating': { $exists: true, $ne: null } } },
-                        { $group: { _id: null, avgRating: { $avg: "$review.rating" } } }
-                    ],
-                    completionRate: [
-                        {
-                            $group: {
-                                _id: null,
-                                completionRate: {
-                                    $avg: {
-                                        $cond: [{ $eq: ["$bookingStatus", BookingStatus.COMPLETED] }, 100, 0]
-                                    }
-                                }
-                            }
-                        }
-                    ]
-                }
+                        100,
+                      ],
+                    },
+                    0,
+                  ],
+                },
+              },
             },
             {
-                $project: {
-                    avgResponseTime: {
-                        $floor: {
-                            $ifNull: [{ $arrayElemAt: ["$responseTime.avgResponseTime", 0] }, 0]
-                        }
-                    },
-                    onTimePercent: {
-                        $floor: {
-                            $ifNull: [{ $arrayElemAt: ["$onTimeArrival.onTimePercent", 0] }, 0]
-                        }
-                    },
-                    avgRating: {
-                        $round: [
-                            { $ifNull: [{ $arrayElemAt: ["$avgRating.avgRating", 0] }, 0] },
-                            2
-                        ]
-                    },
-                    completionRate: {
-                        $floor: {
-                            $ifNull: [{ $arrayElemAt: ["$completionRate.completionRate", 0] }, 0]
-                        }
-                    }
-                }
-            }
-
-        ]);
-
-        return result[0];
-    }
-
-    async getBookingPerformanceData(providerId: string): Promise<IBookingPerformanceData[]> {
-        return await this._bookingModel.aggregate([
-            { $match: { providerId: this._toObjectId(providerId) } },
-            {
-                $addFields: {
-                    year: { $year: "$createdAt" },
-                    month: { $month: "$createdAt" }
-                }
+              $group: {
+                _id: null,
+                overallAvgGrowth: { $avg: '$growthRate' },
+              },
             },
-            { $match: { year: new Date().getFullYear() } },
             {
-                $group: {
-                    _id: "$month",
-                    completed: {
-                        $sum: { $cond: [{ $eq: ["$bookingStatus", BookingStatus.COMPLETED] }, 1, 0] }
-                    },
-                    cancelled: {
-                        $sum: { $cond: [{ $eq: ["$bookingStatus", BookingStatus.CANCELLED] }, 1, 0] }
-                    },
-                    total: { $sum: 1 }
-                }
+              $project: { _id: 0, overallAvgGrowth: 1 },
             },
+          ],
+
+          // ----------------- Monthly Trend -----------------
+          monthlyTrend: [
+            {
+              $match: {
+                providerId: providerObjId,
+              },
+            },
+            {
+              $group: {
+                _id: { $month: '$createdAt' },
+                totalRevenue: { $sum: { $divide: ['$totalAmount', 100] } },
+              },
+            },
+            { $sort: { _id: -1 } },
+            { $limit: 2 },
             { $sort: { _id: 1 } },
             {
-                $project: {
-                    _id: 0,
-                    month: {
-                        $arrayElemAt: [
-                            [
-                                "",
-                                "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                                "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-                            ],
-                            "$_id"
-                        ]
-                    },
-                    completed: 1,
-                    cancelled: 1,
-                    total: 1
-                }
-            }
-        ]);
-    }
-
-    async getRatingDistributionsByProviderId(providerId: string): Promise<IRatingDistribution[]> {
-        return await this._bookingModel.aggregate([
-            {
-                $match: {
-                    providerId: this._toObjectId(providerId),
-                    review: { $exists: true, $ne: null }
-                }
+              $group: {
+                _id: null,
+                months: { $push: '$_id' },
+                revenues: { $push: '$totalRevenue' },
+              },
             },
             {
-                $group: {
-                    _id: "$review.rating",
-                    count: { $sum: 1 }
-                }
-            },
-            {
-                $project: {
-                    _id: 0,
-                    rating: "$_id",
-                    count: 1
-                }
-            }
-        ]);
-    }
-
-    async getRecentReviews(providerId: string, limit: number = 10): Promise<BookingDocument[]> {
-        return await this._bookingModel
-            .find(
-                { providerId: this._toObjectId(providerId), review: { $exists: true, $ne: null } },
-                'review customerId'
-            )
-            .populate({
-                path: 'customerId',
-                select: 'username',
-            })
-            .sort({ createdAt: -1 })
-            .limit(limit)
-            .lean();
-    }
-
-    async getResponseDistributionTime(providerId: string): Promise<IResponseTimeChartData[]> {
-        return await this._bookingModel.aggregate([
-            {
-                $match: {
-                    providerId: this._toObjectId(providerId),
-                    respondedAt: { $exists: true, $ne: null }
-                }
-            },
-            {
-                $addFields: {
-                    responseTimeInSeconds: {
-                        $round: {
-                            $divide: [{ $subtract: ["$respondedAt", "$createdAt"] }, 1000]
-                        }
-                    }
-                }
-            },
-            {
-                $bucket: {
-                    groupBy: "$responseTimeInSeconds",
-                    boundaries: [0, 60, 600, 3600, 86400, Number.MAX_SAFE_INTEGER],
-                    default: "> 1 day",
-                    output: { count: { $sum: 1 } },
-                }
-            }
-        ]);
-    }
-
-    async getReviews(providerId: string, filters: IReviewFilter, options?: { page?: number; limit?: number }): Promise<IReviewDetailsRaw[]> {
-        const page = options?.page ?? 1;
-        const limit = options?.limit ?? 10;
-        const skip = (page - 1) * limit;
-
-        console.log(filters)
-
-        const matchStage: PipelineStage = {
-            $match: {
-                providerId: this._toObjectId(providerId),
-                review: { $exists: true, $ne: null }
-            }
-        };
-
-        if (filters.search) {
-            const regex = { $regex: filters.search, $options: 'i' };
-            matchStage.$match.$or = [
-                { 'customer.email': regex },
-                { 'review.desc': regex },
-                { 'customer.username': regex },
-                { 'provider.email': regex },
-                { 'provider.username': regex },
-            ];
-        }
-
-        if (filters.rating && filters.rating !== 'all') {
-            matchStage.$match['review.rating'] = Number(filters.rating);
-        }
-
-        if (filters.time && filters.time !== 'all') {
-            const now = new Date();
-            let pastDate: Date | null = null;
-
-            if (filters.time === 'last_6_months') pastDate = new Date(now.setMonth(now.getMonth() - 6));
-            if (filters.time === 'last_year') pastDate = new Date(now.setFullYear(now.getFullYear() - 1));
-
-            if (pastDate) {
-                matchStage.$match['review.writtenAt'] = { $gte: pastDate };
-            }
-        }
-
-        const pipeline: PipelineStage[] = [
-            {
-                $lookup: {
-                    from: 'customers',
-                    localField: 'customerId',
-                    foreignField: '_id',
-                    as: 'customer',
-                },
-            },
-            { $unwind: '$customer' },
-            matchStage,
-            {
-                $project: {
-                    _id: 0,
-                    bookingId: '$_id',
-                    desc: '$review.desc',
-                    rating: '$review.rating',
-                    writtenAt: '$review.writtenAt',
-                    customer: {
-                        avatar: '$customer.avatar',
-                        email: '$customer.email',
-                        username: '$customer.username',
-                    }
-                },
-            },
-            { $sort: { writtenAt: filters.sort === 'asc' ? 1 : -1 } },
-            { $skip: skip },
-            { $limit: limit }
-        ];
-
-        return await this._bookingModel.aggregate(pipeline);
-    }
-
-    async countReviews(providerId: string): Promise<number> {
-        return await this._bookingModel.countDocuments({
-            providerId: this._toObjectId(providerId),
-            review: { $exists: true, $ne: null },
-            'review.isActive': true
-        });
-    }
-
-    async getOnTimeArrivalData(providerId: string): Promise<IOnTimeArrivalChartData[]> {
-        return await this._bookingModel.aggregate([
-            {
-                $match: {
-                    providerId: this._toObjectId(providerId),
-                    actualArrivalTime: { $exists: true, $ne: null },
-                    expectedArrivalTime: { $exists: true, $ne: null },
-                    bookingStatus: BookingStatus.COMPLETED
-                }
-            },
-            {
-                $addFields: {
-                    monthNumber: { $month: "$actualArrivalTime" },
-                    arrivalDelayInSeconds: {
-                        $divide: [
-                            { $subtract: ["$actualArrivalTime", "$expectedArrivalTime"] }, 1000]
-                    }
-                }
-            },
-            {
-                $group: {
-                    _id: "$monthNumber",
-                    totalDeliveries: { $sum: 1 },
-                    onTimeDeliveries: {
-                        $sum: { $cond: [{ $lte: ["$arrivalDelayInSeconds", 600] }, 1, 0] }
-                    }
-                }
-            },
-            {
-                $project: {
-                    _id: 0,
-                    monthNumber: "$_id",
-                    percentage: {
-                        $multiply: [
-                            { $divide: ["$onTimeDeliveries", "$totalDeliveries"] },
-                            100
-                        ]
-                    }
-                }
-            },
-            { $sort: { monthNumber: 1 } }
-        ]);
-    }
-
-    async getComparisonOverviewData(providerId: string): Promise<IComparisonOverviewData> {
-        const providerObjId = this._toObjectId(providerId);
-
-        const result = await this._bookingModel.aggregate([
-            {
-                $match: {
-                    bookingStatus: BookingStatus.COMPLETED,
-                    $expr: {
-                        $eq: [{ $year: "$createdAt" }, new Date().getFullYear()]
-                    }
-                }
-            },
-            {
-                $facet: {
-                    // ----------------- Growth Rate -----------------
-                    growthRate: [
+              $project: {
+                _id: 0,
+                previousMonth: { $arrayElemAt: ['$months', 0] },
+                currentMonth: { $arrayElemAt: ['$months', 1] },
+                previousRevenue: { $arrayElemAt: ['$revenues', 0] },
+                currentRevenue: { $arrayElemAt: ['$revenues', 1] },
+                growthPercentage: {
+                  $cond: [
+                    { $gt: [{ $arrayElemAt: ['$revenues', 0] }, 0] },
+                    {
+                      $multiply: [
                         {
-                            $project: {
-                                totalAmount: 1,
-                                rating: { $ifNull: ["$review.rating", 0] },
-                                month: { $month: "$createdAt" },
-                            }
-                        },
-                        {
-                            $group: {
-                                _id: { providerId: "$providerId", month: "$month" },
-                                totalCompleted: { $sum: 1 },
-                                avgRating: { $avg: "$rating" },
-                                revenue: { $sum: { $divide: ["$totalAmount", 100] } }
-                            }
-                        },
-                        { $sort: { "_id.providerId": 1, "_id.month": 1 } },
-                        {
-                            $setWindowFields: {
-                                partitionBy: "$_id.providerId",
-                                sortBy: { "_id.month": 1 },
-                                output: {
-                                    prevTotal: {
-                                        $shift: {
-                                            by: -1,
-                                            output: { $add: ["$totalCompleted", "$avgRating", "$revenue"] }
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        {
-                            $project: {
-                                growthRate: {
-                                    $cond: [
-                                        { $gt: ["$prevTotal", 0] },
-                                        {
-                                            $multiply: [
-                                                {
-                                                    $divide: [
-                                                        { $subtract: [{ $add: ["$totalCompleted", "$avgRating", "$revenue"] }, "$prevTotal"] },
-                                                        "$prevTotal"
-                                                    ]
-                                                },
-                                                100
-                                            ]
-                                        },
-                                        0
-                                    ]
-                                }
-                            }
-                        },
-                        {
-                            $group: {
-                                _id: null,
-                                overallAvgGrowth: { $avg: "$growthRate" }
-                            }
-                        },
-                        {
-                            $project: { _id: 0, overallAvgGrowth: 1 }
-                        }
-                    ],
-
-                    // ----------------- Monthly Trend -----------------
-                    monthlyTrend: [
-                        {
-                            $match: {
-                                providerId: providerObjId
-                            }
-                        },
-                        {
-                            $group: {
-                                _id: { $month: "$createdAt" },
-totalRevenue: { $sum: { $divide: ["$totalAmount", 100] } }
-                            }
-                        },
-                        { $sort: { _id: -1 } },
-                        { $limit: 2 },
-                        { $sort: { _id: 1 } },
-                        {
-                            $group: {
-                                _id: null,
-                                months: { $push: "$_id" },
-                                revenues: { $push: "$totalRevenue" }
-                            }
-                        },
-                        {
-                            $project: {
-                                _id: 0,
-                                previousMonth: { $arrayElemAt: ["$months", 0] },
-                                currentMonth: { $arrayElemAt: ["$months", 1] },
-                                previousRevenue: { $arrayElemAt: ["$revenues", 0] },
-                                currentRevenue: { $arrayElemAt: ["$revenues", 1] },
-                                growthPercentage: {
-                                    $cond: [
-                                        { $gt: [{ $arrayElemAt: ["$revenues", 0] }, 0] },
-                                        {
-                                            $multiply: [
-                                                {
-                                                    $divide: [
-                                                        { $subtract: [{ $arrayElemAt: ["$revenues", 1] }, { $arrayElemAt: ["$revenues", 0] }] },
-                                                        { $arrayElemAt: ["$revenues", 0] }
-                                                    ]
-                                                },
-                                                100
-                                            ]
-                                        },
-                                        0
-                                    ]
-                                }
-                            }
-                        }
-                    ],
-
-                    // ----------------- Provider Rank -----------------
-                    providerRank: [
-                        { $match: { "review.isActive": true } },
-                        {
-                            $group: {
-                                _id: "$providerId",
-                                avgRating: { $avg: "$review.rating" }
-                            }
-                        },
-                        { $sort: { avgRating: -1 } },
-                        {
-                            $group: {
-                                _id: null,
-                                providers: { $push: { providerId: "$_id", avgRating: "$avgRating" } },
-                                total: { $sum: 1 }
-                            }
-                        },
-                        {
-                            $project: {
-                                providerRank: {
-                                    $let: {
-                                        vars: {
-                                            index: {
-                                                $indexOfArray: ["$providers.providerId", providerObjId]
-                                            }
-                                        },
-                                        in: {
-                                            $cond: [
-                                                { $lte: ["$total", 1] },
-                                                100,
-                                                {
-                                                    $multiply: [
-                                                        {
-                                                            $divide: [
-                                                                { $subtract: ["$total", { $add: ["$$index", 1] }] },
-                                                                { $subtract: ["$total", 1] }
-                                                            ]
-                                                        },
-                                                        100
-                                                    ]
-                                                }
-                                            ]
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    ]
-                }
-            },
-            {
-                $project: {
-                    growthRate: { $ifNull: [{ $arrayElemAt: ["$growthRate.overallAvgGrowth", 0] }, 0] },
-                    monthlyTrend: { $ifNull: [{ $arrayElemAt: ["$monthlyTrend", 0] }, 0] },
-                    providerRank: { $ifNull: [{ $arrayElemAt: ["$providerRank.providerRank", 0] }, 0] }
-                }
-            }
-        ]);
-
-        return result[0];
-    }
-
-
-    async getComparisonData(providerId: string): Promise<IComparisonChartData[]> {
-        const objectProviderId = this._toObjectId(providerId);
-        const currentYear = new Date().getFullYear();
-
-        return await this._bookingModel.aggregate([
-            {
-                $match: {
-                    bookingStatus: BookingStatus.COMPLETED,
-                    createdAt: {
-                        $gte: new Date(`${currentYear}-01-01T00:00:00.000Z`),
-                        $lt: new Date(`${currentYear + 1}-01-01T00:00:00.000Z`)
-                    }
-                }
-            },
-            {
-                $group: {
-                    _id: { month: { $month: "$createdAt" }, providerId: "$providerId" },
-                    completedBookings: { $sum: 1 }
-                }
-            },
-            {
-                $group: {
-                    _id: "$_id.month",
-                    providerData: {
-                        $push: {
-                            providerId: "$_id.providerId",
-                            completedBookings: "$completedBookings"
-                        }
-                    },
-                    totalPlatformBookings: { $sum: "$completedBookings" },
-                    totalProviders: { $sum: 1 }
-                }
-            },
-            {
-                $project: {
-                    _id: 0,
-                    month: "$_id",
-                    performance: {
-                        $let: {
-                            vars: {
-                                your: {
-                                    $arrayElemAt: [
-                                        {
-                                            $filter: {
-                                                input: "$providerData",
-                                                as: "p",
-                                                cond: { $eq: ["$$p.providerId", objectProviderId] }
-                                            }
-                                        },
-                                        0
-                                    ]
-                                }
-                            },
-                            in: { $ifNull: ["$$your.completedBookings", 0] }
-                        }
-                    },
-                    platformAvg: {
-                        $cond: [
-                            { $gt: ["$totalProviders", 0] },
-                            { $divide: ["$totalPlatformBookings", "$totalProviders"] },
-                            0
-                        ]
-                    }
-                }
-            },
-            { $sort: { month: 1 } }
-        ]);
-    }
-
-    async getRevenueOverview(providerId: string): Promise<IProviderRevenueOverview> {
-        const result = await this._bookingModel.aggregate([
-            {
-                $match: {
-                    providerId: this._toObjectId(providerId),
-                    bookingStatus: BookingStatus.COMPLETED
-                }
-            },
-            {
-                $group: {
-                    _id: null,
-                    totalRevenue: { $sum: { $divide: ["$totalAmount", 100] } },
-                    currentPeriodRevenue: {
-                        $sum: {
-                            $cond: [{ $eq: [{ $month: "$createdAt" }, new Date().getMonth() + 1] }, { $divide: ["$totalAmount", 100] }, 0]
-                        }
-                    },
-                    previousPeriodRevenue: {
-                        $sum: {
-                            $cond: [
-                                { $eq: [{ $month: "$createdAt" }, new Date().getMonth() === 0 ? 12 : new Date().getMonth()] },
-                                { $divide: ["$totalAmount", 100] }, 0
-                            ]
-                        }
-                    },
-                    completedTransactions: {
-                        $sum: {
-                            $cond: [{ $eq: ["$transactionId", null] }, 0, 1]
-                        }
-                    }
-                }
-            },
-            {
-                $project: {
-                    _id: 0,
-                    totalRevenue: { $round: { $cond: [{ $eq: ["$totalRevenue", 0] }, 0, "$totalRevenue"] } },
-                    revenueGrowth: {
-                        $round: {
-                            $cond: [
-                                { $gt: [{ $round: "$previousPeriodRevenue" }, 0] },
-                                {
-                                    $multiply: [
-                                        {
-                                            $divide: [
-                                                { $subtract: ["$currentPeriodRevenue", "$previousPeriodRevenue"] },
-                                                { $round: "$previousPeriodRevenue" }
-                                            ]
-                                        },
-                                        100
-                                    ]
-                                },
-                                0
-                            ]
-                        }
-                    },
-                    completedTransactions: { $cond: [{ $eq: ["$completedTransactions", 0] }, 0, "$completedTransactions"] },
-                    avgTransactionValue: {
-                        $round: {
-                            $cond: [
-                                { $gt: ["$completedTransactions", 0] },
-                                {
-                                    $divide:
-                                        ["$totalRevenue", "$completedTransactions"]
-                                }, 0]
-                        }
-                    }
-                }
-            }
-        ]);
-
-        return result[0];
-    }
-
-    async getRevenueTrendOverTime(providerId: string, view: RevenueChartView): Promise<IRevenueTrendRawData> {
-        const matchStage: FilterQuery<BookingDocument> = {
-            bookingStatus: BookingStatus.COMPLETED,
-        };
-
-        if (view === 'monthly' || view === 'quarterly') {
-            const currentYear = new Date().getFullYear();
-            matchStage.createdAt = {
-                $gte: new Date(currentYear, 0, 1),
-                $lt: new Date(currentYear + 1, 0, 1)
-            };
-        }
-
-        const getGroupId = () => {
-            switch (view) {
-                case 'monthly':
-                    return { month: { $month: "$createdAt" } };
-                case 'quarterly':
-                    return { quarter: { $ceil: { $divide: [{ $month: "$createdAt" }, 3] } } };
-                case 'yearly':
-                    return { year: { $year: "$createdAt" } };
-            }
-        };
-
-        const aggregation: PipelineStage[] = [
-            {
-                $facet: {
-                    providerRevenue: [
-                        { $match: { ...matchStage, providerId: this._toObjectId(providerId) } },
-                        { $group: { _id: getGroupId(), totalRevenue: { $sum: { $divide: ["$totalAmount", 100] } } } },
-                        {
-                            $sort: view === 'monthly' ? { "_id.month": 1 } :
-                                view === 'quarterly' ? { "_id.quarter": 1 } :
-                                    { "_id.year": 1 }
-                        }
-                    ],
-                    platformAverage: [
-                        {
-                            $match: {
-                                ...matchStage,
-                                providerId: { $ne: this._toObjectId(providerId) }
-                            }
-                        },
-                        { $group: { _id: getGroupId(), totalRevenue: { $avg: { $divide: ["$totalAmount", 100] } } } },
-                        {
-                            $sort: view === 'monthly' ? { "_id.month": 1 } :
-                                view === 'quarterly' ? { "_id.quarter": 1 } :
-                                    { "_id.year": 1 }
-                        }
-                    ]
-                }
-            }
-        ];
-
-        const rawResult = await this._bookingModel.aggregate(aggregation);
-        const providerRevenue = rawResult[0].providerRevenue;
-        const platformAverage = rawResult[0].platformAverage;
-
-        const mapLabel = (item) => {
-            if (view === 'monthly') return new Date(0, item._id.month - 1).toLocaleString('en-US', { month: 'short' });
-            if (view === 'quarterly') return `Q${item._id.quarter}`;
-            return item._id.year.toString();
-        }
-
-        const cleanProvider = providerRevenue.map(item => ({
-            label: mapLabel(item),
-            totalRevenue: item.totalRevenue
-        }));
-
-        const cleanPlatform = platformAverage.map(item => ({
-            label: mapLabel(item),
-            totalRevenue: item.totalRevenue
-        }));
-
-        return { providerRevenue: cleanProvider, platformAvg: cleanPlatform };
-    }
-
-    async getRevenueGrowthByMonth(providerId: string): Promise<IRevenueMonthlyGrowthRateData[]> {
-        return await this._bookingModel.aggregate([
-            {
-                $match: {
-                    providerId: this._toObjectId(providerId),
-                    $expr: {
-                        $eq: [{ $year: "$createdAt" }, new Date().getFullYear()]
-                    }
-                }
-            },
-            {
-                $group: {
-                    _id: { month: { $month: "$createdAt" } },
-                    totalRevenue: { $sum: { $divide: ["$totalAmount", 100] } }
-                }
-            },
-            { $sort: { "_id.month": 1 } },
-            {
-                $setWindowFields: {
-                    sortBy: { "_id.month": 1 },
-                    output: {
-                        prevMonthRevenue: { $shift: { output: "$totalRevenue", by: -1 } }
-                    }
-                }
-            },
-            {
-                $addFields: {
-                    prevMonthRevenue: { $ifNull: ["$prevMonthRevenue", 0] },
-                    growthRate: {
-                        $cond: [
-                            { $eq: [{ $ifNull: ["$prevMonthRevenue", 0] }, 0] },
-                            0,
+                          $divide: [
                             {
-                                $multiply: [
-                                    {
-                                        $divide: [
-                                            { $subtract: ["$totalRevenue", "$prevMonthRevenue"] },
-                                            "$prevMonthRevenue"
-                                        ]
-                                    },
-                                    100
-                                ]
-                            }
-                        ]
-                    }
-                }
-            },
-            {
-                $project: {
-                    _id: 0,
-                    month: "$_id.month",
-                    totalRevenue: 1,
-                    growthRate: { $round: ["$growthRate", 2] }
-                }
-            }
-        ]);
-    }
-
-    async getRevenueCompositionByServiceCategory(providerId: string): Promise<IRevenueCompositionData[]> {
-        return await this._bookingModel.aggregate([
-            {
-                $match: { providerId: this._toObjectId(providerId) }
-            },
-            { $unwind: "$services" },
-            {
-                $lookup: {
-                    from: 'providerservices',
-                    localField: "services",
-                    foreignField: "_id",
-                    as: "serviceDetails"
-                }
-            },
-            {
-                $unwind: {
-                    path: "$serviceDetails",
-                    preserveNullAndEmptyArrays: true
-                }
-            },
-            {
-                $lookup: {
-                    from: 'servicecategories',
-                    localField: "serviceDetails.categoryId",
-                    foreignField: "_id",
-                    as: "categoryDetails"
-                }
-            },
-            {
-                $unwind: {
-                    path: "$categoryDetails",
-                    preserveNullAndEmptyArrays: true
-                }
-            },
-            {
-                $group: {
-                    _id: "$categoryDetails.name",
-                    totalRevenue: { $sum: { $divide: ["$totalAmount", 100] } }
-                }
-            },
-            {
-                $project: {
-                    _id: 0,
-                    category: "$_id",
-                    totalRevenue: 1
-                }
-            }
-        ]);
-    }
-
-    async getTopTenServicesByRevenue(providerId: string): Promise<ITopServicesByRevenue[]> {
-        return await this._bookingModel.aggregate([
-            { $match: { providerId: this._toObjectId(providerId) } },
-            { $unwind: "$services" },
-            {
-                $lookup: {
-                    from: 'providerservices',
-                    localField: 'services',
-                    foreignField: "_id",
-                    as: 'serviceDetails'
-                }
-            },
-            { $unwind: "$serviceDetails" },
-            {
-                $lookup: {
-                    from: 'professions',
-                    localField: 'serviceDetails.professionId',
-                    foreignField: '_id',
-                    as: 'professionDetails'
-                }
-            },
-            { $unwind: "$professionDetails" },
-            {
-                $group: {
-                    _id: "$professionDetails.name",
-                    revenue: { $sum: { $divide: ["$totalAmount", 100] } },
-                    totalBookings: { $sum: 1 },
-                }
-            },
-            {
-                $addFields: {
-                    avgRevenue: {
-                        $cond: {
-                            if: { $eq: ["$totalBookings", 0] },
-                            then: 0,
-                            else: { $divide: ["$revenue", "$totalBookings"] },
+                              $subtract: [{ $arrayElemAt: ['$revenues', 1] }, { $arrayElemAt: ['$revenues', 0] }],
+                            },
+                            { $arrayElemAt: ['$revenues', 0] },
+                          ],
                         },
+                        100,
+                      ],
                     },
+                    0,
+                  ],
                 },
+              },
+            },
+          ],
+
+          // ----------------- Provider Rank -----------------
+          providerRank: [
+            { $match: { 'review.isActive': true } },
+            {
+              $group: {
+                _id: '$providerId',
+                avgRating: { $avg: '$review.rating' },
+              },
+            },
+            { $sort: { avgRating: -1 } },
+            {
+              $group: {
+                _id: null,
+                providers: { $push: { providerId: '$_id', avgRating: '$avgRating' } },
+                total: { $sum: 1 },
+              },
             },
             {
-                $project: {
-                    _id: 0,
-                    service: "$_id",
-                    revenue: 1,
-                    totalBookings: 1,
-                    avgRevenue: 1
-                }
-            },
-            { $sort: { revenue: -1 } },
-            { $limit: 10 }
-        ]);
-    }
-
-    async getNewAndReturningClientData(providerId: string): Promise<INewOrReturningClientData[]> {
-        const currentYear = new Date().getFullYear();
-
-        return await this._bookingModel.aggregate([
-            {
-                $match: {
-                    providerId: this._toObjectId(providerId),
-                    bookingStatus: "completed",
-                    createdAt: {
-                        $gte: new Date(`${currentYear}-01-01T00:00:00.000Z`),
-                        $lte: new Date(`${currentYear}-12-31T23:59:59.999Z`)
-                    }
-                }
-            },
-
-            // Lookup the customer's first completed booking
-            {
-                $lookup: {
-                    from: "bookings",
-                    let: { custId: "$customerId" },
-                    pipeline: [
+              $project: {
+                providerRank: {
+                  $let: {
+                    vars: {
+                      index: {
+                        $indexOfArray: ['$providers.providerId', providerObjId],
+                      },
+                    },
+                    in: {
+                      $cond: [
+                        { $lte: ['$total', 1] },
+                        100,
                         {
-                            $match: {
-                                $expr: { $eq: ["$customerId", "$$custId"] },
-                                bookingStatus: "completed"
-                            }
+                          $multiply: [
+                            {
+                              $divide: [{ $subtract: ['$total', { $add: ['$$index', 1] }] }, { $subtract: ['$total', 1] }],
+                            },
+                            100,
+                          ],
                         },
-                        { $sort: { createdAt: 1 } },
-                        { $limit: 1 }
-                    ],
-                    as: "firstBooking"
-                }
-            },
-
-            { $unwind: "$firstBooking" },
-
-            // Extract month and check if booking is first for this customer
-            {
-                $addFields: {
-                    month: { $month: "$createdAt" },
-                    isNewClient: {
-                        $eq: [
-                            { $month: "$firstBooking.createdAt" },
-                            { $month: "$createdAt" }
-                        ]
-                    }
-                }
-            },
-
-            // Group by month and new/returning
-            {
-                $group: {
-                    _id: { month: "$month", isNewClient: "$isNewClient" },
-                    count: { $sum: 1 }
-                }
-            },
-
-            // Reshape data: merge new vs returning per month
-            {
-                $group: {
-                    _id: "$_id.month",
-                    newClients: {
-                        $sum: { $cond: [{ $eq: ["$_id.isNewClient", true] }, "$count", 0] }
+                      ],
                     },
-                    returningClients: {
-                        $sum: { $cond: [{ $eq: ["$_id.isNewClient", false] }, "$count", 0] }
-                    }
-                }
-            },
-
-            // Sort by month
-            { $sort: { "_id": 1 } },
-
-            // Converting month number to readable month name
-            {
-                $project: {
-                    _id: 0,
-                    month: {
-                        $arrayElemAt: [
-                            ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-                            { $subtract: ["$_id", 1] }
-                        ]
-                    },
-                    newClients: 1,
-                    returningClients: 1
-                }
-            }
-        ]);
-    }
-
-    async getAreaSummaryData(providerId: string): Promise<IAreaSummary> {
-        const result = await this._bookingModel.aggregate([
-            {
-                $match: {
-                    providerId: this._toObjectId(providerId),
-                    bookingStatus: BookingStatus.COMPLETED,
-                    'location.address': { $exists: true, $type: 'string', $nin: ['', null] }
-                }
-            },
-            {
-                $addFields: {
-                    areaName: {
-                        $trim: {
-                            input: {
-                                $let: {
-                                    vars: {
-                                        region: { $arrayElemAt: [{ $split: ["$location.address", ","] }, 3] },
-                                        lastRegion: { $arrayElemAt: [{ $split: ["$location.address", ","] }, -1] }
-                                    },
-                                    in: {
-                                        $ifNull: [
-                                            {
-                                                $cond: [
-                                                    { $in: ["$$region", [null, ""]] },
-                                                    "$$lastRegion",
-                                                    "$$region"
-                                                ]
-                                            },
-                                            "Unknown"
-                                        ]
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            {
-                $group: {
-                    _id: "$areaName",
-                    totalBooking: { $sum: 1 },
-                    totalRevenue: { $sum: "$totalAmount" }
-                }
-            },
-            {
-                $sort: { totalRevenue: -1 }
-            },
-            // collecting all areas with their revenue in an array for easy extraction
-            {
-                $group: {
-                    _id: null,
-                    totalBookings: { $sum: "$totalBooking" },
-                    areas: {
-                        $push: {
-                            area: "$_id",
-                            revenue: "$totalRevenue"
-                        },
-                    }
-                }
-            },
-            // add top and bottom performing areas
-            {
-                $addFields: {
-                    topPerformingArea: { $arrayElemAt: ["$areas.area", 0] },
-                    underperformingArea: {
-                        $arrayElemAt: ["$areas.area", { $subtract: [{ $size: "$areas" }, 1] }]
-                    }
-                }
-            },
-            // get peak booking hour from the main collection
-            {
-                $lookup: {
-                    from: "bookings",
-                    pipeline: [
-                        {
-                            $match: {
-                                providerId: this._toObjectId(providerId),
-                                bookingStatus: "completed"
-                            }
-                        },
-                        {
-                            $group: {
-                                _id: "$slot.from",
-                                count: { $sum: 1 }
-                            }
-                        },
-                        { $sort: { count: -1 } },
-                        {
-                            $limit: 1
-                        }
-                    ],
-                    as: "peakHour"
-                }
-            },
-            {
-                $project: {
-                    _id: 0,
-                    totalBookings: 1,
-                    topPerformingArea: 1,
-                    underperformingArea: 1,
-                    peakBookingHour: { $arrayElemAt: ["$peakHour._id", 0] }
-                }
-            }
-        ]);
-
-        return result[0];
-    }
-
-    async getServiceDemandData(providerId: string): Promise<IServiceDemandData[]> {
-        return await this._bookingModel.aggregate([
-            { $match: { providerId: this._toObjectId(providerId) } },
-            {
-                $group: {
-                    _id: {
-                        day: { $dayOfWeek: "$createdAt" }, // 1 (Sunday) to 7 (Saturday)
-                        hour: { $hour: "$createdAt" }
-                    },
-                    count: { $sum: 1 }
-                }
-            },
-            {
-                $project: {
-                    day: {
-                        $arrayElemAt: [
-                            ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-                            { $subtract: ["$_id.day", 1] }
-                        ]
-                    },
-                    hour: {
-                        $concat: [
-                            { $toString: "$_id.hour" },
-                            ":00"
-                        ]
-                    },
-                    count: 1,
-                    _id: 0
-                }
-            },
-            { $sort: { day: 1, hour: 1 } }
-        ]);
-    }
-
-    async getServiceDemandByLocation(providerId: string): Promise<ILocationRevenue[]> {
-        const now = new Date();
-        const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        const currentMonth = now.getMonth() + 1;
-        const currentYear = now.getFullYear();
-        const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        const prevMonth = prevMonthDate.getMonth() + 1;
-        const prevYear = prevMonthDate.getFullYear();
-
-        return await this._bookingModel.aggregate([
-            {
-                $match: {
-                    providerId: this._toObjectId(providerId),
-                    bookingStatus: BookingStatus.COMPLETED,
-                    createdAt: { $gte: previousMonthStart }
-                }
-            },
-            {
-                $addFields: {
-                    month: { $month: "$createdAt" },
-                    year: { $year: "$createdAt" }
-                }
-            },
-            {
-                $group: {
-                    _id: {
-                        locationName: "$location.address",
-                        year: "$year",
-                        month: "$month"
-                    },
-                    totalRevenue: { $sum: { $divide: ["$totalAmount", 100] } }
-                }
-            },
-            {
-                $group: {
-                    _id: "$_id.locationName",
-                    monthlyData: {
-                        $push: {
-                            month: "$_id.month",
-                            year: "$_id.year",
-                            totalRevenue: "$totalRevenue"
-                        }
-                    }
-                }
-            },
-            {
-                $project: {
-                    locationName: "$_id",
-                    monthlyData: 1,
-                    _id: 0
-                }
-            },
-            {
-                $addFields: {
-                    current: {
-                        $arrayElemAt: [
-                            {
-                                $filter: {
-                                    input: "$monthlyData",
-                                    cond: {
-                                        $and: [
-                                            { $eq: ["$$this.month", currentMonth] },
-                                            { $eq: ["$$this.year", currentYear] }
-                                        ]
-                                    }
-                                }
-                            },
-                            0
-                        ]
-                    },
-                    previous: {
-                        $arrayElemAt: [
-                            {
-                                $filter: {
-                                    input: "$monthlyData",
-                                    cond: {
-                                        $and: [
-                                            { $eq: ["$$this.month", prevMonth] },
-                                            { $eq: ["$$this.year", prevYear] }
-                                        ]
-                                    }
-                                }
-                            },
-                            0
-                        ]
-                    }
-                }
-            },
-            {
-                $project: {
-                    locationName: 1,
-                    totalRevenue: "$current.totalRevenue",
-                    previousRevenue: "$previous.totalRevenue",
-                    changePct: {
-                        $cond: [
-                            { $and: [{ $ifNull: ["$previous.totalRevenue", false] }, { $ne: ["$previous.totalRevenue", 0] }] },
-                            {
-                                $round: [
-                                    {
-                                        $multiply: [
-                                            {
-                                                $divide: [
-                                                    { $subtract: ["$current.totalRevenue", "$previous.totalRevenue"] },
-                                                    "$previous.totalRevenue"
-                                                ]
-                                            },
-                                            100
-                                        ]
-                                    },
-                                    2
-                                ]
-                            },
-                            0
-                        ]
-                    }
-                }
-            },
-            { $sort: { totalRevenue: -1 } }
-        ]);
-    }
-
-    async getTopAreasRevenue(providerId: string): Promise<ITopAreaRevenue[]> {
-        const now = new Date();
-        const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
-        const currentMonth = now.getMonth() + 1;
-        const currentYear = now.getFullYear();
-        const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        const prevMonth = prevMonthDate.getMonth() + 1;
-        const prevYear = prevMonthDate.getFullYear();
-
-        return await this._bookingModel.aggregate([
-            {
-                $match: {
-                    providerId: this._toObjectId(providerId),
-                    bookingStatus: BookingStatus.COMPLETED,
-                    createdAt: { $gte: startOfLastMonth, $lte: now }
-                }
-            },
-            {
-                $addFields: {
-                    month: { $month: '$createdAt' },
-                    year: { $year: '$createdAt' }
-                }
-            },
-            {
-                $group: {
-                    _id: { locationName: '$location.address', month: '$month', year: '$year' },
-                    totalRevenue: { $sum: { $divide: ['$totalAmount', 100] } }
-                }
-            },
-            {
-                $group: {
-                    _id: '$_id.locationName',
-                    monthlyData: {
-                        $push: {
-                            month: '$_id.month',
-                            year: '$_id.year',
-                            totalRevenue: '$totalRevenue'
-                        }
-                    }
-                }
-            },
-            {
-                $project: {
-                    locationName: '$_id',
-                    _id: 0,
-                    totalRevenue: {
-                        $let: {
-                            vars: {
-                                currentMonth: {
-                                    $first: {
-                                        $filter: {
-                                            input: '$monthlyData',
-                                            as: 'm',
-                                            cond: {
-                                                $and: [
-                                                    { $eq: ['$$m.month', currentMonth] },
-                                                    { $eq: ['$$m.year', currentYear] }
-                                                ]
-                                            }
-                                        }
-                                    }
-                                },
-                                lastMonth: {
-                                    $first: {
-                                        $filter: {
-                                            input: '$monthlyData',
-                                            as: 'm',
-                                            cond: {
-                                                $and: [
-                                                    { $eq: ['$$m.month', prevMonth] },
-                                                    { $eq: ['$$m.year', prevYear] }
-                                                ]
-                                            }
-                                        }
-                                    }
-                                }
-                            },
-                            in: '$$currentMonth.totalRevenue'
-                        }
-                    },
-                    prevRevenue: {
-                        $let: {
-                            vars: {
-                                lastMonth: {
-                                    $first: {
-                                        $filter: {
-                                            input: '$monthlyData',
-                                            as: 'm',
-                                            cond: {
-                                                $and: [
-                                                    { $eq: ['$$m.month', prevMonth] },
-                                                    { $eq: ['$$m.year', prevYear] }
-                                                ]
-                                            }
-                                        }
-                                    }
-                                }
-                            },
-                            in: '$$lastMonth.totalRevenue'
-                        }
-                    }
-                }
-            },
-            {
-                $addFields: {
-                    changePct: {
-                        $cond: [
-                            { $or: [{ $eq: ['$prevRevenue', 0] }, { $not: ['$prevRevenue'] }] },
-                            0,
-                            {
-                                $multiply: [
-                                    { $divide: [{ $subtract: ['$totalRevenue', '$prevRevenue'] }, '$prevRevenue'] },
-                                    100
-                                ]
-                            }
-                        ]
-                    }
-                }
-            },
-            {
-                $sort: { totalRevenue: -1 }
-            },
-            {
-                $project: {
-                    locationName: 1,
-                    totalRevenue: 1,
-                    changePct: { $round: ['$changePct', 2] }
-                }
-            }
-        ]);
-    }
-
-    async getUnderperformingAreas(providerId: string): Promise<IUnderperformingArea[]> {
-        const now = new Date();
-        const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-        const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-
-        return await this._bookingModel.aggregate([
-            {
-                $match: {
-                    providerId: this._toObjectId(providerId),
-                    bookingStatus: BookingStatus.COMPLETED,
-                    createdAt: { $gte: lastMonthStart }
-                }
-            },
-            {
-                // Group by location address and month/year
-                $group: {
-                    _id: {
-                        locationName: '$location.address',
-                        month: { $month: '$createdAt' },
-                        year: { $year: '$createdAt' }
-                    },
-                    totalRevenue: { $sum: { $divide: ['$totalAmount', 100] } }
-                }
-            },
-            {
-                // Reshape data per location
-                $group: {
-                    _id: '$_id.locationName',
-                    revenues: {
-                        $push: {
-                            month: '$_id.month',
-                            year: '$_id.year',
-                            totalRevenue: '$totalRevenue'
-                        }
-                    }
-                }
-            },
-            {
-                // Project last month, current month, and change
-                $project: {
-                    locationName: '$_id',
-                    lastMonthRevenue: {
-                        $let: {
-                            vars: {
-                                lm: {
-                                    $arrayElemAt: [
-                                        {
-                                            $filter: {
-                                                input: '$revenues',
-                                                as: 'r',
-                                                cond: {
-                                                    $and: [
-                                                        { $eq: ['$$r.year', lastMonthStart.getFullYear()] },
-                                                        { $eq: ['$$r.month', lastMonthStart.getMonth() + 1] }
-                                                    ]
-                                                }
-                                            }
-                                        },
-                                        0
-                                    ]
-                                }
-                            },
-                            in: { $ifNull: ['$$lm.totalRevenue', 0] }
-                        }
-                    },
-                    currentMonthRevenue: {
-                        $let: {
-                            vars: {
-                                cm: {
-                                    $arrayElemAt: [
-                                        {
-                                            $filter: {
-                                                input: '$revenues',
-                                                as: 'r',
-                                                cond: {
-                                                    $and: [
-                                                        { $eq: ['$$r.year', currentMonthStart.getFullYear()] },
-                                                        { $eq: ['$$r.month', currentMonthStart.getMonth() + 1] }
-                                                    ]
-                                                }
-                                            }
-                                        },
-                                        0
-                                    ]
-                                }
-                            },
-                            in: { $ifNull: ['$$cm.totalRevenue', 0] }
-                        }
-                    }
-                }
-            },
-            {
-                $addFields: {
-                    changePct: {
-                        $round: {
-                            $cond: [
-                                { $eq: ['$lastMonthRevenue', 0] },
-                                0,
-                                {
-                                    $multiply: [
-                                        { $divide: [{ $subtract: ['$currentMonthRevenue', '$lastMonthRevenue'] }, '$lastMonthRevenue'] },
-                                        100
-                                    ]
-                                }
-                            ]
-                        }
-                    }
-                }
-            },
-            { $sort: { changePct: 1 } }
-        ]);
-    }
-
-    async getPeakServiceTime(providerId: string): Promise<IPeakServiceTime[]> {
-        return await this._bookingModel.aggregate([
-            {
-                $match: {
-                    providerId: this._toObjectId(providerId),
-                    bookingStatus: BookingStatus.COMPLETED,
-                    "expectedArrivalTime": { $exists: true, $ne: null }
-                }
-            },
-            {
-                $addFields: {
-                    hour: { $hour: "$expectedArrivalTime" },
-                    dayOfWeek: { $isoDayOfWeek: "$expectedArrivalTime" }
-                }
-            },
-            {
-                $group: {
-                    _id: "$hour",
-                    weekdayBookings: {
-                        $sum: {
-                            $cond: [{ $lte: ["$dayOfWeek", 5] }, 1, 0]
-                        }
-                    },
-                    weekendBookings: {
-                        $sum: {
-                            $cond: [{ $gte: ["$dayOfWeek", 6] }, 1, 0]
-                        }
-                    }
-                }
-            },
-            {
-                $project: {
-                    _id: 0,
-                    hour: '$_id',
-                    weekdayBookings: 1,
-                    weekendBookings: 1
-                }
-            },
-            { $sort: { hour: 1 } }
-        ]);
-    }
-
-    async getRevenueBreakdown(providerId: string): Promise<IRevenueBreakdown> {
-        const providerIdObj = this._toObjectId(providerId);
-
-        const result = await this._bookingModel.aggregate([
-            {
-                $facet: {
-                    bookings: [
-                        { $match: { providerId: providerIdObj } },
-                        {
-                            $group: {
-                                _id: null,
-                                completedCount: {
-                                    $sum: { $cond: [{ $eq: ['$bookingStatus', BookingStatus.COMPLETED] }, 1, 0] }
-                                },
-                                pendingCount: {
-                                    $sum: {
-                                        $cond: [
-                                            {
-                                                $and: [
-                                                    { $ne: ['$bookingStatus', BookingStatus.COMPLETED] },
-                                                    { $ne: ['$bookingStatus', BookingStatus.CANCELLED] }
-                                                ]
-                                            },
-                                            1,
-                                            0
-                                        ]
-                                    }
-                                }
-                            }
-                        }
-                    ],
-                    earnings: [
-                        { $match: { providerId: providerIdObj } },
-                        { $unwind: '$transactionHistory' },
-                        {
-                            $match: {
-                                'transactionHistory.transactionType': TransactionType.BOOKING_RELEASE,
-                                'transactionHistory.direction': PaymentDirection.CREDIT,
-                                'paymentStatus': PaymentStatus.PAID
-                            }
-                        },
-                        {
-                            $group: {
-                                _id: null,
-                                totalEarnings: { $sum: '$totalAmount' }
-                            }
-                        }
-                    ]
-                }
-            },
-            {
-                $project: {
-                    totalEarnings: {
-                        $ifNull: [
-                            {
-                                $divide: [
-                                    { $arrayElemAt: ['$earnings.totalEarnings', 0] },
-                                    100
-                                ]
-                            },
-                            0
-                        ]
-                    },
-                    completedCount: {
-                        $ifNull: [{ $arrayElemAt: ['$bookings.completedCount', 0] }, 0]
-                    },
-                    pendingCount: {
-                        $ifNull: [{ $arrayElemAt: ['$bookings.pendingCount', 0] }, 0]
-                    }
-                }
-            }
-        ]);
-
-        return result[0];
-    }
-
-    async getBookingsBreakdown(providerId: string): Promise<IBookingsBreakdown> {
-        const result = await this._bookingModel.aggregate([
-            {
-                $match: {
-                    providerId: this._toObjectId(providerId),
-                }
-            },
-            {
-                $group: {
-                    _id: null,
-                    totalBookings: { $sum: 1 },
-                    upcomingBookings: {
-                        $sum: {
-                            $cond: [
-                                {
-                                    $and: [
-                                        { $ne: ['$bookingStatus', BookingStatus.COMPLETED] },
-                                        { $ne: ['$bookingStatus', BookingStatus.CANCELLED] }
-                                    ]
-                                },
-                                1,
-                                0
-                            ]
-                        }
-                    },
-                    cancelledBookings: {
-                        $sum: {
-                            $cond: [{ $eq: ['$bookingStatus', BookingStatus.CANCELLED] }, 1, 0]
-                        }
-                    },
-                    totalAmount: { $sum: '$totalAmount' }
-                }
-            },
-            {
-                $project: {
-                    _id: 0,
-                    totalBookings: 1,
-                    upcomingBookings: 1,
-                    cancelledBookings: 1,
-                    averageBookingValue: {
-                        $cond: [
-                            { $eq: ['$totalBookings', 0] },
-                            0,
-                            { $divide: ['$totalAmount', '$totalBookings'] }
-                        ]
-                    }
-                }
-            }
-        ]);
-
-        return result?.[0] ?? {
-            totalBookings: 0,
-            upcomingBookings: 0,
-            cancelledBookings: 0,
-            averageBookingValue: 0,
-        }
-    }
-
-    async getBookingsCompletionRate(providerId: string): Promise<number> {
-        const result = await this._bookingModel.aggregate([
-            {
-                $match: {
-                    providerId: this._toObjectId(providerId),
-                }
-            },
-            {
-                $group: {
-                    _id: null,
-                    totalBookings: { $sum: 1 },
-                    completedCount: {
-                        $sum: {
-                            $cond: [{ $eq: ['$bookingStatus', BookingStatus.COMPLETED] }, 1, 0]
-                        }
-                    },
-                    cancelledCount: {
-                        $sum: {
-                            $cond: [{ $eq: ['$bookingStatus', BookingStatus.CANCELLED] }, 1, 0]
-                        }
-                    }
-                }
-            },
-            {
-                $project: {
-                    _id: 0,
-                    completionRate: {
-                        $multiply: [
-                            {
-                                $cond: [
-                                    {
-                                        $lte: [
-                                            {
-                                                $subtract: [
-                                                    { $ifNull: ['$totalBookings', 0] },
-                                                    { $ifNull: ['$cancelledCount', 0] }
-                                                ]
-                                            },
-                                            0
-                                        ]
-                                    },
-                                    0,
-                                    {
-                                        $divide: [
-                                            { $ifNull: ['$completedCount', 0] },
-                                            {
-                                                $subtract: [
-                                                    { $ifNull: ['$totalBookings', 0] },
-                                                    { $ifNull: ['$cancelledCount', 0] }
-                                                ]
-                                            }
-                                        ]
-                                    }
-                                ]
-                            },
-                            100
-                        ]
-                    }
-                }
-            }
-        ]);
-
-        return Math.round(result?.[0]?.completionRate ?? 0);
-    }
-
-    async isAnyBookingOngoing(customerId: string, providerId: string): Promise<boolean> {
-        const exists = await this._bookingModel.exists({
-            customerId: this._toObjectId(customerId),
-            providerId: this._toObjectId(providerId),
-            bookingStatus: {
-                $in: [
-                    BookingStatus.PENDING,
-                    BookingStatus.CONFIRMED,
-                    BookingStatus.IN_PROGRESS,
-                ]
-            },
-        });
-        return Boolean(exists);
-    }
-
-    async fetchBookingsByProviderOnSameDate(customerId: string, providerId: string, date: Date | string): Promise<BookingDocument[]> {
-        const formattedDate = new Date(date);
-        formattedDate.setHours(0, 0, 0, 0);
-
-        return this._bookingModel.find({
-            customerId: this._toObjectId(customerId),
-            providerId: this._toObjectId(providerId),
-            'slot.date': formattedDate,
-        });
-    }
-
-    async findAllBookingsByProviderOnSameDate(providerId: string, date: Date | string): Promise<BookingDocument[]> {
-        const formattedDate = new Date(date);
-        formattedDate.setHours(0, 0, 0, 0);
-
-        return this._bookingModel.find({
-            providerId: this._toObjectId(providerId),
-            'slot.date': formattedDate,
-            bookingStatus: { $ne: BookingStatus.CANCELLED },
-            paymentStatus: { $ne: PaymentStatus.FAILED }
-        });
-    }
-
-    async completedBookingsCount(providerId: string): Promise<number> {
-        return await this._bookingModel.countDocuments({
-            providerId: this._toObjectId(providerId),
-            bookingStatus: BookingStatus.COMPLETED
-        });
-    }
-
-    async getNextAvailableSlot(providerId: string): Promise<ISlot & { date: Date }> {
-        const providerObjId = this._toObjectId(providerId);
-
-        const result = await this._bookingModel.aggregate([
-            {
-                $match: {
-                    providerId: providerObjId,
-                    bookingStatus: {
-                        $in: [
-                            BookingStatus.PENDING,
-                            BookingStatus.CONFIRMED,
-                            BookingStatus.IN_PROGRESS,
-                        ]
-                    },
-                }
-            },
-            { $sort: { 'slot.date': 1 } },
-            { $limit: 1 },
-            {
-                $project: {
-                    _id: 0,
-                    slot: {
-                        from: "$slot.from",
-                        to: "$slot.to",
-                        date: '$slot.date'
-                    }
-                }
-            }
-        ]);
-
-        return result?.[0]?.slot;
-    }
-
-    async getUpcomingBookings(providerId: string, limit: number = 5): Promise<IUpcomingBooking[]> {
-        const providerObjId = this._toObjectId(providerId);
-
-        return this._bookingModel.aggregate<IUpcomingBooking>([
-            {
-                $match: {
-                    providerId: providerObjId,
-                    bookingStatus: {
-                        $in: [
-                            BookingStatus.PENDING,
-                            BookingStatus.CONFIRMED,
-                            BookingStatus.IN_PROGRESS,
-                        ]
-                    },
-                }
-            },
-            { $sort: { 'slot.date': 1, 'slot.from': 1 } },
-            { $limit: limit },
-            {
-                $lookup: {
-                    from: 'customers',
-                    localField: 'customerId',
-                    foreignField: '_id',
-                    as: 'customerDoc',
+                  },
                 },
+              },
             },
-            { $unwind: { path: '$customerDoc', preserveNullAndEmptyArrays: true } },
-            {
-                $lookup: {
-                    from: 'providerservices',
-                    localField: 'services',
-                    foreignField: '_id',
-                    as: 'serviceDocs',
-                },
+          ],
+        },
+      },
+      {
+        $project: {
+          growthRate: { $ifNull: [{ $arrayElemAt: ['$growthRate.overallAvgGrowth', 0] }, 0] },
+          monthlyTrend: { $ifNull: [{ $arrayElemAt: ['$monthlyTrend', 0] }, 0] },
+          providerRank: { $ifNull: [{ $arrayElemAt: ['$providerRank.providerRank', 0] }, 0] },
+        },
+      },
+    ]);
+
+    return result[0];
+  }
+
+  async getComparisonData(providerId: string): Promise<IComparisonChartData[]> {
+    const objectProviderId = this._toObjectId(providerId);
+    const currentYear = new Date().getFullYear();
+
+    return await this._bookingModel.aggregate([
+      {
+        $match: {
+          bookingStatus: BookingStatus.COMPLETED,
+          createdAt: {
+            $gte: new Date(`${currentYear}-01-01T00:00:00.000Z`),
+            $lt: new Date(`${currentYear + 1}-01-01T00:00:00.000Z`),
+          },
+        },
+      },
+      {
+        $group: {
+          _id: { month: { $month: '$createdAt' }, providerId: '$providerId' },
+          completedBookings: { $sum: 1 },
+        },
+      },
+      {
+        $group: {
+          _id: '$_id.month',
+          providerData: {
+            $push: {
+              providerId: '$_id.providerId',
+              completedBookings: '$completedBookings',
             },
-            {
-                $addFields: {
-                    firstService: { $arrayElemAt: ['$serviceDocs', 0] },
-                },
-            },
-            {
-                $lookup: {
-                    from: 'professions',
-                    let: { pid: '$firstService.professionId' },
-                    pipeline: [
-                        { $match: { $expr: { $eq: ['$_id', '$$pid'] } } },
-                        { $limit: 1 },
-                        { $project: { _id: 0, name: 1 } },
-                    ],
-                    as: 'serviceProfession',
-                },
-            },
-            { $unwind: { path: '$serviceProfession', preserveNullAndEmptyArrays: true } },
-            {
-                $lookup: {
-                    from: 'servicecategories',
-                    let: { cid: '$firstService.categoryId' },
-                    pipeline: [
-                        { $match: { $expr: { $eq: ['$_id', '$$cid'] } } },
-                        { $limit: 1 },
-                        { $project: { _id: 0, name: 1 } },
-                    ],
-                    as: 'serviceCategory',
-                },
-            },
-            { $unwind: { path: '$serviceCategory', preserveNullAndEmptyArrays: true } },
-            {
-                $project: {
-                    _id: 0,
-                    bookingId: { $toString: '$_id' },
-                    amount: { $divide: [{ $ifNull: ['$totalAmount', 0] }, 100] },
-                    status: '$bookingStatus',
-                    slot: {
-                        from: '$slot.from',
-                        to: '$slot.to',
-                        date: '$slot.date',
+          },
+          totalPlatformBookings: { $sum: '$completedBookings' },
+          totalProviders: { $sum: 1 },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          month: '$_id',
+          performance: {
+            $let: {
+              vars: {
+                your: {
+                  $arrayElemAt: [
+                    {
+                      $filter: {
+                        input: '$providerData',
+                        as: 'p',
+                        cond: { $eq: ['$$p.providerId', objectProviderId] },
+                      },
                     },
-                    customer: {
-                        id: { $toString: '$customerDoc._id' },
-                        username: { $ifNull: ['$customerDoc.username', ''] },
-                        fullname: { $ifNull: ['$customerDoc.fullname', '$customerDoc.username'] },
-                        avatar: { $ifNull: ['$customerDoc.avatar', ''] },
-                    },
-                    service: {
-                        name: { $ifNull: ['$serviceProfession.name', ''] },
-                        category: { $ifNull: ['$serviceCategory.name', ''] },
-                    },
+                    0,
+                  ],
                 },
+              },
+              in: { $ifNull: ['$$your.completedBookings', 0] },
             },
-        ]);
-    }
+          },
+          platformAvg: {
+            $cond: [{ $gt: ['$totalProviders', 0] }, { $divide: ['$totalPlatformBookings', '$totalProviders'] }, 0],
+          },
+        },
+      },
+      { $sort: { month: 1 } },
+    ]);
+  }
 
-    async getAdminReviews(filter: IReviewFilters): Promise<PaginatedReviewResponse> {
-        const page = filter.page || 1;
-
-        const limit = 10;
-        const skip = (page - 1) * limit;
-
-        const match: FilterQuery<BookingDocument> = {
-            review: { $exists: true, $ne: null }
-        };
-
-        if (filter.minRating) {
-            match['review.rating'] = { $gte: Number(filter.minRating) };
-        }
-
-        if (filter.status !== undefined && filter.status !== 'all') {
-            match['review.isActive'] = filter.status === true;
-        }
-
-        if (filter.isReported !== undefined && filter.isReported !== 'all') {
-            match['review.isReported'] = filter.isReported === true;
-        }
-
-        const pipeline: PipelineStage[] = [];
-
-        pipeline.push(
-            { $match: match },
-            {
-                $lookup: {
-                    from: 'customers',
-                    localField: 'customerId',
-                    foreignField: '_id',
-                    as: 'customer'
-                }
+  async getRevenueOverview(providerId: string): Promise<IProviderRevenueOverview> {
+    const result = await this._bookingModel.aggregate([
+      {
+        $match: {
+          providerId: this._toObjectId(providerId),
+          bookingStatus: BookingStatus.COMPLETED,
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalRevenue: { $sum: { $divide: ['$totalAmount', 100] } },
+          currentPeriodRevenue: {
+            $sum: {
+              $cond: [{ $eq: [{ $month: '$createdAt' }, new Date().getMonth() + 1] }, { $divide: ['$totalAmount', 100] }, 0],
             },
-            { $unwind: '$customer' },
-            {
-                $lookup: {
-                    from: 'providers',
-                    localField: 'providerId',
-                    foreignField: '_id',
-                    as: 'provider'
-                }
-            },
-            { $unwind: '$provider' }
-        );
-
-        if (filter.search) {
-            const searchRegex = new RegExp(this._escapeRegex(filter.search), 'i');
-            if (filter.searchBy === 'review id') {
-                pipeline.push({
-                    $match: {
-                        $expr: { $regexMatch: { input: { $toString: '$_id' }, regex: searchRegex } }
-                    }
-                });
-            } else if (filter.searchBy === 'customer') {
-                pipeline.push({ $match: { 'customer.username': searchRegex } });
-            } else if (filter.searchBy === 'provider') {
-                pipeline.push({ $match: { 'provider.username': searchRegex } });
-            } else if (filter.searchBy === 'content') {
-                pipeline.push({ $match: { 'review.desc': searchRegex } });
-            } else {
-                pipeline.push({
-                    $match: {
-                        $or: [
-                            { 'customer.username': searchRegex },
-                            { 'provider.username': searchRegex },
-                            { 'review.desc': searchRegex }
-                        ]
-                    }
-                });
-            }
-        }
-
-        const countPipeline = [...pipeline, { $count: 'total' }];
-        const [totalCountResult] = await this._bookingModel.aggregate(countPipeline);
-        const total = totalCountResult?.total ?? 0;
-
-        const sort: Record<string, 1 | -1> = {};
-        if (filter.sortBy === 'highest') sort['review.rating'] = -1;
-        else if (filter.sortBy === 'lowest') sort['review.rating'] = 1;
-        else if (filter.sortBy === 'oldest') sort['review.writtenAt'] = 1;
-        else sort['review.writtenAt'] = -1;
-
-        pipeline.push(
-            { $sort: sort },
-            { $skip: skip },
-            { $limit: limit },
-            {
-                $project: {
-                    _id: 0,
-                    reviewId: { $toString: '$_id' },
-                    reviewedBy: {
-                        customerId: { $toString: '$customer._id' },
-                        customerName: '$customer.username',
-                        customerEmail: '$customer.email',
-                        customerAvatar: '$customer.avatar'
-                    },
-                    providerId: { $toString: '$provider._id' },
-                    providerName: '$provider.username',
-                    providerEmail: '$provider.email',
-                    providerAvatar: { $ifNull: ['$provider.avatar', ''] },
-                    isReported: '$review.isReported',
-                    desc: '$review.desc',
-                    rating: '$review.rating',
-                    writtenAt: '$review.writtenAt',
-                    isActive: '$review.isActive'
-
-                }
-            }
-        );
-
-        const reviews = await this._bookingModel.aggregate(pipeline);
-
-        return {
-            reviews,
-            pagination: {
-                total,
-                page,
-                limit,
-            }
-        };
-    }
-
-    async getAdminReviewStats(): Promise<IAdminReviewStats> {
-        interface ReviewStatsFacet {
-            stats: { totalReviews: number; activeReviews: number; inactiveReviews: number; reportedReviews: number; averageRating: number }[];
-            distribution: { _id: number; count: number }[];
-        }
-
-        const [facetResult] = await this._bookingModel.aggregate<ReviewStatsFacet>([
-            { $match: { review: { $exists: true, $ne: null } } },
-            {
-                $facet: {
-                    stats: [
-                        {
-                            $group: {
-                                _id: null,
-                                totalReviews: { $sum: 1 },
-                                activeReviews: {
-                                    $sum: { $cond: [{ $eq: ["$review.isActive", true] }, 1, 0] }
-                                },
-                                inactiveReviews: {
-                                    $sum: { $cond: [{ $eq: ["$review.isActive", false] }, 1, 0] }
-                                },
-                                reportedReviews: {
-                                    $sum: { $cond: [{ $eq: ["$review.isReported", true] }, 1, 0] }
-                                },
-                                averageRating: {
-                                    $avg: {
-                                        $cond: [{ $eq: ["$review.isActive", true] }, "$review.rating", null]
-                                    }
-                                }
-                            }
-                        }
-                    ],
-                    distribution: [
-                        { $group: { _id: "$review.rating", count: { $sum: 1 } } }
-                    ]
-                }
-            }
-        ]);
-
-        const stats = facetResult?.stats?.[0];
-        const distributionMap = new Map<number, number>(
-            (facetResult?.distribution ?? []).map((item) => [item._id, item.count])
-        );
-        const distributionTotal = Array.from(distributionMap.values()).reduce((sum, count) => sum + count, 0);
-        const distribution: IReviewDistribution[] = [5, 4, 3, 2, 1].map((rating) => {
-            const count = distributionMap.get(rating) ?? 0;
-            return {
-                rating,
-                count,
-                percentage: distributionTotal > 0 ? Math.round((count / distributionTotal) * 100) : 0
-            };
-        });
-
-        return stats ? {
-            totalReviews: stats.totalReviews,
-            activeReviews: stats.activeReviews,
-            inactiveReviews: stats.inactiveReviews,
-            reportedReviews: stats.reportedReviews,
-            averageRating: Math.round((stats.averageRating || 0) * 10) / 10,
-            distribution
-        } : {
-            totalReviews: 0,
-            activeReviews: 0,
-            inactiveReviews: 0,
-            reportedReviews: 0,
-            averageRating: 0,
-            distribution
-        };
-    }
-
-    async getLowestRatedProviders(limit: number = 5): Promise<ILowestRatedProvider[]> {
-        return await this._bookingModel.aggregate([
-            { $match: { review: { $exists: true, $ne: null }, 'review.isActive': true } },
-            {
-                $group: {
-                    _id: "$providerId",
-                    avgRating: { $avg: "$review.rating" },
-                    totalReviews: { $sum: 1 }
-                }
-            },
-            { $match: { totalReviews: { $gte: 5 } } },
-            { $lookup: { from: 'providers', localField: '_id', foreignField: '_id', as: 'provider' } },
-            { $unwind: '$provider' },
-            {
-                $project: {
-                    _id: 0,
-                    providerId: { $toString: '$_id' },
-                    providerName: '$provider.username',
-                    providerAvatar: { $ifNull: ['$provider.avatar', ''] },
-                    avgRating: { $round: ['$avgRating', 1] },
-                    totalReviews: 1
-                }
-            },
-            { $sort: { avgRating: 1, totalReviews: 1 } },
-            { $limit: limit }
-        ]);
-    }
-
-    async getRatingTrend(days: number = 30): Promise<IRatingTrendPoint[]> {
-        const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-        return await this._bookingModel.aggregate([
-            {
-                $match: {
-                    review: { $exists: true, $ne: null },
-                    'review.isActive': true,
-                    'review.writtenAt': { $gte: since }
-                }
-            },
-            {
-                $group: {
-                    _id: { $dateToString: { format: '%Y-%m-%d', date: '$review.writtenAt' } },
-                    avgRating: { $avg: '$review.rating' },
-                    count: { $sum: 1 }
-                }
-            },
-            {
-                $project: {
-                    _id: 0,
-                    date: '$_id',
-                    avgRating: { $round: ['$avgRating', 1] },
-                    count: 1
-                }
-            },
-            { $sort: { date: 1 } }
-        ]);
-    }
-
-    async updateReviewStatus(reviewId: string, status: boolean): Promise<boolean> {
-        const result = await this._bookingModel.updateOne(
-            { _id: this._toObjectId(reviewId) },
-            { $set: { 'review.isActive': status } }
-        );
-        return result.matchedCount > 0;
-    }
-
-    async markReviewReported(reviewId: string): Promise<boolean> {
-        const result = await this._bookingModel.updateOne(
-            { _id: this._toObjectId(reviewId), review: { $exists: true, $ne: null } },
-            { $set: { 'review.isReported': true } }
-        );
-        return result.modifiedCount > 0;
-    }
-
-    async rescheduleBooking(bookingId: string, newExpectedArrivalTime: Date, newSlot: IBookedSlot): Promise<BookingDocument | null> {
-        return await this._bookingModel.findOneAndUpdate(
-            { _id: bookingId },
-            [
+          },
+          previousPeriodRevenue: {
+            $sum: {
+              $cond: [
                 {
-                    $set: {
-                        previousSlots: {
-                            $concatArrays: [
-                                { $ifNull: ["$previousSlots", []] },
-                                ["$slot"]
-                            ]
-                        },
-                        slot: newSlot,
-                        expectedArrivalTime: newExpectedArrivalTime
-                    }
+                  $eq: [{ $month: '$createdAt' }, new Date().getMonth() === 0 ? 12 : new Date().getMonth()],
                 },
+                { $divide: ['$totalAmount', 100] },
+                0,
+              ],
+            },
+          },
+          completedTransactions: {
+            $sum: {
+              $cond: [{ $eq: ['$transactionId', null] }, 0, 1],
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          totalRevenue: { $round: { $cond: [{ $eq: ['$totalRevenue', 0] }, 0, '$totalRevenue'] } },
+          revenueGrowth: {
+            $round: {
+              $cond: [
+                { $gt: [{ $round: '$previousPeriodRevenue' }, 0] },
+                {
+                  $multiply: [
+                    {
+                      $divide: [{ $subtract: ['$currentPeriodRevenue', '$previousPeriodRevenue'] }, { $round: '$previousPeriodRevenue' }],
+                    },
+                    100,
+                  ],
+                },
+                0,
+              ],
+            },
+          },
+          completedTransactions: {
+            $cond: [{ $eq: ['$completedTransactions', 0] }, 0, '$completedTransactions'],
+          },
+          avgTransactionValue: {
+            $round: {
+              $cond: [
+                { $gt: ['$completedTransactions', 0] },
+                {
+                  $divide: ['$totalRevenue', '$completedTransactions'],
+                },
+                0,
+              ],
+            },
+          },
+        },
+      },
+    ]);
+
+    return result[0];
+  }
+
+  async getRevenueTrendOverTime(providerId: string, view: RevenueChartView): Promise<IRevenueTrendRawData> {
+    const matchStage: FilterQuery<BookingDocument> = {
+      bookingStatus: BookingStatus.COMPLETED,
+    };
+
+    if (view === 'monthly' || view === 'quarterly') {
+      const currentYear = new Date().getFullYear();
+      matchStage.createdAt = {
+        $gte: new Date(currentYear, 0, 1),
+        $lt: new Date(currentYear + 1, 0, 1),
+      };
+    }
+
+    const getGroupId = () => {
+      switch (view) {
+        case 'monthly':
+          return { month: { $month: '$createdAt' } };
+        case 'quarterly':
+          return { quarter: { $ceil: { $divide: [{ $month: '$createdAt' }, 3] } } };
+        case 'yearly':
+          return { year: { $year: '$createdAt' } };
+      }
+    };
+
+    const aggregation: PipelineStage[] = [
+      {
+        $facet: {
+          providerRevenue: [
+            { $match: { ...matchStage, providerId: this._toObjectId(providerId) } },
+            {
+              $group: {
+                _id: getGroupId(),
+                totalRevenue: { $sum: { $divide: ['$totalAmount', 100] } },
+              },
+            },
+            {
+              $sort: view === 'monthly' ? { '_id.month': 1 } : view === 'quarterly' ? { '_id.quarter': 1 } : { '_id.year': 1 },
+            },
+          ],
+          platformAverage: [
+            {
+              $match: {
+                ...matchStage,
+                providerId: { $ne: this._toObjectId(providerId) },
+              },
+            },
+            {
+              $group: {
+                _id: getGroupId(),
+                totalRevenue: { $avg: { $divide: ['$totalAmount', 100] } },
+              },
+            },
+            {
+              $sort: view === 'monthly' ? { '_id.month': 1 } : view === 'quarterly' ? { '_id.quarter': 1 } : { '_id.year': 1 },
+            },
+          ],
+        },
+      },
+    ];
+
+    const rawResult = await this._bookingModel.aggregate(aggregation);
+    const providerRevenue = rawResult[0].providerRevenue;
+    const platformAverage = rawResult[0].platformAverage;
+
+    const mapLabel = (item) => {
+      if (view === 'monthly') return new Date(0, item._id.month - 1).toLocaleString('en-US', { month: 'short' });
+      if (view === 'quarterly') return `Q${item._id.quarter}`;
+      return item._id.year.toString();
+    };
+
+    const cleanProvider = providerRevenue.map((item) => ({
+      label: mapLabel(item),
+      totalRevenue: item.totalRevenue,
+    }));
+
+    const cleanPlatform = platformAverage.map((item) => ({
+      label: mapLabel(item),
+      totalRevenue: item.totalRevenue,
+    }));
+
+    return { providerRevenue: cleanProvider, platformAvg: cleanPlatform };
+  }
+
+  async getRevenueGrowthByMonth(providerId: string): Promise<IRevenueMonthlyGrowthRateData[]> {
+    return await this._bookingModel.aggregate([
+      {
+        $match: {
+          providerId: this._toObjectId(providerId),
+          $expr: {
+            $eq: [{ $year: '$createdAt' }, new Date().getFullYear()],
+          },
+        },
+      },
+      {
+        $group: {
+          _id: { month: { $month: '$createdAt' } },
+          totalRevenue: { $sum: { $divide: ['$totalAmount', 100] } },
+        },
+      },
+      { $sort: { '_id.month': 1 } },
+      {
+        $setWindowFields: {
+          sortBy: { '_id.month': 1 },
+          output: {
+            prevMonthRevenue: { $shift: { output: '$totalRevenue', by: -1 } },
+          },
+        },
+      },
+      {
+        $addFields: {
+          prevMonthRevenue: { $ifNull: ['$prevMonthRevenue', 0] },
+          growthRate: {
+            $cond: [
+              { $eq: [{ $ifNull: ['$prevMonthRevenue', 0] }, 0] },
+              0,
+              {
+                $multiply: [
+                  {
+                    $divide: [{ $subtract: ['$totalRevenue', '$prevMonthRevenue'] }, '$prevMonthRevenue'],
+                  },
+                  100,
+                ],
+              },
             ],
-            { new: true }
-        );
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          month: '$_id.month',
+          totalRevenue: 1,
+          growthRate: { $round: ['$growthRate', 2] },
+        },
+      },
+    ]);
+  }
+
+  async getRevenueCompositionByServiceCategory(providerId: string): Promise<IRevenueCompositionData[]> {
+    return await this._bookingModel.aggregate([
+      {
+        $match: { providerId: this._toObjectId(providerId) },
+      },
+      { $unwind: '$services' },
+      {
+        $lookup: {
+          from: 'providerservices',
+          localField: 'services',
+          foreignField: '_id',
+          as: 'serviceDetails',
+        },
+      },
+      {
+        $unwind: {
+          path: '$serviceDetails',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $lookup: {
+          from: 'servicecategories',
+          localField: 'serviceDetails.categoryId',
+          foreignField: '_id',
+          as: 'categoryDetails',
+        },
+      },
+      {
+        $unwind: {
+          path: '$categoryDetails',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $group: {
+          _id: '$categoryDetails.name',
+          totalRevenue: { $sum: { $divide: ['$totalAmount', 100] } },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          category: '$_id',
+          totalRevenue: 1,
+        },
+      },
+    ]);
+  }
+
+  async getTopTenServicesByRevenue(providerId: string): Promise<ITopServicesByRevenue[]> {
+    return await this._bookingModel.aggregate([
+      { $match: { providerId: this._toObjectId(providerId) } },
+      { $unwind: '$services' },
+      {
+        $lookup: {
+          from: 'providerservices',
+          localField: 'services',
+          foreignField: '_id',
+          as: 'serviceDetails',
+        },
+      },
+      { $unwind: '$serviceDetails' },
+      {
+        $lookup: {
+          from: 'professions',
+          localField: 'serviceDetails.professionId',
+          foreignField: '_id',
+          as: 'professionDetails',
+        },
+      },
+      { $unwind: '$professionDetails' },
+      {
+        $group: {
+          _id: '$professionDetails.name',
+          revenue: { $sum: { $divide: ['$totalAmount', 100] } },
+          totalBookings: { $sum: 1 },
+        },
+      },
+      {
+        $addFields: {
+          avgRevenue: {
+            $cond: {
+              if: { $eq: ['$totalBookings', 0] },
+              then: 0,
+              else: { $divide: ['$revenue', '$totalBookings'] },
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          service: '$_id',
+          revenue: 1,
+          totalBookings: 1,
+          avgRevenue: 1,
+        },
+      },
+      { $sort: { revenue: -1 } },
+      { $limit: 10 },
+    ]);
+  }
+
+  async getNewAndReturningClientData(providerId: string): Promise<INewOrReturningClientData[]> {
+    const currentYear = new Date().getFullYear();
+
+    return await this._bookingModel.aggregate([
+      {
+        $match: {
+          providerId: this._toObjectId(providerId),
+          bookingStatus: 'completed',
+          createdAt: {
+            $gte: new Date(`${currentYear}-01-01T00:00:00.000Z`),
+            $lte: new Date(`${currentYear}-12-31T23:59:59.999Z`),
+          },
+        },
+      },
+
+      // Lookup the customer's first completed booking
+      {
+        $lookup: {
+          from: 'bookings',
+          let: { custId: '$customerId' },
+          pipeline: [
+            {
+              $match: {
+                $expr: { $eq: ['$customerId', '$$custId'] },
+                bookingStatus: 'completed',
+              },
+            },
+            { $sort: { createdAt: 1 } },
+            { $limit: 1 },
+          ],
+          as: 'firstBooking',
+        },
+      },
+
+      { $unwind: '$firstBooking' },
+
+      // Extract month and check if booking is first for this customer
+      {
+        $addFields: {
+          month: { $month: '$createdAt' },
+          isNewClient: {
+            $eq: [{ $month: '$firstBooking.createdAt' }, { $month: '$createdAt' }],
+          },
+        },
+      },
+
+      // Group by month and new/returning
+      {
+        $group: {
+          _id: { month: '$month', isNewClient: '$isNewClient' },
+          count: { $sum: 1 },
+        },
+      },
+
+      // Reshape data: merge new vs returning per month
+      {
+        $group: {
+          _id: '$_id.month',
+          newClients: {
+            $sum: { $cond: [{ $eq: ['$_id.isNewClient', true] }, '$count', 0] },
+          },
+          returningClients: {
+            $sum: { $cond: [{ $eq: ['$_id.isNewClient', false] }, '$count', 0] },
+          },
+        },
+      },
+
+      // Sort by month
+      { $sort: { _id: 1 } },
+
+      // Converting month number to readable month name
+      {
+        $project: {
+          _id: 0,
+          month: {
+            $arrayElemAt: [
+              ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+              { $subtract: ['$_id', 1] },
+            ],
+          },
+          newClients: 1,
+          returningClients: 1,
+        },
+      },
+    ]);
+  }
+
+  async getAreaSummaryData(providerId: string): Promise<IAreaSummary> {
+    const result = await this._bookingModel.aggregate([
+      {
+        $match: {
+          providerId: this._toObjectId(providerId),
+          bookingStatus: BookingStatus.COMPLETED,
+          'location.address': { $exists: true, $type: 'string', $nin: ['', null] },
+        },
+      },
+      {
+        $addFields: {
+          areaName: {
+            $trim: {
+              input: {
+                $let: {
+                  vars: {
+                    region: { $arrayElemAt: [{ $split: ['$location.address', ','] }, 3] },
+                    lastRegion: { $arrayElemAt: [{ $split: ['$location.address', ','] }, -1] },
+                  },
+                  in: {
+                    $ifNull: [
+                      {
+                        $cond: [{ $in: ['$$region', [null, '']] }, '$$lastRegion', '$$region'],
+                      },
+                      'Unknown',
+                    ],
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      {
+        $group: {
+          _id: '$areaName',
+          totalBooking: { $sum: 1 },
+          totalRevenue: { $sum: '$totalAmount' },
+        },
+      },
+      {
+        $sort: { totalRevenue: -1 },
+      },
+      // collecting all areas with their revenue in an array for easy extraction
+      {
+        $group: {
+          _id: null,
+          totalBookings: { $sum: '$totalBooking' },
+          areas: {
+            $push: {
+              area: '$_id',
+              revenue: '$totalRevenue',
+            },
+          },
+        },
+      },
+      // add top and bottom performing areas
+      {
+        $addFields: {
+          topPerformingArea: { $arrayElemAt: ['$areas.area', 0] },
+          underperformingArea: {
+            $arrayElemAt: ['$areas.area', { $subtract: [{ $size: '$areas' }, 1] }],
+          },
+        },
+      },
+      // get peak booking hour from the main collection
+      {
+        $lookup: {
+          from: 'bookings',
+          pipeline: [
+            {
+              $match: {
+                providerId: this._toObjectId(providerId),
+                bookingStatus: 'completed',
+              },
+            },
+            {
+              $group: {
+                _id: '$slot.from',
+                count: { $sum: 1 },
+              },
+            },
+            { $sort: { count: -1 } },
+            {
+              $limit: 1,
+            },
+          ],
+          as: 'peakHour',
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          totalBookings: 1,
+          topPerformingArea: 1,
+          underperformingArea: 1,
+          peakBookingHour: { $arrayElemAt: ['$peakHour._id', 0] },
+        },
+      },
+    ]);
+
+    return result[0];
+  }
+
+  async getServiceDemandData(providerId: string): Promise<IServiceDemandData[]> {
+    return await this._bookingModel.aggregate([
+      { $match: { providerId: this._toObjectId(providerId) } },
+      {
+        $group: {
+          _id: {
+            day: { $dayOfWeek: '$createdAt' }, // 1 (Sunday) to 7 (Saturday)
+            hour: { $hour: '$createdAt' },
+          },
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $project: {
+          day: {
+            $arrayElemAt: [['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'], { $subtract: ['$_id.day', 1] }],
+          },
+          hour: {
+            $concat: [{ $toString: '$_id.hour' }, ':00'],
+          },
+          count: 1,
+          _id: 0,
+        },
+      },
+      { $sort: { day: 1, hour: 1 } },
+    ]);
+  }
+
+  async getServiceDemandByLocation(providerId: string): Promise<ILocationRevenue[]> {
+    const now = new Date();
+    const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const currentMonth = now.getMonth() + 1;
+    const currentYear = now.getFullYear();
+    const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const prevMonth = prevMonthDate.getMonth() + 1;
+    const prevYear = prevMonthDate.getFullYear();
+
+    return await this._bookingModel.aggregate([
+      {
+        $match: {
+          providerId: this._toObjectId(providerId),
+          bookingStatus: BookingStatus.COMPLETED,
+          createdAt: { $gte: previousMonthStart },
+        },
+      },
+      {
+        $addFields: {
+          month: { $month: '$createdAt' },
+          year: { $year: '$createdAt' },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            locationName: '$location.address',
+            year: '$year',
+            month: '$month',
+          },
+          totalRevenue: { $sum: { $divide: ['$totalAmount', 100] } },
+        },
+      },
+      {
+        $group: {
+          _id: '$_id.locationName',
+          monthlyData: {
+            $push: {
+              month: '$_id.month',
+              year: '$_id.year',
+              totalRevenue: '$totalRevenue',
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          locationName: '$_id',
+          monthlyData: 1,
+          _id: 0,
+        },
+      },
+      {
+        $addFields: {
+          current: {
+            $arrayElemAt: [
+              {
+                $filter: {
+                  input: '$monthlyData',
+                  cond: {
+                    $and: [{ $eq: ['$$this.month', currentMonth] }, { $eq: ['$$this.year', currentYear] }],
+                  },
+                },
+              },
+              0,
+            ],
+          },
+          previous: {
+            $arrayElemAt: [
+              {
+                $filter: {
+                  input: '$monthlyData',
+                  cond: {
+                    $and: [{ $eq: ['$$this.month', prevMonth] }, { $eq: ['$$this.year', prevYear] }],
+                  },
+                },
+              },
+              0,
+            ],
+          },
+        },
+      },
+      {
+        $project: {
+          locationName: 1,
+          totalRevenue: '$current.totalRevenue',
+          previousRevenue: '$previous.totalRevenue',
+          changePct: {
+            $cond: [
+              {
+                $and: [{ $ifNull: ['$previous.totalRevenue', false] }, { $ne: ['$previous.totalRevenue', 0] }],
+              },
+              {
+                $round: [
+                  {
+                    $multiply: [
+                      {
+                        $divide: [{ $subtract: ['$current.totalRevenue', '$previous.totalRevenue'] }, '$previous.totalRevenue'],
+                      },
+                      100,
+                    ],
+                  },
+                  2,
+                ],
+              },
+              0,
+            ],
+          },
+        },
+      },
+      { $sort: { totalRevenue: -1 } },
+    ]);
+  }
+
+  async getTopAreasRevenue(providerId: string): Promise<ITopAreaRevenue[]> {
+    const now = new Date();
+    const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+    const currentMonth = now.getMonth() + 1;
+    const currentYear = now.getFullYear();
+    const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const prevMonth = prevMonthDate.getMonth() + 1;
+    const prevYear = prevMonthDate.getFullYear();
+
+    return await this._bookingModel.aggregate([
+      {
+        $match: {
+          providerId: this._toObjectId(providerId),
+          bookingStatus: BookingStatus.COMPLETED,
+          createdAt: { $gte: startOfLastMonth, $lte: now },
+        },
+      },
+      {
+        $addFields: {
+          month: { $month: '$createdAt' },
+          year: { $year: '$createdAt' },
+        },
+      },
+      {
+        $group: {
+          _id: { locationName: '$location.address', month: '$month', year: '$year' },
+          totalRevenue: { $sum: { $divide: ['$totalAmount', 100] } },
+        },
+      },
+      {
+        $group: {
+          _id: '$_id.locationName',
+          monthlyData: {
+            $push: {
+              month: '$_id.month',
+              year: '$_id.year',
+              totalRevenue: '$totalRevenue',
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          locationName: '$_id',
+          _id: 0,
+          totalRevenue: {
+            $let: {
+              vars: {
+                currentMonth: {
+                  $first: {
+                    $filter: {
+                      input: '$monthlyData',
+                      as: 'm',
+                      cond: {
+                        $and: [{ $eq: ['$$m.month', currentMonth] }, { $eq: ['$$m.year', currentYear] }],
+                      },
+                    },
+                  },
+                },
+                lastMonth: {
+                  $first: {
+                    $filter: {
+                      input: '$monthlyData',
+                      as: 'm',
+                      cond: {
+                        $and: [{ $eq: ['$$m.month', prevMonth] }, { $eq: ['$$m.year', prevYear] }],
+                      },
+                    },
+                  },
+                },
+              },
+              in: '$$currentMonth.totalRevenue',
+            },
+          },
+          prevRevenue: {
+            $let: {
+              vars: {
+                lastMonth: {
+                  $first: {
+                    $filter: {
+                      input: '$monthlyData',
+                      as: 'm',
+                      cond: {
+                        $and: [{ $eq: ['$$m.month', prevMonth] }, { $eq: ['$$m.year', prevYear] }],
+                      },
+                    },
+                  },
+                },
+              },
+              in: '$$lastMonth.totalRevenue',
+            },
+          },
+        },
+      },
+      {
+        $addFields: {
+          changePct: {
+            $cond: [
+              { $or: [{ $eq: ['$prevRevenue', 0] }, { $not: ['$prevRevenue'] }] },
+              0,
+              {
+                $multiply: [{ $divide: [{ $subtract: ['$totalRevenue', '$prevRevenue'] }, '$prevRevenue'] }, 100],
+              },
+            ],
+          },
+        },
+      },
+      {
+        $sort: { totalRevenue: -1 },
+      },
+      {
+        $project: {
+          locationName: 1,
+          totalRevenue: 1,
+          changePct: { $round: ['$changePct', 2] },
+        },
+      },
+    ]);
+  }
+
+  async getUnderperformingAreas(providerId: string): Promise<IUnderperformingArea[]> {
+    const now = new Date();
+    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+    return await this._bookingModel.aggregate([
+      {
+        $match: {
+          providerId: this._toObjectId(providerId),
+          bookingStatus: BookingStatus.COMPLETED,
+          createdAt: { $gte: lastMonthStart },
+        },
+      },
+      {
+        // Group by location address and month/year
+        $group: {
+          _id: {
+            locationName: '$location.address',
+            month: { $month: '$createdAt' },
+            year: { $year: '$createdAt' },
+          },
+          totalRevenue: { $sum: { $divide: ['$totalAmount', 100] } },
+        },
+      },
+      {
+        // Reshape data per location
+        $group: {
+          _id: '$_id.locationName',
+          revenues: {
+            $push: {
+              month: '$_id.month',
+              year: '$_id.year',
+              totalRevenue: '$totalRevenue',
+            },
+          },
+        },
+      },
+      {
+        // Project last month, current month, and change
+        $project: {
+          locationName: '$_id',
+          lastMonthRevenue: {
+            $let: {
+              vars: {
+                lm: {
+                  $arrayElemAt: [
+                    {
+                      $filter: {
+                        input: '$revenues',
+                        as: 'r',
+                        cond: {
+                          $and: [
+                            { $eq: ['$$r.year', lastMonthStart.getFullYear()] },
+                            { $eq: ['$$r.month', lastMonthStart.getMonth() + 1] },
+                          ],
+                        },
+                      },
+                    },
+                    0,
+                  ],
+                },
+              },
+              in: { $ifNull: ['$$lm.totalRevenue', 0] },
+            },
+          },
+          currentMonthRevenue: {
+            $let: {
+              vars: {
+                cm: {
+                  $arrayElemAt: [
+                    {
+                      $filter: {
+                        input: '$revenues',
+                        as: 'r',
+                        cond: {
+                          $and: [
+                            { $eq: ['$$r.year', currentMonthStart.getFullYear()] },
+                            { $eq: ['$$r.month', currentMonthStart.getMonth() + 1] },
+                          ],
+                        },
+                      },
+                    },
+                    0,
+                  ],
+                },
+              },
+              in: { $ifNull: ['$$cm.totalRevenue', 0] },
+            },
+          },
+        },
+      },
+      {
+        $addFields: {
+          changePct: {
+            $round: {
+              $cond: [
+                { $eq: ['$lastMonthRevenue', 0] },
+                0,
+                {
+                  $multiply: [
+                    {
+                      $divide: [{ $subtract: ['$currentMonthRevenue', '$lastMonthRevenue'] }, '$lastMonthRevenue'],
+                    },
+                    100,
+                  ],
+                },
+              ],
+            },
+          },
+        },
+      },
+      { $sort: { changePct: 1 } },
+    ]);
+  }
+
+  async getPeakServiceTime(providerId: string): Promise<IPeakServiceTime[]> {
+    return await this._bookingModel.aggregate([
+      {
+        $match: {
+          providerId: this._toObjectId(providerId),
+          bookingStatus: BookingStatus.COMPLETED,
+          expectedArrivalTime: { $exists: true, $ne: null },
+        },
+      },
+      {
+        $addFields: {
+          hour: { $hour: '$expectedArrivalTime' },
+          dayOfWeek: { $isoDayOfWeek: '$expectedArrivalTime' },
+        },
+      },
+      {
+        $group: {
+          _id: '$hour',
+          weekdayBookings: {
+            $sum: {
+              $cond: [{ $lte: ['$dayOfWeek', 5] }, 1, 0],
+            },
+          },
+          weekendBookings: {
+            $sum: {
+              $cond: [{ $gte: ['$dayOfWeek', 6] }, 1, 0],
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          hour: '$_id',
+          weekdayBookings: 1,
+          weekendBookings: 1,
+        },
+      },
+      { $sort: { hour: 1 } },
+    ]);
+  }
+
+  async getRevenueBreakdown(providerId: string): Promise<IRevenueBreakdown> {
+    const providerIdObj = this._toObjectId(providerId);
+
+    const result = await this._bookingModel.aggregate([
+      {
+        $facet: {
+          bookings: [
+            { $match: { providerId: providerIdObj } },
+            {
+              $group: {
+                _id: null,
+                completedCount: {
+                  $sum: { $cond: [{ $eq: ['$bookingStatus', BookingStatus.COMPLETED] }, 1, 0] },
+                },
+                pendingCount: {
+                  $sum: {
+                    $cond: [
+                      {
+                        $and: [{ $ne: ['$bookingStatus', BookingStatus.COMPLETED] }, { $ne: ['$bookingStatus', BookingStatus.CANCELLED] }],
+                      },
+                      1,
+                      0,
+                    ],
+                  },
+                },
+              },
+            },
+          ],
+          earnings: [
+            { $match: { providerId: providerIdObj } },
+            { $unwind: '$transactionHistory' },
+            {
+              $match: {
+                'transactionHistory.transactionType': TransactionType.BOOKING_RELEASE,
+                'transactionHistory.direction': PaymentDirection.CREDIT,
+                paymentStatus: PaymentStatus.PAID,
+              },
+            },
+            {
+              $group: {
+                _id: null,
+                totalEarnings: { $sum: '$totalAmount' },
+              },
+            },
+          ],
+        },
+      },
+      {
+        $project: {
+          totalEarnings: {
+            $ifNull: [
+              {
+                $divide: [{ $arrayElemAt: ['$earnings.totalEarnings', 0] }, 100],
+              },
+              0,
+            ],
+          },
+          completedCount: {
+            $ifNull: [{ $arrayElemAt: ['$bookings.completedCount', 0] }, 0],
+          },
+          pendingCount: {
+            $ifNull: [{ $arrayElemAt: ['$bookings.pendingCount', 0] }, 0],
+          },
+        },
+      },
+    ]);
+
+    return result[0];
+  }
+
+  async getBookingsBreakdown(providerId: string): Promise<IBookingsBreakdown> {
+    const result = await this._bookingModel.aggregate([
+      {
+        $match: {
+          providerId: this._toObjectId(providerId),
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalBookings: { $sum: 1 },
+          upcomingBookings: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [{ $ne: ['$bookingStatus', BookingStatus.COMPLETED] }, { $ne: ['$bookingStatus', BookingStatus.CANCELLED] }],
+                },
+                1,
+                0,
+              ],
+            },
+          },
+          cancelledBookings: {
+            $sum: {
+              $cond: [{ $eq: ['$bookingStatus', BookingStatus.CANCELLED] }, 1, 0],
+            },
+          },
+          totalAmount: { $sum: '$totalAmount' },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          totalBookings: 1,
+          upcomingBookings: 1,
+          cancelledBookings: 1,
+          averageBookingValue: {
+            $cond: [{ $eq: ['$totalBookings', 0] }, 0, { $divide: ['$totalAmount', '$totalBookings'] }],
+          },
+        },
+      },
+    ]);
+
+    return (
+      result?.[0] ?? {
+        totalBookings: 0,
+        upcomingBookings: 0,
+        cancelledBookings: 0,
+        averageBookingValue: 0,
+      }
+    );
+  }
+
+  async getBookingsCompletionRate(providerId: string): Promise<number> {
+    const result = await this._bookingModel.aggregate([
+      {
+        $match: {
+          providerId: this._toObjectId(providerId),
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalBookings: { $sum: 1 },
+          completedCount: {
+            $sum: {
+              $cond: [{ $eq: ['$bookingStatus', BookingStatus.COMPLETED] }, 1, 0],
+            },
+          },
+          cancelledCount: {
+            $sum: {
+              $cond: [{ $eq: ['$bookingStatus', BookingStatus.CANCELLED] }, 1, 0],
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          completionRate: {
+            $multiply: [
+              {
+                $cond: [
+                  {
+                    $lte: [
+                      {
+                        $subtract: [{ $ifNull: ['$totalBookings', 0] }, { $ifNull: ['$cancelledCount', 0] }],
+                      },
+                      0,
+                    ],
+                  },
+                  0,
+                  {
+                    $divide: [
+                      { $ifNull: ['$completedCount', 0] },
+                      {
+                        $subtract: [{ $ifNull: ['$totalBookings', 0] }, { $ifNull: ['$cancelledCount', 0] }],
+                      },
+                    ],
+                  },
+                ],
+              },
+              100,
+            ],
+          },
+        },
+      },
+    ]);
+
+    return Math.round(result?.[0]?.completionRate ?? 0);
+  }
+
+  async isAnyBookingOngoing(customerId: string, providerId: string): Promise<boolean> {
+    const exists = await this._bookingModel.exists({
+      customerId: this._toObjectId(customerId),
+      providerId: this._toObjectId(providerId),
+      bookingStatus: {
+        $in: [BookingStatus.PENDING, BookingStatus.CONFIRMED, BookingStatus.IN_PROGRESS],
+      },
+    });
+    return Boolean(exists);
+  }
+
+  async fetchBookingsByProviderOnSameDate(customerId: string, providerId: string, date: Date | string): Promise<BookingDocument[]> {
+    const formattedDate = new Date(date);
+    formattedDate.setHours(0, 0, 0, 0);
+
+    return this._bookingModel.find({
+      customerId: this._toObjectId(customerId),
+      providerId: this._toObjectId(providerId),
+      'slot.date': formattedDate,
+    });
+  }
+
+  async findAllBookingsByProviderOnSameDate(providerId: string, date: Date | string): Promise<BookingDocument[]> {
+    const formattedDate = new Date(date);
+    formattedDate.setHours(0, 0, 0, 0);
+
+    return this._bookingModel.find({
+      providerId: this._toObjectId(providerId),
+      'slot.date': formattedDate,
+      bookingStatus: { $ne: BookingStatus.CANCELLED },
+      paymentStatus: { $ne: PaymentStatus.FAILED },
+    });
+  }
+
+  async completedBookingsCount(providerId: string): Promise<number> {
+    return await this._bookingModel.countDocuments({
+      providerId: this._toObjectId(providerId),
+      bookingStatus: BookingStatus.COMPLETED,
+    });
+  }
+
+  async getNextAvailableSlot(providerId: string): Promise<ISlot & { date: Date }> {
+    const providerObjId = this._toObjectId(providerId);
+
+    const result = await this._bookingModel.aggregate([
+      {
+        $match: {
+          providerId: providerObjId,
+          bookingStatus: {
+            $in: [BookingStatus.PENDING, BookingStatus.CONFIRMED, BookingStatus.IN_PROGRESS],
+          },
+        },
+      },
+      { $sort: { 'slot.date': 1 } },
+      { $limit: 1 },
+      {
+        $project: {
+          _id: 0,
+          slot: {
+            from: '$slot.from',
+            to: '$slot.to',
+            date: '$slot.date',
+          },
+        },
+      },
+    ]);
+
+    return result?.[0]?.slot;
+  }
+
+  async getUpcomingBookings(providerId: string, limit: number = 5): Promise<IUpcomingBooking[]> {
+    const providerObjId = this._toObjectId(providerId);
+
+    return this._bookingModel.aggregate<IUpcomingBooking>([
+      {
+        $match: {
+          providerId: providerObjId,
+          bookingStatus: {
+            $in: [BookingStatus.PENDING, BookingStatus.CONFIRMED, BookingStatus.IN_PROGRESS],
+          },
+        },
+      },
+      { $sort: { 'slot.date': 1, 'slot.from': 1 } },
+      { $limit: limit },
+      {
+        $lookup: {
+          from: 'customers',
+          localField: 'customerId',
+          foreignField: '_id',
+          as: 'customerDoc',
+        },
+      },
+      { $unwind: { path: '$customerDoc', preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: 'providerservices',
+          localField: 'services',
+          foreignField: '_id',
+          as: 'serviceDocs',
+        },
+      },
+      {
+        $addFields: {
+          firstService: { $arrayElemAt: ['$serviceDocs', 0] },
+        },
+      },
+      {
+        $lookup: {
+          from: 'professions',
+          let: { pid: '$firstService.professionId' },
+          pipeline: [{ $match: { $expr: { $eq: ['$_id', '$$pid'] } } }, { $limit: 1 }, { $project: { _id: 0, name: 1 } }],
+          as: 'serviceProfession',
+        },
+      },
+      { $unwind: { path: '$serviceProfession', preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: 'servicecategories',
+          let: { cid: '$firstService.categoryId' },
+          pipeline: [{ $match: { $expr: { $eq: ['$_id', '$$cid'] } } }, { $limit: 1 }, { $project: { _id: 0, name: 1 } }],
+          as: 'serviceCategory',
+        },
+      },
+      { $unwind: { path: '$serviceCategory', preserveNullAndEmptyArrays: true } },
+      {
+        $project: {
+          _id: 0,
+          bookingId: { $toString: '$_id' },
+          amount: { $divide: [{ $ifNull: ['$totalAmount', 0] }, 100] },
+          status: '$bookingStatus',
+          slot: {
+            from: '$slot.from',
+            to: '$slot.to',
+            date: '$slot.date',
+          },
+          customer: {
+            id: { $toString: '$customerDoc._id' },
+            username: { $ifNull: ['$customerDoc.username', ''] },
+            fullname: { $ifNull: ['$customerDoc.fullname', '$customerDoc.username'] },
+            avatar: { $ifNull: ['$customerDoc.avatar', ''] },
+          },
+          service: {
+            name: { $ifNull: ['$serviceProfession.name', ''] },
+            category: { $ifNull: ['$serviceCategory.name', ''] },
+          },
+        },
+      },
+    ]);
+  }
+
+  async getAdminReviews(filter: IReviewFilters): Promise<PaginatedReviewResponse> {
+    const page = filter.page || 1;
+
+    const limit = 10;
+    const skip = (page - 1) * limit;
+
+    const match: FilterQuery<BookingDocument> = {
+      review: { $exists: true, $ne: null },
+    };
+
+    if (filter.minRating) {
+      match['review.rating'] = { $gte: Number(filter.minRating) };
     }
 
-    async aggregateSalesReport(option: ISalesReportFilter): Promise<ISalesReportBundle> {
-        const COMPLETED = BookingStatus.COMPLETED;
-        const CANCELLED = BookingStatus.CANCELLED;
+    if (filter.status !== undefined && filter.status !== 'all') {
+      match['review.isActive'] = filter.status === true;
+    }
 
-        // ---- Date windows ----
-        const year = new Date().getFullYear();
-        let windowStart: Date;
-        let windowEnd: Date;
-        let hasRange = false;
+    if (filter.isReported !== undefined && filter.isReported !== 'all') {
+      match['review.isReported'] = filter.isReported === true;
+    }
 
-        if (option.fromDate && option.toDate) {
-            windowStart = new Date(option.fromDate);
-            windowEnd = new Date(option.toDate);
-            if (isNaN(windowStart.getTime()) || isNaN(windowEnd.getTime())) {
-                windowStart = new Date(year, 0, 1);
-                windowEnd = new Date();
-            } else {
-                hasRange = true;
-            }
-        } else {
-            windowStart = new Date(year, 0, 1);
-            windowEnd = new Date();
-        }
-        windowEnd.setHours(23, 59, 59, 999);
-        const windowLenMs = Math.max(windowEnd.getTime() - windowStart.getTime(), 0);
-        const prevEnd = new Date(windowStart.getTime() - 1);
-        const prevStart = new Date(prevEnd.getTime() - windowLenMs);
+    const pipeline: PipelineStage[] = [];
 
-        // ---- Base match (provider / status filters; category & profession applied post-lookup) ----
-        const baseMatch: FilterQuery<BookingDocument> = {};
-        if (option.providerId) baseMatch.providerId = this._toObjectId(option.providerId);
-        if (option.bookingStatus) baseMatch.bookingStatus = option.bookingStatus;
+    pipeline.push(
+      { $match: match },
+      {
+        $lookup: {
+          from: 'customers',
+          localField: 'customerId',
+          foreignField: '_id',
+          as: 'customer',
+        },
+      },
+      { $unwind: '$customer' },
+      {
+        $lookup: {
+          from: 'providers',
+          localField: 'providerId',
+          foreignField: '_id',
+          as: 'provider',
+        },
+      },
+      { $unwind: '$provider' },
+    );
 
-        const pipeline: PipelineStage[] = [];
-        if (Object.keys(baseMatch).length > 0) pipeline.push({ $match: baseMatch });
-
-        // ---- Flatten one row per ordered service ----
-        pipeline.push(
-            { $lookup: { from: 'providerservices', localField: 'services', foreignField: '_id', as: 'serviceFetch' } },
-            { $unwind: { path: '$serviceFetch', preserveNullAndEmptyArrays: true } },
-            { $lookup: { from: 'professions', localField: 'serviceFetch.professionId', foreignField: '_id', as: 'professionFetch' } },
-            { $unwind: { path: '$professionFetch', preserveNullAndEmptyArrays: true } },
-            { $lookup: { from: 'servicecategories', localField: 'serviceFetch.categoryId', foreignField: '_id', as: 'categoryFetch' } },
-            { $unwind: { path: '$categoryFetch', preserveNullAndEmptyArrays: true } },
-            { $lookup: { from: 'providers', localField: 'providerId', foreignField: '_id', as: 'providerFetch' } },
-            { $unwind: { path: '$providerFetch', preserveNullAndEmptyArrays: true } },
-        );
-
-        if (option.professionId) {
-            pipeline.push({ $match: { 'professionFetch._id': this._toObjectId(option.professionId) } });
-        }
-        if (option.categoryId) {
-            pipeline.push({ $match: { 'categoryFetch._id': this._toObjectId(option.categoryId) } });
-        }
-
-        const monthArr = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-        const dailyBucket = hasRange && windowLenMs <= 92 * 24 * 60 * 60 * 1000;
-        const trendGroupId = dailyBucket
-            ? { year: { $year: '$createdAt' }, month: { $month: '$createdAt' }, day: { $dayOfMonth: '$createdAt' } }
-            : { year: { $year: '$createdAt' }, month: { $month: '$createdAt' } };
-        const trendLabel = dailyBucket
-            ? { $concat: [{ $arrayElemAt: [monthArr, { $subtract: ['$_id.month', 1] }] }, ' ', { $toString: '$_id.day' }] }
-            : { $arrayElemAt: [monthArr, { $subtract: ['$_id.month', 1] }] };
-
+    if (filter.search) {
+      const searchRegex = new RegExp(this._escapeRegex(filter.search), 'i');
+      if (filter.searchBy === 'review id') {
         pipeline.push({
-            $facet: {
-                // ---- Summary (dedup per booking) ----
-                summary: [
-                    { $match: { createdAt: { $gte: windowStart, $lte: windowEnd } } },
-                    { $sort: { createdAt: 1 } },
-                    { $group: { _id: '$_id', amount: { $first: '$totalAmount' }, status: { $first: '$bookingStatus' }, createdAt: { $first: '$createdAt' } } },
-                    {
-                        $group: {
-                            _id: null,
-                            totalBookings: { $sum: 1 },
-                            totalCompleted: { $sum: { $cond: [{ $eq: ['$status', COMPLETED] }, 1, 0] } },
-                            cancelled: { $sum: { $cond: [{ $eq: ['$status', CANCELLED] }, 1, 0] } },
-                            totalRevenue: { $sum: { $cond: [{ $eq: ['$status', COMPLETED] }, { $ifNull: ['$amount', 0] }, 0] } },
-                            firstDate: { $min: '$createdAt' },
-                            lastDate: { $max: '$createdAt' },
-                        }
-                    },
-                    {
-                        $project: {
-                            _id: 0,
-                            totalBookings: 1,
-                            completed: '$totalCompleted',
-                            cancelled: 1,
-                            totalRevenue: 1,
-                            days: {
-                                $max: [
-                                    { $ceil: { $divide: [{ $subtract: ['$lastDate', '$firstDate'] }, 86400000] } },
-                                    1
-                                ]
-                            }
-                        }
-                    }
-                ],
-                // ---- Previous period revenue (for growth) ----
-                previousRevenue: [
-                    { $match: { createdAt: { $gte: prevStart, $lte: prevEnd }, bookingStatus: COMPLETED } },
-                    { $sort: { createdAt: 1 } },
-                    { $group: { _id: '$_id', amount: { $first: '$totalAmount' } } },
-                    { $group: { _id: null, revenue: { $sum: { $ifNull: ['$amount', 0] } } } }
-                ],
-                // ---- Sales trend ----
-                trend: [
-                    { $match: { createdAt: { $gte: windowStart, $lte: windowEnd } } },
-                    { $sort: { createdAt: 1 } },
-                    { $group: { _id: '$_id', status: { $first: '$bookingStatus' }, amount: { $first: '$totalAmount' }, createdAt: { $first: '$createdAt' } } },
-                    { $addFields: { _bucket: trendGroupId } },
-                    {
-                        $group: {
-                            _id: '$_bucket',
-                            revenue: { $sum: { $cond: [{ $eq: ['$status', COMPLETED] }, { $ifNull: ['$amount', 0] }, 0] } },
-                            bookings: { $sum: 1 }
-                        }
-                    },
-                    { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 } },
-                    { $project: { _id: 0, label: trendLabel, revenue: 1, bookings: 1 } }
-                ],
-                // ---- Bookings sold buckets ----
-                bookingsSold: [
-                    { $match: { createdAt: { $gte: windowStart, $lte: windowEnd } } },
-                    { $sort: { createdAt: 1 } },
-                    { $group: { _id: '$_id', createdAt: { $first: '$createdAt' } } },
-                    { $group: { _id: null, buckets: { $push: '$createdAt' } } }
-                ],
-                // ---- Top professions ----
-                professions: [
-                    { $match: { createdAt: { $gte: windowStart, $lte: windowEnd } } },
-                    {
-                        $group: {
-                            _id: { p: '$professionFetch.name', b: '$_id' },
-                            revenue: { $first: { $cond: [{ $eq: ['$bookingStatus', COMPLETED] }, { $ifNull: ['$totalAmount', 0] }, 0] } }
-                        }
-                    },
-                    { $group: { _id: '$_id.p', bookings: { $sum: 1 }, revenue: { $sum: '$revenue' } } },
-                    { $sort: { bookings: -1 } },
-                    { $limit: 6 },
-                    { $project: { _id: 0, name: '$_id', bookings: 1, revenue: { $round: ['$revenue', 0] } } }
-                ],
-                // ---- Top categories ----
-                categories: [
-                    { $match: { createdAt: { $gte: windowStart, $lte: windowEnd } } },
-                    {
-                        $group: {
-                            _id: { c: '$categoryFetch.name', b: '$_id' },
-                            revenue: { $first: { $cond: [{ $eq: ['$bookingStatus', COMPLETED] }, { $ifNull: ['$totalAmount', 0] }, 0] } }
-                        }
-                    },
-                    { $group: { _id: '$_id.c', bookings: { $sum: 1 }, revenue: { $sum: '$revenue' } } },
-                    { $sort: { bookings: -1 } },
-                    { $limit: 6 },
-                    { $project: { _id: 0, name: '$_id', bookings: 1, revenue: { $round: ['$revenue', 0] } } }
-                ],
-                // ---- Top selling services ----
-                services: [
-                    { $match: { createdAt: { $gte: windowStart, $lte: windowEnd } } },
-                    {
-                        $group: {
-                            _id: { s: '$serviceFetch._id', b: '$_id' },
-                            revenue: { $first: { $cond: [{ $eq: ['$bookingStatus', COMPLETED] }, { $ifNull: ['$totalAmount', 0] }, 0] } },
-                            rating: { $first: { $ifNull: ['$review.rating', 0] } },
-                            providerId: { $first: '$providerFetch._id' },
-                            providerName: { $first: '$providerFetch.username' },
-                            serviceName: { $first: '$serviceFetch.description' },
-                            profession: { $first: '$professionFetch.name' }
-                        }
-                    },
-                    {
-                        $group: {
-                            _id: '$_id.s',
-                            bookings: { $sum: 1 },
-                            revenue: { $sum: '$revenue' },
-                            providerId: { $first: '$providerId' },
-                            providerName: { $first: '$providerName' },
-                            serviceName: { $first: '$serviceName' },
-                            profession: { $first: '$profession' },
-                            ratingSum: { $sum: { $cond: [{ $gt: ['$rating', 0] }, '$rating', 0] } },
-                            rated: { $sum: { $cond: [{ $gt: ['$rating', 0] }, 1, 0] } }
-                        }
-                    },
-                    {
-                        $addFields: {
-                            avgRating: { $round: [{ $cond: [{ $gt: ['$rated', 0] }, { $divide: ['$ratingSum', '$rated'] }, 0] }, 2] }
-                        }
-                    },
-                    { $sort: { bookings: -1 } },
-                    { $limit: 10 },
-                    {
-                        $project: {
-                            _id: 0,
-                            serviceId: { $toString: '$_id' },
-                            providerId: { $toString: '$providerId' },
-                            providerName: 1,
-                            serviceName: 1,
-                            profession: 1,
-                            bookings: 1,
-                            revenue: { $round: ['$revenue', 0] },
-                            avgRating: 1
-                        }
-                    }
-                ],
-                // ---- Provider performance ----
-                providers: [
-                    { $match: { createdAt: { $gte: windowStart, $lte: windowEnd } } },
-                    { $sort: { createdAt: 1 } },
-                    {
-                        $group: {
-                            _id: { p: '$providerFetch._id', b: '$_id' },
-                            providerName: { $first: '$providerFetch.username' },
-                            status: { $first: '$bookingStatus' },
-                            amount: { $first: '$totalAmount' },
-                            rating: { $first: { $ifNull: ['$review.rating', 0] } }
-                        }
-                    },
-                    {
-                        $group: {
-                            _id: '$_id.p',
-                            providerName: { $first: '$providerName' },
-                            total: { $sum: 1 },
-                            completedJobs: { $sum: { $cond: [{ $eq: ['$status', COMPLETED] }, 1, 0] } },
-                            cancelled: { $sum: { $cond: [{ $eq: ['$status', CANCELLED] }, 1, 0] } },
-                            revenue: { $sum: { $cond: [{ $eq: ['$status', COMPLETED] }, { $ifNull: ['$amount', 0] }, 0] } },
-                            ratingSum: { $sum: { $cond: [{ $gt: ['$rating', 0] }, '$rating', 0] } },
-                            rated: { $sum: { $cond: [{ $gt: ['$rating', 0] }, 1, 0] } }
-                        }
-                    },
-                    {
-                        $addFields: {
-                            completionRate: { $multiply: [{ $divide: ['$completedJobs', { $cond: [{ $gt: ['$total', 0] }, '$total', 1] }] }, 100] },
-                            avgRating: { $round: [{ $cond: [{ $gt: ['$rated', 0] }, { $divide: ['$ratingSum', '$rated'] }, 0] }, 2] }
-                        }
-                    },
-                    { $sort: { revenue: -1 } },
-                    {
-                        $project: {
-                            _id: 0,
-                            providerId: { $toString: '$_id' },
-                            providerName: 1,
-                            completedJobs: 1,
-                            cancelled: 1,
-                            revenue: { $round: ['$revenue', 0] },
-                            completionRate: { $round: ['$completionRate', 1] },
-                            avgRating: 1
-                        }
-                    }
-                ],
-                // ---- Sales distribution (by profession) ----
-                distribution: [
-                    { $match: { createdAt: { $gte: windowStart, $lte: windowEnd }, bookingStatus: COMPLETED } },
-                    { $group: { _id: { p: '$professionFetch.name', b: '$_id' }, amount: { $first: { $ifNull: ['$totalAmount', 0] } } } },
-                    { $group: { _id: '$_id.p', value: { $sum: '$amount' } } },
-                    { $sort: { value: -1 } },
-                    { $limit: 8 },
-                    { $project: { _id: 0, name: '$_id', value: { $round: ['$value', 0] } } }
-                ],
-                // ---- Cancellation analysis ----
-                cancellationCategories: [
-                    { $match: { createdAt: { $gte: windowStart, $lte: windowEnd }, bookingStatus: CANCELLED } },
-                    { $group: { _id: { c: '$categoryFetch.name', b: '$_id' } } },
-                    { $group: { _id: '$_id.c', bookings: { $sum: 1 } } },
-                    { $sort: { bookings: -1 } },
-                    { $limit: 5 },
-                    { $project: { _id: 0, name: '$_id', bookings: 1 } }
-                ],
-                cancellationProviders: [
-                    { $match: { createdAt: { $gte: windowStart, $lte: windowEnd }, bookingStatus: CANCELLED } },
-                    { $group: { _id: { p: '$providerFetch._id', b: '$_id' }, name: { $first: '$providerFetch.username' } } },
-                    { $group: { _id: '$_id.p', name: { $first: '$name' }, bookings: { $sum: 1 } } },
-                    { $sort: { bookings: -1 } },
-                    { $limit: 5 },
-                    { $project: { _id: 0, name: 1, bookings: 1 } }
-                ],
-                // ---- Filter options ----
-                filters: [
-                    { $sort: { createdAt: 1 } },
-                    {
-                        $group: {
-                            _id: null,
-                            professions: { $addToSet: { id: { $toString: '$professionFetch._id' }, name: '$professionFetch.name' } },
-                            categories: { $addToSet: { id: { $toString: '$categoryFetch._id' }, name: '$categoryFetch.name' } },
-                            providers: { $addToSet: { id: { $toString: '$providerFetch._id' }, name: '$providerFetch.username' } }
-                        }
-                    }
-                ]
-            }
+          $match: {
+            $expr: { $regexMatch: { input: { $toString: '$_id' }, regex: searchRegex } },
+          },
         });
-
-        const [result] = await this._bookingModel.aggregate(pipeline);
-        return this._mapSalesReport(result);
+      } else if (filter.searchBy === 'customer') {
+        pipeline.push({ $match: { 'customer.username': searchRegex } });
+      } else if (filter.searchBy === 'provider') {
+        pipeline.push({ $match: { 'provider.username': searchRegex } });
+      } else if (filter.searchBy === 'content') {
+        pipeline.push({ $match: { 'review.desc': searchRegex } });
+      } else {
+        pipeline.push({
+          $match: {
+            $or: [{ 'customer.username': searchRegex }, { 'provider.username': searchRegex }, { 'review.desc': searchRegex }],
+          },
+        });
+      }
     }
 
-    private _mapSalesReport(result: any): ISalesReportBundle {
-        const summary = result?.summary?.[0] ?? {
-            totalBookings: 0, completed: 0, cancelled: 0, totalRevenue: 0, days: 1
-        };
-        const prevRevenue = result?.previousRevenue?.[0]?.revenue ?? 0;
-        const totalDays = summary.days > 0 ? summary.days : 1;
+    const countPipeline = [...pipeline, { $count: 'total' }];
+    const [totalCountResult] = await this._bookingModel.aggregate(countPipeline);
+    const total = totalCountResult?.total ?? 0;
 
-        const totalSales = Math.round(summary.totalRevenue || 0);
-        const completedSales = summary.completed ?? 0;
-        const cancelledSales = summary.cancelled ?? 0;
-        const totalBookings = summary.totalBookings ?? 0;
+    const sort: Record<string, 1 | -1> = {};
+    if (filter.sortBy === 'highest') sort['review.rating'] = -1;
+    else if (filter.sortBy === 'lowest') sort['review.rating'] = 1;
+    else if (filter.sortBy === 'oldest') sort['review.writtenAt'] = 1;
+    else sort['review.writtenAt'] = -1;
 
-        const avgOrderValue = totalSales > 0 && completedSales > 0 ? Math.round(totalSales / completedSales) : 0;
-        const avgDailySales = totalSales > 0 ? Math.round(totalSales / totalDays) : 0;
-        const salesGrowthPct = prevRevenue > 0 ? ((totalSales - prevRevenue) / prevRevenue) * 100 : 0;
+    pipeline.push(
+      { $sort: sort },
+      { $skip: skip },
+      { $limit: limit },
+      {
+        $project: {
+          _id: 0,
+          reviewId: { $toString: '$_id' },
+          reviewedBy: {
+            customerId: { $toString: '$customer._id' },
+            customerName: '$customer.username',
+            customerEmail: '$customer.email',
+            customerAvatar: '$customer.avatar',
+          },
+          providerId: { $toString: '$provider._id' },
+          providerName: '$provider.username',
+          providerEmail: '$provider.email',
+          providerAvatar: { $ifNull: ['$provider.avatar', ''] },
+          isReported: '$review.isReported',
+          desc: '$review.desc',
+          rating: '$review.rating',
+          writtenAt: '$review.writtenAt',
+          isActive: '$review.isActive',
+        },
+      },
+    );
 
-        const trend = (result?.trend ?? []).map((t: any) => ({
-            label: t.label,
-            revenue: Number(t.revenue || 0),
-            bookings: Number(t.bookings || 0),
-        }));
+    const reviews = await this._bookingModel.aggregate(pipeline);
 
-        const bookingsSold = this._computeBuckets(result?.bookingsSold?.[0]?.buckets ?? []);
+    return {
+      reviews,
+      pagination: {
+        total,
+        page,
+        limit,
+      },
+    };
+  }
 
-        const filterOptions = result?.filters?.[0] || { professions: [], categories: [], providers: [] };
-
-        return {
-            summary: {
-                totalBookings,
-                totalSales,
-                completedSales,
-                cancelledSales,
-                avgOrderValue,
-                avgDailySales,
-                salesGrowthPct: Math.round(salesGrowthPct * 10) / 10,
-            },
-            trend,
-            bookingsSold,
-            professions: result?.professions || [],
-            categories: result?.categories || [],
-            services: result?.services || [],
-            providers: result?.providers || [],
-            distribution: result?.distribution || [],
-            cancellation: {
-                cancelledOrders: cancelledSales,
-                cancellationRate: totalBookings > 0 ? Math.round((cancelledSales / totalBookings) * 1000) / 10 : 0,
-                topCancelledCategories: result?.cancellationCategories || [],
-                topCancelledProviders: result?.cancellationProviders || [],
-            },
-            filters: {
-                professions: (filterOptions.professions || []).filter((p: any) => p.name),
-                categories: (filterOptions.categories || []).filter((c: any) => c.name),
-                providers: (filterOptions.providers || []).filter((p: any) => p.name),
-            },
-        };
+  async getAdminReviewStats(): Promise<IAdminReviewStats> {
+    interface ReviewStatsFacet {
+      stats: {
+        totalReviews: number;
+        activeReviews: number;
+        inactiveReviews: number;
+        reportedReviews: number;
+        averageRating: number;
+      }[];
+      distribution: { _id: number; count: number }[];
     }
 
-    private _computeBuckets(dates: Date[]): IBookingsSoldBuckets {
-        const now = new Date();
-        const startOfDay = new Date(now); startOfDay.setHours(0, 0, 0, 0);
-        const startOfWeek = new Date(startOfDay); startOfWeek.setDate(startOfDay.getDate() - startOfDay.getDay());
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        const startOfYear = new Date(now.getFullYear(), 0, 1);
+    const [facetResult] = await this._bookingModel.aggregate<ReviewStatsFacet>([
+      { $match: { review: { $exists: true, $ne: null } } },
+      {
+        $facet: {
+          stats: [
+            {
+              $group: {
+                _id: null,
+                totalReviews: { $sum: 1 },
+                activeReviews: {
+                  $sum: { $cond: [{ $eq: ['$review.isActive', true] }, 1, 0] },
+                },
+                inactiveReviews: {
+                  $sum: { $cond: [{ $eq: ['$review.isActive', false] }, 1, 0] },
+                },
+                reportedReviews: {
+                  $sum: { $cond: [{ $eq: ['$review.isReported', true] }, 1, 0] },
+                },
+                averageRating: {
+                  $avg: {
+                    $cond: [{ $eq: ['$review.isActive', true] }, '$review.rating', null],
+                  },
+                },
+              },
+            },
+          ],
+          distribution: [{ $group: { _id: '$review.rating', count: { $sum: 1 } } }],
+        },
+      },
+    ]);
 
-        let today = 0, week = 0, month = 0, year = 0;
-        for (const d of dates) {
-            const dt = new Date(d);
-            if (dt >= startOfYear) year++;
-            if (dt >= startOfMonth) month++;
-            if (dt >= startOfWeek) week++;
-            if (dt >= startOfDay) today++;
+    const stats = facetResult?.stats?.[0];
+    const distributionMap = new Map<number, number>((facetResult?.distribution ?? []).map((item) => [item._id, item.count]));
+    const distributionTotal = Array.from(distributionMap.values()).reduce((sum, count) => sum + count, 0);
+    const distribution: IReviewDistribution[] = [5, 4, 3, 2, 1].map((rating) => {
+      const count = distributionMap.get(rating) ?? 0;
+      return {
+        rating,
+        count,
+        percentage: distributionTotal > 0 ? Math.round((count / distributionTotal) * 100) : 0,
+      };
+    });
+
+    return stats
+      ? {
+          totalReviews: stats.totalReviews,
+          activeReviews: stats.activeReviews,
+          inactiveReviews: stats.inactiveReviews,
+          reportedReviews: stats.reportedReviews,
+          averageRating: Math.round((stats.averageRating || 0) * 10) / 10,
+          distribution,
         }
-        return { today, week, month, year };
+      : {
+          totalReviews: 0,
+          activeReviews: 0,
+          inactiveReviews: 0,
+          reportedReviews: 0,
+          averageRating: 0,
+          distribution,
+        };
+  }
+
+  async getLowestRatedProviders(limit: number = 5): Promise<ILowestRatedProvider[]> {
+    return await this._bookingModel.aggregate([
+      { $match: { review: { $exists: true, $ne: null }, 'review.isActive': true } },
+      {
+        $group: {
+          _id: '$providerId',
+          avgRating: { $avg: '$review.rating' },
+          totalReviews: { $sum: 1 },
+        },
+      },
+      { $match: { totalReviews: { $gte: 5 } } },
+      { $lookup: { from: 'providers', localField: '_id', foreignField: '_id', as: 'provider' } },
+      { $unwind: '$provider' },
+      {
+        $project: {
+          _id: 0,
+          providerId: { $toString: '$_id' },
+          providerName: '$provider.username',
+          providerAvatar: { $ifNull: ['$provider.avatar', ''] },
+          avgRating: { $round: ['$avgRating', 1] },
+          totalReviews: 1,
+        },
+      },
+      { $sort: { avgRating: 1, totalReviews: 1 } },
+      { $limit: limit },
+    ]);
+  }
+
+  async getRatingTrend(days: number = 30): Promise<IRatingTrendPoint[]> {
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    return await this._bookingModel.aggregate([
+      {
+        $match: {
+          review: { $exists: true, $ne: null },
+          'review.isActive': true,
+          'review.writtenAt': { $gte: since },
+        },
+      },
+      {
+        $group: {
+          _id: { $dateToString: { format: '%Y-%m-%d', date: '$review.writtenAt' } },
+          avgRating: { $avg: '$review.rating' },
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          date: '$_id',
+          avgRating: { $round: ['$avgRating', 1] },
+          count: 1,
+        },
+      },
+      { $sort: { date: 1 } },
+    ]);
+  }
+
+  async updateReviewStatus(reviewId: string, status: boolean): Promise<boolean> {
+    const result = await this._bookingModel.updateOne({ _id: this._toObjectId(reviewId) }, { $set: { 'review.isActive': status } });
+    return result.matchedCount > 0;
+  }
+
+  async markReviewReported(reviewId: string): Promise<boolean> {
+    const result = await this._bookingModel.updateOne(
+      { _id: this._toObjectId(reviewId), review: { $exists: true, $ne: null } },
+      { $set: { 'review.isReported': true } },
+    );
+    return result.modifiedCount > 0;
+  }
+
+  async rescheduleBooking(bookingId: string, newExpectedArrivalTime: Date, newSlot: IBookedSlot): Promise<BookingDocument | null> {
+    return await this._bookingModel.findOneAndUpdate(
+      { _id: bookingId },
+      [
+        {
+          $set: {
+            previousSlots: {
+              $concatArrays: [{ $ifNull: ['$previousSlots', []] }, ['$slot']],
+            },
+            slot: newSlot,
+            expectedArrivalTime: newExpectedArrivalTime,
+          },
+        },
+      ],
+      { new: true },
+    );
+  }
+
+  async aggregateSalesReport(option: ISalesReportFilter): Promise<ISalesReportBundle> {
+    const COMPLETED = BookingStatus.COMPLETED;
+    const CANCELLED = BookingStatus.CANCELLED;
+
+    // ---- Date windows ----
+    const year = new Date().getFullYear();
+    let windowStart: Date;
+    let windowEnd: Date;
+    let hasRange = false;
+
+    if (option.fromDate && option.toDate) {
+      windowStart = new Date(option.fromDate);
+      windowEnd = new Date(option.toDate);
+      if (isNaN(windowStart.getTime()) || isNaN(windowEnd.getTime())) {
+        windowStart = new Date(year, 0, 1);
+        windowEnd = new Date();
+      } else {
+        hasRange = true;
+      }
+    } else {
+      windowStart = new Date(year, 0, 1);
+      windowEnd = new Date();
     }
+    windowEnd.setHours(23, 59, 59, 999);
+    const windowLenMs = Math.max(windowEnd.getTime() - windowStart.getTime(), 0);
+    const prevEnd = new Date(windowStart.getTime() - 1);
+    const prevStart = new Date(prevEnd.getTime() - windowLenMs);
+
+    // ---- Base match (provider / status filters; category & profession applied post-lookup) ----
+    const baseMatch: FilterQuery<BookingDocument> = {};
+    if (option.providerId) baseMatch.providerId = this._toObjectId(option.providerId);
+    if (option.bookingStatus) baseMatch.bookingStatus = option.bookingStatus;
+
+    const pipeline: PipelineStage[] = [];
+    if (Object.keys(baseMatch).length > 0) pipeline.push({ $match: baseMatch });
+
+    // ---- Flatten one row per ordered service ----
+    pipeline.push(
+      {
+        $lookup: {
+          from: 'providerservices',
+          localField: 'services',
+          foreignField: '_id',
+          as: 'serviceFetch',
+        },
+      },
+      { $unwind: { path: '$serviceFetch', preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: 'professions',
+          localField: 'serviceFetch.professionId',
+          foreignField: '_id',
+          as: 'professionFetch',
+        },
+      },
+      { $unwind: { path: '$professionFetch', preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: 'servicecategories',
+          localField: 'serviceFetch.categoryId',
+          foreignField: '_id',
+          as: 'categoryFetch',
+        },
+      },
+      { $unwind: { path: '$categoryFetch', preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: 'providers',
+          localField: 'providerId',
+          foreignField: '_id',
+          as: 'providerFetch',
+        },
+      },
+      { $unwind: { path: '$providerFetch', preserveNullAndEmptyArrays: true } },
+    );
+
+    if (option.professionId) {
+      pipeline.push({ $match: { 'professionFetch._id': this._toObjectId(option.professionId) } });
+    }
+    if (option.categoryId) {
+      pipeline.push({ $match: { 'categoryFetch._id': this._toObjectId(option.categoryId) } });
+    }
+
+    const monthArr = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const dailyBucket = hasRange && windowLenMs <= 92 * 24 * 60 * 60 * 1000;
+    const trendGroupId = dailyBucket
+      ? {
+          year: { $year: '$createdAt' },
+          month: { $month: '$createdAt' },
+          day: { $dayOfMonth: '$createdAt' },
+        }
+      : { year: { $year: '$createdAt' }, month: { $month: '$createdAt' } };
+    const trendLabel = dailyBucket
+      ? {
+          $concat: [{ $arrayElemAt: [monthArr, { $subtract: ['$_id.month', 1] }] }, ' ', { $toString: '$_id.day' }],
+        }
+      : { $arrayElemAt: [monthArr, { $subtract: ['$_id.month', 1] }] };
+
+    pipeline.push({
+      $facet: {
+        // ---- Summary (dedup per booking) ----
+        summary: [
+          { $match: { createdAt: { $gte: windowStart, $lte: windowEnd } } },
+          { $sort: { createdAt: 1 } },
+          {
+            $group: {
+              _id: '$_id',
+              amount: { $first: '$totalAmount' },
+              status: { $first: '$bookingStatus' },
+              createdAt: { $first: '$createdAt' },
+            },
+          },
+          {
+            $group: {
+              _id: null,
+              totalBookings: { $sum: 1 },
+              totalCompleted: { $sum: { $cond: [{ $eq: ['$status', COMPLETED] }, 1, 0] } },
+              cancelled: { $sum: { $cond: [{ $eq: ['$status', CANCELLED] }, 1, 0] } },
+              totalRevenue: {
+                $sum: { $cond: [{ $eq: ['$status', COMPLETED] }, { $ifNull: ['$amount', 0] }, 0] },
+              },
+              firstDate: { $min: '$createdAt' },
+              lastDate: { $max: '$createdAt' },
+            },
+          },
+          {
+            $project: {
+              _id: 0,
+              totalBookings: 1,
+              completed: '$totalCompleted',
+              cancelled: 1,
+              totalRevenue: 1,
+              days: {
+                $max: [{ $ceil: { $divide: [{ $subtract: ['$lastDate', '$firstDate'] }, 86400000] } }, 1],
+              },
+            },
+          },
+        ],
+        // ---- Previous period revenue (for growth) ----
+        previousRevenue: [
+          { $match: { createdAt: { $gte: prevStart, $lte: prevEnd }, bookingStatus: COMPLETED } },
+          { $sort: { createdAt: 1 } },
+          { $group: { _id: '$_id', amount: { $first: '$totalAmount' } } },
+          { $group: { _id: null, revenue: { $sum: { $ifNull: ['$amount', 0] } } } },
+        ],
+        // ---- Sales trend ----
+        trend: [
+          { $match: { createdAt: { $gte: windowStart, $lte: windowEnd } } },
+          { $sort: { createdAt: 1 } },
+          {
+            $group: {
+              _id: '$_id',
+              status: { $first: '$bookingStatus' },
+              amount: { $first: '$totalAmount' },
+              createdAt: { $first: '$createdAt' },
+            },
+          },
+          { $addFields: { _bucket: trendGroupId } },
+          {
+            $group: {
+              _id: '$_bucket',
+              revenue: {
+                $sum: { $cond: [{ $eq: ['$status', COMPLETED] }, { $ifNull: ['$amount', 0] }, 0] },
+              },
+              bookings: { $sum: 1 },
+            },
+          },
+          { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 } },
+          { $project: { _id: 0, label: trendLabel, revenue: 1, bookings: 1 } },
+        ],
+        // ---- Bookings sold buckets ----
+        bookingsSold: [
+          { $match: { createdAt: { $gte: windowStart, $lte: windowEnd } } },
+          { $sort: { createdAt: 1 } },
+          { $group: { _id: '$_id', createdAt: { $first: '$createdAt' } } },
+          { $group: { _id: null, buckets: { $push: '$createdAt' } } },
+        ],
+        // ---- Top professions ----
+        professions: [
+          { $match: { createdAt: { $gte: windowStart, $lte: windowEnd } } },
+          {
+            $group: {
+              _id: { p: '$professionFetch.name', b: '$_id' },
+              revenue: {
+                $first: {
+                  $cond: [{ $eq: ['$bookingStatus', COMPLETED] }, { $ifNull: ['$totalAmount', 0] }, 0],
+                },
+              },
+            },
+          },
+          { $group: { _id: '$_id.p', bookings: { $sum: 1 }, revenue: { $sum: '$revenue' } } },
+          { $sort: { bookings: -1 } },
+          { $limit: 6 },
+          { $project: { _id: 0, name: '$_id', bookings: 1, revenue: { $round: ['$revenue', 0] } } },
+        ],
+        // ---- Top categories ----
+        categories: [
+          { $match: { createdAt: { $gte: windowStart, $lte: windowEnd } } },
+          {
+            $group: {
+              _id: { c: '$categoryFetch.name', b: '$_id' },
+              revenue: {
+                $first: {
+                  $cond: [{ $eq: ['$bookingStatus', COMPLETED] }, { $ifNull: ['$totalAmount', 0] }, 0],
+                },
+              },
+            },
+          },
+          { $group: { _id: '$_id.c', bookings: { $sum: 1 }, revenue: { $sum: '$revenue' } } },
+          { $sort: { bookings: -1 } },
+          { $limit: 6 },
+          { $project: { _id: 0, name: '$_id', bookings: 1, revenue: { $round: ['$revenue', 0] } } },
+        ],
+        // ---- Top selling services ----
+        services: [
+          { $match: { createdAt: { $gte: windowStart, $lte: windowEnd } } },
+          {
+            $group: {
+              _id: { s: '$serviceFetch._id', b: '$_id' },
+              revenue: {
+                $first: {
+                  $cond: [{ $eq: ['$bookingStatus', COMPLETED] }, { $ifNull: ['$totalAmount', 0] }, 0],
+                },
+              },
+              rating: { $first: { $ifNull: ['$review.rating', 0] } },
+              providerId: { $first: '$providerFetch._id' },
+              providerName: { $first: '$providerFetch.username' },
+              serviceName: { $first: '$serviceFetch.description' },
+              profession: { $first: '$professionFetch.name' },
+            },
+          },
+          {
+            $group: {
+              _id: '$_id.s',
+              bookings: { $sum: 1 },
+              revenue: { $sum: '$revenue' },
+              providerId: { $first: '$providerId' },
+              providerName: { $first: '$providerName' },
+              serviceName: { $first: '$serviceName' },
+              profession: { $first: '$profession' },
+              ratingSum: { $sum: { $cond: [{ $gt: ['$rating', 0] }, '$rating', 0] } },
+              rated: { $sum: { $cond: [{ $gt: ['$rating', 0] }, 1, 0] } },
+            },
+          },
+          {
+            $addFields: {
+              avgRating: {
+                $round: [{ $cond: [{ $gt: ['$rated', 0] }, { $divide: ['$ratingSum', '$rated'] }, 0] }, 2],
+              },
+            },
+          },
+          { $sort: { bookings: -1 } },
+          { $limit: 10 },
+          {
+            $project: {
+              _id: 0,
+              serviceId: { $toString: '$_id' },
+              providerId: { $toString: '$providerId' },
+              providerName: 1,
+              serviceName: 1,
+              profession: 1,
+              bookings: 1,
+              revenue: { $round: ['$revenue', 0] },
+              avgRating: 1,
+            },
+          },
+        ],
+        // ---- Provider performance ----
+        providers: [
+          { $match: { createdAt: { $gte: windowStart, $lte: windowEnd } } },
+          { $sort: { createdAt: 1 } },
+          {
+            $group: {
+              _id: { p: '$providerFetch._id', b: '$_id' },
+              providerName: { $first: '$providerFetch.username' },
+              status: { $first: '$bookingStatus' },
+              amount: { $first: '$totalAmount' },
+              rating: { $first: { $ifNull: ['$review.rating', 0] } },
+            },
+          },
+          {
+            $group: {
+              _id: '$_id.p',
+              providerName: { $first: '$providerName' },
+              total: { $sum: 1 },
+              completedJobs: { $sum: { $cond: [{ $eq: ['$status', COMPLETED] }, 1, 0] } },
+              cancelled: { $sum: { $cond: [{ $eq: ['$status', CANCELLED] }, 1, 0] } },
+              revenue: {
+                $sum: { $cond: [{ $eq: ['$status', COMPLETED] }, { $ifNull: ['$amount', 0] }, 0] },
+              },
+              ratingSum: { $sum: { $cond: [{ $gt: ['$rating', 0] }, '$rating', 0] } },
+              rated: { $sum: { $cond: [{ $gt: ['$rating', 0] }, 1, 0] } },
+            },
+          },
+          {
+            $addFields: {
+              completionRate: {
+                $multiply: [{ $divide: ['$completedJobs', { $cond: [{ $gt: ['$total', 0] }, '$total', 1] }] }, 100],
+              },
+              avgRating: {
+                $round: [{ $cond: [{ $gt: ['$rated', 0] }, { $divide: ['$ratingSum', '$rated'] }, 0] }, 2],
+              },
+            },
+          },
+          { $sort: { revenue: -1 } },
+          {
+            $project: {
+              _id: 0,
+              providerId: { $toString: '$_id' },
+              providerName: 1,
+              completedJobs: 1,
+              cancelled: 1,
+              revenue: { $round: ['$revenue', 0] },
+              completionRate: { $round: ['$completionRate', 1] },
+              avgRating: 1,
+            },
+          },
+        ],
+        // ---- Sales distribution (by profession) ----
+        distribution: [
+          {
+            $match: { createdAt: { $gte: windowStart, $lte: windowEnd }, bookingStatus: COMPLETED },
+          },
+          {
+            $group: {
+              _id: { p: '$professionFetch.name', b: '$_id' },
+              amount: { $first: { $ifNull: ['$totalAmount', 0] } },
+            },
+          },
+          { $group: { _id: '$_id.p', value: { $sum: '$amount' } } },
+          { $sort: { value: -1 } },
+          { $limit: 8 },
+          { $project: { _id: 0, name: '$_id', value: { $round: ['$value', 0] } } },
+        ],
+        // ---- Cancellation analysis ----
+        cancellationCategories: [
+          {
+            $match: { createdAt: { $gte: windowStart, $lte: windowEnd }, bookingStatus: CANCELLED },
+          },
+          { $group: { _id: { c: '$categoryFetch.name', b: '$_id' } } },
+          { $group: { _id: '$_id.c', bookings: { $sum: 1 } } },
+          { $sort: { bookings: -1 } },
+          { $limit: 5 },
+          { $project: { _id: 0, name: '$_id', bookings: 1 } },
+        ],
+        cancellationProviders: [
+          {
+            $match: { createdAt: { $gte: windowStart, $lte: windowEnd }, bookingStatus: CANCELLED },
+          },
+          {
+            $group: {
+              _id: { p: '$providerFetch._id', b: '$_id' },
+              name: { $first: '$providerFetch.username' },
+            },
+          },
+          { $group: { _id: '$_id.p', name: { $first: '$name' }, bookings: { $sum: 1 } } },
+          { $sort: { bookings: -1 } },
+          { $limit: 5 },
+          { $project: { _id: 0, name: 1, bookings: 1 } },
+        ],
+        // ---- Filter options ----
+        filters: [
+          { $sort: { createdAt: 1 } },
+          {
+            $group: {
+              _id: null,
+              professions: {
+                $addToSet: {
+                  id: { $toString: '$professionFetch._id' },
+                  name: '$professionFetch.name',
+                },
+              },
+              categories: {
+                $addToSet: { id: { $toString: '$categoryFetch._id' }, name: '$categoryFetch.name' },
+              },
+              providers: {
+                $addToSet: {
+                  id: { $toString: '$providerFetch._id' },
+                  name: '$providerFetch.username',
+                },
+              },
+            },
+          },
+        ],
+      },
+    });
+
+    const [result] = await this._bookingModel.aggregate(pipeline);
+    return this._mapSalesReport(result);
+  }
+
+  private _mapSalesReport(result: any): ISalesReportBundle {
+    const summary = result?.summary?.[0] ?? {
+      totalBookings: 0,
+      completed: 0,
+      cancelled: 0,
+      totalRevenue: 0,
+      days: 1,
+    };
+    const prevRevenue = result?.previousRevenue?.[0]?.revenue ?? 0;
+    const totalDays = summary.days > 0 ? summary.days : 1;
+
+    const totalSales = Math.round(summary.totalRevenue || 0);
+    const completedSales = summary.completed ?? 0;
+    const cancelledSales = summary.cancelled ?? 0;
+    const totalBookings = summary.totalBookings ?? 0;
+
+    const avgOrderValue = totalSales > 0 && completedSales > 0 ? Math.round(totalSales / completedSales) : 0;
+    const avgDailySales = totalSales > 0 ? Math.round(totalSales / totalDays) : 0;
+    const salesGrowthPct = prevRevenue > 0 ? ((totalSales - prevRevenue) / prevRevenue) * 100 : 0;
+
+    const trend = (result?.trend ?? []).map((t: any) => ({
+      label: t.label,
+      revenue: Number(t.revenue || 0),
+      bookings: Number(t.bookings || 0),
+    }));
+
+    const bookingsSold = this._computeBuckets(result?.bookingsSold?.[0]?.buckets ?? []);
+
+    const filterOptions = result?.filters?.[0] || {
+      professions: [],
+      categories: [],
+      providers: [],
+    };
+
+    return {
+      summary: {
+        totalBookings,
+        totalSales,
+        completedSales,
+        cancelledSales,
+        avgOrderValue,
+        avgDailySales,
+        salesGrowthPct: Math.round(salesGrowthPct * 10) / 10,
+      },
+      trend,
+      bookingsSold,
+      professions: result?.professions || [],
+      categories: result?.categories || [],
+      services: result?.services || [],
+      providers: result?.providers || [],
+      distribution: result?.distribution || [],
+      cancellation: {
+        cancelledOrders: cancelledSales,
+        cancellationRate: totalBookings > 0 ? Math.round((cancelledSales / totalBookings) * 1000) / 10 : 0,
+        topCancelledCategories: result?.cancellationCategories || [],
+        topCancelledProviders: result?.cancellationProviders || [],
+      },
+      filters: {
+        professions: (filterOptions.professions || []).filter((p: any) => p.name),
+        categories: (filterOptions.categories || []).filter((c: any) => c.name),
+        providers: (filterOptions.providers || []).filter((p: any) => p.name),
+      },
+    };
+  }
+
+  private _computeBuckets(dates: Date[]): IBookingsSoldBuckets {
+    const now = new Date();
+    const startOfDay = new Date(now);
+    startOfDay.setHours(0, 0, 0, 0);
+    const startOfWeek = new Date(startOfDay);
+    startOfWeek.setDate(startOfDay.getDate() - startOfDay.getDay());
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfYear = new Date(now.getFullYear(), 0, 1);
+
+    let today = 0,
+      week = 0,
+      month = 0,
+      year = 0;
+    for (const d of dates) {
+      const dt = new Date(d);
+      if (dt >= startOfYear) year++;
+      if (dt >= startOfMonth) month++;
+      if (dt >= startOfWeek) week++;
+      if (dt >= startOfDay) today++;
+    }
+    return { today, week, month, year };
+  }
 }

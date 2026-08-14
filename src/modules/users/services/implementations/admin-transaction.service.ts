@@ -1,192 +1,193 @@
-import { CUSTOMER_MAPPER, PROVIDER_MAPPER, WALLET_LEDGER_MAPPER } from "@core/constants/mappers.constant";
-import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, TRANSACTION_REPOSITORY_NAME, WALLET_LEDGER_REPOSITORY_NAME, WALLET_REPOSITORY_NAME, BOOKING_REPOSITORY_NAME, SUBSCRIPTION_REPOSITORY_NAME } from "@core/constants/repository.constant";
-import { PDF_SERVICE } from "@core/constants/service.constant";
-import { ICustomerMapper } from "@core/dto-mapper/interface/customer.mapper..interface";
-import { IProviderMapper } from "@core/dto-mapper/interface/provider.mapper.interface";
-import { IWalletLedgerMapper } from "@core/dto-mapper/interface/wallet-ledger.mapper.interface";
-import { ClientUserType, ICustomer, IProvider } from "@core/entities/interfaces/user.entity.interface";
-import { IAdminTransactionDataWithPagination, ITransactionAdminList, ITransactionStats, IWalletTransactionFilter } from "@core/entities/interfaces/wallet-ledger.entity.interface";
-import { IResponse } from "@core/misc/response.util";
+import { CUSTOMER_MAPPER, PROVIDER_MAPPER, WALLET_LEDGER_MAPPER } from '@core/constants/mappers.constant';
+import {
+  CUSTOMER_REPOSITORY_INTERFACE_NAME,
+  PROVIDER_REPOSITORY_INTERFACE_NAME,
+  TRANSACTION_REPOSITORY_NAME,
+  WALLET_LEDGER_REPOSITORY_NAME,
+  WALLET_REPOSITORY_NAME,
+  BOOKING_REPOSITORY_NAME,
+  SUBSCRIPTION_REPOSITORY_NAME,
+} from '@core/constants/repository.constant';
+import { PDF_SERVICE } from '@core/constants/service.constant';
+import { ICustomerMapper } from '@core/dto-mapper/interface/customer.mapper..interface';
+import { IProviderMapper } from '@core/dto-mapper/interface/provider.mapper.interface';
+import { IWalletLedgerMapper } from '@core/dto-mapper/interface/wallet-ledger.mapper.interface';
+import { ClientUserType, ICustomer, IProvider } from '@core/entities/interfaces/user.entity.interface';
+import {
+  IAdminTransactionDataWithPagination,
+  ITransactionAdminList,
+  ITransactionStats,
+  IWalletTransactionFilter,
+} from '@core/entities/interfaces/wallet-ledger.entity.interface';
+import { IResponse } from '@core/misc/response.util';
 
-import { IBookingRepository } from "@core/repositories/interfaces/bookings-repo.interface";
-import { ICustomerRepository } from "@core/repositories/interfaces/customer-repo.interface";
-import { IProviderRepository } from "@core/repositories/interfaces/provider-repo.interface";
-import { ISubscriptionRepository } from "@core/repositories/interfaces/subscription-repo.interface";
-import { ITransactionRepository } from "@core/repositories/interfaces/transaction-repo.interface";
-import { IWalletLedgerRepository } from "@core/repositories/interfaces/wallet-ledger.repo.interface";
-import { IWalletRepository } from "@core/repositories/interfaces/wallet-repo.interface";
-import { CustomerDocument } from "@core/schema/customer.schema";
-import { ProviderDocument } from "@core/schema/provider.schema";
-import { createTransactionReportTableTemplate, ITransactionTableTemplate } from "@core/services/pdf/mappers/transaction-report.mapper";
-import { IPdfService } from "@core/services/pdf/pdf.interface";
-import { TransactionReportDownloadDto } from "@modules/users/dtos/admin-user.dto";
-import { IAdminTransactionService } from "@modules/users/services/interfaces/admin-transaction-service.interface";
-import { ProviderWalletFilterDto } from "@modules/wallet/dto/wallet.dto";
-import { Inject, Injectable } from "@nestjs/common";
+import { IBookingRepository } from '@core/repositories/interfaces/bookings-repo.interface';
+import { ICustomerRepository } from '@core/repositories/interfaces/customer-repo.interface';
+import { IProviderRepository } from '@core/repositories/interfaces/provider-repo.interface';
+import { ISubscriptionRepository } from '@core/repositories/interfaces/subscription-repo.interface';
+import { ITransactionRepository } from '@core/repositories/interfaces/transaction-repo.interface';
+import { IWalletLedgerRepository } from '@core/repositories/interfaces/wallet-ledger.repo.interface';
+import { IWalletRepository } from '@core/repositories/interfaces/wallet-repo.interface';
+import { CustomerDocument } from '@core/schema/customer.schema';
+import { ProviderDocument } from '@core/schema/provider.schema';
+import { createTransactionReportTableTemplate, ITransactionTableTemplate } from '@core/services/pdf/mappers/transaction-report.mapper';
+import { IPdfService } from '@core/services/pdf/pdf.interface';
+import { TransactionReportDownloadDto } from '@modules/users/dtos/admin-user.dto';
+import { IAdminTransactionService } from '@modules/users/services/interfaces/admin-transaction-service.interface';
+import { ProviderWalletFilterDto } from '@modules/wallet/dto/wallet.dto';
+import { Inject, Injectable } from '@nestjs/common';
 
 @Injectable()
 export class AdminTransactionService implements IAdminTransactionService {
+  constructor(
+    @Inject(TRANSACTION_REPOSITORY_NAME)
+    private readonly _transactionRepository: ITransactionRepository,
+    @Inject(PDF_SERVICE)
+    private readonly _pdfService: IPdfService,
+    @Inject(WALLET_LEDGER_REPOSITORY_NAME)
+    private readonly _walletLedgerRepository: IWalletLedgerRepository,
+    @Inject(CUSTOMER_REPOSITORY_INTERFACE_NAME)
+    private readonly _customerRepository: ICustomerRepository,
+    @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
+    private readonly _providerRepository: IProviderRepository,
+    @Inject(CUSTOMER_MAPPER)
+    private readonly _customerMapper: ICustomerMapper,
+    @Inject(PROVIDER_MAPPER)
+    private readonly _providerMapper: IProviderMapper,
+    @Inject(WALLET_REPOSITORY_NAME)
+    private readonly _walletRepository: IWalletRepository,
+    @Inject(BOOKING_REPOSITORY_NAME)
+    private readonly _bookingRepository: IBookingRepository,
+    @Inject(SUBSCRIPTION_REPOSITORY_NAME)
+    private readonly _subscriptionRepository: ISubscriptionRepository,
+  ) {}
 
-    constructor(
-        @Inject(TRANSACTION_REPOSITORY_NAME)
-        private readonly _transactionRepository: ITransactionRepository,
-        @Inject(PDF_SERVICE)
-        private readonly _pdfService: IPdfService,
-        @Inject(WALLET_LEDGER_REPOSITORY_NAME)
-        private readonly _walletLedgerRepository: IWalletLedgerRepository,
-        @Inject(CUSTOMER_REPOSITORY_INTERFACE_NAME)
-        private readonly _customerRepository: ICustomerRepository,
-        @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
-        private readonly _providerRepository: IProviderRepository,
-        @Inject(CUSTOMER_MAPPER)
-        private readonly _customerMapper: ICustomerMapper,
-        @Inject(PROVIDER_MAPPER)
-        private readonly _providerMapper: IProviderMapper,
-        @Inject(WALLET_REPOSITORY_NAME)
-        private readonly _walletRepository: IWalletRepository,
-        @Inject(BOOKING_REPOSITORY_NAME)
-        private readonly _bookingRepository: IBookingRepository,
-        @Inject(SUBSCRIPTION_REPOSITORY_NAME)
-        private readonly _subscriptionRepository: ISubscriptionRepository,
-    ) { }
+  private async _getUserDetails(userId: string, role: ClientUserType | null): Promise<ICustomer | IProvider | null> {
+    if (!role) return null;
+    const repo = role === 'customer' ? this._customerRepository : this._providerRepository;
+    const userDoc = await repo.findById(userId);
 
-    private async _getUserDetails(userId: string, role: ClientUserType | null): Promise<ICustomer | IProvider | null> {
-        if (!role) return null;
-        const repo = role === 'customer' ? this._customerRepository : this._providerRepository;
-        const userDoc = await repo.findById(userId);
+    if (!userDoc) return null;
 
-        if (!userDoc) return null;
+    return role === 'customer'
+      ? this._customerMapper.toEntity(userDoc as CustomerDocument)
+      : this._providerMapper.toEntity(userDoc as ProviderDocument);
+  }
 
-        return role === 'customer'
-            ? this._customerMapper.toEntity(userDoc as CustomerDocument)
-            : this._providerMapper.toEntity(userDoc as ProviderDocument);
-    }
+  async downloadTransactionReport(reportFilterData: TransactionReportDownloadDto): Promise<Buffer> {
+    const { category, ...reportDownloadData } = { ...reportFilterData };
 
-    async downloadTransactionReport(reportFilterData: TransactionReportDownloadDto): Promise<Buffer> {
-        const { category, ...reportDownloadData } = { ...reportFilterData };
+    const transactionReportDetails = await this._transactionRepository.getReportDetails(reportDownloadData);
+    const transactionColumns = ['Transaction ID', 'User ID', 'Email', 'Contact', 'Amount (₹)', 'Method', 'Type', 'Date'];
 
-        const transactionReportDetails = await this._transactionRepository.getReportDetails(reportDownloadData);
-        const transactionColumns = ['Transaction ID', 'User ID', 'Email', 'Contact', 'Amount (₹)', 'Method', 'Type', 'Date'];
+    const tableData: ITransactionTableTemplate[] = [
+      {
+        rows: transactionReportDetails,
+        columns: transactionColumns,
+        type: 'normal',
+      },
+    ];
 
-        const tableData: ITransactionTableTemplate[] = [
-            {
-                rows: transactionReportDetails,
-                columns: transactionColumns,
-                type: 'normal'
+    const tables = createTransactionReportTableTemplate(tableData);
+    return this._pdfService.generatePdf(tables, 'Transaction Report');
+  }
+
+  async getTransactionStats(): Promise<IResponse<ITransactionStats>> {
+    const [stats, wallet] = await Promise.all([
+      this._walletLedgerRepository.getTransactionStats(),
+      this._walletRepository.getAdminWallet(),
+    ]);
+
+    const balance = wallet?.balance ?? 0;
+
+    return {
+      success: true,
+      message: 'Transaction stats fetched successfully',
+      data: { ...stats, balance: balance / 100 },
+    };
+  }
+
+  async getTransactionLists(adminId: string, filterData: ProviderWalletFilterDto): Promise<IResponse<IAdminTransactionDataWithPagination>> {
+    const {
+      page = 1,
+      limit = 10,
+      ...filters
+    } = filterData as unknown as {
+      page: number;
+      limit: number;
+    } & IWalletTransactionFilter;
+
+    const [total, transactionDocs] = await Promise.all([
+      this._walletLedgerRepository.countFiltered(filters),
+      this._walletLedgerRepository.getAdminTransactionLists(filters, { page, limit }),
+    ]);
+
+    const enrichedTransaction: ITransactionAdminList[] = await Promise.all(
+      (transactionDocs ?? []).map(async (tnxDoc) => {
+        const userId = tnxDoc.userId.toString();
+        const isCurrentAdmin = adminId === userId;
+        let role: ClientUserType | null = null;
+
+        let user: ICustomer | IProvider | null = null;
+
+        if (!isCurrentAdmin) {
+          role = tnxDoc.userRole as ClientUserType;
+          user = await this._getUserDetails(userId, role);
+        } else {
+          if (tnxDoc.bookingId) {
+            const booking = await this._bookingRepository.findById(tnxDoc.bookingId.toString());
+            if (booking) {
+              role = 'customer';
+              user = await this._getUserDetails(booking.customerId.toString(), 'customer');
             }
-        ];
+          } else if (tnxDoc.subscriptionId) {
+            const subscription = await this._subscriptionRepository.findById(tnxDoc.subscriptionId.toString());
+            if (subscription) {
+              role = subscription.role;
+              user = await this._getUserDetails(subscription.userId.toString(), role);
+            }
+          }
+        }
 
-        const tables = createTransactionReportTableTemplate(tableData);
-        return this._pdfService.generatePdf(tables, 'Transaction Report');
-    }
+        let counterpartyEmail = '';
+        let counterpartyRole: 'customer' | 'provider' | 'admin' = 'customer';
 
-    async getTransactionStats(): Promise<IResponse<ITransactionStats>> {
-        const [stats, wallet] = await Promise.all([
-            this._walletLedgerRepository.getTransactionStats(),
-            this._walletRepository.getAdminWallet()
-        ]);
-
-        const balance = wallet?.balance ?? 0;
+        if (user && role) {
+          counterpartyEmail = user.email;
+          counterpartyRole = role;
+        } else if (tnxDoc.counterpartyEmail) {
+          counterpartyEmail = tnxDoc.counterpartyEmail;
+          counterpartyRole = (tnxDoc.userRole as 'customer' | 'provider' | 'admin') || 'customer';
+        } else {
+          counterpartyEmail = isCurrentAdmin ? 'Internal' : '';
+          counterpartyRole = isCurrentAdmin ? 'admin' : 'customer';
+        }
 
         return {
-            success: true,
-            message: 'Transaction stats fetched successfully',
-            data: { ...stats, balance: balance / 100 },
-        }
-    }
+          dateTime: tnxDoc.createdAt.toString(),
+          counterparty: {
+            email: counterpartyEmail,
+            role: counterpartyRole,
+          },
+          type: tnxDoc.type,
+          direction: tnxDoc.direction,
+          amount: tnxDoc.amount / 100,
+          referenceType: tnxDoc.bookingId ? 'booking' : tnxDoc.subscriptionId ? 'subscription' : 'Internal',
+          referenceId: tnxDoc.bookingId?.toString() || tnxDoc.subscriptionId?.toString() || tnxDoc._id.toString(),
+          bookingId: tnxDoc.bookingId?.toString() ?? null,
+          paymentId: tnxDoc.gatewayPaymentId ?? null,
+          source: tnxDoc.source,
+        };
+      }),
+    );
 
-    async getTransactionLists(adminId: string, filterData: ProviderWalletFilterDto): Promise<IResponse<IAdminTransactionDataWithPagination>> {
-        const { page = 1, limit = 10, ...filters } = filterData as unknown as {
-            page: number;
-            limit: number;
-        } & IWalletTransactionFilter;
-
-        const [total, transactionDocs] = await Promise.all([
-            this._walletLedgerRepository.countFiltered(filters),
-            this._walletLedgerRepository.getAdminTransactionLists(filters, { page, limit })
-        ]);
-
-        const enrichedTransaction: ITransactionAdminList[] = await Promise.all(
-            (transactionDocs ?? []).map(async (tnxDoc) => {
-                const userId = tnxDoc.userId.toString();
-                const isCurrentAdmin = adminId === userId;
-                let role: ClientUserType | null = null;
-
-                let user: ICustomer | IProvider | null = null;
-
-                if (!isCurrentAdmin) {
-                    role = tnxDoc.userRole as ClientUserType;
-                    user = await this._getUserDetails(
-                        userId,
-                        role
-                    );
-                } else {
-                    if (tnxDoc.bookingId) {
-                        const booking = await this._bookingRepository.findById(tnxDoc.bookingId.toString());
-                        if (booking) {
-                            role = 'customer';
-                            user = await this._getUserDetails(
-                                booking.customerId.toString(),
-                                'customer'
-                            );
-                        }
-                    } else if (tnxDoc.subscriptionId) {
-                        const subscription = await this._subscriptionRepository.findById(tnxDoc.subscriptionId.toString());
-                        if (subscription) {
-                            role = subscription.role;
-                            user = await this._getUserDetails(
-                                subscription.userId.toString(),
-                                role
-                            );
-                        }
-                    }
-                }
-
-                let counterpartyEmail = '';
-                let counterpartyRole: 'customer' | 'provider' | 'admin' = 'customer';
-
-                if (user && role) {
-                    counterpartyEmail = user.email;
-                    counterpartyRole = role;
-                } else if (tnxDoc.counterpartyEmail) {
-                    counterpartyEmail = tnxDoc.counterpartyEmail;
-                    counterpartyRole = tnxDoc.userRole as 'customer' | 'provider' | 'admin' || 'customer';
-                } else {
-                    counterpartyEmail = isCurrentAdmin ? 'Internal' : '';
-                    counterpartyRole = isCurrentAdmin ? 'admin' : 'customer';
-                }
-
-                return {
-                    dateTime: tnxDoc.createdAt.toString(),
-                    counterparty: {
-                        email: counterpartyEmail,
-                        role: counterpartyRole,
-                    },
-                    type: tnxDoc.type,
-                    direction: tnxDoc.direction,
-                    amount: tnxDoc.amount / 100,
-                    referenceType: tnxDoc.bookingId
-                        ? 'booking'
-                        : tnxDoc.subscriptionId
-                            ? 'subscription'
-                            : 'Internal',
-                    referenceId: tnxDoc.bookingId?.toString()
-                        || tnxDoc.subscriptionId?.toString()
-                        || tnxDoc._id.toString(),
-                    bookingId: tnxDoc.bookingId?.toString() ?? null,
-                    paymentId: tnxDoc.gatewayPaymentId ?? null,
-                    source: tnxDoc.source,
-                };
-            })
-        );
-
-        return {
-            success: true,
-            message: 'Transaction lists fetched successfully',
-            data: {
-                transactions: enrichedTransaction,
-                pagination: { page, total, limit }
-            }
-        }
-    }
+    return {
+      success: true,
+      message: 'Transaction lists fetched successfully',
+      data: {
+        transactions: enrichedTransaction,
+        pagination: { page, total, limit },
+      },
+    };
+  }
 }

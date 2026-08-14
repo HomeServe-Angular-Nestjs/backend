@@ -7,12 +7,8 @@ import { subscriptionServiceProviders } from './providers/service.providers';
 import { subscriptionUtilityProviders } from '@modules/subscriptions/providers/utility.providers';
 
 @Module({
-    imports: [SharedModule],
-    controllers: [SubscriptionController],
-    providers: [
-        ...subscriptionServiceProviders,
-        ...subscriptionRepositoryProviders,
-        ...subscriptionUtilityProviders,
-    ]
+  imports: [SharedModule],
+  controllers: [SubscriptionController],
+  providers: [...subscriptionServiceProviders, ...subscriptionRepositoryProviders, ...subscriptionUtilityProviders],
 })
-export class SubscriptionModules { }
+export class SubscriptionModules {}

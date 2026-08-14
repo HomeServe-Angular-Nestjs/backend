@@ -1,7 +1,7 @@
-import { ICustomer } from "@core/entities/interfaces/user.entity.interface";
-import { CustomerDocument } from "@core/schema/customer.schema";
+import type { ICustomer } from '@core/entities/interfaces/user.entity.interface';
+import type { CustomerDocument } from '@core/schema/customer.schema';
 
 export interface ICustomerMapper {
-    toEntity(doc: CustomerDocument): ICustomer;
-    toDocument(entity: Partial<ICustomer>): Partial<CustomerDocument>;
+  toEntity(doc: CustomerDocument): ICustomer;
+  toDocument(entity: Partial<ICustomer>): Partial<CustomerDocument>;
 }

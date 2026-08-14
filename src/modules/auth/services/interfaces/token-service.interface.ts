@@ -1,4 +1,4 @@
-import { IPayload } from '../../../../core/misc/payload.interface';
+import type { IPayload } from '../../../../core/misc/payload.interface';
 
 export interface IRefreshResult {
   refreshToken: string;

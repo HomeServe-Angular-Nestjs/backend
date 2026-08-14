@@ -5,10 +5,17 @@ import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-fa
 
 import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { CallAcceptDto, CallDeclineDto, CallJoinDto, CallLeaveDto, CallReceiverDto, SignalPayloadDto } from '@modules/websockets/dto/video-call.dto';
+import {
+  CallAcceptDto,
+  CallDeclineDto,
+  CallJoinDto,
+  CallLeaveDto,
+  CallReceiverDto,
+  SignalPayloadDto,
+} from '@modules/websockets/dto/video-call.dto';
 import { CUSTOM_DTO_VALIDATOR_NAME } from '@core/constants/utility.constant';
 import { ICustomDtoValidator } from '@core/utilities/interface/custom-dto-validator.utility.interface';
-import { AUTH_SOCKET_SERVICE_NAME, USER_SOCKET_STORE_SERVICE_NAME, VIDEO_CALL_SERVICE_NAME, } from '@core/constants/service.constant';
+import { AUTH_SOCKET_SERVICE_NAME, USER_SOCKET_STORE_SERVICE_NAME, VIDEO_CALL_SERVICE_NAME } from '@core/constants/service.constant';
 import { IVideoCallService } from '@modules/websockets/services/interface/video-call-service.interface';
 import { GlobalWsExceptionFilter } from '@core/exception-filters/ws-exception.filters';
 import { IAuthSocketService } from '@modules/websockets/services/interface/auth-socket-service.interface';
@@ -84,21 +91,15 @@ export class VideoCallGateway extends BaseSocketGateway {
     if (!session) return;
 
     if (session.status === CallStatus.RINGING) {
-      const reason = session.callerId === user.id
-        ? CallEndReason.CANCELLED
-        : CallEndReason.MISSED;
+      const reason = session.callerId === user.id ? CallEndReason.CANCELLED : CallEndReason.MISSED;
       await this._finalizeSession(session, reason);
       return;
     }
 
-    if (
-      session.status === CallStatus.ACTIVE ||
-      session.status === CallStatus.CONNECTING ||
-      session.status === CallStatus.RECONNECTING
-    ) {
+    if (session.status === CallStatus.ACTIVE || session.status === CallStatus.CONNECTING || session.status === CallStatus.RECONNECTING) {
       await this._videoCallService.updateStatus(callId, CallStatus.RECONNECTING);
       this.server.to(this._callRoom(callId)).emit(VIDEO_CALL_PEER_RECONNECTING, { callId });
-      this._scheduleReconnectGrace(callId, () => this._handleReconnectTimeout(callId));
+      this._scheduleReconnectGrace(callId, () => void this._handleReconnectTimeout(callId));
     }
   }
 
@@ -167,7 +168,7 @@ export class VideoCallGateway extends BaseSocketGateway {
 
     this.logger.log(`Call ${callId} initiated by ${user.id} → ${callee}`);
 
-    this._videoCallService.scheduleTimeout(callId, RINGING_TIMEOUT_MS, (cid) => this._handleRingTimeout(cid));
+    this._videoCallService.scheduleTimeout(callId, RINGING_TIMEOUT_MS, (cid) => void this._handleRingTimeout(cid));
   }
 
   @SubscribeMessage(VIDEO_CALL_ACCEPT)
@@ -239,9 +240,12 @@ export class VideoCallGateway extends BaseSocketGateway {
     if (!session) return;
     if (!this._isParticipant(session, user.id, client.id)) return;
 
-    const reason = session.status === CallStatus.RINGING
-      ? (session.callerId === user.id ? CallEndReason.CANCELLED : CallEndReason.DECLINED)
-      : CallEndReason.REMOTE_LEFT;
+    const reason =
+      session.status === CallStatus.RINGING
+        ? session.callerId === user.id
+          ? CallEndReason.CANCELLED
+          : CallEndReason.DECLINED
+        : CallEndReason.REMOTE_LEFT;
 
     await this._finalizeSession(session, reason);
   }
@@ -259,11 +263,7 @@ export class VideoCallGateway extends BaseSocketGateway {
       return;
     }
     if (session.callerId !== user.id && session.receiverId !== user.id) return;
-    if (
-      session.status !== CallStatus.ACTIVE &&
-      session.status !== CallStatus.CONNECTING &&
-      session.status !== CallStatus.RECONNECTING
-    ) {
+    if (session.status !== CallStatus.ACTIVE && session.status !== CallStatus.CONNECTING && session.status !== CallStatus.RECONNECTING) {
       return;
     }
 
@@ -372,7 +372,7 @@ export class VideoCallGateway extends BaseSocketGateway {
     this.server.to(this._roomKey(session.receiverId)).emit(VIDEO_CALL_ENDED, { callId, reason });
 
     // Remove every socket from the signaling room.
-    await this.server.in(this._callRoom(callId)).socketsLeave(this._callRoom(callId));
+    this.server.in(this._callRoom(callId)).socketsLeave(this._callRoom(callId));
 
     this._clearReconnectGrace(callId);
     await this._videoCallService.cleanup(callId);

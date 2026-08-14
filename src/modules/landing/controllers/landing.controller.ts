@@ -6,18 +6,18 @@ import { ILandingService } from '@modules/landing/services/interfaces/landing-se
 
 @Controller('landing')
 export class LandingController {
-    constructor(
-        @Inject(LANDING_SERVICE_NAME)
-        private readonly _landingService: ILandingService,
-    ) { }
+  constructor(
+    @Inject(LANDING_SERVICE_NAME)
+    private readonly _landingService: ILandingService,
+  ) {}
 
-    @Get('home')
-    async getLandingData(): Promise<IResponse<ILandingData>> {
-        return await this._landingService.getLandingData();
-    }
+  @Get('home')
+  async getLandingData(): Promise<IResponse<ILandingData>> {
+    return await this._landingService.getLandingData();
+  }
 
-    @Get('search-categories')
-    async searchCategories(@Query() { search }: { search: string }): Promise<IResponse<ILandingSearchCategory[]>> {
-        return await this._landingService.searchCategories(search);
-    }
+  @Get('search-categories')
+  async searchCategories(@Query() { search }: { search: string }): Promise<IResponse<ILandingSearchCategory[]>> {
+    return await this._landingService.searchCategories(search);
+  }
 }

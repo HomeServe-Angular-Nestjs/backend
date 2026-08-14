@@ -1,14 +1,20 @@
-import { ISlotUI } from '@core/entities/interfaces/booking.entity.interface';
-import { ICustomerProviderDetails, IDisplayReviews, IProvider, IProviderCardWithPagination, UserType } from '@core/entities/interfaces/user.entity.interface';
-import { UploadsType } from '@core/enum/uploads.enum';
-import { IResponse } from '@core/misc/response.util';
-import { FilterDto, SlotDto, UpdateBioDto } from '@modules/providers/dtos/provider.dto';
+import type { ISlotUI } from '@core/entities/interfaces/booking.entity.interface';
+import type {
+  ICustomerProviderDetails,
+  IDisplayReviews,
+  IProvider,
+  IProviderCardWithPagination,
+  UserType,
+} from '@core/entities/interfaces/user.entity.interface';
+import type { UploadsType } from '@core/enum/uploads.enum';
+import type { IResponse } from '@core/misc/response.util';
+import type { FilterDto, SlotDto, UpdateBioDto } from '@modules/providers/dtos/provider.dto';
 
 export interface IProviderServices {
   getProviders(filter: FilterDto): Promise<IResponse<IProviderCardWithPagination>>;
   getReviews(providerId: string, options?: { cursor?: string; limit?: number }): Promise<IResponse<IDisplayReviews>>;
   fetchOneProvider(providerId: string): Promise<IResponse<ICustomerProviderDetails>>;
-  bulkUpdateProvider(id: string, updateData: Partial<IProvider>, file?: Express.Multer.File,): Promise<IProvider>;
+  bulkUpdateProvider(id: string, updateData: Partial<IProvider>, file?: Express.Multer.File): Promise<IProvider>;
   updateBio(providerId: string, updateBioDto: UpdateBioDto): Promise<IResponse<IProvider>>;
   uploadCertificate(providerId: string, label: string, file: Express.Multer.File): Promise<IResponse<IProvider>>;
   updateDefaultSlot(slot: SlotDto, providerId: string): Promise<IProvider>;

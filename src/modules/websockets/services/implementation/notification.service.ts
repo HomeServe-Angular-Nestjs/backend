@@ -1,120 +1,123 @@
-import { NOTIFICATION_MAPPER } from "@core/constants/mappers.constant";
-import { NOTIFICATION_REPOSITORY_NAME } from "@core/constants/repository.constant";
-import { INotificationMapper } from "@core/dto-mapper/interface/notification.mapper.interface";
-import { INotification, INotificationPage } from "@core/entities/interfaces/notification.entity.interface";
-import { NotificationType, NotificationTemplateId } from "@core/enum/notification.enum";
-import { IResponse } from "@core/misc/response.util";
-import { INotificationRepository } from "@core/repositories/interfaces/notification-repo.interface";
-import { SendNewNotificationDto } from "@modules/websockets/dto/notification.dto";
-import { INotificationService } from "@modules/websockets/services/interface/notification-service.interface";
-import { forwardRef, Inject, Injectable, NotFoundException } from "@nestjs/common";
-import { NotificationGateway } from "@modules/websockets/namespaces/notification.gateway";
-import { ErrorCodes, ErrorMessage } from "@core/enum/error.enum";
+import { NOTIFICATION_MAPPER } from '@core/constants/mappers.constant';
+import { NOTIFICATION_REPOSITORY_NAME } from '@core/constants/repository.constant';
+import { INotificationMapper } from '@core/dto-mapper/interface/notification.mapper.interface';
+import { INotification, INotificationPage } from '@core/entities/interfaces/notification.entity.interface';
+import { NotificationType, NotificationTemplateId } from '@core/enum/notification.enum';
+import { IResponse } from '@core/misc/response.util';
+import { INotificationRepository } from '@core/repositories/interfaces/notification-repo.interface';
+import { SendNewNotificationDto } from '@modules/websockets/dto/notification.dto';
+import { INotificationService } from '@modules/websockets/services/interface/notification-service.interface';
+import { forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { NotificationGateway } from '@modules/websockets/namespaces/notification.gateway';
+import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
 
 @Injectable()
 export class NotificationService implements INotificationService {
-    constructor(
-        @Inject(NOTIFICATION_REPOSITORY_NAME)
-        private readonly _notificationRepository: INotificationRepository,
-        @Inject(NOTIFICATION_MAPPER)
-        private readonly _notificationMapper: INotificationMapper,
-        @Inject(forwardRef(() => NotificationGateway))
-        private readonly _notificationGateway: NotificationGateway,
-    ) { }
+  constructor(
+    @Inject(NOTIFICATION_REPOSITORY_NAME)
+    private readonly _notificationRepository: INotificationRepository,
+    @Inject(NOTIFICATION_MAPPER)
+    private readonly _notificationMapper: INotificationMapper,
+    @Inject(forwardRef(() => NotificationGateway))
+    private readonly _notificationGateway: NotificationGateway,
+  ) {}
 
-    async createNotification(userId: string, body: SendNewNotificationDto): Promise<INotification> {
-        const newNotification = await this._notificationRepository.create(this._notificationMapper.toDocument({
-            userId,
-            templateId: body.templateId,
-            type: body.type,
-            title: body.title,
-            message: body.message,
-            entityId: body.entityId,
-            metadata: body.metadata,
-        }));
+  async createNotification(userId: string, body: SendNewNotificationDto): Promise<INotification> {
+    const newNotification = await this._notificationRepository.create(
+      this._notificationMapper.toDocument({
+        userId,
+        templateId: body.templateId,
+        type: body.type,
+        title: body.title,
+        message: body.message,
+        entityId: body.entityId,
+        metadata: body.metadata,
+      }),
+    );
 
-        const notificationEntity = this._notificationMapper.toEntity(newNotification);
+    const notificationEntity = this._notificationMapper.toEntity(newNotification);
 
-        await this._notificationGateway.sendNotification(userId, notificationEntity);
+    await this._notificationGateway.sendNotification(userId, notificationEntity);
 
-        return notificationEntity;
+    return notificationEntity;
+  }
+
+  async fetchAll(userId: string, cursor?: string, limit: number = 20): Promise<IResponse<INotificationPage>> {
+    const { data, nextCursor, hasMore } = await this._notificationRepository.findAllPaginated(userId, limit, cursor);
+    return {
+      success: true,
+      message: 'Notifications fetched.',
+      data: {
+        data: (data ?? []).map((notification) => this._notificationMapper.toEntity(notification)),
+        nextCursor,
+        hasMore,
+      },
+    };
+  }
+
+  async findNotification(userId: string, type: NotificationType, templateId: NotificationTemplateId): Promise<INotification | null> {
+    const notificationDoc = await this._notificationRepository.findNotification(userId, type, templateId);
+    return notificationDoc ? this._notificationMapper.toEntity(notificationDoc) : null;
+  }
+
+  async markAsReadById(userId: string, notificationId: string): Promise<IResponse<INotification>> {
+    const notificationDoc = await this._notificationRepository.markAsReadById(userId, notificationId);
+    if (!notificationDoc)
+      throw new NotFoundException({
+        code: ErrorCodes.NOT_FOUND,
+        message: ErrorMessage.NOTIFICATION_NOT_FOUND,
+      });
+
+    return {
+      success: true,
+      message: 'Notification marked as read.',
+      data: this._notificationMapper.toEntity(notificationDoc),
+    };
+  }
+
+  async markAllAsRead(userId: string): Promise<IResponse<INotification[]>> {
+    const result = await this._notificationRepository.markAllAsRead(userId);
+
+    if (!result) {
+      return {
+        success: true,
+        message: 'No notifications found to mark as read.',
+      };
     }
 
-    async fetchAll(userId: string, cursor?: string, limit: number = 20): Promise<IResponse<INotificationPage>> {
-        const { data, nextCursor, hasMore } = await this._notificationRepository.findAllPaginated(userId, limit, cursor);
-        return {
-            success: true,
-            message: 'Notifications fetched.',
-            data: {
-                data: (data ?? []).map(notification => this._notificationMapper.toEntity(notification)),
-                nextCursor,
-                hasMore,
-            }
-        }
-    }
+    const notificationDocs = await this._notificationRepository.findAll(userId);
 
-    async findNotification(userId: string, type: NotificationType, templateId: NotificationTemplateId): Promise<INotification | null> {
-        const notificationDoc = await this._notificationRepository.findNotification(userId, type, templateId);
-        return notificationDoc ? this._notificationMapper.toEntity(notificationDoc) : null;
-    }
+    return {
+      success: true,
+      message: 'All notifications marked as read.',
+      data: (notificationDocs ?? []).map((notification) => this._notificationMapper.toEntity(notification)),
+    };
+  }
 
-    async markAsReadById(userId: string, notificationId: string): Promise<IResponse<INotification>> {
-        const notificationDoc = await this._notificationRepository.markAsReadById(userId, notificationId);
-        if (!notificationDoc) throw new NotFoundException({
-            code: ErrorCodes.NOT_FOUND,
-            message: ErrorMessage.NOTIFICATION_NOT_FOUND
-        });
+  async deleteByUserIdAndTemplateId(userId: string, templateId: NotificationTemplateId): Promise<INotification | null> {
+    const deletedDoc = await this._notificationRepository.deleteByUserIdAndTemplateId(userId, templateId);
+    return deletedDoc ? this._notificationMapper.toEntity(deletedDoc) : null;
+  }
 
-        return {
-            success: true,
-            message: 'Notification marked as read.',
-            data: this._notificationMapper.toEntity(notificationDoc)
-        }
-    }
+  async deleteById(userId: string, notificationId: string): Promise<IResponse<void>> {
+    const isDeleted = await this._notificationRepository.deleteById(userId, notificationId);
+    if (!isDeleted)
+      throw new NotFoundException({
+        code: ErrorCodes.NOT_FOUND,
+        message: ErrorMessage.NOTIFICATION_NOT_FOUND,
+      });
 
-    async markAllAsRead(userId: string): Promise<IResponse<INotification[]>> {
-        const result = await this._notificationRepository.markAllAsRead(userId);
+    return {
+      success: true,
+      message: 'Notification deleted successfully.',
+    };
+  }
 
-        if (!result) {
-            return {
-                success: true,
-                message: 'No notifications found to mark as read.'
-            };
-        }
-
-        const notificationDocs = await this._notificationRepository.findAll(userId);
-
-        return {
-            success: true,
-            message: 'All notifications marked as read.',
-            data: (notificationDocs ?? []).map(notification => this._notificationMapper.toEntity(notification))
-        };
-    }
-
-    async deleteByUserIdAndTemplateId(userId: string, templateId: NotificationTemplateId): Promise<INotification | null> {
-        const deletedDoc = await this._notificationRepository.deleteByUserIdAndTemplateId(userId, templateId);
-        return deletedDoc ? this._notificationMapper.toEntity(deletedDoc) : null;
-    }
-
-    async deleteById(userId: string, notificationId: string): Promise<IResponse<void>> {
-        const isDeleted = await this._notificationRepository.deleteById(userId, notificationId);
-        if (!isDeleted) throw new NotFoundException({
-            code: ErrorCodes.NOT_FOUND,
-            message: ErrorMessage.NOTIFICATION_NOT_FOUND
-        })
-
-        return {
-            success: true,
-            message: 'Notification deleted successfully.'
-        };
-    }
-
-    async deleteAll(userId: string): Promise<IResponse<void>> {
-        await this._notificationRepository.deleteAll(userId);
-        return {
-            success: true,
-            message: 'All notifications cleared.'
-        };
-    }
+  async deleteAll(userId: string): Promise<IResponse<void>> {
+    await this._notificationRepository.deleteAll(userId);
+    return {
+      success: true,
+      message: 'All notifications cleared.',
+    };
+  }
 }
-

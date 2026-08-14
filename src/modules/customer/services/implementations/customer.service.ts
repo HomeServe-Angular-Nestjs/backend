@@ -2,7 +2,11 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 
-import { CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME, SUBSCRIPTION_REPOSITORY_NAME } from '@core/constants/repository.constant';
+import {
+  CUSTOMER_REPOSITORY_INTERFACE_NAME,
+  PROVIDER_REPOSITORY_INTERFACE_NAME,
+  SUBSCRIPTION_REPOSITORY_NAME,
+} from '@core/constants/repository.constant';
 import { ARGON_UTILITY_NAME, UPLOAD_UTILITY_NAME } from '@core/constants/utility.constant';
 import { ICustomer, ISearchedProviders, IUpdateProfileData } from '@core/entities/interfaces/user.entity.interface';
 import { ErrorCodes, ErrorMessage, UploadErrorMessages } from '@core/enum/error.enum';
@@ -24,194 +28,191 @@ import { ISubscriptionRepository } from '@core/repositories/interfaces/subscript
 
 @Injectable()
 export class CustomerService implements ICustomerService {
-    private readonly logger: ICustomLogger;
+  private readonly logger: ICustomLogger;
 
-    constructor(
-        @Inject(LOGGER_FACTORY)
-        private readonly loggerFactory: ILoggerFactory,
-        @Inject(CUSTOMER_REPOSITORY_INTERFACE_NAME)
-        private readonly _customerRepository: ICustomerRepository,
-        @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
-        private readonly _providerRepository: IProviderRepository,
-        @Inject(ARGON_UTILITY_NAME)
-        private readonly _argonUtility: IArgonUtility,
-        @Inject(UPLOAD_UTILITY_NAME)
-        private readonly _uploadsUtility: IUploadsUtility,
-        @Inject(CUSTOMER_MAPPER)
-        private readonly _customerMapper: ICustomerMapper,
-        @Inject(SUBSCRIPTION_REPOSITORY_NAME)
-        private readonly _subscriptionRepository: ISubscriptionRepository,
-    ) {
-        this.logger = this.loggerFactory.createLogger(CustomerService.name);
+  constructor(
+    @Inject(LOGGER_FACTORY)
+    private readonly loggerFactory: ILoggerFactory,
+    @Inject(CUSTOMER_REPOSITORY_INTERFACE_NAME)
+    private readonly _customerRepository: ICustomerRepository,
+    @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
+    private readonly _providerRepository: IProviderRepository,
+    @Inject(ARGON_UTILITY_NAME)
+    private readonly _argonUtility: IArgonUtility,
+    @Inject(UPLOAD_UTILITY_NAME)
+    private readonly _uploadsUtility: IUploadsUtility,
+    @Inject(CUSTOMER_MAPPER)
+    private readonly _customerMapper: ICustomerMapper,
+    @Inject(SUBSCRIPTION_REPOSITORY_NAME)
+    private readonly _subscriptionRepository: ISubscriptionRepository,
+  ) {
+    this.logger = this.loggerFactory.createLogger(CustomerService.name);
+  }
+
+  async fetchOneCustomer(id: string): Promise<ICustomer | null> {
+    const customerDocument = await this._customerRepository.findOne({ _id: id });
+    if (!customerDocument) return null;
+    return this.toEntityWithSignedAvatar(customerDocument);
+  }
+
+  private toEntityWithSignedAvatar(doc: CustomerDocument): ICustomer {
+    const entity = this._customerMapper.toEntity(doc);
+    entity.avatar = this._uploadsUtility.getSignedImageUrl(entity.avatar);
+    return entity;
+  }
+
+  async partialUpdate(id: string, data: Partial<ICustomer>): Promise<ICustomer> {
+    const updatedCustomerDocument = await this._customerRepository.partialUpdate(id, data);
+
+    if (!updatedCustomerDocument) {
+      throw new NotFoundException(`Customer with Id ${id} is not found`);
     }
 
-    async fetchOneCustomer(id: string): Promise<ICustomer | null> {
-        const customerDocument = await this._customerRepository.findOne({ _id: id });
-        if (!customerDocument) return null;
-        return this.toEntityWithSignedAvatar(customerDocument);
+    return this.toEntityWithSignedAvatar(updatedCustomerDocument);
+  }
+
+  async toggleFavorite(id: string, providerId: string): Promise<ICustomer> {
+    const updatedCustomerDocument = await this._customerRepository.toggleFavorite(id, providerId);
+
+    if (!updatedCustomerDocument) {
+      throw new NotFoundException(`Customer with ID ${id} not found`);
     }
 
-    private toEntityWithSignedAvatar(doc: CustomerDocument): ICustomer {
-        const entity = this._customerMapper.toEntity(doc);
-        entity.avatar = this._uploadsUtility.getSignedImageUrl(entity.avatar);
-        return entity;
+    return this.toEntityWithSignedAvatar(updatedCustomerDocument);
+  }
+
+  async searchProviders(search: string): Promise<IResponse> {
+    let result: ISearchedProviders[] = [];
+
+    if (search) {
+      const regex = new RegExp(search, 'i');
+      const providers = await this._providerRepository.find({ address: regex }, { sort: { createdAt: -1 } });
+
+      result = providers.map((prov) => ({
+        id: prov.id,
+        avatar: prov.avatar,
+        name: prov?.fullname ?? prov.username,
+        address: prov?.address ?? '',
+      }));
+
+      const activeSubs = await this._subscriptionRepository.findActiveByUserIds(result.map((r) => r.id));
+
+      const priorityRank = new Map<string, number>();
+      for (const sub of activeSubs) {
+        const providerId = sub.userId.toString();
+        const priority = sub.features?.search_priority as string;
+        const rank = priority === 'high' ? 0 : priority === 'medium' ? 1 : priority === 'low' ? 2 : 3;
+        const current = priorityRank.get(providerId);
+        if (current === undefined || rank < current) {
+          priorityRank.set(providerId, rank);
+        }
+      }
+
+      result = result.sort((a, b) => {
+        const rankA = priorityRank.get(a.id) ?? 3;
+        const rankB = priorityRank.get(b.id) ?? 3;
+        return rankA - rankB;
+      });
     }
 
-    async partialUpdate(id: string, data: Partial<ICustomer>): Promise<ICustomer> {
-        const updatedCustomerDocument = await this._customerRepository.partialUpdate(id, data);
+    return {
+      success: true,
+      message: 'success',
+      data: result,
+    };
+  }
 
-        if (!updatedCustomerDocument) {
-            throw new NotFoundException(`Customer with Id ${id} is not found`)
-        }
+  async updateProfile(customerId: string, updateData: UpdateProfileDto): Promise<IResponse<ICustomer>> {
+    const profileData: IUpdateProfileData = {
+      fullname: updateData.fullname,
+      username: updateData.username,
+      phone: updateData.phone,
+      address: updateData.address,
+      coordinates: updateData.coordinates as [number, number],
+    };
 
-        return this.toEntityWithSignedAvatar(updatedCustomerDocument);
+    const updatedCustomer = await this._customerRepository.updateProfile(customerId, profileData);
+
+    if (!updatedCustomer) {
+      throw new NotFoundException({
+        code: ErrorCodes.NOT_FOUND,
+        message: ErrorMessage.USER_NOT_FOUND,
+      });
     }
 
-    async toggleFavorite(id: string, providerId: string): Promise<ICustomer> {
-        const updatedCustomerDocument = await this._customerRepository.toggleFavorite(id, providerId);
+    return {
+      success: !!updatedCustomer,
+      message: 'update successful',
+      data: this.toEntityWithSignedAvatar(updatedCustomer),
+    };
+  }
 
-        if (!updatedCustomerDocument) {
-            throw new NotFoundException(`Customer with ID ${id} not found`);
-        }
-
-        return this.toEntityWithSignedAvatar(updatedCustomerDocument);
+  async changePassword(customerId: string, data: ChangePasswordDto): Promise<IResponse<ICustomer>> {
+    const customer = await this._customerRepository.findById(customerId);
+    if (!customer) {
+      throw new NotFoundException(ErrorMessage.CUSTOMER_NOT_FOUND_WITH_ID, customerId);
     }
 
-    async searchProviders(search: string): Promise<IResponse> {
-        let result: ISearchedProviders[] = [];
-
-        if (search) {
-            const regex = new RegExp(search, 'i');
-            const providers = await this._providerRepository.find(
-                { address: regex },
-                { sort: { createdAt: -1 } }
-            );
-
-            result = providers.map(prov => ({
-                id: prov.id,
-                avatar: prov.avatar,
-                name: prov?.fullname ?? prov.username,
-                address: prov?.address ?? ''
-            }));
-
-            const activeSubs = await this._subscriptionRepository.findActiveByUserIds(result.map(r => r.id));
-
-            const priorityRank = new Map<string, number>();
-            for (const sub of activeSubs) {
-                const providerId = sub.userId.toString();
-                const priority = sub.features?.search_priority as string;
-                const rank = priority === 'high' ? 0 : priority === 'medium' ? 1 : priority === 'low' ? 2 : 3;
-                const current = priorityRank.get(providerId);
-                if (current === undefined || rank < current) {
-                    priorityRank.set(providerId, rank);
-                }
-            }
-
-            result = result.sort((a, b) => {
-                const rankA = priorityRank.get(a.id) ?? 3;
-                const rankB = priorityRank.get(b.id) ?? 3;
-                return rankA - rankB;
-            });
-        }
-
-        return {
-            success: true,
-            message: 'success',
-            data: result
-        }
+    if (customer.googleId || !customer.password) {
+      throw new BadRequestException({
+        code: ErrorCodes.BAD_REQUEST,
+        message: 'Password change is not available for Google-authenticated accounts.',
+      });
     }
 
-    async updateProfile(customerId: string, updateData: UpdateProfileDto): Promise<IResponse<ICustomer>> {
-        const profileData: IUpdateProfileData = {
-            fullname: updateData.fullname,
-            username: updateData.username,
-            phone: updateData.phone,
-            address: updateData.address,
-            coordinates: updateData.coordinates as [number, number],
-        };
-
-        const updatedCustomer = await this._customerRepository.updateProfile(customerId, profileData);
-
-        if (!updatedCustomer) {
-            throw new NotFoundException({
-                code: ErrorCodes.NOT_FOUND,
-                message: ErrorMessage.USER_NOT_FOUND
-            });
-        }
-
-        return {
-            success: !!updatedCustomer,
-            message: 'update successful',
-            data: this.toEntityWithSignedAvatar(updatedCustomer)
-        }
+    const result = await this._argonUtility.verify(customer.password, data.currentPassword);
+    if (!result) {
+      return {
+        success: false,
+        message: 'Incorrect current password.',
+      };
     }
 
-    async changePassword(customerId: string, data: ChangePasswordDto): Promise<IResponse<ICustomer>> {
-        const customer = await this._customerRepository.findById(customerId);
-        if (!customer) {
-            throw new NotFoundException(ErrorMessage.CUSTOMER_NOT_FOUND_WITH_ID, customerId);
-        }
+    const hashedPassword = await this._argonUtility.hash(data.newPassword);
 
-        if (customer.googleId || !customer.password) {
-            throw new BadRequestException({
-                code: ErrorCodes.BAD_REQUEST,
-                message: 'Password change is not available for Google-authenticated accounts.'
-            });
-        }
+    const updatedCustomer = await this._customerRepository.updatePasswordById(customerId, hashedPassword);
 
-        const result = await this._argonUtility.verify(customer.password, data.currentPassword);
-        if (!result) {
-            return {
-                success: false,
-                message: 'Incorrect current password.'
-            }
-        }
-
-        const hashedPassword = await this._argonUtility.hash(data.newPassword);
-
-        const updatedCustomer = await this._customerRepository.updatePasswordById(customerId, hashedPassword);
-
-        if (!updatedCustomer) {
-            throw new Error('Failed to update password');
-        }
-
-        return {
-            success: !!updatedCustomer,
-            message: 'password changed successfully',
-            data: this.toEntityWithSignedAvatar(updatedCustomer)
-        }
+    if (!updatedCustomer) {
+      throw new Error('Failed to update password');
     }
 
-    async changeAvatar(customerId: string, file: Express.Multer.File): Promise<IResponse<ICustomer>> {
-        const publicId = this._uploadsUtility.getPublicId('customer', customerId, UploadsType.USER, uuidv4());
+    return {
+      success: !!updatedCustomer,
+      message: 'password changed successfully',
+      data: this.toEntityWithSignedAvatar(updatedCustomer),
+    };
+  }
 
-        const uploadResponse = await this._uploadsUtility.uploadsImage(file, publicId);
+  async changeAvatar(customerId: string, file: Express.Multer.File): Promise<IResponse<ICustomer>> {
+    const publicId = this._uploadsUtility.getPublicId('customer', customerId, UploadsType.USER, uuidv4());
 
-        if (!uploadResponse) {
-            throw new InternalServerErrorException(UploadErrorMessages.IMAGE_UPLOAD_FAILED);
-        }
+    const uploadResponse = await this._uploadsUtility.uploadsImage(file, publicId);
 
-        const updatedCustomer = await this._customerRepository.updateAvatar(customerId, uploadResponse.public_id);
-
-        if (!updatedCustomer) {
-            throw new NotFoundException(ErrorMessage.CUSTOMER_NOT_FOUND_WITH_ID, customerId);
-        }
-
-        return {
-            success: !!updatedCustomer,
-            message: 'image updated',
-            data: this.toEntityWithSignedAvatar(updatedCustomer)
-        }
+    if (!uploadResponse) {
+      throw new InternalServerErrorException(UploadErrorMessages.IMAGE_UPLOAD_FAILED);
     }
 
-    async getProviderGalleryImages(providerId: string): Promise<IResponse<string[]>> {
-        const workImages = await this._providerRepository.getWorkImages(providerId);
-        const urls = workImages.map(imageUrl => this._uploadsUtility.getSignedImageUrl(imageUrl, 5));
+    const updatedCustomer = await this._customerRepository.updateAvatar(customerId, uploadResponse.public_id);
 
-        return {
-            success: true,
-            message: 'successfully fetched',
-            data: urls ?? []
-        }
+    if (!updatedCustomer) {
+      throw new NotFoundException(ErrorMessage.CUSTOMER_NOT_FOUND_WITH_ID, customerId);
     }
+
+    return {
+      success: !!updatedCustomer,
+      message: 'image updated',
+      data: this.toEntityWithSignedAvatar(updatedCustomer),
+    };
+  }
+
+  async getProviderGalleryImages(providerId: string): Promise<IResponse<string[]>> {
+    const workImages = await this._providerRepository.getWorkImages(providerId);
+    const urls = workImages.map((imageUrl) => this._uploadsUtility.getSignedImageUrl(imageUrl, 5));
+
+    return {
+      success: true,
+      message: 'successfully fetched',
+      data: urls ?? [],
+    };
+  }
 }

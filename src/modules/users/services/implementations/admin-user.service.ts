@@ -1,5 +1,15 @@
-import { BOOKING_REPOSITORY_NAME, CUSTOMER_REPOSITORY_INTERFACE_NAME, PROVIDER_REPOSITORY_INTERFACE_NAME } from '@/core/constants/repository.constant';
-import { IReportUserData, IReportDownloadUserData, IReportProviderData, IUserData, IUserDataWithPagination, } from '@/core/entities/interfaces/admin.entity.interface';
+import {
+  BOOKING_REPOSITORY_NAME,
+  CUSTOMER_REPOSITORY_INTERFACE_NAME,
+  PROVIDER_REPOSITORY_INTERFACE_NAME,
+} from '@/core/constants/repository.constant';
+import {
+  IReportUserData,
+  IReportDownloadUserData,
+  IReportProviderData,
+  IUserData,
+  IUserDataWithPagination,
+} from '@/core/entities/interfaces/admin.entity.interface';
 import { ICustomer, IProvider } from '@/core/entities/interfaces/user.entity.interface';
 import { ICustomerRepository } from '@/core/repositories/interfaces/customer-repo.interface';
 import { IProviderRepository } from '@/core/repositories/interfaces/provider-repo.interface';
@@ -18,180 +28,189 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 
 @Injectable()
 export class AdminUserManagementService implements IAdminUserManagementService {
-    private readonly logger: ICustomLogger;
+  private readonly logger: ICustomLogger;
 
-    constructor(
-        @Inject(LOGGER_FACTORY)
-        private readonly loggerFactory: ILoggerFactory,
-        @Inject(CUSTOMER_REPOSITORY_INTERFACE_NAME)
-        private readonly _customerRepository: ICustomerRepository,
-        @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
-        private readonly _providerRepository: IProviderRepository,
-        @Inject(BOOKING_REPOSITORY_NAME)
-        private readonly _bookingRepository: IBookingRepository,
-        @Inject(CUSTOMER_MAPPER)
-        private readonly _customerMapper: ICustomerMapper,
-        @Inject(PROVIDER_MAPPER)
-        private readonly _providerMapper: IProviderMapper,
-        @Inject(PDF_SERVICE)
-        private readonly _pdfService: IPdfService
-    ) {
-        this.logger = this.loggerFactory.createLogger(AdminUserManagementService.name);
-    }
+  constructor(
+    @Inject(LOGGER_FACTORY)
+    private readonly loggerFactory: ILoggerFactory,
+    @Inject(CUSTOMER_REPOSITORY_INTERFACE_NAME)
+    private readonly _customerRepository: ICustomerRepository,
+    @Inject(PROVIDER_REPOSITORY_INTERFACE_NAME)
+    private readonly _providerRepository: IProviderRepository,
+    @Inject(BOOKING_REPOSITORY_NAME)
+    private readonly _bookingRepository: IBookingRepository,
+    @Inject(CUSTOMER_MAPPER)
+    private readonly _customerMapper: ICustomerMapper,
+    @Inject(PROVIDER_MAPPER)
+    private readonly _providerMapper: IProviderMapper,
+    @Inject(PDF_SERVICE)
+    private readonly _pdfService: IPdfService,
+  ) {
+    this.logger = this.loggerFactory.createLogger(AdminUserManagementService.name);
+  }
 
-    private async _generateEnrichedCustomerReport(reportDownloadData: IReportDownloadUserData): Promise<IReportUserData[]> {
-        const customers = await this._customerRepository.generateCustomersReport(reportDownloadData);
+  private async _generateEnrichedCustomerReport(reportDownloadData: IReportDownloadUserData): Promise<IReportUserData[]> {
+    const customers = await this._customerRepository.generateCustomersReport(reportDownloadData);
 
-        const enriched = await Promise.all(
-            customers.map(async (customer) => {
-                const matrix = await this._bookingRepository.getCustomerReportMatrix(customer.id.toString());
-                return {
-                    ...customer,
-                    ...matrix,
-                };
-            }),
-        );
-
-        return enriched;
-    }
-
-    private async _generateEnrichedProviderReport(reportDownloadData: IReportDownloadUserData): Promise<IReportProviderData[]> {
-        const providers = await this._providerRepository.generateProviderReport(reportDownloadData);
-        const enriched = await Promise.all(
-            providers.map(async (provider) => {
-                const matrix = await this._bookingRepository.getProviderReportMatrix(provider.id.toString());
-                return {
-                    ...provider,
-                    ...matrix
-                };
-            }),
-        );
-
-        return enriched;
-    }
-
-    async getUsers(page: number = 1, getUserDto: Omit<GetUsersWithFilterDto, 'page'>): Promise<IUserDataWithPagination> {
-        const limit = 10;
-        const skip = (page - 1) * limit;
-
-        const query: { [key: string]: any | string } = { isDeleted: false };
-
-        if (typeof getUserDto.search === 'string') {
-            query.email = new RegExp(getUserDto.search, 'i')
-        }
-
-        if (typeof getUserDto.status === 'boolean') {
-            query.isActive = getUserDto.status
-        }
-
-        if (getUserDto.date) {
-            const dayStart = new Date(getUserDto.date);
-            dayStart.setHours(0, 0, 0, 0);
-
-            const dayEnd = new Date(getUserDto.date);
-            dayEnd.setHours(23, 59, 59, 999);
-
-            query.createdAt = { $gte: dayStart, $lte: dayEnd };
-        }
-
-        const repo = getUserDto.role === 'customer' ? this._customerRepository : this._providerRepository;
-        const [userDocuments, total] = await Promise.all([
-            repo.find(query, { skip, limit }),
-            repo.count(query)
-        ]);
-
-        let users: ICustomer[] | IProvider[] = [];
-        switch (getUserDto.role) {
-            case 'customer':
-                users = (userDocuments ?? []).map((user) => this._customerMapper.toEntity(user));
-                break;
-            case 'provider':
-                users = (userDocuments ?? []).map((user) => this._providerMapper.toEntity(user));
-                break;
-        }
-
-        const data: IUserData[] = (users ?? []).map((user: ICustomer | IProvider) => ({
-            id: user.id,
-            username: user.username,
-            email: user.email,
-            contact: user.phone,
-            createdAt: user.createdAt as Date,
-            isActive: user.isActive,
-            isDeleted: user.isDeleted,
-        }));
-
-        return { data, pagination: { limit, page, total } }
-    }
-
-    async updateUserStatus(statusUpdateDto: StatusUpdateDto): Promise<boolean> {
-        const repo = statusUpdateDto.role === 'customer' ? this._customerRepository : this._providerRepository;
-
-        const updatedUser = await repo.findOneAndUpdate(
-            { _id: statusUpdateDto.userId },
-            { $set: { isActive: !statusUpdateDto.status } },
-            { new: true }
-        ); //todo
-
-        if (!updatedUser) {
-            throw new NotFoundException(`${statusUpdateDto.role} with ID ${statusUpdateDto.userId} not found.`);
-        }
-
-        return !!updatedUser;
-    }
-
-    async removeUser(removeUserDto: RemoveUserDto): Promise<boolean> {
-        const repo = removeUserDto.role === 'customer' ? this._customerRepository : this._providerRepository;
-
-        const deletedUser = await repo.findOneAndUpdate(
-            { _id: removeUserDto.userId },
-            { $set: { isDeleted: true } }
-        ); //todo
-
-        if (!deletedUser) {
-            throw new NotFoundException(`${removeUserDto.role} with ID ${removeUserDto.userId} not found.`);
-        }
-
-        return !!deletedUser;
-    }
-
-    async downloadUserReport(reportFilterData: UserReportDownloadDto): Promise<Buffer> {
-        const { category, ...reportDownloadData } = { ...reportFilterData };
-
-        const user: Record<'customer' | 'provider', IReportUserData[] | IReportProviderData[]> = {
-            customer: [],
-            provider: [],
+    const enriched = await Promise.all(
+      customers.map(async (customer) => {
+        const matrix = await this._bookingRepository.getCustomerReportMatrix(customer.id.toString());
+        return {
+          ...customer,
+          ...matrix,
         };
+      }),
+    );
 
-        const role = (reportFilterData.role ?? '').toLowerCase();
-        switch (role) {
-            case 'customer':
-                user.customer = await this._generateEnrichedCustomerReport(reportDownloadData);
-                break;
-            case 'provider':
-                user.provider = await this._generateEnrichedProviderReport(reportDownloadData);
-                break;
-            default:
-                user.customer = await this._generateEnrichedCustomerReport(reportDownloadData);
-                user.provider = await this._generateEnrichedProviderReport(reportDownloadData);
-        }
+    return enriched;
+  }
 
-        const customerColumnData = ['Customer ID', 'Email', 'Username', 'Fullname', 'Phone', 'Status', 'Bookings', 'Spend (₹)', 'Refunds (₹)'];
-        const providerColumnData = ['Provider ID', 'Email', 'Username', 'Fullname', 'Phone', 'Profession', 'Experience', 'Certified', 'Ratings (avg)', 'Service Listed', 'Reviews', 'Total Bookings', 'Earnings (₹)', 'Refunds (₹)'];
+  private async _generateEnrichedProviderReport(reportDownloadData: IReportDownloadUserData): Promise<IReportProviderData[]> {
+    const providers = await this._providerRepository.generateProviderReport(reportDownloadData);
+    const enriched = await Promise.all(
+      providers.map(async (provider) => {
+        const matrix = await this._bookingRepository.getProviderReportMatrix(provider.id.toString());
+        return {
+          ...provider,
+          ...matrix,
+        };
+      }),
+    );
 
-        const tableData: IUserTableTemplate[] = [
-            {
-                rows: user.customer,
-                columns: customerColumnData,
-                role: 'customer'
-            },
-            {
-                rows: user.provider,
-                columns: providerColumnData,
-                role: 'provider'
-            },
-        ];
+    return enriched;
+  }
 
-        const tables = createUserReportTableTemplate(tableData);
-        return this._pdfService.generatePdf(tables, 'Users Report');
+  async getUsers(page: number = 1, getUserDto: Omit<GetUsersWithFilterDto, 'page'>): Promise<IUserDataWithPagination> {
+    const limit = 10;
+    const skip = (page - 1) * limit;
+
+    const query: Record<string, any> = { isDeleted: false };
+
+    if (typeof getUserDto.search === 'string') {
+      query.email = new RegExp(getUserDto.search, 'i');
     }
+
+    if (typeof getUserDto.status === 'boolean') {
+      query.isActive = getUserDto.status;
+    }
+
+    if (getUserDto.date) {
+      const dayStart = new Date(getUserDto.date);
+      dayStart.setHours(0, 0, 0, 0);
+
+      const dayEnd = new Date(getUserDto.date);
+      dayEnd.setHours(23, 59, 59, 999);
+
+      query.createdAt = { $gte: dayStart, $lte: dayEnd };
+    }
+
+    const repo = getUserDto.role === 'customer' ? this._customerRepository : this._providerRepository;
+    const [userDocuments, total] = await Promise.all([repo.find(query, { skip, limit }), repo.count(query)]);
+
+    let users: ICustomer[] | IProvider[] = [];
+    switch (getUserDto.role) {
+      case 'customer':
+        users = (userDocuments ?? []).map((user) => this._customerMapper.toEntity(user));
+        break;
+      case 'provider':
+        users = (userDocuments ?? []).map((user) => this._providerMapper.toEntity(user));
+        break;
+    }
+
+    const data: IUserData[] = (users ?? []).map((user: ICustomer | IProvider) => ({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      contact: user.phone,
+      createdAt: user.createdAt as Date,
+      isActive: user.isActive,
+      isDeleted: user.isDeleted,
+    }));
+
+    return { data, pagination: { limit, page, total } };
+  }
+
+  async updateUserStatus(statusUpdateDto: StatusUpdateDto): Promise<boolean> {
+    const repo = statusUpdateDto.role === 'customer' ? this._customerRepository : this._providerRepository;
+
+    const updatedUser = await repo.findOneAndUpdate(
+      { _id: statusUpdateDto.userId },
+      { $set: { isActive: !statusUpdateDto.status } },
+      { new: true },
+    ); //todo
+
+    if (!updatedUser) {
+      throw new NotFoundException(`${statusUpdateDto.role} with ID ${statusUpdateDto.userId} not found.`);
+    }
+
+    return !!updatedUser;
+  }
+
+  async removeUser(removeUserDto: RemoveUserDto): Promise<boolean> {
+    const repo = removeUserDto.role === 'customer' ? this._customerRepository : this._providerRepository;
+
+    const deletedUser = await repo.findOneAndUpdate({ _id: removeUserDto.userId }, { $set: { isDeleted: true } }); //todo
+
+    if (!deletedUser) {
+      throw new NotFoundException(`${removeUserDto.role} with ID ${removeUserDto.userId} not found.`);
+    }
+
+    return !!deletedUser;
+  }
+
+  async downloadUserReport(reportFilterData: UserReportDownloadDto): Promise<Buffer> {
+    const { category, ...reportDownloadData } = { ...reportFilterData };
+
+    const user: Record<'customer' | 'provider', IReportUserData[] | IReportProviderData[]> = {
+      customer: [],
+      provider: [],
+    };
+
+    const role = (reportFilterData.role ?? '').toLowerCase();
+    switch (role) {
+      case 'customer':
+        user.customer = await this._generateEnrichedCustomerReport(reportDownloadData);
+        break;
+      case 'provider':
+        user.provider = await this._generateEnrichedProviderReport(reportDownloadData);
+        break;
+      default:
+        user.customer = await this._generateEnrichedCustomerReport(reportDownloadData);
+        user.provider = await this._generateEnrichedProviderReport(reportDownloadData);
+    }
+
+    const customerColumnData = ['Customer ID', 'Email', 'Username', 'Fullname', 'Phone', 'Status', 'Bookings', 'Spend (₹)', 'Refunds (₹)'];
+    const providerColumnData = [
+      'Provider ID',
+      'Email',
+      'Username',
+      'Fullname',
+      'Phone',
+      'Profession',
+      'Experience',
+      'Certified',
+      'Ratings (avg)',
+      'Service Listed',
+      'Reviews',
+      'Total Bookings',
+      'Earnings (₹)',
+      'Refunds (₹)',
+    ];
+
+    const tableData: IUserTableTemplate[] = [
+      {
+        rows: user.customer,
+        columns: customerColumnData,
+        role: 'customer',
+      },
+      {
+        rows: user.provider,
+        columns: providerColumnData,
+        role: 'provider',
+      },
+    ];
+
+    const tables = createUserReportTableTemplate(tableData);
+    return this._pdfService.generatePdf(tables, 'Users Report');
+  }
 }

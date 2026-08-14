@@ -1,17 +1,19 @@
-import {
-  ClientSession, Document, FilterQuery, Model, QueryOptions, Types, UpdateQuery
-} from 'mongoose';
+import type { ClientSession, Document, FilterQuery, Model, QueryOptions, UpdateQuery } from 'mongoose';
+import { Types } from 'mongoose';
 
-import { IBaseRepository } from '../interfaces/base-repo.interface';
+import type { IBaseRepository } from '../interfaces/base-repo.interface';
 
 export abstract class BaseRepository<TDocument extends Document> implements IBaseRepository<TDocument> {
-  constructor(protected readonly model: Model<TDocument>) { }
+  constructor(protected readonly model: Model<TDocument>) {}
 
   async create(doc: Partial<TDocument>): Promise<TDocument> {
     return await this.model.create(doc);
   }
 
-  async find(filter: FilterQuery<TDocument>, options?: { limit?: number; skip?: number; sort?: Record<string, 1 | -1>; }): Promise<TDocument[]> {
+  async find(
+    filter: FilterQuery<TDocument>,
+    options?: { limit?: number; skip?: number; sort?: Record<string, 1 | -1> },
+  ): Promise<TDocument[]> {
     let query = this.model.find(filter);
     if (options?.limit) query = query.limit(options.limit);
     if (options?.skip) query = query.skip(options.skip);

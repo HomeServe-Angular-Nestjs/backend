@@ -5,8 +5,8 @@ import { SharedModule } from '@shared/shared.module';
 import { CloudinaryModule } from '@configs/cloudinary/cloudinary.module';
 
 @Module({
-    imports: [SharedModule, CloudinaryModule.registerAsync()],
-    controllers: [LandingController],
-    providers: [...landingProviders],
+  imports: [SharedModule, CloudinaryModule.registerAsync()],
+  controllers: [LandingController],
+  providers: [...landingProviders],
 })
-export class LandingModule { }
+export class LandingModule {}

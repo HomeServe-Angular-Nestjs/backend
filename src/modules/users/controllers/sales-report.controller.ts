@@ -12,53 +12,53 @@ import { Response } from 'express';
 @UseGuards(AdminRoleGuard)
 @Controller('admin/sales-report')
 export class AdminSalesReportController {
-    private readonly logger = new CustomLogger(AdminSalesReportController.name);
+  private readonly logger = new CustomLogger(AdminSalesReportController.name);
 
-    constructor(
-        @Inject(ADMIN_SALES_REPORT_SERVICE_NAME)
-        private readonly _salesReportService: IAdminSalesReportService
-    ) { }
+  constructor(
+    @Inject(ADMIN_SALES_REPORT_SERVICE_NAME)
+    private readonly _salesReportService: IAdminSalesReportService,
+  ) {}
 
-    @Get('')
-    async getSalesReport(@Query() salesReportQueryDto: SalesReportQueryDto): Promise<IResponse<ISalesReportBundle>> {
-        return await this._salesReportService.getSalesReport(salesReportQueryDto);
+  @Get('')
+  async getSalesReport(@Query() salesReportQueryDto: SalesReportQueryDto): Promise<IResponse<ISalesReportBundle>> {
+    return await this._salesReportService.getSalesReport(salesReportQueryDto);
+  }
+
+  @Post('export/pdf')
+  async exportSalesReportPdf(@Res() res: Response, @Body() salesReportQueryDto: SalesReportQueryDto): Promise<void> {
+    try {
+      const start = Date.now();
+      const pdfBuffer = await this._salesReportService.downloadSalesReportPdf(salesReportQueryDto);
+      this.logger.debug(`[Admin] - Sales Report PDF Generation Time: ${Date.now() - start}ms`);
+
+      res.set({
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': 'attachment; filename="sales-report.pdf"',
+        'Content-Length': pdfBuffer.length,
+      });
+
+      res.send(pdfBuffer);
+    } catch (err) {
+      this.logger.error(`Error downloading sales report pdf: ${err.message}`, err.stack);
+      throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
     }
+  }
 
-    @Post('export/pdf')
-    async exportSalesReportPdf(@Res() res: Response, @Body() salesReportQueryDto: SalesReportQueryDto): Promise<void> {
-        try {
-            const start = Date.now();
-            const pdfBuffer = await this._salesReportService.downloadSalesReportPdf(salesReportQueryDto);
-            this.logger.debug(`[Admin] - Sales Report PDF Generation Time: ${Date.now() - start}ms`);
+  @Post('export/excel')
+  async exportSalesReportExcel(@Res() res: Response, @Body() salesReportQueryDto: SalesReportQueryDto): Promise<void> {
+    try {
+      const excelBuffer = await this._salesReportService.downloadSalesReportExcel(salesReportQueryDto);
 
-            res.set({
-                'Content-Type': 'application/pdf',
-                'Content-Disposition': 'attachment; filename="sales-report.pdf"',
-                'Content-Length': pdfBuffer.length,
-            });
+      res.set({
+        'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'Content-Disposition': 'attachment; filename="sales-report.xlsx"',
+        'Content-Length': excelBuffer.length,
+      });
 
-            res.send(pdfBuffer);
-        } catch (err) {
-            this.logger.error(`Error downloading sales report pdf: ${err.message}`, err.stack);
-            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
-        }
+      res.send(excelBuffer);
+    } catch (err) {
+      this.logger.error(`Error downloading sales report excel: ${err.message}`, err.stack);
+      throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
     }
-
-    @Post('export/excel')
-    async exportSalesReportExcel(@Res() res: Response, @Body() salesReportQueryDto: SalesReportQueryDto): Promise<void> {
-        try {
-            const excelBuffer = await this._salesReportService.downloadSalesReportExcel(salesReportQueryDto);
-
-            res.set({
-                'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                'Content-Disposition': 'attachment; filename="sales-report.xlsx"',
-                'Content-Length': excelBuffer.length,
-            });
-
-            res.send(excelBuffer);
-        } catch (err) {
-            this.logger.error(`Error downloading sales report excel: ${err.message}`, err.stack);
-            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
-        }
-    }
+  }
 }

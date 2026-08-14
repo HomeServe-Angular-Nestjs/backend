@@ -12,7 +12,7 @@ import { UserType } from '@core/entities/interfaces/user.entity.interface';
 
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy) {
-  private readonly logger: ICustomLogger
+  private readonly logger: ICustomLogger;
 
   constructor(
     private _config: ConfigService,
@@ -33,9 +33,8 @@ export class GoogleStrategy extends PassportStrategy(Strategy) {
     this.logger = this.loggerFactory.createLogger(GoogleStrategy.name);
   }
 
-  async validate(req: Request, accessToken: string, refreshToken: string, profile: Profile,) {
+  async validate(req: Request, accessToken: string, refreshToken: string, profile: Profile) {
     try {
-
       const userType = req.query.state as UserType;
 
       if (!userType) {

@@ -3,86 +3,86 @@ import { IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, Min, ValidateNested }
 import { PaymentDirection, PaymentSource, TransactionStatus, TransactionType } from '@core/enum/transaction.enum';
 
 export class CreateOrderDto {
-    @IsNotEmpty()
-    @Transform(({ value }) => Number(value))
-    @IsNumber()
-    amount: number;
+  @IsNotEmpty()
+  @Transform(({ value }) => Number(value))
+  @IsNumber()
+  amount: number;
 }
 
 export class RazorpayVerifyData {
-    @IsNotEmpty()
-    @IsString()
-    razorpay_order_id: string;
+  @IsNotEmpty()
+  @IsString()
+  razorpay_order_id: string;
 
-    @IsNotEmpty()
-    @IsString()
-    razorpay_payment_id: string;
+  @IsNotEmpty()
+  @IsString()
+  razorpay_payment_id: string;
 
-    @IsNotEmpty()
-    @IsString()
-    razorpay_signature: string;
+  @IsNotEmpty()
+  @IsString()
+  razorpay_signature: string;
 }
 
 class VerifyOrderData {
-    @IsString()
-    id: string;
+  @IsString()
+  id: string;
 
-    @IsNotEmpty()
-    @IsString()
-    @IsIn(Object.values(TransactionType))
-    transactionType: TransactionType;
+  @IsNotEmpty()
+  @IsString()
+  @IsIn(Object.values(TransactionType))
+  transactionType: TransactionType;
 
-    @IsNotEmpty()
-    @IsString()
-    @IsIn(Object.values(PaymentDirection))
-    direction: PaymentDirection;
+  @IsNotEmpty()
+  @IsString()
+  @IsIn(Object.values(PaymentDirection))
+  direction: PaymentDirection;
 
-    @IsNotEmpty()
-    @IsString()
-    @IsIn(Object.values(PaymentSource))
-    source: PaymentSource;
+  @IsNotEmpty()
+  @IsString()
+  @IsIn(Object.values(PaymentSource))
+  source: PaymentSource;
 
-    @Transform(({ value }) => Number(value))
-    @IsNumber()
-    @Min(0)
-    amount: number;
+  @Transform(({ value }) => Number(value))
+  @IsNumber()
+  @Min(0)
+  amount: number;
 
-    @IsIn(Object.values(TransactionStatus))
-    status: TransactionStatus;
+  @IsIn(Object.values(TransactionStatus))
+  status: TransactionStatus;
 
-    @IsOptional()
-    @IsString()
-    receipt?: string;
+  @IsOptional()
+  @IsString()
+  receipt?: string;
 }
 
 export class BookingOrderData extends VerifyOrderData {
-    @IsNotEmpty()
-    @IsString()
-    bookingId: string;
+  @IsNotEmpty()
+  @IsString()
+  bookingId: string;
 }
 
 export class SubscriptionOrderData extends VerifyOrderData {
-    @IsNotEmpty()
-    @IsString()
-    subscriptionId: string;
+  @IsNotEmpty()
+  @IsString()
+  subscriptionId: string;
 }
 
 export class BookingPaymentVerifyDto {
-    @Type(() => RazorpayVerifyData)
-    @ValidateNested()
-    verifyData: RazorpayVerifyData;
+  @Type(() => RazorpayVerifyData)
+  @ValidateNested()
+  verifyData: RazorpayVerifyData;
 
-    @Type(() => BookingOrderData)
-    @ValidateNested()
-    orderData: BookingOrderData;
+  @Type(() => BookingOrderData)
+  @ValidateNested()
+  orderData: BookingOrderData;
 }
 
 export class SubscriptionPaymentVerifyDto {
-    @Type(() => RazorpayVerifyData)
-    @ValidateNested()
-    verifyData: RazorpayVerifyData;
+  @Type(() => RazorpayVerifyData)
+  @ValidateNested()
+  verifyData: RazorpayVerifyData;
 
-    @Type(() => SubscriptionOrderData)
-    @ValidateNested()
-    orderData: SubscriptionOrderData;
+  @Type(() => SubscriptionOrderData)
+  @ValidateNested()
+  orderData: SubscriptionOrderData;
 }

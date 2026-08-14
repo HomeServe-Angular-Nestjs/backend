@@ -1,14 +1,15 @@
-import { IReportTransactionData } from "@core/entities/interfaces/admin.entity.interface";
+import type { IReportTransactionData } from '@core/entities/interfaces/admin.entity.interface';
 
 export interface ITransactionTableTemplate {
-    rows: any,
-    columns: string[];
-    type: 'normal'
+  rows: any;
+  columns: string[];
+  type: 'normal';
 }
 
 function transactionRowMapper(data: IReportTransactionData[]): string {
-    return (data ?? []).map(d => {
-        return `
+  return (data ?? [])
+    .map((d) => {
+      return `
             <tr>
                 <td>${d.id}</td>
                 <td>${d.userId}</td>
@@ -20,26 +21,29 @@ function transactionRowMapper(data: IReportTransactionData[]): string {
                 <td>${new Date(d.date).toLocaleDateString()}</td>               
             </tr>
         `;
-    }).join('');
+    })
+    .join('');
 }
 
 function transactionColumnMapper(data: string[]): string {
-    return (data ?? []).map(d => {
-        return `
+  return (data ?? [])
+    .map((d) => {
+      return `
             <th>${d}</th>
-        `
-    }).join('');
+        `;
+    })
+    .join('');
 }
 
 export function createTransactionReportTableTemplate(tableData: ITransactionTableTemplate[]): string {
-    const tables: string[] = [];
+  const tables: string[] = [];
 
-    for (let table of tableData) {
-        let section = '';
+  for (const table of tableData) {
+    let section = '';
 
-        if (table.rows.length > 0) {
-            if (table.type === 'normal') {
-                section = `
+    if (table.rows.length > 0) {
+      if (table.type === 'normal') {
+        section = `
                 <table>
                     <thead>
                         <tr>
@@ -51,9 +55,9 @@ export function createTransactionReportTableTemplate(tableData: ITransactionTabl
                     </tbody>
                 </table>
             `;
-            }
-            tables.push(section)
-        }
+      }
+      tables.push(section);
     }
-    return tables.join('<br> <br>');
+  }
+  return tables.join('<br> <br>');
 }

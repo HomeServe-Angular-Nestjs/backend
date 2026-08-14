@@ -5,15 +5,11 @@ import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { IPayload } from '@core/misc/payload.interface';
 import { UserType } from '@core/entities/interfaces/user.entity.interface';
-import {
-  IRefreshResult, ITokenService
-} from '@modules/auth/services/interfaces/token-service.interface';
-import {
-  Inject, Injectable, InternalServerErrorException, UnauthorizedException
-} from '@nestjs/common';
+import { IRefreshResult, ITokenService } from '@modules/auth/services/interfaces/token-service.interface';
+import { Inject, Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JsonWebTokenError, JwtService, TokenExpiredError } from '@nestjs/jwt';
-import { v4 as uuidv4 } from 'uuid'
+import { v4 as uuidv4 } from 'uuid';
 import { ErrorMessage, ErrorCodes } from '@core/enum/error.enum';
 
 @Injectable()
@@ -226,9 +222,7 @@ export class TokenService implements ITokenService {
     if (!token) return;
 
     const decoded: any = this._jwtService.decode(token);
-    const expiryInSec = decoded?.exp
-      ? Math.max(decoded.exp - Math.floor(Date.now() / 1000), 1)
-      : 60 * 60;
+    const expiryInSec = decoded?.exp ? Math.max(decoded.exp - Math.floor(Date.now() / 1000), 1) : 60 * 60;
 
     const blacklistKey = this.getBlacklistTokenKey(token);
     await this._redis.setex(blacklistKey, expiryInSec, 'blacklisted');

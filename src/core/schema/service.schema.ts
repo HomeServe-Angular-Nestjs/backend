@@ -7,7 +7,6 @@ import { PROVIDER_MODEL_NAME } from '@core/constants/model.constant';
 
 @Schema({ timestamps: true })
 export class ServiceDocument extends Document {
-
   @Prop({ type: Types.ObjectId, ref: PROVIDER_MODEL_NAME, required: true })
   providerId: Types.ObjectId;
 
@@ -40,4 +39,3 @@ export class ServiceDocument extends Document {
 }
 
 export const ServiceSchema = SchemaFactory.createForClass(ServiceDocument);
-

@@ -11,86 +11,86 @@ import { IUploadsUtility } from '@core/utilities/interface/upload.utility.interf
 
 @Injectable()
 export class AdminReviewService implements IAdminReviewService {
-    constructor(
-        @Inject(BOOKING_REPOSITORY_NAME)
-        private readonly _bookingRepository: IBookingRepository,
-        @Inject(UPLOAD_UTILITY_NAME)
-        private readonly _uploadUtility: IUploadsUtility
-    ) { }
+  constructor(
+    @Inject(BOOKING_REPOSITORY_NAME)
+    private readonly _bookingRepository: IBookingRepository,
+    @Inject(UPLOAD_UTILITY_NAME)
+    private readonly _uploadUtility: IUploadsUtility,
+  ) {}
 
-    async getReviews(filter: IReviewFilters): Promise<IResponse> {
-        try {
-            const result = await this._bookingRepository.getAdminReviews(filter);
+  async getReviews(filter: IReviewFilters): Promise<IResponse> {
+    try {
+      const result = await this._bookingRepository.getAdminReviews(filter);
 
-            for (let review of result.reviews) {
-                review.providerAvatar = this._uploadUtility.getSignedImageUrl(review.providerAvatar);
-                review.reviewedBy.customerAvatar = this._uploadUtility.getSignedImageUrl(review.reviewedBy.customerAvatar);
-            }
+      for (const review of result.reviews) {
+        review.providerAvatar = this._uploadUtility.getSignedImageUrl(review.providerAvatar);
+        review.reviewedBy.customerAvatar = this._uploadUtility.getSignedImageUrl(review.reviewedBy.customerAvatar);
+      }
 
-            return {
-                success: true,
-                message: 'Reviews fetched successfully',
-                data: result
-            };
-        } catch (error) {
-            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
-        }
+      return {
+        success: true,
+        message: 'Reviews fetched successfully',
+        data: result,
+      };
+    } catch (error) {
+      throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async updateReviewStatus(updateReviewStatus: UpdateReviewStatus): Promise<IResponse> {
+    const isUpdated = await this._bookingRepository.updateReviewStatus(updateReviewStatus.reviewId, updateReviewStatus.status);
+
+    if (!isUpdated) {
+      throw new NotFoundException('Review not found or could not be updated');
     }
 
-    async updateReviewStatus(updateReviewStatus: UpdateReviewStatus): Promise<IResponse> {
-        const isUpdated = await this._bookingRepository.updateReviewStatus(updateReviewStatus.reviewId, updateReviewStatus.status);
+    return {
+      success: true,
+      message: updateReviewStatus.status ? 'Review Successfully activated.' : 'Review Successfully inactivated.',
+    };
+  }
 
-        if (!isUpdated) {
-            throw new NotFoundException('Review not found or could not be updated');
-        }
-
-        return {
-            success: true,
-            message: updateReviewStatus.status ? 'Review Successfully activated.' : 'Review Successfully inactivated.'
-        }
+  async reviewStats(): Promise<IResponse> {
+    try {
+      const stats = await this._bookingRepository.getAdminReviewStats();
+      return {
+        success: true,
+        message: 'Review stats fetched successfully',
+        data: stats,
+      };
+    } catch (error) {
+      throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
     }
+  }
 
-    async reviewStats(): Promise<IResponse> {
-        try {
-            const stats = await this._bookingRepository.getAdminReviewStats();
-            return {
-                success: true,
-                message: 'Review stats fetched successfully',
-                data: stats
-            };
-        } catch (error) {
-            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
-        }
+  async lowestRatedProviders(limit: number = 5): Promise<IResponse> {
+    try {
+      const providers = await this._bookingRepository.getLowestRatedProviders(limit);
+
+      for (const provider of providers) {
+        provider.providerAvatar = this._uploadUtility.getSignedImageUrl(provider.providerAvatar);
+      }
+
+      return {
+        success: true,
+        message: 'Lowest rated providers fetched successfully',
+        data: providers,
+      };
+    } catch (error) {
+      throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
     }
+  }
 
-    async lowestRatedProviders(limit: number = 5): Promise<IResponse> {
-        try {
-            const providers = await this._bookingRepository.getLowestRatedProviders(limit);
-
-            for (const provider of providers) {
-                provider.providerAvatar = this._uploadUtility.getSignedImageUrl(provider.providerAvatar);
-            }
-
-            return {
-                success: true,
-                message: 'Lowest rated providers fetched successfully',
-                data: providers
-            };
-        } catch (error) {
-            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
-        }
+  async ratingTrend(days: number = 30): Promise<IResponse> {
+    try {
+      const trend = await this._bookingRepository.getRatingTrend(days);
+      return {
+        success: true,
+        message: 'Rating trend fetched successfully',
+        data: trend,
+      };
+    } catch (error) {
+      throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
     }
-
-    async ratingTrend(days: number = 30): Promise<IResponse> {
-        try {
-            const trend = await this._bookingRepository.getRatingTrend(days);
-            return {
-                success: true,
-                message: 'Rating trend fetched successfully',
-                data: trend
-            };
-        } catch (error) {
-            throw new InternalServerErrorException(ErrorMessage.INTERNAL_SERVER_ERROR);
-        }
-    }
+  }
 }

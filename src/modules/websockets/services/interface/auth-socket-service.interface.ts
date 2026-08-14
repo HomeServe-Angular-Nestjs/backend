@@ -1,7 +1,7 @@
-import { Socket } from 'socket.io';
+import type { Socket } from 'socket.io';
 
-import { IPayload } from '@core/misc/payload.interface';
+import type { IPayload } from '@core/misc/payload.interface';
 
 export interface IAuthSocketService {
-    validateToken(client: Socket): Promise<IPayload>;
+  validateToken(client: Socket): Promise<IPayload>;
 }

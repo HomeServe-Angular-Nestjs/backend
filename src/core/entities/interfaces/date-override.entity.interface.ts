@@ -1,12 +1,12 @@
-import { IEntity } from "@core/entities/base/interfaces/base-entity.entity.interface";
+import type { IEntity } from '@core/entities/base/interfaces/base-entity.entity.interface';
 
 export interface IDateOverride extends IEntity {
-    providerId: string;
-    date: Date;
-    reason?: string;
-    timeRanges: {
-        startTime: string;
-        endTime: string
-    }[];
-    isAvailable: boolean;
+  providerId: string;
+  date: Date;
+  reason?: string;
+  timeRanges: {
+    startTime: string;
+    endTime: string;
+  }[];
+  isAvailable: boolean;
 }

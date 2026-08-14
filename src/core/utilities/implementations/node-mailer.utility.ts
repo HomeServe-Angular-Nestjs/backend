@@ -3,17 +3,11 @@ import { createTransport, SendMailOptions, Transporter } from 'nodemailer';
 import { Inject, Injectable } from '@nestjs/common';
 
 import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
-import {
-  ILoggerFactory,
-  LOGGER_FACTORY,
-} from '@core/logger/interface/logger-factory.interface';
+import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 
 import { IMailService } from '@core/services/mail/mail.service.interface';
 
-import {
-  buildEmailHtml,
-  buildEmailSubject,
-} from '../../services/mail/email-template';
+import { buildEmailHtml, buildEmailSubject } from '../../services/mail/email-template';
 
 @Injectable()
 export class NodeMailerUtility implements IMailService {
@@ -63,10 +57,7 @@ export class NodeMailerUtility implements IMailService {
       await this.mailTransporter.sendMail(mailOptions);
       this.logger.log(`Email sent successfully to ${to} (type: ${type})`);
     } catch (error) {
-      this.logger.error(
-        `Failed to send email to ${to} (type: ${type})`,
-        error instanceof Error ? error.stack : String(error),
-      );
+      this.logger.error(`Failed to send email to ${to} (type: ${type})`, error instanceof Error ? error.stack : String(error));
       throw error;
     }
   }
