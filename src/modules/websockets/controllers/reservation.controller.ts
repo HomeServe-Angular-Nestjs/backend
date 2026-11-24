@@ -5,6 +5,7 @@ import { ICustomLogger } from '@core/logger/interface/custom-logger.interface';
 import { ITokenService } from '@modules/auth/services/interfaces/token-service.interface';
 import { ILoggerFactory, LOGGER_FACTORY } from '@core/logger/interface/logger-factory.interface';
 import { ErrorCodes, ErrorMessage } from '@core/enum/error.enum';
+import { IPayload } from '@core/misc/payload.interface';
 
 @Controller('reservation')
 export class ReservationController {
@@ -22,17 +23,8 @@ export class ReservationController {
   @Post('new_access_token')
   async newAccessToken(@Req() req: Request, @Res() res: Response) {
     this.logger.log('[Socket] Generating new access token...');
-    const refreshToken = req.cookies['refresh_token'];
-    if (!refreshToken) {
-      throw new UnauthorizedException({
-        code: ErrorCodes.UNAUTHORIZED_ACCESS,
-        message: ErrorMessage.UNAUTHORIZED_ACCESS,
-      });
-    }
-
-    const user = await this._tokenService.validateRefreshToken(refreshToken);
-
-    if (!user || !user.type) {
+    const user = req.user as IPayload | undefined;
+    if (!user?.sub || !user.email || !user.type) {
       throw new UnauthorizedException({
         code: ErrorCodes.UNAUTHORIZED_ACCESS,
         message: ErrorMessage.UNAUTHORIZED_ACCESS,

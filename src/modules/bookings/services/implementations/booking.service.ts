@@ -519,10 +519,11 @@ export class BookingService implements IBookingService {
       cancelStatus: booking.cancelStatus,
       provider: {
         id: provider.id,
-        name: provider.fullname || provider.username,
+        fullname: provider.fullname,
+        username: provider.username,
         email: provider.email,
         phone: provider.phone,
-        location: provider.address,
+        address: provider.address,
       },
       orderedServices,
       transaction: transaction

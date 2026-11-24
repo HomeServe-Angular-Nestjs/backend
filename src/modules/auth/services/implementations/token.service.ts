@@ -12,6 +12,36 @@ import { JsonWebTokenError, JwtService, TokenExpiredError } from '@nestjs/jwt';
 import { v4 as uuidv4 } from 'uuid';
 import { ErrorMessage, ErrorCodes } from '@core/enum/error.enum';
 
+const REFRESH_DUPLICATE_WINDOW_SECONDS = 5;
+const ROTATE_REFRESH_TOKEN_SCRIPT = `
+local currentJti = redis.call('GET', KEYS[1])
+local presentedJti = ARGV[1]
+local nextJti = ARGV[2]
+local sessionTtl = tonumber(ARGV[3])
+local duplicateWindow = tonumber(ARGV[4])
+
+if not currentJti then
+  redis.call('DEL', KEYS[2])
+  return {-1, ''}
+end
+
+if currentJti == presentedJti then
+  redis.call('SADD', KEYS[2], presentedJti)
+  redis.call('EXPIRE', KEYS[2], sessionTtl)
+  redis.call('SET', KEYS[1], nextJti, 'EX', sessionTtl)
+  redis.call('SET', KEYS[3], nextJti, 'EX', duplicateWindow)
+  return {1, nextJti}
+end
+
+if redis.call('EXISTS', KEYS[3]) == 1 then
+  redis.call('EXPIRE', KEYS[1], sessionTtl)
+  return {2, currentJti}
+end
+
+redis.call('DEL', KEYS[1], KEYS[2])
+return {-1, ''}
+`;
+
 @Injectable()
 export class TokenService implements ITokenService {
   private readonly logger: ICustomLogger;
@@ -43,6 +73,10 @@ export class TokenService implements ITokenService {
 
   private getRotatedKey(sid: string): string {
     return `session:${sid}:rot`;
+  }
+
+  private getRotationResultKey(sid: string, jti: string): string {
+    return `session:${sid}:rotation:${jti}`;
   }
 
   private getBlacklistTokenKey(token: string): string {
@@ -103,31 +137,39 @@ export class TokenService implements ITokenService {
 
   async rotateRefreshToken(refreshToken: string): Promise<IRefreshResult> {
     const payload = await this._refreshPayload(refreshToken);
-
     const sid = payload.sid as string;
     const jti = payload.jti as string;
-    const sessionKey = this.getSessionKey(sid);
-    const currentJti = await this._redis.get(sessionKey);
+    const candidateJti = uuidv4();
+    const result = await this._redis.eval(
+      ROTATE_REFRESH_TOKEN_SCRIPT,
+      3,
+      this.getSessionKey(sid),
+      this.getRotatedKey(sid),
+      this.getRotationResultKey(sid, jti),
+      jti,
+      candidateJti,
+      this.getRefreshTtlSeconds(),
+      REFRESH_DUPLICATE_WINDOW_SECONDS,
+    );
 
-    if (!currentJti) {
-      await this._destroyFamily(sid);
-      throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
+    if (!Array.isArray(result) || result.length !== 2) {
+      throw new InternalServerErrorException('Invalid refresh rotation result');
     }
 
-    if (jti !== currentJti) {
-      await this._destroyFamily(sid);
+    const status = Number(result[0]);
+    const nextJti = result[1] == null ? '' : String(result[1]);
+    if (status === -1) {
       throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
     }
+    if ((status !== 1 && status !== 2) || !nextJti) {
+      throw new InternalServerErrorException('Invalid refresh rotation result');
+    }
 
-    const newJti = uuidv4();
-    const newRefreshToken = this._signRefresh(payload.sub, payload.email, payload.type, newJti, sid);
-
-    await this._redis.sadd(this.getRotatedKey(sid), currentJti);
-    await this._redis.set(sessionKey, newJti);
+    const newRefreshToken = this._signRefresh(payload.sub, payload.email, payload.type, nextJti, sid);
 
     return {
       refreshToken: newRefreshToken,
-      payload: { sub: payload.sub, email: payload.email, type: payload.type, jti: newJti, sid },
+      payload: { sub: payload.sub, email: payload.email, type: payload.type, jti: nextJti, sid },
     };
   }
 
@@ -169,9 +211,18 @@ export class TokenService implements ITokenService {
   }
 
   private async _refreshPayload(refreshToken: string): Promise<IPayload> {
-    const payload = await this._jwtService.verifyAsync<IPayload>(refreshToken, {
-      secret: this.REFRESH_SECRET,
-    });
+    let payload: IPayload;
+    try {
+      payload = await this._jwtService.verifyAsync<IPayload>(refreshToken, {
+        secret: this.REFRESH_SECRET,
+      });
+    } catch (error) {
+      if (error instanceof JsonWebTokenError || error instanceof TokenExpiredError) {
+        throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
+      }
+      throw error;
+    }
+
     if (!payload.sid || !payload.jti) {
       throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
     }
