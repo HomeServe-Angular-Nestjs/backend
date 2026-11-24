@@ -43,93 +43,83 @@ export class AuthMiddleware implements NestMiddleware {
     };
 
     try {
-      if (!accessToken || !refreshToken) {
+      if (!refreshToken) {
         throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
       }
 
-      await attachUserFromToken(accessToken);
-      return next();
-    } catch (accessError) {
-      this.logger.warn(`Access token invalid or missing. Trying refresh flow... Error: ${accessError}`);
-
-      let userId: string | undefined;
-      let userType: string | undefined;
-
-      try {
-        if (accessToken) {
-          const decoded = this.tokenService.decode(accessToken);
-          if (decoded && typeof decoded === 'object') {
-            userId = decoded.sub;
-            userType = decoded.type;
-          }
+      if (accessToken) {
+        try {
+          await attachUserFromToken(accessToken);
+          return next();
+        } catch (accessError) {
+          this.logger.warn(`Access token invalid. Trying refresh flow... Error: ${accessError}`);
         }
-
-        if (!userId || !userType) {
-          this.logger.error('Cannot identify user for refresh token');
-          throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
-        }
-
-        const rotated = await this.tokenService.rotateRefreshToken(refreshToken);
-        if (!rotated?.refreshToken) throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
-
-        const newAccessToken = this.tokenService.generateAccessToken(userId, rotated.payload.email, userType);
-        const newRefreshToken = rotated.refreshToken;
-
-        const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
-
-        res.cookie('access_token', newAccessToken, {
-          httpOnly: true,
-          secure: false,
-          sameSite: 'strict',
-          path: '/',
-          maxAge: SEVEN_DAYS_MS,
-        });
-
-        res.cookie('refresh_token', newRefreshToken, {
-          httpOnly: true,
-          secure: false,
-          sameSite: 'strict',
-          path: '/',
-          maxAge: SEVEN_DAYS_MS,
-        });
-
-        await attachUserFromToken(newAccessToken);
-        this.logger.debug('New access token issued');
-        return next();
-      } catch (refreshError) {
-        const isRevocation = refreshError instanceof UnauthorizedException;
-
-        if (isRevocation) {
-          res.clearCookie('access_token', {
-            httpOnly: true,
-            secure: false,
-            sameSite: 'strict',
-            path: '/',
-          });
-
-          res.clearCookie('refresh_token', {
-            httpOnly: true,
-            secure: false,
-            sameSite: 'strict',
-            path: '/',
-          });
-
-          this.logger.error('Refresh token flow failed:', refreshError instanceof Error ? refreshError.message : String(refreshError));
-          throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
-        }
-
-        // Transient failure (e.g. Redis not ready / network) — do not burn the
-        // session or force the client to log out. Respond with a retryable 503.
-        this.logger.error(
-          'Transient failure during refresh token flow:',
-          refreshError instanceof Error ? refreshError.message : String(refreshError),
-        );
-        res.status(503).json({
-          statusCode: 503,
-          message: 'Service temporarily unavailable. Please retry.',
-        });
-        return;
       }
+
+      const rotated = await this.tokenService.rotateRefreshToken(refreshToken);
+      if (!rotated?.refreshToken || !rotated.payload?.sub || !rotated.payload.email || !rotated.payload.type) {
+        throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
+      }
+
+      const newAccessToken = this.tokenService.generateAccessToken(
+        rotated.payload.sub,
+        rotated.payload.email,
+        rotated.payload.type,
+      );
+      const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+
+      res.cookie('access_token', newAccessToken, {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'strict',
+        path: '/',
+        maxAge: SEVEN_DAYS_MS,
+      });
+
+      res.cookie('refresh_token', rotated.refreshToken, {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'strict',
+        path: '/',
+        maxAge: SEVEN_DAYS_MS,
+      });
+
+      req.user = rotated.payload;
+      this.logger.debug('New access token issued');
+      return next();
+    } catch (refreshError) {
+      const isRevocation = refreshError instanceof UnauthorizedException;
+
+      if (isRevocation) {
+        res.clearCookie('access_token', {
+          httpOnly: true,
+          secure: false,
+          sameSite: 'strict',
+          path: '/',
+        });
+
+        res.clearCookie('refresh_token', {
+          httpOnly: true,
+          secure: false,
+          sameSite: 'strict',
+          path: '/',
+        });
+
+        this.logger.error('Refresh token flow failed:', refreshError instanceof Error ? refreshError.message : String(refreshError));
+        throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
+      }
+
+      // Transient failure (e.g. Redis not ready / network) — do not burn the
+      // session or force the client to log out. Respond with a retryable 503.
+      this.logger.error(
+        'Transient failure during refresh token flow:',
+        refreshError instanceof Error ? refreshError.message : String(refreshError),
+      );
+      res.status(503).json({
+        statusCode: 503,
+        message: 'Service temporarily unavailable. Please retry.',
+      });
+      return;
     }
   }
 }
