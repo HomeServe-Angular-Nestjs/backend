@@ -10,7 +10,7 @@ import {
   USER_SOCKET_STORE_SERVICE_NAME,
 } from '@/core/constants/service.constant';
 import { IParticipant } from '@/core/entities/interfaces/chat.entity.interface';
-import { ICreateMessage, IMessage } from '@/core/entities/interfaces/message.entity.interface';
+import { ICreateMessage } from '@/core/entities/interfaces/message.entity.interface';
 import { ErrorCodes, ErrorMessage } from '@/core/enum/error.enum';
 import { GlobalWsExceptionFilter } from '@/core/exception-filters/ws-exception.filters';
 import { ICustomDtoValidator } from '@/core/utilities/interface/custom-dto-validator.utility.interface';
@@ -52,10 +52,62 @@ export class ChatGateway extends BaseSocketGateway {
 
   protected override async onClientConnect(client: Socket): Promise<void> {
     await this._authenticate(client);
+
+    const user = this._getClient(client);
+    if (user?.id) {
+      await this._broadcastPresence(user.id, user.type, true);
+    }
   }
 
   protected override async onClientDisConnect(client: Socket): Promise<void> {
+    const user = this._getClient(client);
     await this._unauthenticate(client);
+
+    if (user?.id && !(await this._userSocketService.hasSockets(user.id, 'chat'))) {
+      await this._broadcastPresence(user.id, user.type, false);
+    }
+  }
+
+  private async _broadcastPresence(userId: string, userType: 'customer' | 'provider', isOnline: boolean): Promise<void> {
+    const chatsResponse = await this._chatSocketService.getAllChat({
+      id: new Types.ObjectId(userId),
+      type: userType,
+    });
+
+    for (const chat of chatsResponse.data ?? []) {
+      const peerSocketIds = await this._userSocketService.getSockets(chat.receiver.id.toString(), 'chat');
+      for (const socketId of peerSocketIds) {
+        this.server.to(socketId).emit('presence:update', { userId, isOnline });
+      }
+    }
+  }
+
+  @SubscribeMessage('presence:check')
+  async handlePresenceCheck(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: { receiverId: string; receiverType: 'customer' | 'provider' },
+  ): Promise<void> {
+    const sender = this._getClient(client);
+    if (!sender?.id) {
+      throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED_ACCESS);
+    }
+
+    if (
+      !body?.receiverId ||
+      !Types.ObjectId.isValid(body.receiverId) ||
+      (body.receiverType !== 'customer' && body.receiverType !== 'provider')
+    ) {
+      throw new WsException('Invalid presence check.');
+    }
+
+    const chat = await this._chatSocketService.findChat(
+      { id: new Types.ObjectId(sender.id), type: sender.type },
+      { id: new Types.ObjectId(body.receiverId), type: body.receiverType },
+    );
+
+    const isOnline = chat ? await this._userSocketService.hasSockets(body.receiverId, 'chat') : false;
+
+    client.emit('presence:status', { userId: body.receiverId, isOnline });
   }
 
   @SubscribeMessage('sendMessage')
