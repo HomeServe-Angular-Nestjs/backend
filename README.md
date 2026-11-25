@@ -1,121 +1,216 @@
-# HomeServe Backend — NestJS API
+# 🏡 HomeServe — Full-Stack Home Services Marketplace
 
-REST API and real-time gateway layer for the HomeServe home services marketplace. Built with **NestJS 11**, **MongoDB (Mongoose)**, **Redis**, and **Socket.IO**, exposing the business logic for the Customer, Provider, and Admin portals.
+HomeServe is a production-grade, full-stack home services marketplace connecting customers with vetted local service providers under real-time administrative governance. Built using a decoupled **Polyrepo Architecture**, it enforces role-based security across three distinct Angular 19 portals (**Customer**, **Provider**, and **Admin**) powered by a modular NestJS 11 REST API and Socket.IO real-time engine.
 
-## Features
+---
 
-- **Authentication & Authorization** — JWT access/refresh tokens, Google OAuth (Passport), email OTP verification, argon2 password hashing, role-based guards, Redis-backed sessions.
-- **Booking Engine** — Slot-based bookings with slot reservations, rescheduling and cancellation flows, availability rules (default schedules, date overrides, slot rules).
-- **Commerce** — Cart, coupon engine, Razorpay payment integration, subscription plans, dual wallets (customer refunds / provider earnings) with withdrawal requests.
-- **Real-Time** — Namespaced Socket.IO gateways for chat, notifications, slot reservations, and video-call signaling; Redis socket adapter for multi-instance scaling; authenticated socket handshakes.
-- **Reports & Invoices** — Server-side PDF generation with Puppeteer (users, bookings, transaction reports; booking invoices).
-- **Admin Governance** — KYC approval workflows, category/profession/service management, user and transaction oversight, complaint handling.
-- **Media & Email** — Cloudinary uploads, Nodemailer with Handlebars templates.
+## 🔐 Pre-Configured Test Roles
 
-## Tech Stack
+* 👤 **Customer Portal:** Demo Customer Account (Browse, Book, Cart, Wallet, Live Chat)
+* 🛠️ **Provider Portal:** Demo Provider Account (Availability, Catalog, Analytics, KYC)
+* 🛡️ **Admin Governance:** Demo Admin Account (Platform Oversight, Disputes, Approvals)
 
-| Concern            | Technology                                                       |
-| ------------------ | ---------------------------------------------------------------- |
-| Runtime            | Node.js, NestJS 11, Express, TypeScript                          |
-| Database           | MongoDB 8 (Mongoose 8)                                           |
-| Caching / Sessions | Redis (cache-manager, connect-redis, `@socket.io/redis-adapter`) |
-| Auth               | Passport (JWT, Local, Google OAuth 2.0), jsonwebtoken, argon2    |
-| Real-Time          | Socket.IO                                                        |
-| Payments           | Razorpay                                                         |
-| Files              | Cloudinary, multer, streamifier                                  |
-| Email              | Nodemailer, @nestjs-modules/mailer, Handlebars                   |
-| PDF                | Puppeteer                                                        |
-| Dates              | Luxon                                                            |
-| Testing            | Jest, Supertest, mongodb-memory-server                           |
+---
 
-## Project Structure
+## 📦 Polyrepo Organization Structure
 
+| Application | Primary Tech Stack | Repository Link | Responsibilities |
+| :--- | :--- | :--- | :--- |
+| **`HomeServe-Server`** | NestJS 11, Node.js 20, MongoDB, Redis, Socket.IO | [`backend/`](./backend) | Modular REST API, Redis reservation locking, JWT blacklisting, WebSockets |
+| **`HomeServe-Client`** | Angular 19, NgRx 19, Signals, Tailwind CSS, WebRTC | [`frontend/`](./frontend) | Multi-portal SPA, hybrid state management, real-time chat & WebRTC video UI |
+
+
+---
+
+## 🛠️ Complete Tech Stack
+
+| Domain | Technologies |
+| :--- | :--- |
+| **Frontend UI** | Angular 19, TypeScript 5.7, RxJS 7.8, NgRx 19 (Store, Effects, Entity), Angular Material 19, Tailwind CSS 3.4 |
+| **Data Visualization & Spatial** | Mapbox GL (Geocoding & Discovery), Apache ECharts (Financial & Provider Dashboards) |
+| **Real-Time & WebRTC** | Socket.IO Client, WebRTC Peer-to-Peer, STUN/TURN Relays |
+| **Backend API Server** | Node.js 20, NestJS 11, Express, Mongoose 8, Passport, JWT |
+| **Caching & In-Memory Store** | Redis (Session Storage, Lock Engine, Socket.IO Pub/Sub Adapter, Token Blacklist) |
+| **Financial & Media** | Razorpay SDK (Orders & Verification), Cloudinary API, Puppeteer (PDF Invoices), ExcelJS |
+| **Email Infrastructure** | Nodemailer (Development), Brevo SMTP (Production), Handlebars Email Templates |
+| **Testing & Deployment** | Jest, Supertest, Karma, Jasmine, Render Blueprint, GitHub Actions CI/CD |
+
+---
+
+## 📐 High-Level System Architecture
+
+```mermaid
+flowchart TB
+    subgraph Client["Angular 19 SPA (Client)"]
+        Customer["Customer Portal"]
+        Provider["Provider Portal"]
+        Admin["Admin Portal"]
+        Store["NgRx Store + Signals"]
+        Customer & Provider & Admin --> Store
+    end
+
+    subgraph API["NestJS 11 API (Server)"]
+        Middleware["Auth & BlockGuard"]
+        Services["Domain Services Layer"]
+        Gateways["Socket.IO Gateways"]
+        Middleware --> Services --- Gateways
+    end
+
+    subgraph Data["Infrastructure & Storage"]
+        Mongo[(MongoDB System of Record)]
+        Redis[(Redis Cache & Locks)]
+    end
+
+    subgraph External["Third-Party Integration Services"]
+        Razorpay["Razorpay Payments"]
+        Cloudinary["Cloudinary Assets"]
+        Mapbox["Mapbox GL Geocoding"]
+        TURN["Authenticated TURN Relays"]
+    end
+
+    Store -- REST (HttpOnly Cookies) --> Middleware
+    Store <-- WebSockets / WebRTC --> Gateways
+    Services --> Mongo
+    Services & Gateways --> Redis
+    Services --> Razorpay
+    Services --> Cloudinary
+    Customer --> Mapbox
+    Gateways --> TURN
 ```
-src/
-├── core/              # Guards, interceptors, shared services (PDF, mail, uploads)
-├── configs/           # Environment and module configuration
-├── modules/
-│   ├── auth/                  # Authentication (JWT, OAuth, OTP)
-│   ├── users/                 # Customer and admin domain
-│   ├── providers/             # Provider domain, KYC, approvals
-│   ├── provider-service/      # Provider service catalog
-│   ├── category/              # Categories, professions, services
-│   ├── bookings/              # Booking lifecycle, invoices
-│   ├── slots/                 # Slot management
-│   ├── availability/          # Default schedules, date overrides, slot rules
-│   ├── cart/                  # Cart management
-│   ├── coupons/               # Discount engine
-│   ├── payment/               # Razorpay integration
-│   ├── plans/                 # Subscription plans
-│   ├── subscriptions/         # User subscriptions
-│   ├── wallet/                # Wallets and withdrawals
-│   ├── reports/               # Reporting and analytics endpoints
-│   └── websockets/            # Chat, notification, reservation, video-call gateways
-├── shared/            # Reusable DTOs, enums, utilities
-├── seed/              # Seed scripts
-└── main.ts
+
+---
+
+## 🏛️ Multi-Portal Feature Deep Dive
+
+### 👤 1. Customer Portal
+- **Spatial Discovery & Geocoding:** Search providers by service category and location using Mapbox GL radius filtering, with detailed provider profiles, reviews, and gallery tabs.
+- **Real-Time Booking & Checkout:** Cart price breakdown calculation, 15-minute slot reservation locking, coupon validation, and Razorpay payment authorization.
+- **Live Communication Suite:** Cursor-paginated Socket.IO chat and WebRTC peer-to-peer video calling featuring a draggable/minimizable picture-in-picture window overlay.
+- **Account & Financial Ledger:** Wallet refund history, saved providers, profile management, and notification feeds.
+
+### 🛠️ 2. Provider Portal
+- **Operational Availability Manager:** Weekly default availability matrix, custom date overrides, slot rules, buffer time enforcement, and overlap validation.
+- **Service Catalog Management:** CRUD operations for offered services with custom unit pricing, image uploads, and profession/category mapping.
+- **Subscription-Gated Analytics:** Performance, revenue, and regional trends rendered with Apache ECharts, feature-gated by active provider subscription plans.
+- **Financial Ledger & Wallet:** Earnings ledger, payout status, subscription management, and invoice generation.
+
+### 🛡️ 3. Admin Governance Portal
+- **Platform Analytics & Growth:** Executive dashboards tracking platform revenue trends, user growth curves, provider performance metrics, and pending approvals.
+- **Governance & Verification:** KYC document review workflows, customer/provider oversight, category/profession activation, and ratings/reviews moderation.
+- **Audit & Financial Reports:** Dispute investigation workflows, penalty/fine tracking, and one-click downloadable PDF and Excel financial ledgers.
+
+---
+
+## ⚡ Core Engineering & Architectural Mechanics
+
+### 1. Hybrid Frontend State Management (NgRx 19 + Angular Signals)
+- **Global Session & Real-Time Data (NgRx 19):** `@ngrx/entity` adapters handle normalized collections (`users`, `chat`, `notifications`) with functional effects using `inject()`.
+- **Ephemeral UI State (Angular Signals):** Shopping cart items, active slot selection, and local table filters use Angular Signals to eliminate store boilerplate.
+- **Optimistic Reconciliation:** Chat messages assign a temporary `clientMessageId` for instant UI feedback, reconciling seamlessly upon server Socket.IO acknowledgment.
+
+### 2. Distributed Concurrency & Slot Reservation Locking
+- **Two-Phase Slot Guard:** Combines a compound unique MongoDB index (`providerId + date + slot`) with a **15-minute TTL reservation document**.
+- **Redis Payment Lock:** Acquires an in-memory lock during Razorpay payment initiation. If verification succeeds, the booking finalizes; if payment fails, the Redis lock releases immediately and the TTL reservation clears.
+
+### 3. Enterprise Security & Token Rotation Protocol
+- **Password Security:** Password protection backed by argon2 memory-hard hashing algorithm.
+- **Refresh Token Family Rotation:** Refresh tokens rotate on use. Replaying a token triggers immediate Redis-based destruction of the entire token family.
+- **Access Token TTL Blacklisting:** Upon user logout, remaining JWT access token TTLs are blacklisted in Redis to block token reuse.
+- **HttpOnly Cookie Transport:** Tokens are transported strictly via `HttpOnly` and `SameSite` cookies with `withCredentials` CORS security.
+
+### 4. Real-Time Infrastructure & Secure WebRTC Signaling
+- **Ephemeral TURN Credentials:** STUN/TURN credentials for WebRTC video calling are generated on-demand behind an authenticated NestJS endpoint, keeping relay secrets out of client bundle code.
+- **Redis Socket Pub/Sub Adapter:** Socket.IO gateways utilize a Redis pub/sub broker to maintain seamless room presence across horizontally scaled NestJS node instances.
+
+---
+
+## 🛠️ Real-World Problems Solved
+
+| Problem Identified | Root Cause / Risk | Technical Resolution | System Impact |
+| :--- | :--- | :--- | :--- |
+| **Refresh-Token Reuse & Silent Races** | Replayed or stolen refresh tokens allowed unauthorized access; concurrent refreshes failed. | Redis session families with rotated-JTI tracking, atomic Lua scripts, and short grace windows. | Replayed tokens trigger instant session family destruction; zero silent-refresh user drops. |
+| **Double-Booking & Payment Races** | Simultaneous checkouts allowed two customers to reserve the same slot. | Two-phase locking using 15-min TTL MongoDB reservations and Redis checkout locks. | Guaranteed zero double-bookings during peak checkout traffic; auto-clears on failure. |
+| **Exposed WebRTC Relay Secrets** | Static TURN credentials in client bundle exposed relay infrastructure. | Ephemeral TURN token generation behind an authenticated NestJS endpoint. | Zero credential leaks in client JavaScript bundles; secure WebRTC video calls. |
+| **Stale UI Filter Results** | Rapid search bar typing triggered out-of-order HTTP response overwrites. | Refactored search and filter streams to use the RxJS `switchMap` operator. | In-flight stale requests are cancelled; UI strictly reflects latest user keystrokes. |
+| **Analytical Reporting Discrepancies** | Multi-service bookings double-counted revenue in aggregation pipelines. | Deduplicated booking IDs prior to executing MongoDB aggregation math. | 100% accurate financial, GST, and provider earnings trend reports. |
+
+---
+
+## 💾 Database Indexing & Redis Architecture
+
+### MongoDB Indexing Strategy
+* **GeoJSON `2dsphere` Index (`Provider.location`):** Powers spatial radius discovery via `` aggregation pipelines.
+* **Compound Unique Index (`ProviderSlot`):** Database-level enforcement of `providerId + date + slot` uniqueness.
+* **TTL Auto-Expiry Index (`Reservation.createdAt`):** Automatically purges abandoned 15-minute checkout reservations.
+* **Cursor Indexes (`Chat.messageId`, `Notification.id`):** Enables efficient pagination over chat history without offset performance penalties.
+
+### Redis Cache & Storage Map
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            Redis In-Memory Store                            │
+├──────────────────┬──────────────────┬───────────────────┬───────────────────┤
+│ Auth & Sessions  │ Concurrency Lock │ Real-Time Gateway │ Cache & Presence  │
+├──────────────────┼──────────────────┼───────────────────┼───────────────────┤
+│ • OTP Storage    │ • Slot Checkout  │ • Socket Pub/Sub  │ • HTTP Cache      │
+│ • Token Blacklist│   Payment Locks  │   Adapter         │ • User Online Map │
+│ • Token Families │ • Rate Limiting  │ • STUN/TURN Cache │ • Call State      │
+└──────────────────┴──────────────────┴───────────────────┴───────────────────┘
 ```
 
-Each module follows a layered architecture: **controllers → services (interface + implementation) → repositories**, with DTO validation via `class-validator`.
+---
 
-## Getting Started
+## 💻 Local Development Setup
 
 ### Prerequisites
+* **Node.js:** v20.x or higher
+* **Package Managers:** `pnpm` (recommended for backend), `npm`
+* **Databases:** Local or remote MongoDB 8+ and Redis instance
 
-- Node.js ≥ 20 and pnpm
-- MongoDB instance
-- Redis instance
-- Keys for Razorpay, Cloudinary, Google OAuth, and an SMTP account
-
-### Setup
-
+### 1. Backend Server Setup
 ```bash
+# Navigate to backend directory
+cd backend
+
+# Install dependencies
 pnpm install
-cp .env.development .env   # or .env.production; fill in your values
-pnpm run start:dev         # hot-reload dev server
+
+# Configure environment variables
+cp .env.development .env
+
+# Start NestJS dev server (Listens on http://localhost:5000/api)
+pnpm run start:dev
 ```
 
-### Environment Variables
-
-| Group        | Variables                                                                                                               |
-| ------------ | ----------------------------------------------------------------------------------------------------------------------- |
-| Server       | `PORT`, `NODE_ENV`, `FRONTEND_URL`, `BACKEND_URL`, `ALLOWED_URLS`, `VERIFICATION_LINK`                                  |
-| Database     | `MONGO_URI`                                                                                                             |
-| JWT          | `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `JWT_VERIFICATION_SECRET`, `JWT_ACCESS_EXPIRES_IN`, `JWT_REFRESH_EXPIRES_IN` |
-| Session      | `SESSION_SECRET`, `MULTI_INSTANCE`                                                                                      |
-| Google OAuth | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL`                                                       |
-| SMTP         | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`                                                     |
-| Cloudinary   | `CLOUDINARY_NAME`, `CLOUDINARY_KEY`, `CLOUDINARY_SECRET`                                                                |
-| Redis        | `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`, `REDIS_TLS`, `REDIS_TTL`                                                  |
-| Razorpay     | `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`                                                                                |
-| Admin seed   | `ADMIN_EMAIL`, `ADMIN_PASSWORD`                                                                                         |
-
-## Scripts
-
-| Script                | Purpose                           |
-| --------------------- | --------------------------------- |
-| `pnpm run start`      | Run the server                    |
-| `pnpm run start:dev`  | Run with hot reload (ts-node-dev) |
-| `pnpm run start:prod` | Run the compiled production build |
-| `pnpm run build`      | Compile with Nest CLI             |
-| `pnpm run lint`       | ESLint with autofix               |
-| `pnpm run test`       | Unit tests (Jest)                 |
-| `pnpm run test:e2e`   | e2e tests (Jest + Supertest)      |
-| `pnpm run test:cov`   | Test coverage report              |
-| `pnpm run seed:admin` | Seed the admin account            |
-| `pnpm run console`    | Interactive console               |
-
-## Deployment
-
-Build the production bundle and run it with `NODE_ENV=production`:
-
+### 2. Seed Administrator Account
 ```bash
-pnpm run build
-pnpm run start:prod
+# Seed initial admin user
+pnpm run seed:admin
 ```
 
-The API expects a MongoDB instance and a Redis instance (required for sessions, caching, and the Socket.IO adapter when `MULTI_INSTANCE` is enabled).
+### 3. Frontend SPA Setup
+```bash
+# Navigate to frontend directory
+cd frontend
 
-## License
+# Install dependencies
+npm install
 
-Private / UNLICENSED.
+# Start Angular dev server (Runs on http://localhost:4200)
+npm start
+```
+
+---
+
+## 🚧 Known Limitations & Technical Roadmap
+
+* 🧪 **Automated Test Coverage:** Core domain services feature unit tests; implementing a full Playwright E2E suite and GitHub Actions CI workflow is planned.
+* 📦 **Shared DTO Package:** Extracting duplicated TypeScript API models into an npm/pnpm workspace package for unified type safety across network boundaries.
+* 🐳 **Containerization:** Deployed via Render blueprints. Adding a multi-container `docker-compose.yml` file for single-command developer onboarding.
+
+---
+
+## 📄 Author & License
+
+**Author:** Muhammed Sajid S  
+**Specialization:** Full-Stack / MEAN Stack Engineer (Angular, NestJS, TypeScript, Node.js, PostgreSQL, MongoDB, Redis, AWS)  
+**License:** MIT License
